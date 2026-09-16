@@ -1,4 +1,4 @@
-import type { Insumo, UnidadeMedida } from './types.js';
+import type { Insumo, UnidadeMedida } from './types';
 
 const FATOR_PARA_BASE: Record<'kg' | 'g' | 'l' | 'ml', number> = { kg: 1000, g: 1, l: 1000, ml: 1 };
 

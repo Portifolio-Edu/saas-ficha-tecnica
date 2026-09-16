@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { calcularCmvReceita, calcularCustoPorPorcao, type ResolverContexto } from '../cmv.js';
-import type { Insumo, Receita } from '../types.js';
+import { calcularCmvReceita, calcularCustoPorPorcao, type ResolverContexto } from '../cmv';
+import type { Insumo, Receita } from '../types';
 
 // Fixture espelha o exemplo da Lasanha Bolonhesa do mockup: prato final com
 // insumos diretos e uma linha de sub-receita (molho de tomate caseiro).

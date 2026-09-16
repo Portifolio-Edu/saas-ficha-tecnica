@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fatorCorrecaoEfetivo } from '../fatorCorrecao.js';
-import type { Insumo, ProcessamentoProteina } from '../types.js';
+import { fatorCorrecaoEfetivo } from '../fatorCorrecao';
+import type { Insumo, ProcessamentoProteina } from '../types';
 
 const salmao: Insumo = { id: 'salmao', unidadeMedida: 'kg', precoUnitario: 68, fatorCorrecao: 1.18 };
 

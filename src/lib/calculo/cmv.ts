@@ -1,6 +1,6 @@
-import { converterParaUnidadeDoInsumo } from './conversaoUnidade.js';
-import { fatorCorrecaoEfetivo } from './fatorCorrecao.js';
-import type { Insumo, ProcessamentoProteina, Receita } from './types.js';
+import { converterParaUnidadeDoInsumo } from './conversaoUnidade';
+import { fatorCorrecaoEfetivo } from './fatorCorrecao';
+import type { Insumo, ProcessamentoProteina, Receita } from './types';
 
 export interface ResolverContexto {
   insumoPorId: Map<string, Insumo>;

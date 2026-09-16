@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcularPrecoPorCanal, calcularPrecoSugerido } from '../precificacao.js';
+import { calcularPrecoPorCanal, calcularPrecoSugerido } from '../precificacao';
 
 describe('calcularPrecoSugerido', () => {
   it('usa a margem da receita quando definida, ignorando a do cliente', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcularCapacidadeProducao } from '../capacidadeProducao.js';
+import { calcularCapacidadeProducao } from '../capacidadeProducao';
 
 describe('calcularCapacidadeProducao', () => {
   it('usa o insumo mais escasso como gargalo, nao a media', () => {

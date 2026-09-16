@@ -1,6 +1,6 @@
 # Ficha Técnica SaaS — app
 
-Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn/ui, integrado ao Supabase. Cobre o passo 1 da ordem de construção do handoff (projeto + migration + RLS); nenhuma tela de produto foi construída ainda.
+Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn/ui, integrado ao Supabase. Cobre os passos 1 a 3 da ordem de construção do handoff: projeto + migration + RLS, auth e onboarding de restaurante, e o CRUD de insumo/receita/preparo (o resto depende disto).
 
 ## Stack
 
@@ -57,8 +57,21 @@ npm test         # 39 testes (vitest), cobrindo os exemplos numéricos do handof
 npm run test:watch
 ```
 
+## Auth e onboarding
+
+`/login` e `/cadastro` usam Server Actions (`src/lib/auth/actions.ts`) sobre o client server-side do Supabase, então a sessão já chega via cookie sem round-trip extra no client. Cadastro salva nome/nome_restaurante/telefone em `user_metadata` no `signUp` e só grava a linha em `clientes` se já existir sessão (confirmação de e-mail desligada); se o projeto exigir confirmação, `getClienteAtual()` (`src/lib/dados/cliente.ts`) termina esse onboarding sozinho no primeiro login, lendo os mesmos metadados — funciona nos dois casos sem precisar saber qual está ligado no projeto.
+
+## Telas (CRUD)
+
+`/insumos` (insumos comprados + preparos próprios) e `/receitas` (pratos finais, com quebra de CMV) — layout, componentes visuais (`Card`, `Badge`, paleta `C`, mesmos estilos de input/botão) e comportamento de formulário portados de `mockup/ficha-tecnica-mvp.jsx` sem redesenho. Duas diferenças deliberadas em relação ao mock, necessárias pra bater com o schema real: um campo de peso-por-unidade quando o insumo é medido em `un`, e um seletor de unidade por linha de ficha (o mock assumia peso já na unidade do insumo; o motor de cálculo já suporta conversão, então o formulário também precisa).
+
+A quebra de CMV em `/receitas` chama `src/lib/calculo/` de verdade (não recalcula nada solto na tela) — inclusive sub-receita sem reaplicar FC, exatamente como testado.
+
+## Camada de dados
+
+`src/lib/dominio/` guarda tipos e constantes puros (sem import de Supabase) que tanto os componentes cliente quanto o código de servidor importam. Isso é obrigatório, não estético: um componente `"use client"` que importe qualquer coisa de um arquivo que também importe `next/headers` quebra o build (Turbopack inclui o módulo inteiro no bundle do cliente). `src/lib/dados/` faz o CRUD de verdade (sempre no servidor, via `src/lib/supabase/server.ts`) e só é importado por Server Components e Server Actions.
+
 ## Em aberto
 
-- Nenhuma tela de produto ainda — só o scaffold, a integração com Supabase, a migration e o motor de cálculo, por pedido explícito.
-- Onboarding (criação do `cliente` vinculado ao `auth.users` no primeiro login) ainda não implementado.
-- Camada de API/Server Actions que chama `src/lib/calculo/` a partir dos dados lidos via Supabase — ainda não existe.
+- Estoque, fornecedores, produção com kanban, manipulação de proteína, checklists, nutricional, temperatura, fechamento de CMV e relatórios — todos os outros itens do nav aparecem no menu (mesmo layout do mock) mas ficam inertes até terem tela própria.
+- Preço por canal e rotulagem (existem no mock, na aba Receitas & Fichas) não entraram nesta rodada de CRUD — não fazem parte de insumo/receita/preparo em si.

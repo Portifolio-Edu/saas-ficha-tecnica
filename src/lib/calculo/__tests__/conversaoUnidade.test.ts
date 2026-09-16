@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { converterParaUnidadeDoInsumo } from '../conversaoUnidade.js';
+import { converterParaUnidadeDoInsumo } from '../conversaoUnidade';
 
 describe('converterParaUnidadeDoInsumo', () => {
   it('retorna o mesmo valor quando a unidade ja bate', () => {

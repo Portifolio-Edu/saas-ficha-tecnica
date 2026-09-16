@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcularFechamentoCmv, calcularQuebraEstoque } from '../fechamentoCmv.js';
+import { calcularFechamentoCmv, calcularQuebraEstoque } from '../fechamentoCmv';
 
 describe('calcularFechamentoCmv', () => {
   it('calcula CMV teorico, real e o gap entre eles', () => {

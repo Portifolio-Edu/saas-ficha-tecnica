@@ -1,4 +1,4 @@
-import type { CanalVenda } from './types.js';
+import type { CanalVenda } from './types';
 
 /**
  * Preco sugerido (secao 5.4): margem da receita sobrescreve a do cliente

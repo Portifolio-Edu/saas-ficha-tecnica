@@ -1,4 +1,4 @@
-import type { Insumo, ProcessamentoProteina } from './types.js';
+import type { Insumo, ProcessamentoProteina } from './types';
 
 /**
  * FC medido sempre prevalece sobre o de tabela: se existe ao menos um lote

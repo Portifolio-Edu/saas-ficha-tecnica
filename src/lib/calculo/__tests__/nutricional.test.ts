@@ -6,7 +6,7 @@ import {
   calcularPercentualVD,
   nutrientesComSeloFrontal,
   type ValoresNutricionais,
-} from '../nutricional.js';
+} from '../nutricional';
 
 const zerado: ValoresNutricionais = {
   caloriasKcal: 0,
