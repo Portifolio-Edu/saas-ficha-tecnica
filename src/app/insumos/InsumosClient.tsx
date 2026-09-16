@@ -7,7 +7,8 @@ import { Badge } from "@/components/ficha/Badge";
 import { C, inputStyle, nums } from "@/components/ficha/tema";
 import { CATEGORIAS, UNIDADES, type Categoria, type Insumo, type InsumoInput } from "@/lib/dominio/insumo";
 import type { LinhaFichaInput, Receita, ReceitaInput } from "@/lib/dominio/receita";
-import { construirContexto } from "@/lib/dados/adaptadores";
+import { construirContexto, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
+import type { Processamento } from "@/lib/dominio/processamento";
 import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
 import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
 import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
@@ -143,6 +144,7 @@ function PreparoForm({
       tipo: "preparo_base",
       categoria: null,
       precoVenda: null,
+      vendasMes: null,
       rendimento: parseFloat(rendimento),
       unidadeRendimento,
       pesoPorcaoG: null,
@@ -234,13 +236,24 @@ function PreparoForm({
   );
 }
 
-export function InsumosClient({ insumos, preparos, todasReceitas }: { insumos: Insumo[]; preparos: Receita[]; todasReceitas: Receita[] }) {
+export function InsumosClient({
+  insumos,
+  preparos,
+  todasReceitas,
+  processamentos,
+}: {
+  insumos: Insumo[];
+  preparos: Receita[];
+  todasReceitas: Receita[];
+  processamentos: Processamento[];
+}) {
   const [showNovoInsumo, setShowNovoInsumo] = useState(false);
   const [insumoEditando, setInsumoEditando] = useState<Insumo | null>(null);
   const [showNovoPreparo, setShowNovoPreparo] = useState(false);
   const [preparoEditando, setPreparoEditando] = useState<Receita | null>(null);
 
-  const contexto = construirContexto(insumos, todasReceitas);
+  const contexto = construirContexto(insumos, todasReceitas, processamentos);
+  const lotesProteina = processamentos.map(paraProcessamentoCalc);
 
   const excluirInsumoComConfirmacao = async (insumo: Insumo) => {
     if (!window.confirm(`Excluir "${insumo.nome}"? Isso não pode ser desfeito.`)) return;
@@ -402,7 +415,7 @@ export function InsumosClient({ insumos, preparos, todasReceitas }: { insumos: I
                       const insumo = insumos.find((i) => i.id === f.insumoId);
                       if (!insumo) return null;
                       const insumoCalc = { id: insumo.id, unidadeMedida: insumo.unidadeMedida, precoUnitario: insumo.precoUnitario, fatorCorrecao: insumo.fatorCorrecao, pesoPorUnidade: insumo.pesoPorUnidade ?? undefined };
-                      const fc = fatorCorrecaoEfetivo(insumoCalc, []);
+                      const fc = fatorCorrecaoEfetivo(insumoCalc, lotesProteina);
                       const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
                       const custo = pesoConvertido * fc * insumo.precoUnitario;
                       return (

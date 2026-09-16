@@ -7,6 +7,7 @@ import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Producao, ProducaoInput, StatusProducao, Turno, TipoItemProducao } from "@/lib/dominio/producao";
 import { pesoBrutoDaLinha } from "@/lib/dados/adaptadores";
+import type { Processamento } from "@/lib/dominio/processamento";
 import { calcularCapacidadeProducao, type InsumoNaFicha, type SaldoEstoque } from "@/lib/calculo/capacidadeProducao";
 import { acaoIniciarProducao, acaoRegistrarProducao, acaoAtualizarStatusProducao } from "./actions";
 
@@ -133,11 +134,13 @@ export function ProducoesClient({
   receitas,
   producoes,
   turnos,
+  processamentos,
 }: {
   insumos: Insumo[];
   receitas: Receita[];
   producoes: Producao[];
   turnos: Turno[];
+  processamentos: Processamento[];
 }) {
   const [turnoId, setTurnoId] = useState<string | null>(turnos[0]?.id ?? null);
   const [chefeTurno, setChefeTurno] = useState("");
@@ -175,7 +178,7 @@ export function ProducoesClient({
         const semRastreioNomes: string[] = [];
         for (const linha of p.ficha) {
           if (!linha.insumoId) continue;
-          const bruto = pesoBrutoDaLinha(linha, insumoPorId);
+          const bruto = pesoBrutoDaLinha(linha, insumoPorId, processamentos);
           if (bruto === null) continue;
           linhasInsumo.push({ insumoId: linha.insumoId, pesoBrutoPorPorcao: bruto / p.rendimento });
         }
@@ -191,7 +194,7 @@ export function ProducoesClient({
           semRastreio: semRastreioNomes.length,
         };
       }),
-    [pratos, insumoPorId, saldosPorInsumoId],
+    [pratos, insumoPorId, saldosPorInsumoId, processamentos],
   );
 
   const capacidadePreparos = useMemo(
@@ -200,7 +203,7 @@ export function ProducoesClient({
         const linhasInsumo: InsumoNaFicha[] = [];
         for (const linha of prep.ficha) {
           if (!linha.insumoId) continue;
-          const bruto = pesoBrutoDaLinha(linha, insumoPorId);
+          const bruto = pesoBrutoDaLinha(linha, insumoPorId, processamentos);
           if (bruto === null) continue;
           linhasInsumo.push({ insumoId: linha.insumoId, pesoBrutoPorPorcao: bruto });
         }
@@ -211,7 +214,7 @@ export function ProducoesClient({
           nomeGargalo: resultado.insumoGargalo ? (insumoPorId.get(resultado.insumoGargalo)?.nome ?? null) : null,
         };
       }),
-    [preparos, insumoPorId, saldosPorInsumoId],
+    [preparos, insumoPorId, saldosPorInsumoId, processamentos],
   );
 
   const disponivelProduzir: CardEstoque[] = useMemo(

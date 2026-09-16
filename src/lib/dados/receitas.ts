@@ -11,6 +11,7 @@ interface LinhaReceitaRow {
   tipo: TipoReceita;
   categoria: string | null;
   preco_venda: number | null;
+  vendas_mes: number | null;
   rendimento: number;
   unidade_rendimento: string;
   peso_porcao_g: number | null;
@@ -33,7 +34,7 @@ export async function listarReceitas(tipo?: TipoReceita): Promise<Receita[]> {
 
   let query = supabase
     .from("receitas")
-    .select("id, nome_prato, tipo, categoria, preco_venda, rendimento, unidade_rendimento, peso_porcao_g, forma_fisica, destino_venda, margem_alvo")
+    .select("id, nome_prato, tipo, categoria, preco_venda, vendas_mes, rendimento, unidade_rendimento, peso_porcao_g, forma_fisica, destino_venda, margem_alvo")
     .order("nome_prato");
   if (tipo) query = query.eq("tipo", tipo);
 
@@ -68,6 +69,7 @@ export async function listarReceitas(tipo?: TipoReceita): Promise<Receita[]> {
     tipo: r.tipo,
     categoria: r.categoria,
     precoVenda: r.preco_venda == null ? null : Number(r.preco_venda),
+    vendasMes: r.vendas_mes == null ? null : Number(r.vendas_mes),
     rendimento: Number(r.rendimento),
     unidadeRendimento: r.unidade_rendimento,
     pesoPorcaoG: r.peso_porcao_g == null ? null : Number(r.peso_porcao_g),
@@ -84,6 +86,7 @@ function paraLinhaReceita(input: ReceitaInput) {
     tipo: input.tipo,
     categoria: input.categoria,
     preco_venda: input.tipo === "preparo_base" ? null : input.precoVenda,
+    vendas_mes: input.tipo === "preparo_base" ? null : input.vendasMes,
     rendimento: input.rendimento,
     unidade_rendimento: input.unidadeRendimento,
     peso_porcao_g: input.pesoPorcaoG,

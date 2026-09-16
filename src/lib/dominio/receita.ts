@@ -23,6 +23,7 @@ export interface Receita {
   tipo: TipoReceita;
   categoria: string | null;
   precoVenda: number | null;
+  vendasMes: number | null;
   rendimento: number;
   unidadeRendimento: string;
   pesoPorcaoG: number | null;
@@ -37,6 +38,7 @@ export interface ReceitaInput {
   tipo: TipoReceita;
   categoria: string | null;
   precoVenda: number | null;
+  vendasMes: number | null;
   rendimento: number;
   unidadeRendimento: string;
   pesoPorcaoG: number | null;

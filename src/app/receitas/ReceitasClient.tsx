@@ -7,7 +7,8 @@ import { Badge } from "@/components/ficha/Badge";
 import { C, inputStyle, nums } from "@/components/ficha/tema";
 import { UNIDADES, type Insumo } from "@/lib/dominio/insumo";
 import type { DestinoVenda, FormaFisica, LinhaFichaInput, Receita, ReceitaInput } from "@/lib/dominio/receita";
-import { construirContexto } from "@/lib/dados/adaptadores";
+import { construirContexto, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
+import type { Processamento } from "@/lib/dominio/processamento";
 import { calcularCmvReceita, calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
 import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
@@ -31,6 +32,7 @@ function ReceitaForm({
   const [nome, setNome] = useState(receita?.nomePrato ?? "");
   const [categoria, setCategoria] = useState(receita?.categoria ?? "");
   const [precoVenda, setPrecoVenda] = useState(receita?.precoVenda != null ? String(receita.precoVenda) : "");
+  const [vendasMes, setVendasMes] = useState(receita?.vendasMes != null ? String(receita.vendasMes) : "");
   const [rendimento, setRendimento] = useState(receita ? String(receita.rendimento) : "1");
   const [pesoPorcaoG, setPesoPorcaoG] = useState(receita?.pesoPorcaoG != null ? String(receita.pesoPorcaoG) : "");
   const [formaFisica, setFormaFisica] = useState<FormaFisica>(receita?.formaFisica ?? "solido");
@@ -74,6 +76,7 @@ function ReceitaForm({
       tipo: "prato_final",
       categoria: categoria.trim() || null,
       precoVenda: parseFloat(precoVenda),
+      vendasMes: vendasMes ? parseInt(vendasMes, 10) : null,
       rendimento: parseFloat(rendimento),
       unidadeRendimento: "porção",
       pesoPorcaoG: pesoPorcaoG ? parseFloat(pesoPorcaoG) : null,
@@ -99,8 +102,9 @@ function ReceitaForm({
         <input placeholder="Preço de venda (R$)" type="number" value={precoVenda} onChange={(e) => setPrecoVenda(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle} />
         <input placeholder="Rende (porções)" type="number" value={rendimento} onChange={(e) => setRendimento(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle} />
       </div>
-      <div className="grid grid-cols-6 gap-2 mb-3">
+      <div className="grid grid-cols-8 gap-2 mb-3">
         <input placeholder="Peso da porção (g, opcional)" type="number" value={pesoPorcaoG} onChange={(e) => setPesoPorcaoG(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle} />
+        <input placeholder="Vendas/mês (manual, opcional)" type="number" value={vendasMes} onChange={(e) => setVendasMes(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle} />
         <select value={formaFisica} onChange={(e) => setFormaFisica(e.target.value as FormaFisica)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           <option value="solido">Sólido</option>
           <option value="liquido">Líquido</option>
@@ -191,17 +195,20 @@ export function ReceitasClient({
   insumos,
   preparos,
   margemAlvoCliente,
+  processamentos,
 }: {
   receitas: Receita[];
   insumos: Insumo[];
   preparos: Receita[];
   margemAlvoCliente: number;
+  processamentos: Processamento[];
 }) {
   const [expandido, setExpandido] = useState<string | null>(receitas[0]?.id ?? null);
   const [showNova, setShowNova] = useState(false);
   const [editando, setEditando] = useState<Receita | null>(null);
 
-  const contexto = construirContexto(insumos, [...receitas, ...preparos]);
+  const contexto = construirContexto(insumos, [...receitas, ...preparos], processamentos);
+  const lotesProteina = processamentos.map(paraProcessamentoCalc);
   const insumoPorId = new Map(insumos.map((i) => [i.id, i]));
   const preparoPorId = new Map(preparos.map((p) => [p.id, p]));
 
@@ -283,7 +290,7 @@ export function ReceitasClient({
                             const insumo = insumoPorId.get(f.insumoId);
                             if (!insumo) return null;
                             const insumoCalc = { id: insumo.id, unidadeMedida: insumo.unidadeMedida, precoUnitario: insumo.precoUnitario, fatorCorrecao: insumo.fatorCorrecao, pesoPorUnidade: insumo.pesoPorUnidade ?? undefined };
-                            const fc = fatorCorrecaoEfetivo(insumoCalc, []);
+                            const fc = fatorCorrecaoEfetivo(insumoCalc, lotesProteina);
                             const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
                             const custo = pesoConvertido * fc * insumo.precoUnitario;
                             return (

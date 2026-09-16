@@ -10,17 +10,17 @@ import { C } from "./tema";
 import { createClient } from "@/lib/supabase/client";
 
 // Mesma lista/ordem/ícones de ficha-tecnica-mvp.jsx. Insumos, Receitas,
-// Produções e Estoque têm tela construída até agora; o resto fica visível
-// (não redesenha o menu) mas inerte, pra não fingir que uma rota existe
-// quando não existe.
+// Produções, Estoque, Fechamento de CMV e Manipulação de Proteínas têm tela
+// construída até agora; o resto fica visível (não redesenha o menu) mas
+// inerte, pra não fingir que uma rota existe quando não existe.
 const NAV = [
   { id: "visao-geral", label: "Visão Geral", icon: LineChart, href: null },
   { id: "insumos", label: "Insumos", icon: Carrot, href: "/insumos" },
-  { id: "cmv", label: "Fechamento de CMV", icon: Calculator, href: null },
+  { id: "cmv", label: "Fechamento de CMV", icon: Calculator, href: "/cmv" },
   { id: "producoes", label: "Produções", icon: CookingPot, href: "/producoes" },
   { id: "checklists", label: "Checklists de Turno", icon: ListChecks, href: null },
   { id: "estoque", label: "Estoque", icon: Package, href: "/estoque" },
-  { id: "proteinas", label: "Manipulação de Proteínas", icon: Scale, href: null },
+  { id: "proteinas", label: "Manipulação de Proteínas", icon: Scale, href: "/proteinas" },
   { id: "nutricional", label: "Ficha Nutricional", icon: Apple, href: null },
   { id: "seguranca", label: "Segurança Alimentar", icon: Thermometer, href: null },
   { id: "receitas", label: "Receitas & Fichas", icon: ClipboardList, href: "/receitas" },

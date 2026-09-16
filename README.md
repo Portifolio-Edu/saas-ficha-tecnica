@@ -1,6 +1,6 @@
 # Ficha Técnica SaaS — app
 
-Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn/ui, integrado ao Supabase. Cobre os passos 1 a 4 da ordem de construção do handoff: projeto + migration + RLS, auth e onboarding de restaurante, CRUD de insumo/receita/preparo, e estoque/fornecedores/produção com kanban (o resto depende disto).
+Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn/ui, integrado ao Supabase. Cobre os passos 1 a 5 da ordem de construção do handoff: projeto + migration + RLS, auth e onboarding de restaurante, CRUD de insumo/receita/preparo, estoque/fornecedores/produção com kanban, e manipulação de proteína + fechamento de CMV com importação de vendas (o resto depende disto).
 
 ## Stack
 
@@ -8,6 +8,7 @@ Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn/ui, integrado ao Sup
 - Tailwind CSS v4 (`@theme inline` em `src/app/globals.css`, sem `tailwind.config.js`).
 - shadcn/ui — style `new-york`, base color `neutral`. `ui.shadcn.com` não é alcançável neste ambiente de sandbox, então o init (`components.json`, `src/lib/utils.ts`, tokens de tema, `Button`) foi replicado manualmente; `npx shadcn@latest add <componente>` deve funcionar normalmente num ambiente com acesso à internet.
 - `@supabase/ssr` + `@supabase/supabase-js` — clientes separados para browser (`src/lib/supabase/client.ts`), Server Components/Route Handlers (`src/lib/supabase/server.ts`) e o middleware de refresh de sessão (`src/lib/supabase/middleware.ts` + `middleware.ts` na raiz).
+- Recharts — só o gráfico de FC observado por lote em `/proteinas` usa; o resto das telas é tabela/card, como no mock.
 
 ## Configuração
 
@@ -71,12 +72,17 @@ A quebra de CMV em `/receitas` chama `src/lib/calculo/` de verdade (não recalcu
 
 **Capacidade de produção** (`src/lib/calculo/capacidadeProducao.ts`, já testado) alimenta tanto a coluna "Em estoque" do quadro quanto a tabela de detalhe em `/producoes`, com uma distinção que o mock não precisava fazer porque assumia rendimento implícito: pra **prato final**, o peso bruto de cada linha da ficha é dividido pelo rendimento da receita antes de entrar no cálculo (o resultado já sai em porções, do jeito que a tabela de detalhe mostra); pra **preparo próprio**, o peso bruto da ficha entra inteiro, sem dividir, porque a ficha de um preparo já representa o lote completo — dividir infla a capacidade além do que a cozinha produz de uma vez. `src/lib/dados/adaptadores.ts` centraliza esse peso bruto (`pesoBrutoDaLinha`) pra não duplicar a conta entre Insumos/Receitas e Produções.
 
+`/proteinas` (manipulação de proteína) registra cada lote processado (`processamentos_proteina`, já com `fc_observado` e `peso_descarte_puro` calculados pelo banco) e mostra FC cadastrado × FC observado (média dos lotes) num gráfico Recharts, igual ao mock. A diferença que importa não é visual: **até esta tela existir, `construirContexto`/`pesoBrutoDaLinha` recebiam `lotesProteina` vazio sempre**, então o FC efetivo nunca saía do cadastrado em lugar nenhum do sistema, apesar da função já estar implementada e testada desde a primeira rodada. Agora `/insumos`, `/receitas`, `/producoes` e `/cmv` buscam `listarProcessamentos()` e passam os lotes de verdade pro motor de cálculo — um lote registrado pra um insumo já muda o CMV calculado em toda tela que usa aquele insumo, não só na aba de proteínas.
+
+`/cmv` (fechamento de CMV) importa vendas coladas em texto (`nome do prato, quantidade`, mesmo parser do mock, casando pelo nome cadastrado) ou usa o `vendas_mes` manual de cada receita quando não há importação -- esse campo é novo na tela de Receitas, pro fallback funcionar. Diferente do mock (que era só estado efêmero em memória), aqui "Salvar fechamento do período" grava de verdade em `fechamentos_cmv` + `vendas_periodo`, então a tela também lista um histórico de fechamentos passados. O CMV real de um fechamento salvo nunca muda (vem do estoque contado na época); o CMV teórico do histórico é recalculado com a ficha técnica atual, então pode se afastar um pouco do teórico do dia do fechamento se preço de insumo mudou depois -- isso fica documentado na própria tela, não escondido.
+
 ## Camada de dados
 
 `src/lib/dominio/` guarda tipos e constantes puros (sem import de Supabase) que tanto os componentes cliente quanto o código de servidor importam. Isso é obrigatório, não estético: um componente `"use client"` que importe qualquer coisa de um arquivo que também importe `next/headers` quebra o build (Turbopack inclui o módulo inteiro no bundle do cliente). `src/lib/dados/` faz o CRUD de verdade (sempre no servidor, via `src/lib/supabase/server.ts`) e só é importado por Server Components e Server Actions.
 
 ## Em aberto
 
-- Manipulação de proteína, checklists, nutricional, temperatura, fechamento de CMV e relatórios — os itens restantes do nav aparecem no menu (mesmo layout do mock) mas ficam inertes até terem tela própria.
+- Checklists, nutricional, temperatura e relatórios — os itens restantes do nav aparecem no menu (mesmo layout do mock) mas ficam inertes até terem tela própria.
 - Preço por canal e rotulagem (existem no mock, na aba Receitas & Fichas) não entraram nesta rodada de CRUD — não fazem parte de insumo/receita/preparo em si.
 - Turno ativo e chefe de turno em `/producoes` são um seletor local da tela (estado do componente, não persistido), só usados pra preencher `turno_id`/`chefe_turno` ao iniciar produção pelo quadro — não há tela de CRUD de turno ainda, os três turnos padrão (Manhã/Tarde/Noite) são criados automaticamente na primeira visita.
+- Quebra de estoque por insumo (`calcularQuebraEstoque`, seção 5.8) está implementada e testada em `src/lib/calculo/fechamentoCmv.ts`, mas ainda não tem tela — o fechamento de CMV hoje só mostra o gap agregado do período, não a quebra insumo a insumo.
