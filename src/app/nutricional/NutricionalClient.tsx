@@ -10,16 +10,16 @@ import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
 import type { NutricionalOverride, Rotulagem, ValoresNutricionaisInsumo } from "@/lib/dominio/nutricional";
-import { pesoBrutoDaLinha } from "@/lib/dados/adaptadores";
 import {
   CAMPOS_NUTRICIONAIS,
+  calcularNutricaoReceita,
   calcularNutricionalPor100g,
-  calcularNutricionalPorPorcao,
   calcularPercentualVD,
+  insumosUsados,
   nutrientesComSeloFrontal,
+  valoresPor100gDoInsumo,
   aplicarOverride,
   type CampoNutricional,
-  type LinhaNutricional,
   type ValoresNutricionais,
 } from "@/lib/calculo/nutricional";
 import { acaoSalvarValoresInsumo, acaoSalvarOverride, acaoRemoverOverride, acaoSalvarRotulagem } from "./actions";
@@ -55,112 +55,6 @@ const LINHAS_TABELA: { label: string; campo: CampoNutricional; un: string; vd: b
   { label: "Fibra alimentar", campo: "fibraAlimentarG", un: "g", vd: true },
   { label: "Sódio", campo: "sodioMg", un: "mg", vd: true },
 ];
-
-function zerado(): ValoresNutricionais {
-  return Object.fromEntries(CAMPOS_NUTRICIONAIS.map((c) => [c, 0])) as ValoresNutricionais;
-}
-
-/** Peso bruto (já convertido e com FC aplicado por pesoBrutoDaLinha, na
- * unidade_medida do próprio insumo) expresso em gramas -- base que a tabela
- * nutricional usa (valores_nutricionais_insumo.base_gramas). Líquido conta
- * como 1L=1000g (densidade 1): mesma simplificação que o resto do sistema já
- * assume ao não converter massa<->volume por densidade real. */
-function pesoBrutoEmGramas(insumo: Insumo, pesoBruto: number): number {
-  switch (insumo.unidadeMedida) {
-    case "kg":
-    case "l":
-      return pesoBruto * 1000;
-    case "g":
-    case "ml":
-      return pesoBruto;
-    case "un":
-      return pesoBruto * (insumo.pesoPorUnidade ?? 0) * 1000;
-  }
-}
-
-function valoresPor100gDoInsumo(dados: ValoresNutricionaisInsumo | undefined): ValoresNutricionais | null {
-  if (!dados) return null;
-  const fator = 100 / dados.baseGramas;
-  const preenchido = CAMPOS_NUTRICIONAIS.some((c) => dados.valores[c] != null);
-  if (!preenchido) return null;
-  return Object.fromEntries(CAMPOS_NUTRICIONAIS.map((c) => [c, (dados.valores[c] ?? 0) * fator])) as ValoresNutricionais;
-}
-
-interface ResultadoNutricional {
-  porPorcao: ValoresNutricionais;
-  completo: boolean;
-}
-
-/**
- * Nutricional por porção de uma receita (seção 5.9), recursivo pra
- * sub-receita -- mesmo padrão de calcularCmvReceita (cmv.ts): o preparo
- * resolve o próprio nutricional por porção, e a linha que o referencia no
- * prato pai multiplica isso pelo peso líquido informado, sem reconverter
- * unidade (mesma simplificação já usada pelo CMV pra sub-receita).
- */
-function calcularNutricaoReceita(
-  receita: Receita,
-  insumoPorId: Map<string, Insumo>,
-  receitaPorId: Map<string, Receita>,
-  nutriPorInsumoId: Map<string, ValoresNutricionaisInsumo>,
-  processamentos: Processamento[],
-  cache: Map<string, ResultadoNutricional>,
-): ResultadoNutricional {
-  const existente = cache.get(receita.id);
-  if (existente) return existente;
-
-  const linhasInsumo: LinhaNutricional[] = [];
-  let completo = true;
-  const totalSubReceitas = zerado();
-
-  for (const linha of receita.ficha) {
-    if (linha.insumoId) {
-      const insumo = insumoPorId.get(linha.insumoId);
-      if (!insumo) {
-        completo = false;
-        continue;
-      }
-      const bruto = pesoBrutoDaLinha(linha, insumoPorId, processamentos);
-      const por100g = valoresPor100gDoInsumo(nutriPorInsumoId.get(linha.insumoId));
-      if (bruto === null || !por100g) {
-        completo = false;
-        continue;
-      }
-      linhasInsumo.push({ valoresPor100g: por100g, pesoBrutoUsadoGramas: pesoBrutoEmGramas(insumo, bruto) });
-    } else if (linha.subReceitaId) {
-      const sub = receitaPorId.get(linha.subReceitaId);
-      if (!sub) {
-        completo = false;
-        continue;
-      }
-      const resultado = calcularNutricaoReceita(sub, insumoPorId, receitaPorId, nutriPorInsumoId, processamentos, cache);
-      if (!resultado.completo) completo = false;
-      for (const campo of CAMPOS_NUTRICIONAIS) totalSubReceitas[campo] += resultado.porPorcao[campo] * linha.pesoLiquido;
-    }
-  }
-
-  const totalInsumos = calcularNutricionalPorPorcao(linhasInsumo, 1);
-  const totalAbsoluto = zerado();
-  for (const campo of CAMPOS_NUTRICIONAIS) totalAbsoluto[campo] = totalInsumos[campo] + totalSubReceitas[campo];
-  const porPorcao = Object.fromEntries(CAMPOS_NUTRICIONAIS.map((c) => [c, totalAbsoluto[c] / receita.rendimento])) as ValoresNutricionais;
-
-  const resultado = { porPorcao, completo };
-  cache.set(receita.id, resultado);
-  return resultado;
-}
-
-function insumosUsados(receita: Receita, receitaPorId: Map<string, Receita>, acc: Set<string> = new Set(), visitado: Set<string> = new Set()): Set<string> {
-  if (visitado.has(receita.id)) return acc;
-  visitado.add(receita.id);
-  for (const linha of receita.ficha) {
-    if (linha.insumoId) acc.add(linha.insumoId);
-    else if (linha.subReceitaId) {
-      const sub = receitaPorId.get(linha.subReceitaId);
-      if (sub) insumosUsados(sub, receitaPorId, acc, visitado);
-    }
-  }
-  return acc;
-}
 
 function InsumoNutricaoForm({ insumo, dados, onCancel, onSaved }: { insumo: Insumo; dados?: ValoresNutricionaisInsumo; onCancel: () => void; onSaved: () => void }) {
   const [baseGramas, setBaseGramas] = useState(dados ? String(dados.baseGramas) : "100");
@@ -332,8 +226,7 @@ export function NutricionalClient({
 
   if (!prato) return null;
 
-  const cache = new Map<string, ResultadoNutricional>();
-  const { porPorcao: porPorcaoCalculado, completo: nutriCompleta } = calcularNutricaoReceita(prato, insumoPorId, receitaPorId, nutriPorInsumoId, processamentos, cache);
+  const { porPorcao: porPorcaoCalculado, completo: nutriCompleta } = calcularNutricaoReceita(prato, insumoPorId, receitaPorId, nutriPorInsumoId, processamentos);
   const override = overridePorReceitaId.get(prato.id);
   const temOverride = !!override;
   const n = aplicarOverride(porPorcaoCalculado, override?.valores ?? null);

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { Insumo } from '@/lib/dominio/insumo';
+import type { Receita, LinhaFicha } from '@/lib/dominio/receita';
 import {
   aplicarOverride,
+  calcularNutricaoReceita,
   calcularNutricionalPor100g,
   calcularNutricionalPorPorcao,
   calcularPercentualVD,
@@ -90,5 +93,132 @@ describe('nutrientesComSeloFrontal', () => {
     expect(selos).toContain('sodioMg');
     expect(selos).toContain('gordurasSaturadasG');
     expect(selos).not.toContain('acucaresAdicionadosG');
+  });
+});
+
+describe('calcularNutricaoReceita', () => {
+  const insumoA: Insumo = {
+    id: 'insumo-a',
+    nome: 'Farinha',
+    categoria: 'outro',
+    unidadeMedida: 'g',
+    tamanhoEmbalagem: 1000,
+    precoEmbalagem: 10,
+    precoUnitario: 0.01,
+    fatorCorrecao: 1,
+    pesoPorUnidade: null,
+    estoque: null,
+  };
+
+  function linha(overrides: Partial<LinhaFicha>): LinhaFicha {
+    return { id: 'linha', insumoId: null, subReceitaId: null, pesoLiquido: 0, unidade: 'g', ...overrides };
+  }
+
+  function receita(overrides: Partial<Receita>): Receita {
+    return {
+      id: 'receita',
+      nomePrato: 'Receita',
+      tipo: 'prato_final',
+      categoria: null,
+      precoVenda: null,
+      vendasMes: null,
+      rendimento: 1,
+      unidadeRendimento: 'porcao',
+      pesoPorcaoG: null,
+      formaFisica: 'solido',
+      destinoVenda: 'proprio',
+      margemAlvo: null,
+      modoPreparo: null,
+      ficha: [],
+      ...overrides,
+    };
+  }
+
+  it('receita so com insumo direto: pondera pelo peso bruto e divide pelo rendimento', () => {
+    const prato = receita({
+      rendimento: 2,
+      ficha: [linha({ id: 'l1', insumoId: 'insumo-a', pesoLiquido: 200, unidade: 'g' })],
+    });
+    const nutriPorInsumoId = new Map([['insumo-a', { baseGramas: 100, valores: { caloriasKcal: 100, proteinasG: 10 } }]]);
+
+    const resultado = calcularNutricaoReceita(
+      prato,
+      new Map([['insumo-a', insumoA]]),
+      new Map(),
+      nutriPorInsumoId,
+      [],
+    );
+
+    // 200g bruto a 100kcal/100g = 200kcal totais, dividido por 2 porcoes = 100kcal/porcao.
+    expect(resultado.porPorcao.caloriasKcal).toBeCloseTo(100);
+    expect(resultado.porPorcao.proteinasG).toBeCloseTo(10);
+    expect(resultado.completo).toBe(true);
+  });
+
+  it('receita com sub-receita: soma o nutricional do preparo multiplicado pelo peso liquido usado', () => {
+    const sub = receita({
+      id: 'sub',
+      rendimento: 1,
+      ficha: [linha({ id: 'l1', insumoId: 'insumo-a', pesoLiquido: 50, unidade: 'g' })],
+    });
+    const prato = receita({
+      id: 'prato',
+      rendimento: 2,
+      ficha: [linha({ id: 'l2', subReceitaId: 'sub', pesoLiquido: 4 })],
+    });
+    const nutriPorInsumoId = new Map([['insumo-a', { baseGramas: 100, valores: { caloriasKcal: 100 } }]]);
+
+    const resultado = calcularNutricaoReceita(
+      prato,
+      new Map([['insumo-a', insumoA]]),
+      new Map([['sub', sub]]),
+      nutriPorInsumoId,
+      [],
+    );
+
+    // Sub-receita: 50g bruto a 100kcal/100g = 50kcal totais, rendimento 1 -> 50kcal/porcao.
+    // Prato: 50kcal/porcao do preparo * pesoLiquido 4 = 200kcal totais, dividido por 2 porcoes = 100kcal/porcao.
+    expect(resultado.porPorcao.caloriasKcal).toBeCloseTo(100);
+    expect(resultado.completo).toBe(true);
+  });
+
+  it('receita com insumo sem dado nutricional cadastrado: fica incompleta e o insumo nao entra no total', () => {
+    const prato = receita({
+      rendimento: 1,
+      ficha: [linha({ id: 'l1', insumoId: 'insumo-a', pesoLiquido: 200, unidade: 'g' })],
+    });
+
+    const resultado = calcularNutricaoReceita(
+      prato,
+      new Map([['insumo-a', insumoA]]),
+      new Map(),
+      new Map(), // nenhum dado nutricional cadastrado pro insumo
+      [],
+    );
+
+    expect(resultado.completo).toBe(false);
+    expect(resultado.porPorcao.caloriasKcal).toBe(0);
+  });
+
+  it('calculo por 100g bate com o calculo por porcao, escalado pelo peso da porcao', () => {
+    const prato = receita({
+      rendimento: 2,
+      pesoPorcaoG: 50,
+      ficha: [linha({ id: 'l1', insumoId: 'insumo-a', pesoLiquido: 200, unidade: 'g' })],
+    });
+    const nutriPorInsumoId = new Map([['insumo-a', { baseGramas: 100, valores: { caloriasKcal: 100 } }]]);
+
+    const { porPorcao } = calcularNutricaoReceita(
+      prato,
+      new Map([['insumo-a', insumoA]]),
+      new Map(),
+      nutriPorInsumoId,
+      [],
+    );
+    const por100g = calcularNutricionalPor100g(porPorcao, prato.pesoPorcaoG!);
+
+    // porPorcao = 100kcal numa porcao de 50g -> por100g deve dobrar (100g / 50g = fator 2).
+    expect(porPorcao.caloriasKcal).toBeCloseTo(100);
+    expect(por100g.caloriasKcal).toBeCloseTo(200);
   });
 });
