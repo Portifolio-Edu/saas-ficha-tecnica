@@ -14,6 +14,7 @@ import type { FechamentoCmv } from "@/lib/dominio/fechamentoCmv";
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
 import { construirContexto } from "@/lib/dados/adaptadores";
 import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
+import { calcularFechamentoCmv } from "@/lib/calculo/fechamentoCmv";
 
 const GAP_ALERTA_PP = 3;
 
@@ -84,24 +85,39 @@ export function RelatoriosClient({
   const ultimoFechamento = fechamentos[0] ?? null;
   const gapUltimoFechamento = useMemo(() => {
     if (!ultimoFechamento) return null;
-    const consumoReal = ultimoFechamento.estoqueInicial + ultimoFechamento.compras - ultimoFechamento.estoqueFinal;
-    const cmvRealPct = ultimoFechamento.faturamento > 0 ? (consumoReal / ultimoFechamento.faturamento) * 100 : 0;
-    const custoTeorico = ultimoFechamento.vendas.reduce((s, v) => {
+    const vendas = ultimoFechamento.vendas.map((v) => {
       const p = receitaPorId.get(v.receitaId);
-      return s + (p ? v.quantidade * calcularCustoPorPorcao(p.id, contexto) : 0);
-    }, 0);
-    const cmvTeoricoPct = ultimoFechamento.faturamento > 0 ? (custoTeorico / ultimoFechamento.faturamento) * 100 : 0;
-    return { cmvRealPct, cmvTeoricoPct, gapPct: cmvRealPct - cmvTeoricoPct, gapReais: consumoReal - custoTeorico };
+      return { quantidadeVendida: v.quantidade, cmvReceita: p ? calcularCustoPorPorcao(p.id, contexto) : 0 };
+    });
+    const resultado = calcularFechamentoCmv(
+      vendas,
+      ultimoFechamento.faturamento,
+      ultimoFechamento.estoqueInicial,
+      ultimoFechamento.compras,
+      ultimoFechamento.estoqueFinal,
+    );
+    return {
+      cmvRealPct: resultado.cmvRealPercentual * 100,
+      cmvTeoricoPct: resultado.cmvTeoricoPercentual * 100,
+      gapPct: resultado.gapPercentual * 100,
+      gapReais: resultado.gapReais,
+    };
   }, [ultimoFechamento, receitaPorId, contexto]);
 
-  const quebraEstoqueTotal = useMemo(() => Math.max(0, fechamentos.reduce((s, f) => {
-    const consumoReal = f.estoqueInicial + f.compras - f.estoqueFinal;
-    const custoTeorico = f.vendas.reduce((soma, v) => {
-      const p = receitaPorId.get(v.receitaId);
-      return soma + (p ? v.quantidade * calcularCustoPorPorcao(p.id, contexto) : 0);
-    }, 0);
-    return s + (consumoReal - custoTeorico);
-  }, 0)), [fechamentos, receitaPorId, contexto]);
+  const quebraEstoqueTotal = useMemo(
+    () =>
+      Math.max(
+        0,
+        fechamentos.reduce((s, f) => {
+          const vendas = f.vendas.map((v) => {
+            const p = receitaPorId.get(v.receitaId);
+            return { quantidadeVendida: v.quantidade, cmvReceita: p ? calcularCustoPorPorcao(p.id, contexto) : 0 };
+          });
+          return s + calcularFechamentoCmv(vendas, f.faturamento, f.estoqueInicial, f.compras, f.estoqueFinal).gapReais;
+        }, 0),
+      ),
+    [fechamentos, receitaPorId, contexto],
+  );
 
   const alertas = useMemo(() => {
     const lista: Alerta[] = [];

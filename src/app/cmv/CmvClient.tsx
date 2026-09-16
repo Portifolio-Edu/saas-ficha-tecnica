@@ -156,14 +156,17 @@ export function CmvClient({
   const historico = useMemo(
     () =>
       fechamentos.map((f) => {
-        const consumoRealHist = f.estoqueInicial + f.compras - f.estoqueFinal;
-        const cmvRealPctHist = f.faturamento > 0 ? (consumoRealHist / f.faturamento) * 100 : 0;
-        const custoTeoricoHist = f.vendas.reduce((s, v) => {
+        const vendas = f.vendas.map((v) => {
           const p = pratoPorId.get(v.receitaId);
-          return s + (p ? v.quantidade * calcularCustoPorPorcao(p.id, contexto) : 0);
-        }, 0);
-        const cmvTeoricoPctHist = f.faturamento > 0 ? (custoTeoricoHist / f.faturamento) * 100 : 0;
-        return { fechamento: f, cmvRealPctHist, cmvTeoricoPctHist, gapPctHist: cmvRealPctHist - cmvTeoricoPctHist };
+          return { quantidadeVendida: v.quantidade, cmvReceita: p ? calcularCustoPorPorcao(p.id, contexto) : 0 };
+        });
+        const resultadoHist = calcularFechamentoCmv(vendas, f.faturamento, f.estoqueInicial, f.compras, f.estoqueFinal);
+        return {
+          fechamento: f,
+          cmvRealPctHist: resultadoHist.cmvRealPercentual * 100,
+          cmvTeoricoPctHist: resultadoHist.cmvTeoricoPercentual * 100,
+          gapPctHist: resultadoHist.gapPercentual * 100,
+        };
       }),
     [fechamentos, pratoPorId, contexto],
   );

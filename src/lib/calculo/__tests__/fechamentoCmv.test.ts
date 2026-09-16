@@ -20,8 +20,13 @@ describe('calcularFechamentoCmv', () => {
     expect(resultado.gapPercentual).toBeCloseTo(resultado.cmvRealPercentual - resultado.cmvTeoricoPercentual, 6);
   });
 
-  it('rejeita faturamento zero ou negativo', () => {
-    expect(() => calcularFechamentoCmv([], 0, 100, 100, 100)).toThrow(/positivo/);
+  it('zera os percentuais quando faturamento e zero ou negativo, mas mantem o gap em reais', () => {
+    const resultado = calcularFechamentoCmv([{ quantidadeVendida: 10, cmvReceita: 5 }], 0, 100, 100, 100);
+    expect(resultado.cmvTeoricoPercentual).toBe(0);
+    expect(resultado.cmvRealPercentual).toBe(0);
+    expect(resultado.gapPercentual).toBe(0);
+    expect(resultado.consumoReal).toBe(100);
+    expect(resultado.gapReais).toBe(100 - 50);
   });
 });
 

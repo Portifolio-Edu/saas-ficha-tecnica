@@ -28,13 +28,15 @@ export function calcularFechamentoCmv(
   compras: number,
   estoqueFinal: number,
 ): FechamentoCmvResultado {
-  if (faturamento <= 0) throw new Error('Faturamento precisa ser positivo para calcular CMV percentual.');
-
   const custoTeoricoTotal = vendas.reduce((soma, v) => soma + v.quantidadeVendida * v.cmvReceita, 0);
-  const cmvTeoricoPercentual = custoTeoricoTotal / faturamento;
-
   const consumoReal = estoqueInicial + compras - estoqueFinal;
-  const cmvRealPercentual = consumoReal / faturamento;
+
+  // Sem faturamento no periodo os percentuais nao tem base pra existir, mas o
+  // gap em reais (consumo real vs. teorico) continua valendo -- quem chama
+  // (fechamento em aberto, historico, quebra de estoque acumulada) decide se
+  // isso e exibido ou nao, a funcao so evita NaN/Infinity.
+  const cmvTeoricoPercentual = faturamento > 0 ? custoTeoricoTotal / faturamento : 0;
+  const cmvRealPercentual = faturamento > 0 ? consumoReal / faturamento : 0;
 
   return {
     cmvTeoricoPercentual,
