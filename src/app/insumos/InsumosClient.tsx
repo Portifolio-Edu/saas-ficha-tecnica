@@ -151,6 +151,7 @@ function PreparoForm({
       formaFisica: "solido",
       destinoVenda: "proprio",
       margemAlvo: null,
+      modoPreparo: preparo?.modoPreparo ?? null,
       ficha,
     };
     const resultado = preparo ? await acaoAtualizarPreparo(preparo.id, input) : await acaoCriarPreparo(input);

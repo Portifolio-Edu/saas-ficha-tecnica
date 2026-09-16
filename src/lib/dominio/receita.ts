@@ -30,6 +30,7 @@ export interface Receita {
   formaFisica: FormaFisica;
   destinoVenda: DestinoVenda;
   margemAlvo: number | null;
+  modoPreparo: string | null;
   ficha: LinhaFicha[];
 }
 
@@ -45,5 +46,6 @@ export interface ReceitaInput {
   formaFisica: FormaFisica;
   destinoVenda: DestinoVenda;
   margemAlvo: number | null;
+  modoPreparo: string | null;
   ficha: LinhaFichaInput[];
 }

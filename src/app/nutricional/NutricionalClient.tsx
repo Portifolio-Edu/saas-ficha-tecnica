@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { C, inputStyle, nums } from "@/components/ficha/tema";
+import type { LinhaRotuloPdf } from "@/lib/pdf/RotuloNutricionalPdf";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
@@ -303,6 +305,7 @@ export function NutricionalClient({
   const [rascunhoOverride, setRascunhoOverride] = useState<Record<CampoNutricional, string>>({} as Record<CampoNutricional, string>);
   const [insumoEditandoId, setInsumoEditandoId] = useState<string | null>(null);
   const [rotulagemAberta, setRotulagemAberta] = useState(false);
+  const [gerandoRotulo, setGerandoRotulo] = useState(false);
 
   const insumoPorId = useMemo(() => new Map(insumos.map((i) => [i.id, i])), [insumos]);
   const receitaPorId = useMemo(() => new Map([...pratos, ...preparos].map((r) => [r.id, r])), [pratos, preparos]);
@@ -338,6 +341,40 @@ export function NutricionalClient({
   const paraVarejo = prato.destinoVenda === "varejo_terceiro";
   const n100 = prato.pesoPorcaoG ? calcularNutricionalPor100g(n, prato.pesoPorcaoG) : null;
   const altoEm = n100 ? nutrientesComSeloFrontal(n100, prato.formaFisica) : [];
+
+  const gerarPdfRotulo = async () => {
+    setGerandoRotulo(true);
+    try {
+      const unidadeMassa = prato.formaFisica === "liquido" ? "mL" : "g";
+      const linhas: LinhaRotuloPdf[] = LINHAS_TABELA.map((l) => {
+        const vdValor = l.vd ? calcularPercentualVD(n, l.campo) : null;
+        return {
+          label: l.label.trim(),
+          valorPorcao: `${n[l.campo].toFixed(1)}${l.un}${l.kj ? ` (${(n[l.campo] * 4.184).toFixed(0)}kJ)` : ""}`,
+          valorPor100: n100 ? `${n100[l.campo].toFixed(1)}${l.un}` : "—",
+          vd: vdValor !== null ? `${vdValor.toFixed(0)}%` : "—",
+        };
+      });
+
+      const [{ gerarRotuloNutricionalPdfBlob }, { baixarBlob, nomeArquivoSeguro }] = await Promise.all([
+        import("@/lib/pdf/RotuloNutricionalPdf"),
+        import("@/lib/pdf/baixar"),
+      ]);
+      const blob = await gerarRotuloNutricionalPdfBlob({
+        nomePrato: prato.nomePrato,
+        rendimento: prato.rendimento,
+        pesoPorcaoG: prato.pesoPorcaoG,
+        unidadeMassa,
+        linhas,
+        nutrientesComSelo: altoEm.map((campo) => LABEL_SELO[campo] ?? campo),
+        nutriCompleta,
+        geradoEm: new Date().toLocaleDateString("pt-BR"),
+      });
+      baixarBlob(blob, `rotulo-nutricional-${nomeArquivoSeguro(prato.nomePrato)}.pdf`);
+    } finally {
+      setGerandoRotulo(false);
+    }
+  };
 
   const idsInsumosUsados = insumosUsados(prato, receitaPorId);
   const insumosSemDados = [...idsInsumosUsados].map((id) => insumoPorId.get(id)).filter((i): i is Insumo => !!i && !valoresPor100gDoInsumo(nutriPorInsumoId.get(i.id)));
@@ -508,6 +545,15 @@ export function NutricionalClient({
           *Percentual de valores diários fornecidos pela porção, com base numa dieta de 2.000kcal ou 8.400kJ. Seus valores diários podem ser maiores ou menores dependendo das suas necessidades energéticas. Açúcares totais não têm %VD definido pela norma.
         </div>
       </Card>
+
+      <button
+        onClick={gerarPdfRotulo}
+        disabled={gerandoRotulo}
+        className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg mt-3"
+        style={{ background: C.text, color: "#fff", opacity: gerandoRotulo ? 0.6 : 1 }}
+      >
+        <Download size={13} /> {gerandoRotulo ? "Gerando..." : "PDF · Rótulo Nutricional"}
+      </button>
 
       {paraVarejo && (
         <Card className="mt-4 max-w-lg">

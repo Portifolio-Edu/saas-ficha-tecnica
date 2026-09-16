@@ -18,6 +18,7 @@ interface LinhaReceitaRow {
   forma_fisica: FormaFisica;
   destino_venda: DestinoVenda;
   margem_alvo: number | null;
+  modo_preparo: string | null;
 }
 
 interface LinhaFichaRow {
@@ -34,7 +35,7 @@ export async function listarReceitas(tipo?: TipoReceita): Promise<Receita[]> {
 
   let query = supabase
     .from("receitas")
-    .select("id, nome_prato, tipo, categoria, preco_venda, vendas_mes, rendimento, unidade_rendimento, peso_porcao_g, forma_fisica, destino_venda, margem_alvo")
+    .select("id, nome_prato, tipo, categoria, preco_venda, vendas_mes, rendimento, unidade_rendimento, peso_porcao_g, forma_fisica, destino_venda, margem_alvo, modo_preparo")
     .order("nome_prato");
   if (tipo) query = query.eq("tipo", tipo);
 
@@ -76,6 +77,7 @@ export async function listarReceitas(tipo?: TipoReceita): Promise<Receita[]> {
     formaFisica: r.forma_fisica,
     destinoVenda: r.destino_venda,
     margemAlvo: r.margem_alvo == null ? null : Number(r.margem_alvo),
+    modoPreparo: r.modo_preparo,
     ficha: fichaPorReceita.get(r.id) ?? [],
   }));
 }
@@ -93,6 +95,7 @@ function paraLinhaReceita(input: ReceitaInput) {
     forma_fisica: input.formaFisica,
     destino_venda: input.destinoVenda,
     margem_alvo: input.margemAlvo,
+    modo_preparo: input.modoPreparo,
   };
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { C, inputStyle, nums } from "@/components/ficha/tema";
@@ -14,6 +14,8 @@ import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
 import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
 import { calcularPrecoSugerido } from "@/lib/calculo/precificacao";
 import type { UnidadeMedida } from "@/lib/calculo/types";
+import type { LinhaFichaCustosPdf } from "@/lib/pdf/FichaCustosPdf";
+import type { LinhaFichaOperacionalPdf } from "@/lib/pdf/FichaOperacionalPdf";
 import { acaoCriarReceita, acaoAtualizarReceita, acaoExcluirReceita } from "./actions";
 
 function ReceitaForm({
@@ -37,6 +39,7 @@ function ReceitaForm({
   const [pesoPorcaoG, setPesoPorcaoG] = useState(receita?.pesoPorcaoG != null ? String(receita.pesoPorcaoG) : "");
   const [formaFisica, setFormaFisica] = useState<FormaFisica>(receita?.formaFisica ?? "solido");
   const [destinoVenda, setDestinoVenda] = useState<DestinoVenda>(receita?.destinoVenda ?? "proprio");
+  const [modoPreparo, setModoPreparo] = useState(receita?.modoPreparo ?? "");
   const [ficha, setFicha] = useState<LinhaFichaInput[]>(receita?.ficha.map((f) => ({ ...f })) ?? []);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -83,6 +86,7 @@ function ReceitaForm({
       formaFisica,
       destinoVenda,
       margemAlvo: null,
+      modoPreparo: modoPreparo.trim() || null,
       ficha,
     };
     const resultado = receita ? await acaoAtualizarReceita(receita.id, input) : await acaoCriarReceita(input);
@@ -172,6 +176,14 @@ function ReceitaForm({
         </button>
       </div>
 
+      <textarea
+        placeholder="Modo de preparo (opcional -- vai pra ficha operacional da cozinha, não pra ficha de custos)"
+        value={modoPreparo}
+        onChange={(e) => setModoPreparo(e.target.value)}
+        className="text-[12.5px] px-2.5 py-2 rounded-md w-full mb-3"
+        style={{ ...inputStyle, minHeight: 80 }}
+      />
+
       {erro && (
         <div className="text-[12px] mb-3 rounded-md px-2.5 py-2" style={{ background: C.dangerSoft, color: C.danger }}>
           {erro}
@@ -196,16 +208,19 @@ export function ReceitasClient({
   preparos,
   margemAlvoCliente,
   processamentos,
+  nomeRestaurante,
 }: {
   receitas: Receita[];
   insumos: Insumo[];
   preparos: Receita[];
   margemAlvoCliente: number;
   processamentos: Processamento[];
+  nomeRestaurante: string;
 }) {
   const [expandido, setExpandido] = useState<string | null>(receitas[0]?.id ?? null);
   const [showNova, setShowNova] = useState(false);
   const [editando, setEditando] = useState<Receita | null>(null);
+  const [gerandoPdf, setGerandoPdf] = useState<string | null>(null);
 
   const contexto = construirContexto(insumos, [...receitas, ...preparos], processamentos);
   const lotesProteina = processamentos.map(paraProcessamentoCalc);
@@ -216,6 +231,87 @@ export function ReceitasClient({
     if (!window.confirm(`Excluir "${receita.nomePrato}"? Isso não pode ser desfeito.`)) return;
     const resultado = await acaoExcluirReceita(receita.id);
     if (!resultado.ok) window.alert(resultado.erro);
+  };
+
+  // Import dinâmico do @react-pdf/renderer (biblioteca pesada) só quando o
+  // botão é clicado, pra não engordar o bundle de quem só quer ver a lista.
+  const gerarPdfCustos = async (p: Receita) => {
+    setGerandoPdf(`${p.id}-custos`);
+    try {
+      const linhas: LinhaFichaCustosPdf[] = p.ficha
+        .map((f): LinhaFichaCustosPdf | null => {
+          if (f.insumoId) {
+            const insumo = insumoPorId.get(f.insumoId);
+            if (!insumo) return null;
+            const insumoCalc = { id: insumo.id, unidadeMedida: insumo.unidadeMedida, precoUnitario: insumo.precoUnitario, fatorCorrecao: insumo.fatorCorrecao, pesoPorUnidade: insumo.pesoPorUnidade ?? undefined };
+            const fc = fatorCorrecaoEfetivo(insumoCalc, lotesProteina);
+            const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
+            const custo = pesoConvertido * fc * insumo.precoUnitario;
+            return { nome: insumo.nome, pesoLiquido: f.pesoLiquido, unidade: f.unidade, fc, precoUnitario: insumo.precoUnitario, custo, ehPreparo: false };
+          }
+          const preparo = preparoPorId.get(f.subReceitaId!);
+          if (!preparo) return null;
+          const custoUnitarioPreparo = calcularCustoPorPorcao(preparo.id, contexto);
+          const custo = f.pesoLiquido * custoUnitarioPreparo;
+          return { nome: preparo.nomePrato, pesoLiquido: f.pesoLiquido, unidade: f.unidade, fc: null, precoUnitario: custoUnitarioPreparo, custo, ehPreparo: true };
+        })
+        .filter((l): l is LinhaFichaCustosPdf => l !== null);
+
+      const custoPorPorcao = calcularCustoPorPorcao(p.id, contexto);
+      const margemAlvo = p.margemAlvo ?? margemAlvoCliente;
+      const margemPct = p.precoVenda ? ((p.precoVenda - custoPorPorcao) / p.precoVenda) * 100 : 0;
+
+      const [{ gerarFichaCustosPdfBlob }, { baixarBlob, nomeArquivoSeguro }] = await Promise.all([import("@/lib/pdf/FichaCustosPdf"), import("@/lib/pdf/baixar")]);
+      const blob = await gerarFichaCustosPdfBlob({
+        nomeRestaurante,
+        nomePrato: p.nomePrato,
+        rendimento: p.rendimento,
+        unidadeRendimento: p.unidadeRendimento,
+        linhas,
+        cmvTotal: calcularCmvReceita(p.id, contexto),
+        precoVenda: p.precoVenda ?? 0,
+        margemPct,
+        margemAlvoPct: margemAlvo * 100,
+        precoSugerido: calcularPrecoSugerido(custoPorPorcao, p.margemAlvo, margemAlvoCliente),
+        geradoEm: new Date().toLocaleDateString("pt-BR"),
+      });
+      baixarBlob(blob, `ficha-de-custos-${nomeArquivoSeguro(p.nomePrato)}.pdf`);
+    } finally {
+      setGerandoPdf(null);
+    }
+  };
+
+  const gerarPdfOperacional = async (p: Receita) => {
+    setGerandoPdf(`${p.id}-operacional`);
+    try {
+      const linhas: LinhaFichaOperacionalPdf[] = p.ficha
+        .map((f): LinhaFichaOperacionalPdf | null => {
+          if (f.insumoId) {
+            const insumo = insumoPorId.get(f.insumoId);
+            if (!insumo) return null;
+            return { nome: insumo.nome, pesoLiquido: f.pesoLiquido, unidade: f.unidade, ehPreparo: false };
+          }
+          const preparo = preparoPorId.get(f.subReceitaId!);
+          if (!preparo) return null;
+          return { nome: preparo.nomePrato, pesoLiquido: f.pesoLiquido, unidade: f.unidade, ehPreparo: true };
+        })
+        .filter((l): l is LinhaFichaOperacionalPdf => l !== null);
+
+      const [{ gerarFichaOperacionalPdfBlob }, { baixarBlob, nomeArquivoSeguro }] = await Promise.all([import("@/lib/pdf/FichaOperacionalPdf"), import("@/lib/pdf/baixar")]);
+      const blob = await gerarFichaOperacionalPdfBlob({
+        nomeRestaurante,
+        nomePrato: p.nomePrato,
+        rendimento: p.rendimento,
+        unidadeRendimento: p.unidadeRendimento,
+        pesoPorcaoG: p.pesoPorcaoG,
+        linhas,
+        modoPreparo: p.modoPreparo,
+        geradoEm: new Date().toLocaleDateString("pt-BR"),
+      });
+      baixarBlob(blob, `ficha-operacional-${nomeArquivoSeguro(p.nomePrato)}.pdf`);
+    } finally {
+      setGerandoPdf(null);
+    }
   };
 
   return (
@@ -340,6 +436,25 @@ export function ReceitasClient({
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        onClick={() => gerarPdfCustos(p)}
+                        disabled={gerandoPdf === `${p.id}-custos`}
+                        className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
+                        style={{ background: C.text, color: "#fff", opacity: gerandoPdf === `${p.id}-custos` ? 0.6 : 1 }}
+                      >
+                        <Download size={13} /> {gerandoPdf === `${p.id}-custos` ? "Gerando..." : "PDF · Ficha de Custos"}
+                      </button>
+                      <button
+                        onClick={() => gerarPdfOperacional(p)}
+                        disabled={gerandoPdf === `${p.id}-operacional`}
+                        className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
+                        style={{ border: `1px solid ${C.borderStrong}`, opacity: gerandoPdf === `${p.id}-operacional` ? 0.6 : 1 }}
+                      >
+                        <Download size={13} /> {gerandoPdf === `${p.id}-operacional` ? "Gerando..." : "PDF · Ficha Operacional"}
+                      </button>
                     </div>
 
                     <div className="flex gap-2">

@@ -16,7 +16,7 @@ export default async function ReceitasPage() {
 
   return (
     <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Receitas & Fichas">
-      <ReceitasClient receitas={receitas} insumos={insumos} preparos={preparos} margemAlvoCliente={cliente.margemAlvo} processamentos={processamentos} />
+      <ReceitasClient receitas={receitas} insumos={insumos} preparos={preparos} margemAlvoCliente={cliente.margemAlvo} processamentos={processamentos} nomeRestaurante={cliente.nomeRestaurante} />
     </AppShell>
   );
 }

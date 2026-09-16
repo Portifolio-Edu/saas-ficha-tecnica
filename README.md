@@ -9,6 +9,7 @@ Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn/ui, integrado ao Sup
 - shadcn/ui — style `new-york`, base color `neutral`. `ui.shadcn.com` não é alcançável neste ambiente de sandbox, então o init (`components.json`, `src/lib/utils.ts`, tokens de tema, `Button`) foi replicado manualmente; `npx shadcn@latest add <componente>` deve funcionar normalmente num ambiente com acesso à internet.
 - `@supabase/ssr` + `@supabase/supabase-js` — clientes separados para browser (`src/lib/supabase/client.ts`), Server Components/Route Handlers (`src/lib/supabase/server.ts`) e o middleware de refresh de sessão (`src/lib/supabase/middleware.ts` + `middleware.ts` na raiz).
 - Recharts — só o gráfico de FC observado por lote em `/proteinas` usa; o resto das telas é tabela/card, como no mock.
+- `@react-pdf/renderer` — gera os 3 PDFs (ficha de custos, ficha operacional, rótulo nutricional) inteiramente no navegador, via `import()` dinâmico disparado no clique do botão -- a lib é pesada e não faz sentido no bundle inicial de quem só está olhando a lista de pratos.
 
 ## Configuração
 
@@ -67,6 +68,14 @@ npm run test:watch
 `/insumos` (insumos comprados + preparos próprios) e `/receitas` (pratos finais, com quebra de CMV) — layout, componentes visuais (`Card`, `Badge`, paleta `C`, mesmos estilos de input/botão) e comportamento de formulário portados de `mockup/ficha-tecnica-mvp.jsx` sem redesenho. Duas diferenças deliberadas em relação ao mock, necessárias pra bater com o schema real: um campo de peso-por-unidade quando o insumo é medido em `un`, e um seletor de unidade por linha de ficha (o mock assumia peso já na unidade do insumo; o motor de cálculo já suporta conversão, então o formulário também precisa).
 
 A quebra de CMV em `/receitas` chama `src/lib/calculo/` de verdade (não recalcula nada solto na tela) — inclusive sub-receita sem reaplicar FC, exatamente como testado.
+
+**PDFs (seção 6 do handoff)** — `src/lib/pdf/`, gerados inteiramente no navegador com `@react-pdf/renderer`, sem round-trip de servidor: a tela já tem todo dado calculado, só falta desenhar. Três documentos, cada um com sua função e público:
+
+- **Ficha de Custos** (`/receitas`, por prato) — CMV linha a linha, preço de venda, margem e preço sugerido. Contém preço: uso interno do dono, não pra distribuir.
+- **Ficha Operacional** (`/receitas`, por prato) — só ingrediente e quantidade, sem FC, preço nem custo, mais o modo de preparo (campo novo, `modo_preparo` na receita — o mock nunca teve onde digitar isso). Pra cozinha; verificado manualmente (gerando o PDF com dado de exemplo) que o documento não traz nenhum valor em reais.
+- **Rótulo Nutricional** (`/nutricional`, por prato) — a mesma tabela de INFORMAÇÃO NUTRICIONAL da tela, mas **sempre** com fundo branco e letra preta (`estilos` deste PDF são fixos em `#FFFFFF`/`#000000`, não condicionados a `destino_venda` como a versão em tela) — a norma exige esse formato pro rótulo em si, incondicionalmente, diferente da tela onde o dark/light só muda quando o prato é de venda própria. Mostra o aviso de selo de alerta frontal (Anexo XVII/XVIII da IN 75/2020) quando aplicável, com a mesma ressalva já documentada em `/nutricional`: o sistema não desenha o selo oficial, só avisa que ele é obrigatório.
+
+Import é sempre dinâmico (`await import("@/lib/pdf/...")`), disparado no clique do botão -- `@react-pdf/renderer` nunca entra no bundle inicial de `/receitas` nem `/nutricional`.
 
 `/estoque` (saldo em armazenamento, entradas/saídas, fornecedores) e `/producoes` (quadro kanban de produção) seguem o mesmo princípio: mesmos componentes visuais do mock, mesmo comportamento de arrastar-e-soltar e o mesmo modal de motivo de perda (não `window.prompt`, que fica bloqueado em iframe sandboxed — o mesmo problema já resolvido no mockup). Duas extensões deliberadas em relação ao mock, porque o mock não tinha formulário de movimentação nem edição de estoque (só estado inicial fixo): um formulário de "Registrar movimentação" (entrada/ajuste) em `/estoque`, e edição/exclusão de saldo rastreado e de fornecedor — sem isso a tela ficaria bonita mas não funcional.
 
