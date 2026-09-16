@@ -1,0 +1,25 @@
+import { redirect } from "next/navigation";
+import { getClienteAtual } from "@/lib/dados/cliente";
+import { listarInsumos } from "@/lib/dados/insumos";
+import { listarReceitas } from "@/lib/dados/receitas";
+import { listarProducoes, garantirTurnosPadrao } from "@/lib/dados/producoes";
+import { AppShell } from "@/components/ficha/AppShell";
+import { ProducoesClient } from "./ProducoesClient";
+
+export default async function ProducoesPage() {
+  const cliente = await getClienteAtual();
+  if (!cliente) redirect("/login");
+
+  const [insumos, receitas, producoes, turnos] = await Promise.all([
+    listarInsumos(),
+    listarReceitas(),
+    listarProducoes(),
+    garantirTurnosPadrao(cliente.id),
+  ]);
+
+  return (
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Produções">
+      <ProducoesClient insumos={insumos} receitas={receitas} producoes={producoes} turnos={turnos} />
+    </AppShell>
+  );
+}

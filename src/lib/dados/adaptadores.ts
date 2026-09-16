@@ -1,7 +1,9 @@
 import type { Insumo as InsumoCalc, Receita as ReceitaCalc, LinhaReceita } from "@/lib/calculo/types";
 import type { ResolverContexto } from "@/lib/calculo/cmv";
+import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
+import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
 import type { Insumo } from "@/lib/dominio/insumo";
-import type { Receita } from "@/lib/dominio/receita";
+import type { LinhaFicha, Receita } from "@/lib/dominio/receita";
 
 // Converte os tipos vindos do banco (dados/insumos.ts, dados/receitas.ts)
 // para os tipos do motor de cálculo, que não conhece Supabase nem essas
@@ -34,4 +36,20 @@ export function construirContexto(insumos: Insumo[], receitas: Receita[]): Resol
     receitaPorId: new Map(receitas.map((r) => [r.id, paraReceitaCalc(r)])),
     lotesProteina: [],
   };
+}
+
+/**
+ * Peso bruto (já com FC aplicado, seção 5.1-5.3) de uma linha de ficha que
+ * aponta pra insumo. Usado tanto no detalhe de custo (Insumos/Receitas)
+ * quanto na capacidade de produção (Produções) -- centralizado aqui pra não
+ * duplicar a mesma conta em cada tela.
+ */
+export function pesoBrutoDaLinha(linha: LinhaFicha, insumoPorId: Map<string, Insumo>): number | null {
+  if (!linha.insumoId) return null;
+  const insumo = insumoPorId.get(linha.insumoId);
+  if (!insumo) return null;
+  const insumoCalc = paraInsumoCalc(insumo);
+  const fc = fatorCorrecaoEfetivo(insumoCalc, []);
+  const pesoConvertido = converterParaUnidadeDoInsumo(linha.pesoLiquido, linha.unidade, insumoCalc);
+  return pesoConvertido * fc;
 }

@@ -1,6 +1,6 @@
 # Ficha Técnica SaaS — app
 
-Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn/ui, integrado ao Supabase. Cobre os passos 1 a 3 da ordem de construção do handoff: projeto + migration + RLS, auth e onboarding de restaurante, e o CRUD de insumo/receita/preparo (o resto depende disto).
+Next.js 15 (App Router) + TypeScript + Tailwind v4 + shadcn/ui, integrado ao Supabase. Cobre os passos 1 a 4 da ordem de construção do handoff: projeto + migration + RLS, auth e onboarding de restaurante, CRUD de insumo/receita/preparo, e estoque/fornecedores/produção com kanban (o resto depende disto).
 
 ## Stack
 
@@ -67,11 +67,16 @@ npm run test:watch
 
 A quebra de CMV em `/receitas` chama `src/lib/calculo/` de verdade (não recalcula nada solto na tela) — inclusive sub-receita sem reaplicar FC, exatamente como testado.
 
+`/estoque` (saldo em armazenamento, entradas/saídas, fornecedores) e `/producoes` (quadro kanban de produção) seguem o mesmo princípio: mesmos componentes visuais do mock, mesmo comportamento de arrastar-e-soltar e o mesmo modal de motivo de perda (não `window.prompt`, que fica bloqueado em iframe sandboxed — o mesmo problema já resolvido no mockup). Duas extensões deliberadas em relação ao mock, porque o mock não tinha formulário de movimentação nem edição de estoque (só estado inicial fixo): um formulário de "Registrar movimentação" (entrada/ajuste) em `/estoque`, e edição/exclusão de saldo rastreado e de fornecedor — sem isso a tela ficaria bonita mas não funcional.
+
+**Capacidade de produção** (`src/lib/calculo/capacidadeProducao.ts`, já testado) alimenta tanto a coluna "Em estoque" do quadro quanto a tabela de detalhe em `/producoes`, com uma distinção que o mock não precisava fazer porque assumia rendimento implícito: pra **prato final**, o peso bruto de cada linha da ficha é dividido pelo rendimento da receita antes de entrar no cálculo (o resultado já sai em porções, do jeito que a tabela de detalhe mostra); pra **preparo próprio**, o peso bruto da ficha entra inteiro, sem dividir, porque a ficha de um preparo já representa o lote completo — dividir infla a capacidade além do que a cozinha produz de uma vez. `src/lib/dados/adaptadores.ts` centraliza esse peso bruto (`pesoBrutoDaLinha`) pra não duplicar a conta entre Insumos/Receitas e Produções.
+
 ## Camada de dados
 
 `src/lib/dominio/` guarda tipos e constantes puros (sem import de Supabase) que tanto os componentes cliente quanto o código de servidor importam. Isso é obrigatório, não estético: um componente `"use client"` que importe qualquer coisa de um arquivo que também importe `next/headers` quebra o build (Turbopack inclui o módulo inteiro no bundle do cliente). `src/lib/dados/` faz o CRUD de verdade (sempre no servidor, via `src/lib/supabase/server.ts`) e só é importado por Server Components e Server Actions.
 
 ## Em aberto
 
-- Estoque, fornecedores, produção com kanban, manipulação de proteína, checklists, nutricional, temperatura, fechamento de CMV e relatórios — todos os outros itens do nav aparecem no menu (mesmo layout do mock) mas ficam inertes até terem tela própria.
+- Manipulação de proteína, checklists, nutricional, temperatura, fechamento de CMV e relatórios — os itens restantes do nav aparecem no menu (mesmo layout do mock) mas ficam inertes até terem tela própria.
 - Preço por canal e rotulagem (existem no mock, na aba Receitas & Fichas) não entraram nesta rodada de CRUD — não fazem parte de insumo/receita/preparo em si.
+- Turno ativo e chefe de turno em `/producoes` são um seletor local da tela (estado do componente, não persistido), só usados pra preencher `turno_id`/`chefe_turno` ao iniciar produção pelo quadro — não há tela de CRUD de turno ainda, os três turnos padrão (Manhã/Tarde/Noite) são criados automaticamente na primeira visita.
