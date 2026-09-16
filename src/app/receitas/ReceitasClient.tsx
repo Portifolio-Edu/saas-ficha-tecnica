@@ -7,7 +7,7 @@ import { Badge } from "@/components/ficha/Badge";
 import { C, inputStyle, nums } from "@/components/ficha/tema";
 import { UNIDADES, type Insumo } from "@/lib/dominio/insumo";
 import type { DestinoVenda, FormaFisica, LinhaFichaInput, Receita, ReceitaInput } from "@/lib/dominio/receita";
-import { construirContexto, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
+import { construirContexto, paraInsumoCalc, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { calcularCmvReceita, calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
@@ -243,7 +243,7 @@ export function ReceitasClient({
           if (f.insumoId) {
             const insumo = insumoPorId.get(f.insumoId);
             if (!insumo) return null;
-            const insumoCalc = { id: insumo.id, unidadeMedida: insumo.unidadeMedida, precoUnitario: insumo.precoUnitario, fatorCorrecao: insumo.fatorCorrecao, pesoPorUnidade: insumo.pesoPorUnidade ?? undefined };
+            const insumoCalc = paraInsumoCalc(insumo);
             const fc = fatorCorrecaoEfetivo(insumoCalc, lotesProteina);
             const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
             const custo = pesoConvertido * fc * insumo.precoUnitario;
@@ -385,7 +385,7 @@ export function ReceitasClient({
                           if (f.insumoId) {
                             const insumo = insumoPorId.get(f.insumoId);
                             if (!insumo) return null;
-                            const insumoCalc = { id: insumo.id, unidadeMedida: insumo.unidadeMedida, precoUnitario: insumo.precoUnitario, fatorCorrecao: insumo.fatorCorrecao, pesoPorUnidade: insumo.pesoPorUnidade ?? undefined };
+                            const insumoCalc = paraInsumoCalc(insumo);
                             const fc = fatorCorrecaoEfetivo(insumoCalc, lotesProteina);
                             const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
                             const custo = pesoConvertido * fc * insumo.precoUnitario;

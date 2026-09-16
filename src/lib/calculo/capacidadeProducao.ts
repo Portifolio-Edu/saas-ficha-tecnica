@@ -1,3 +1,8 @@
+import { pesoBrutoDaLinha } from '@/lib/dados/adaptadores';
+import type { Insumo } from '@/lib/dominio/insumo';
+import type { Receita } from '@/lib/dominio/receita';
+import type { Processamento } from '@/lib/dominio/processamento';
+
 export interface InsumoNaFicha {
   insumoId: string;
   pesoBrutoPorPorcao: number;
@@ -53,4 +58,31 @@ export function calcularCapacidadeProducao(
     insumoGargalo: gargalo.insumoId,
     insumosForaDoCalculo: foraDoCalculo,
   };
+}
+
+/**
+ * Monta as linhas de capacidade (peso bruto por porcao) a partir da ficha de
+ * uma receita, pra alimentar calcularCapacidadeProducao. Prato final: peso
+ * bruto dividido pelo rendimento da receita -- o resultado sai em peso por
+ * PORCAO, como no detalhe da tela. Preparo proprio: peso bruto do LOTE
+ * inteiro, sem dividir, porque a ficha de um preparo representa o lote
+ * completo, nao uma fracao -- dividir aqui infla a capacidade alem do que a
+ * cozinha produz de uma vez.
+ */
+export function linhasCapacidadeDaReceita(
+  receita: Receita,
+  insumoPorId: Map<string, Insumo>,
+  processamentos: Processamento[],
+): InsumoNaFicha[] {
+  const linhas: InsumoNaFicha[] = [];
+  for (const linha of receita.ficha) {
+    if (!linha.insumoId) continue;
+    const bruto = pesoBrutoDaLinha(linha, insumoPorId, processamentos);
+    if (bruto === null) continue;
+    linhas.push({
+      insumoId: linha.insumoId,
+      pesoBrutoPorPorcao: receita.tipo === 'prato_final' ? bruto / receita.rendimento : bruto,
+    });
+  }
+  return linhas;
 }

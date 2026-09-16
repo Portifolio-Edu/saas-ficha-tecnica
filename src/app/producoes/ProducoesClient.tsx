@@ -6,9 +6,8 @@ import { C, inputStyle, nums, shadow } from "@/components/ficha/tema";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Producao, ProducaoInput, StatusProducao, Turno, TipoItemProducao } from "@/lib/dominio/producao";
-import { pesoBrutoDaLinha } from "@/lib/dados/adaptadores";
 import type { Processamento } from "@/lib/dominio/processamento";
-import { calcularCapacidadeProducao, type InsumoNaFicha, type SaldoEstoque } from "@/lib/calculo/capacidadeProducao";
+import { calcularCapacidadeProducao, linhasCapacidadeDaReceita, type SaldoEstoque } from "@/lib/calculo/capacidadeProducao";
 import { acaoIniciarProducao, acaoRegistrarProducao, acaoAtualizarStatusProducao } from "./actions";
 
 type ColunaId = "estoque" | "em_producao" | "produzido" | "perda";
@@ -165,24 +164,12 @@ export function ProducoesClient({
     return mapa;
   }, [insumos]);
 
-  // Capacidade de prato: peso bruto por PORÇÃO (ficha dividida pelo rendimento
-  // da receita) -- o resultado já sai direto em porções, como na tabela de
-  // detalhe. Capacidade de preparo: peso bruto do LOTE inteiro, sem dividir,
-  // porque a ficha de um preparo representa o lote completo, não uma fração;
-  // dividir por rendimento aqui infla a capacidade além do que a cozinha
-  // realmente produz de uma vez.
   const capacidadePratos = useMemo(
     () =>
       pratos.map((p) => {
-        const linhasInsumo: InsumoNaFicha[] = [];
-        const semRastreioNomes: string[] = [];
-        for (const linha of p.ficha) {
-          if (!linha.insumoId) continue;
-          const bruto = pesoBrutoDaLinha(linha, insumoPorId, processamentos);
-          if (bruto === null) continue;
-          linhasInsumo.push({ insumoId: linha.insumoId, pesoBrutoPorPorcao: bruto / p.rendimento });
-        }
+        const linhasInsumo = linhasCapacidadeDaReceita(p, insumoPorId, processamentos);
         const resultado = calcularCapacidadeProducao(linhasInsumo, saldosPorInsumoId);
+        const semRastreioNomes: string[] = [];
         for (const id of resultado.insumosForaDoCalculo) {
           const nome = insumoPorId.get(id)?.nome;
           if (nome) semRastreioNomes.push(nome);
@@ -200,13 +187,7 @@ export function ProducoesClient({
   const capacidadePreparos = useMemo(
     () =>
       preparos.map((prep) => {
-        const linhasInsumo: InsumoNaFicha[] = [];
-        for (const linha of prep.ficha) {
-          if (!linha.insumoId) continue;
-          const bruto = pesoBrutoDaLinha(linha, insumoPorId, processamentos);
-          if (bruto === null) continue;
-          linhasInsumo.push({ insumoId: linha.insumoId, pesoBrutoPorPorcao: bruto });
-        }
+        const linhasInsumo = linhasCapacidadeDaReceita(prep, insumoPorId, processamentos);
         const resultado = calcularCapacidadeProducao(linhasInsumo, saldosPorInsumoId);
         return {
           receita: prep,

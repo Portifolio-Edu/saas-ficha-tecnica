@@ -7,7 +7,7 @@ import { Badge } from "@/components/ficha/Badge";
 import { C, inputStyle, nums } from "@/components/ficha/tema";
 import { CATEGORIAS, UNIDADES, type Categoria, type Insumo, type InsumoInput } from "@/lib/dominio/insumo";
 import type { LinhaFichaInput, Receita, ReceitaInput } from "@/lib/dominio/receita";
-import { construirContexto, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
+import { construirContexto, paraInsumoCalc, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
 import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
@@ -415,7 +415,7 @@ export function InsumosClient({
                     {prep.ficha.map((f) => {
                       const insumo = insumos.find((i) => i.id === f.insumoId);
                       if (!insumo) return null;
-                      const insumoCalc = { id: insumo.id, unidadeMedida: insumo.unidadeMedida, precoUnitario: insumo.precoUnitario, fatorCorrecao: insumo.fatorCorrecao, pesoPorUnidade: insumo.pesoPorUnidade ?? undefined };
+                      const insumoCalc = paraInsumoCalc(insumo);
                       const fc = fatorCorrecaoEfetivo(insumoCalc, lotesProteina);
                       const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
                       const custo = pesoConvertido * fc * insumo.precoUnitario;
