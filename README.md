@@ -38,8 +38,27 @@ supabase link --project-ref <ref>
 supabase db push
 ```
 
+## Motor de cálculo
+
+`src/lib/calculo/` implementa cada fórmula da seção 5 do handoff como função pura, sem depender de React nem do client do Supabase — recebe dados já resolvidos e devolve número:
+
+| Arquivo | Fórmula |
+|---|---|
+| `fatorCorrecao.ts` | FC efetivo (medido prevalece sobre o cadastrado, cai no cadastrado sem lote) |
+| `conversaoUnidade.ts` | kg/g, l/ml, un via `peso_por_unidade` |
+| `cmv.ts` | CMV da receita, com sub-receita aninhada sem reaplicar o FC |
+| `precificacao.ts` | Preço sugerido e preço por canal (mantém o ganho em reais, com e sem embalagem) |
+| `capacidadeProducao.ts` | Gargalo de estoque; insumo sem rastreio fica fora do cálculo, não conta como zero |
+| `fechamentoCmv.ts` | CMV teórico × real e o gap; quebra de estoque |
+| `nutricional.ts` | Por porção, por 100g, %VD, selo frontal, override de laudo |
+
+```bash
+npm test         # 39 testes (vitest), cobrindo os exemplos numéricos do handoff (salmão, lasanha, iFood)
+npm run test:watch
+```
+
 ## Em aberto
 
-- Nenhuma tela de produto ainda — só o scaffold, a integração com Supabase e a migration, por pedido explícito.
+- Nenhuma tela de produto ainda — só o scaffold, a integração com Supabase, a migration e o motor de cálculo, por pedido explícito.
 - Onboarding (criação do `cliente` vinculado ao `auth.users` no primeiro login) ainda não implementado.
-- O motor de cálculo (`../backend/src/calc`) ainda não foi importado pra dentro deste app.
+- Camada de API/Server Actions que chama `src/lib/calculo/` a partir dos dados lidos via Supabase — ainda não existe.
