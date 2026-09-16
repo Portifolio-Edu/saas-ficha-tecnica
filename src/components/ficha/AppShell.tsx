@@ -9,22 +9,20 @@ import {
 import { C } from "./tema";
 import { createClient } from "@/lib/supabase/client";
 
-// Mesma lista/ordem/ícones de ficha-tecnica-mvp.jsx. Insumos, Receitas,
-// Produções, Estoque, Fechamento de CMV e Manipulação de Proteínas têm tela
-// construída até agora; o resto fica visível (não redesenha o menu) mas
-// inerte, pra não fingir que uma rota existe quando não existe.
+// Mesma lista/ordem/ícones de ficha-tecnica-mvp.jsx. Só Configurações continua
+// sem tela própria; o resto do menu já tem rota real e não fica mais inerte.
 const NAV = [
   { id: "visao-geral", label: "Visão Geral", icon: LineChart, href: null },
   { id: "insumos", label: "Insumos", icon: Carrot, href: "/insumos" },
   { id: "cmv", label: "Fechamento de CMV", icon: Calculator, href: "/cmv" },
   { id: "producoes", label: "Produções", icon: CookingPot, href: "/producoes" },
-  { id: "checklists", label: "Checklists de Turno", icon: ListChecks, href: null },
+  { id: "checklists", label: "Checklists de Turno", icon: ListChecks, href: "/checklists" },
   { id: "estoque", label: "Estoque", icon: Package, href: "/estoque" },
   { id: "proteinas", label: "Manipulação de Proteínas", icon: Scale, href: "/proteinas" },
-  { id: "nutricional", label: "Ficha Nutricional", icon: Apple, href: null },
-  { id: "seguranca", label: "Segurança Alimentar", icon: Thermometer, href: null },
+  { id: "nutricional", label: "Ficha Nutricional", icon: Apple, href: "/nutricional" },
+  { id: "seguranca", label: "Segurança Alimentar", icon: Thermometer, href: "/seguranca" },
   { id: "receitas", label: "Receitas & Fichas", icon: ClipboardList, href: "/receitas" },
-  { id: "relatorios", label: "Relatórios", icon: AlertTriangle, href: null },
+  { id: "relatorios", label: "Relatórios", icon: AlertTriangle, href: "/relatorios" },
   { id: "config", label: "Configurações", icon: Settings, href: null },
 ] as const;
 
