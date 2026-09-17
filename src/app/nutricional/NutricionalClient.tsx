@@ -5,6 +5,9 @@ import { Download } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { C, inputStyle, nums } from "@/components/ficha/tema";
+import { InsumoNutricaoForm } from "@/components/nutricional/InsumoNutricaoForm";
+import { RotulagemForm } from "@/components/nutricional/RotulagemForm";
+import { LABEL_CAMPO } from "@/components/nutricional/labels";
 import type { LinhaRotuloPdf } from "@/lib/pdf/RotuloNutricionalPdf";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
@@ -22,20 +25,7 @@ import {
   type CampoNutricional,
   type ValoresNutricionais,
 } from "@/lib/calculo/nutricional";
-import { acaoSalvarValoresInsumo, acaoSalvarOverride, acaoRemoverOverride, acaoSalvarRotulagem } from "./actions";
-
-const LABEL_CAMPO: Record<CampoNutricional, string> = {
-  caloriasKcal: "Energia (kcal)",
-  carboidratosG: "Carboidratos (g)",
-  acucaresTotaisG: "Açúcares totais (g)",
-  acucaresAdicionadosG: "Açúcares adic. (g)",
-  proteinasG: "Proteínas (g)",
-  gordurasTotaisG: "Gorduras totais (g)",
-  gordurasSaturadasG: "Saturadas (g)",
-  gordurasTransG: "Trans (g)",
-  fibraAlimentarG: "Fibra (g)",
-  sodioMg: "Sódio (mg)",
-};
+import { acaoSalvarOverride, acaoRemoverOverride, acaoSalvarRotulagem } from "./actions";
 
 const LABEL_SELO: Partial<Record<CampoNutricional, string>> = {
   gordurasSaturadasG: "gordura saturada",
@@ -55,127 +45,6 @@ const LINHAS_TABELA: { label: string; campo: CampoNutricional; un: string; vd: b
   { label: "Fibra alimentar", campo: "fibraAlimentarG", un: "g", vd: true },
   { label: "Sódio", campo: "sodioMg", un: "mg", vd: true },
 ];
-
-function InsumoNutricaoForm({ insumo, dados, onCancel, onSaved }: { insumo: Insumo; dados?: ValoresNutricionaisInsumo; onCancel: () => void; onSaved: () => void }) {
-  const [baseGramas, setBaseGramas] = useState(dados ? String(dados.baseGramas) : "100");
-  const [valores, setValores] = useState<Record<CampoNutricional, string>>(
-    Object.fromEntries(CAMPOS_NUTRICIONAIS.map((c) => [c, dados?.valores[c] != null ? String(dados.valores[c]) : ""])) as Record<CampoNutricional, string>,
-  );
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
-
-  const salvar = async () => {
-    setSalvando(true);
-    setErro(null);
-    const resultado = await acaoSalvarValoresInsumo(insumo.id, {
-      baseGramas: parseFloat(baseGramas) || 100,
-      valores: Object.fromEntries(CAMPOS_NUTRICIONAIS.map((c) => [c, valores[c] === "" ? null : parseFloat(valores[c])])) as Partial<ValoresNutricionais>,
-    });
-    setSalvando(false);
-    if (!resultado.ok) {
-      setErro(resultado.erro);
-      return;
-    }
-    onSaved();
-  };
-
-  return (
-    <div className="px-4 py-3 rounded-lg" style={{ background: C.bg, border: `1px solid ${C.border}` }}>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-[12px] font-medium flex-1">{insumo.nome}</span>
-        <span className="text-[11px]" style={{ color: C.faint }}>valores por</span>
-        <input type="number" value={baseGramas} onChange={(e) => setBaseGramas(e.target.value)} className="text-[12px] px-2 py-1 rounded-md w-16 text-right" style={{ ...inputStyle, ...nums }} />
-        <span className="text-[11px]" style={{ color: C.faint }}>g/mL</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        {CAMPOS_NUTRICIONAIS.map((c) => (
-          <div key={c} className="flex items-center gap-2">
-            <span className="text-[11.5px] flex-1" style={{ color: C.sub }}>{LABEL_CAMPO[c]}</span>
-            <input
-              type="number"
-              value={valores[c]}
-              onChange={(e) => setValores({ ...valores, [c]: e.target.value })}
-              className="text-[12px] px-2 py-1 rounded-md w-20 text-right"
-              style={{ ...inputStyle, ...nums }}
-            />
-          </div>
-        ))}
-      </div>
-      {erro && (
-        <div className="text-[12px] mb-2 rounded-md px-2.5 py-2" style={{ background: C.dangerSoft, color: C.danger }}>
-          {erro}
-        </div>
-      )}
-      <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
-          {salvando ? "Salvando..." : "Salvar"}
-        </button>
-        <button onClick={onCancel} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
-          Cancelar
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function RotulagemForm({ rotulagem, onSaved }: { rotulagem?: Rotulagem; onSaved: (r: { ingredientes: string; alergenos: string; gluten: string; lactose: string; fabricante: string; endereco: string; pesoLiquido: string; conservacao: string }) => void }) {
-  const [campos, setCampos] = useState({
-    ingredientes: rotulagem?.ingredientes ?? "",
-    alergenos: rotulagem?.alergenos ?? "",
-    gluten: rotulagem?.gluten ?? "",
-    lactose: rotulagem?.lactose ?? "",
-    fabricante: rotulagem?.fabricante ?? "",
-    endereco: rotulagem?.endereco ?? "",
-    pesoLiquido: rotulagem?.pesoLiquido ?? "",
-    conservacao: rotulagem?.conservacao ?? "",
-  });
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
-
-  const campo = (chave: keyof typeof campos) => (e: React.ChangeEvent<HTMLInputElement>) => setCampos({ ...campos, [chave]: e.target.value });
-
-  const salvar = async () => {
-    setSalvando(true);
-    setErro(null);
-    onSaved(campos);
-    setSalvando(false);
-  };
-
-  return (
-    <div className="px-3.5 pb-3.5" style={{ borderTop: `1px solid ${C.border}` }}>
-      <p className="text-[11.5px] my-3" style={{ color: C.sub }}>
-        Só faz falta pra quem vende em mercado ou varejo de terceiro. Quem serve no próprio estabelecimento pode deixar tudo em branco, o resto do sistema funciona igual.
-      </p>
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        {(
-          [
-            ["ingredientes", "Lista de ingredientes (ordem decrescente de peso)", true],
-            ["alergenos", "Alérgenos (RDC 26/2015)", true],
-            ["gluten", "Glúten: contém / não contém", false],
-            ["lactose", "Lactose, quando aplicável", false],
-            ["fabricante", "Fabricante e CNPJ", false],
-            ["endereco", "Endereço do fabricante", false],
-            ["pesoLiquido", "Peso líquido da embalagem", false],
-            ["conservacao", "Modo de conservação e validade", false],
-          ] as const
-        ).map(([chave, label, largo]) => (
-          <div key={chave} className={largo ? "col-span-2" : ""}>
-            <div className="text-[10.5px] mb-1" style={{ color: C.faint }}>{label}</div>
-            <input value={campos[chave]} onChange={campo(chave)} className="text-[12px] px-2.5 py-1.5 rounded-md w-full" style={inputStyle} />
-          </div>
-        ))}
-      </div>
-      {erro && (
-        <div className="text-[12px] mb-3 rounded-md px-2.5 py-2" style={{ background: C.dangerSoft, color: C.danger }}>
-          {erro}
-        </div>
-      )}
-      <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
-        {salvando ? "Salvando..." : "Salvar dados de rotulagem"}
-      </button>
-    </div>
-  );
-}
 
 export function NutricionalClient({
   pratos,

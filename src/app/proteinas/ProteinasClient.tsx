@@ -4,129 +4,14 @@ import { useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Kpi } from "@/components/ficha/Kpi";
-import { C, inputStyle, nums } from "@/components/ficha/tema";
+import { C, nums } from "@/components/ficha/tema";
+import { NovoProcessamentoForm } from "@/components/proteinas/NovoProcessamentoForm";
 import type { Insumo } from "@/lib/dominio/insumo";
-import type { Processamento, ProcessamentoInput } from "@/lib/dominio/processamento";
-import { acaoCriarProcessamento } from "./actions";
-
-function hoje(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import type { Processamento } from "@/lib/dominio/processamento";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function NovoProcessamentoForm({
-  proteinas,
-  insumoInicial,
-  onCancel,
-  onSaved,
-}: {
-  proteinas: Insumo[];
-  insumoInicial: string;
-  onCancel: () => void;
-  onSaved: (insumoId: string) => void;
-}) {
-  const [insumoId, setInsumoId] = useState(proteinas.some((i) => i.id === insumoInicial) ? insumoInicial : (proteinas[0]?.id ?? ""));
-  const [processadoEm, setProcessadoEm] = useState(hoje());
-  const [responsavel, setResponsavel] = useState("");
-  const [pesoBrutoRecebido, setPesoBrutoRecebido] = useState("");
-  const [valorPagoKg, setValorPagoKg] = useState("");
-  const [pesoLiquidoResultante, setPesoLiquidoResultante] = useState("");
-  const [pesoAparasReaproveitaveis, setPesoAparasReaproveitaveis] = useState("0");
-  const [fornecedor, setFornecedor] = useState("");
-  const [observacao, setObservacao] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
-
-  const bruto = parseFloat(pesoBrutoRecebido) || 0;
-  const liquido = parseFloat(pesoLiquidoResultante) || 0;
-  const aparas = parseFloat(pesoAparasReaproveitaveis) || 0;
-  const descartePuro = bruto && liquido ? bruto - liquido - aparas : null;
-  const fcPreview = bruto && liquido ? bruto / liquido : null;
-  const reconciliacaoInvalida = descartePuro !== null && descartePuro < 0;
-
-  const salvar = async () => {
-    if (!insumoId || !responsavel.trim() || !pesoBrutoRecebido || !valorPagoKg || !pesoLiquidoResultante || reconciliacaoInvalida) return;
-    setSalvando(true);
-    setErro(null);
-    const input: ProcessamentoInput = {
-      insumoId,
-      responsavel: responsavel.trim(),
-      pesoBrutoRecebido: bruto,
-      valorPagoKg: parseFloat(valorPagoKg),
-      pesoLiquidoResultante: liquido,
-      pesoAparasReaproveitaveis: aparas,
-      fornecedor: fornecedor.trim() || null,
-      observacao: observacao.trim() || null,
-      processadoEm,
-    };
-    const resultado = await acaoCriarProcessamento(input);
-    setSalvando(false);
-    if (!resultado.ok) {
-      setErro(resultado.erro);
-      return;
-    }
-    onSaved(insumoId);
-  };
-
-  return (
-    <div className="px-5 py-4">
-      <div className="grid grid-cols-6 gap-2 mb-2">
-        <select value={insumoId} onChange={(e) => setInsumoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
-          {proteinas.map((i) => (
-            <option key={i.id} value={i.id}>{i.nome}</option>
-          ))}
-        </select>
-        <input type="date" value={processadoEm} onChange={(e) => setProcessadoEm(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle} />
-        <input placeholder="Responsável pelo corte" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-3" style={inputStyle} />
-      </div>
-      <div className="grid grid-cols-4 gap-2 mb-2">
-        <input placeholder="Peso bruto recebido (kg)" type="number" value={pesoBrutoRecebido} onChange={(e) => setPesoBrutoRecebido(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle} />
-        <input placeholder="Valor pago/kg (R$)" type="number" value={valorPagoKg} onChange={(e) => setValorPagoKg(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle} />
-        <input placeholder="Peso líquido usável (kg)" type="number" value={pesoLiquidoResultante} onChange={(e) => setPesoLiquidoResultante(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle} />
-        <input placeholder="Aparas reaproveitáveis (kg)" type="number" value={pesoAparasReaproveitaveis} onChange={(e) => setPesoAparasReaproveitaveis(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle} />
-      </div>
-      <div className="flex items-center gap-3 mb-2">
-        <input placeholder="Fornecedor (opcional)" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md flex-1" style={inputStyle} />
-        {fcPreview && (
-          <div className="text-[12.5px]" style={{ color: C.sub }}>
-            FC do lote: <b style={{ ...nums, color: C.text }}>{fcPreview.toFixed(3)}</b>
-          </div>
-        )}
-        {descartePuro !== null && (
-          <div className="text-[12.5px]" style={{ color: reconciliacaoInvalida ? C.danger : C.sub }}>
-            Descarte puro: <b style={{ ...nums, color: reconciliacaoInvalida ? C.danger : C.text }}>{descartePuro.toFixed(2)}kg</b>
-          </div>
-        )}
-      </div>
-      {reconciliacaoInvalida && (
-        <div className="text-[12px] mb-2" style={{ color: C.danger }}>Peso líquido + aparas passa do peso bruto recebido, confere os números antes de salvar.</div>
-      )}
-      <input
-        placeholder="Observação (ex: peixe chegou machucado, corte impreciso, produto vencendo)"
-        value={observacao}
-        onChange={(e) => setObservacao(e.target.value)}
-        className="text-[12.5px] px-2.5 py-1.5 rounded-md w-full mb-3"
-        style={inputStyle}
-      />
-      {erro && (
-        <div className="text-[12px] mb-3 rounded-md px-2.5 py-2" style={{ background: C.dangerSoft, color: C.danger }}>
-          {erro}
-        </div>
-      )}
-      <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
-          {salvando ? "Salvando..." : "Salvar lote"}
-        </button>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
-          Cancelar
-        </button>
-      </div>
-    </div>
-  );
 }
 
 export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insumo[]; processamentos: Processamento[] }) {
