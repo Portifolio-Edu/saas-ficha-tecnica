@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, inputStyle } from "@/components/ficha/tema";
+import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
@@ -62,7 +62,7 @@ export function PreparoForm({
   };
 
   return (
-    <div className="px-5 py-4" style={{ borderTop: `1px solid ${C.border}`, background: C.bg }}>
+    <div className="px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
       <div className="grid grid-cols-6 gap-2 mb-3">
         <Input placeholder="Nome da receita" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-3" />
         <Input placeholder="Rende" type="number" value={rendimento} onChange={(e) => setRendimento(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
@@ -78,12 +78,12 @@ export function PreparoForm({
           {ficha.map((f, idx) => {
             const insumo = insumoPorId.get(f.insumoId!);
             return (
-              <div key={idx} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded-md" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
+              <div key={idx} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded-md" style={{ background: "var(--panel)", border: `1px solid ${"var(--border)"}` }}>
                 <span>
                   {insumo?.nome} · {f.pesoLiquido}
                   {f.unidade}
                 </span>
-                <button onClick={() => removerLinha(idx)} style={{ color: C.danger }}>
+                <button onClick={() => removerLinha(idx)} style={{ color: "var(--danger)" }}>
                   remover
                 </button>
               </div>
@@ -112,7 +112,7 @@ export function PreparoForm({
             <option key={u} value={u}>{u}</option>
           ))}
         </select>
-        <button onClick={addLinha} className="text-[12.5px] font-medium px-3 py-1.5 rounded-md" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={addLinha} className="text-[12.5px] font-medium px-3 py-1.5 rounded-md" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           + ingrediente
         </button>
       </div>
@@ -120,10 +120,10 @@ export function PreparoForm({
       <ErroBanner erro={erro} />
 
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : preparo ? "Salvar alterações" : "Salvar receita"}
         </button>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           Cancelar
         </button>
       </div>

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
-import { C, inputStyle, nums } from "@/components/ficha/tema";
+import { inputStyle, nums } from "@/components/ficha/tema";
 import { InsumoNutricaoForm } from "@/components/nutricional/InsumoNutricaoForm";
 import { RotulagemForm } from "@/components/nutricional/RotulagemForm";
 import { LABEL_CAMPO } from "@/components/nutricional/labels";
@@ -87,7 +87,7 @@ export function NutricionalClient({
     return (
       <div className="max-w-5xl">
         <Card className="p-6 text-center">
-          <p className="text-[13px]" style={{ color: C.sub }}>Nenhum prato final cadastrado ainda. Cadastre um em Receitas & Fichas primeiro.</p>
+          <p className="text-[13px]" style={{ color: "var(--sub)" }}>Nenhum prato final cadastrado ainda. Cadastre um em Receitas & Fichas primeiro.</p>
         </Card>
       </div>
     );
@@ -150,7 +150,7 @@ export function NutricionalClient({
   return (
     <div className="max-w-5xl">
       <h2 className="text-[14px] font-semibold mb-1">Ficha nutricional por porção</h2>
-      <p className="text-[12px] mb-3" style={{ color: C.sub }}>Calculado a partir do peso bruto de cada insumo na receita, mesma lógica do CMV. Aproximação de cálculo, não laudo laboratorial.</p>
+      <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Calculado a partir do peso bruto de cada insumo na receita, mesma lógica do CMV. Aproximação de cálculo, não laudo laboratorial.</p>
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {pratos.map((p) => (
           <button
@@ -162,33 +162,33 @@ export function NutricionalClient({
               setRotulagemAberta(false);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: pratoSelecionadoId === p.id ? C.text : C.panel, color: pratoSelecionadoId === p.id ? "#fff" : C.text, border: `1px solid ${pratoSelecionadoId === p.id ? C.text : C.borderStrong}` }}
+            style={{ background: pratoSelecionadoId === p.id ? "var(--text)" : "var(--panel)", color: pratoSelecionadoId === p.id ? "#fff" : "var(--text)", border: `1px solid ${pratoSelecionadoId === p.id ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {p.nomePrato}
           </button>
         ))}
       </div>
 
-      <div className="text-[12.5px] mb-4" style={{ color: C.sub }}>
-        Destino de venda: <b style={{ color: C.text }}>{paraVarejo ? "Varejo/mercado de terceiro" : "Próprio estabelecimento"}</b>{" "}
-        <span style={{ color: C.faint }}>(edite em Receitas &amp; Fichas)</span>
+      <div className="text-[12.5px] mb-4" style={{ color: "var(--sub)" }}>
+        Destino de venda: <b style={{ color: "var(--text)" }}>{paraVarejo ? "Varejo/mercado de terceiro" : "Próprio estabelecimento"}</b>{" "}
+        <span style={{ color: "var(--faint)" }}>(edite em Receitas &amp; Fichas)</span>
       </div>
 
       {paraVarejo ? (
-        <div className="text-[12px] mb-3" style={{ color: C.sub }}>Vendido fora do próprio estabelecimento: rotulagem nutricional completa é obrigatória (RDC 429/2020), incluindo alerta frontal se aplicável. Tabela abaixo já força fundo branco e letra preta, formato exigido pela norma.</div>
+        <div className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Vendido fora do próprio estabelecimento: rotulagem nutricional completa é obrigatória (RDC 429/2020), incluindo alerta frontal se aplicável. Tabela abaixo já força fundo branco e letra preta, formato exigido pela norma.</div>
       ) : (
-        <div className="text-[12px] mb-3" style={{ color: C.sub }}>Vendido no próprio estabelecimento (balcão/delivery): rotulagem é voluntária, não obrigatória (IN 75/2020, Anexo I).</div>
+        <div className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Vendido no próprio estabelecimento (balcão/delivery): rotulagem é voluntária, não obrigatória (IN 75/2020, Anexo I).</div>
       )}
 
       {paraVarejo && altoEm.length > 0 && (
-        <div className="rounded-lg p-3 mb-4 text-[12.5px]" style={{ background: C.dangerSoft, color: C.danger }}>
+        <div className="rounded-lg p-3 mb-4 text-[12.5px]" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
           <b>Alto em {altoEm.map((campo) => LABEL_SELO[campo]).join(", ")}</b> — esse produto precisa do selo de alerta frontal (lupa). Avaliado por 100{prato.formaFisica === "liquido" ? "mL" : "g"} do alimento, base que a norma usa, não por porção. O desenho oficial do selo é o arquivo vetorial do Anexo XVII da IN 75/2020, precisa ser aplicado na arte da embalagem.
         </div>
       )}
 
       {insumosSemDados.length > 0 && (
         <div className="mb-4">
-          <div className="text-[12px] mb-2" style={{ color: C.sub }}>
+          <div className="text-[12px] mb-2" style={{ color: "var(--sub)" }}>
             {insumosSemDados.length} insumo{insumosSemDados.length > 1 ? "s" : ""} usado{insumosSemDados.length > 1 ? "s" : ""} nesta ficha ainda sem dado nutricional cadastrado:
           </div>
           <div className="space-y-2">
@@ -196,9 +196,9 @@ export function NutricionalClient({
               insumoEditandoId === insumo.id ? (
                 <InsumoNutricaoForm key={insumo.id} insumo={insumo} dados={nutriPorInsumoId.get(insumo.id)} onCancel={() => setInsumoEditandoId(null)} onSaved={() => setInsumoEditandoId(null)} />
               ) : (
-                <div key={insumo.id} className="flex items-center justify-between px-3.5 py-2 rounded-lg text-[12.5px]" style={{ background: C.dangerSoft }}>
-                  <span style={{ color: C.danger }}>{insumo.nome}</span>
-                  <button onClick={() => setInsumoEditandoId(insumo.id)} className="font-medium" style={{ color: C.danger }}>
+                <div key={insumo.id} className="flex items-center justify-between px-3.5 py-2 rounded-lg text-[12.5px]" style={{ background: "var(--danger-soft)" }}>
+                  <span style={{ color: "var(--danger)" }}>{insumo.nome}</span>
+                  <button onClick={() => setInsumoEditandoId(insumo.id)} className="font-medium" style={{ color: "var(--danger)" }}>
                     cadastrar valores
                   </button>
                 </div>
@@ -219,14 +219,14 @@ export function NutricionalClient({
             setEditandoOverride(true);
           }}
           className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-          style={{ background: editandoOverride ? C.bg : C.text, color: editandoOverride ? C.text : "#fff", border: `1px solid ${editandoOverride ? C.borderStrong : C.text}` }}
+          style={{ background: editandoOverride ? "var(--bg)" : "var(--text)", color: editandoOverride ? "var(--text)" : "#fff", border: `1px solid ${editandoOverride ? "var(--border-strong)" : "var(--text)"}` }}
         >
           {editandoOverride ? "Cancelar edição" : "Editar valores"}
         </button>
         {temOverride && (
           <>
             <Badge acao>valor de laudo, não calculado</Badge>
-            <button onClick={() => executarAcaoSimples(acaoRemoverOverride(prato.id))} className="text-[11.5px]" style={{ color: C.sub }}>
+            <button onClick={() => executarAcaoSimples(acaoRemoverOverride(prato.id))} className="text-[11.5px]" style={{ color: "var(--sub)" }}>
               voltar ao calculado
             </button>
           </>
@@ -235,11 +235,11 @@ export function NutricionalClient({
 
       {editandoOverride && (
         <Card className="p-5 mb-3 max-w-lg">
-          <p className="text-[11.5px] mb-3" style={{ color: C.sub }}>Use isto quando tiver laudo laboratorial: o valor informado aqui substitui o cálculo por composição de ingrediente na tabela e no selo frontal. Valores por porção.</p>
+          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Use isto quando tiver laudo laboratorial: o valor informado aqui substitui o cálculo por composição de ingrediente na tabela e no selo frontal. Valores por porção.</p>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {CAMPOS_NUTRICIONAIS.map((c) => (
               <div key={c} className="flex items-center gap-2">
-                <span className="text-[11.5px] flex-1" style={{ color: C.sub }}>{LABEL_CAMPO[c]}</span>
+                <span className="text-[11.5px] flex-1" style={{ color: "var(--sub)" }}>{LABEL_CAMPO[c]}</span>
                 <input
                   type="number"
                   value={rascunhoOverride[c] ?? ""}
@@ -257,7 +257,7 @@ export function NutricionalClient({
               setEditandoOverride(false);
             }}
             className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
-            style={{ background: C.text, color: "#fff" }}
+            style={{ background: "var(--text)", color: "#fff" }}
           >
             Salvar valores do laudo
           </button>
@@ -265,18 +265,18 @@ export function NutricionalClient({
       )}
 
       <Card className="p-6 max-w-lg" style={paraVarejo ? { backgroundColor: "#FFFFFF", color: "#000000" } : {}}>
-        <div className="mb-2" style={{ borderBottom: `3px solid ${paraVarejo ? "#000" : C.text}`, paddingBottom: 6 }}>
+        <div className="mb-2" style={{ borderBottom: `3px solid ${paraVarejo ? "#000" : "var(--text)"}`, paddingBottom: 6 }}>
           <div className="text-[14px] font-bold" style={paraVarejo ? { color: "#000" } : {}}>INFORMAÇÃO NUTRICIONAL</div>
-          <div className="text-[11px] mt-0.5" style={{ color: paraVarejo ? "#000" : C.sub }}>
+          <div className="text-[11px] mt-0.5" style={{ color: paraVarejo ? "#000" : "var(--sub)" }}>
             {prato.rendimento} porç{prato.rendimento > 1 ? "ões" : "ão"} por embalagem{prato.pesoPorcaoG ? ` · porção de ${prato.pesoPorcaoG}g` : ""}
           </div>
         </div>
         {!nutriCompleta && (
-          <div className="text-[11.5px] mb-2" style={{ color: paraVarejo ? "#900" : C.sub }}>Atenção: alguns insumos ainda não têm dado nutricional cadastrado, os valores abaixo estão incompletos e não podem ser impressos como rótulo.</div>
+          <div className="text-[11.5px] mb-2" style={{ color: paraVarejo ? "#900" : "var(--sub)" }}>Atenção: alguns insumos ainda não têm dado nutricional cadastrado, os valores abaixo estão incompletos e não podem ser impressos como rótulo.</div>
         )}
         <table className="w-full text-[12px]">
           <thead>
-            <tr style={{ color: paraVarejo ? "#000" : C.faint, borderBottom: `1.5px solid ${paraVarejo ? "#000" : C.border}` }} className="text-left text-[10.5px]">
+            <tr style={{ color: paraVarejo ? "#000" : "var(--faint)", borderBottom: `1.5px solid ${paraVarejo ? "#000" : "var(--border)"}` }} className="text-left text-[10.5px]">
               <th className="py-1 font-semibold"></th>
               <th className="py-1 font-semibold text-right">Por porção{prato.pesoPorcaoG ? <><br />({prato.pesoPorcaoG}g)</> : null}</th>
               <th className="py-1 font-semibold text-right">Por 100{prato.formaFisica === "liquido" ? "mL" : "g"}</th>
@@ -287,15 +287,15 @@ export function NutricionalClient({
             {LINHAS_TABELA.map((l) => {
               const vdValor = l.vd ? calcularPercentualVD(n, l.campo) : null;
               return (
-                <tr key={l.label} style={{ borderTop: `1px solid ${paraVarejo ? "#999" : C.border}` }}>
-                  <td className="py-1.5" style={{ color: paraVarejo ? "#000" : l.label.startsWith("   ") ? C.sub : C.text }}>{l.label}</td>
-                  <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : C.text }}>
+                <tr key={l.label} style={{ borderTop: `1px solid ${paraVarejo ? "#999" : "var(--border)"}` }}>
+                  <td className="py-1.5" style={{ color: paraVarejo ? "#000" : l.label.startsWith("   ") ? "var(--sub)" : "var(--text)" }}>{l.label}</td>
+                  <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : "var(--text)" }}>
                     {n[l.campo].toFixed(1)}{l.un}{l.kj ? ` (${(n[l.campo] * 4.184).toFixed(0)}kJ)` : ""}
                   </td>
-                  <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : C.sub }}>
+                  <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : "var(--sub)" }}>
                     {n100 ? `${n100[l.campo].toFixed(1)}${l.un}` : "—"}
                   </td>
-                  <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : C.sub }}>
+                  <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : "var(--sub)" }}>
                     {vdValor !== null ? `${vdValor.toFixed(0)}%` : "—"}
                   </td>
                 </tr>
@@ -303,7 +303,7 @@ export function NutricionalClient({
             })}
           </tbody>
         </table>
-        <div className="text-[9.5px] mt-2 leading-snug" style={{ color: paraVarejo ? "#000" : C.faint }}>
+        <div className="text-[9.5px] mt-2 leading-snug" style={{ color: paraVarejo ? "#000" : "var(--faint)" }}>
           *Percentual de valores diários fornecidos pela porção, com base numa dieta de 2.000kcal ou 8.400kJ. Seus valores diários podem ser maiores ou menores dependendo das suas necessidades energéticas. Açúcares totais não têm %VD definido pela norma.
         </div>
       </Card>
@@ -312,7 +312,7 @@ export function NutricionalClient({
         onClick={gerarPdfRotulo}
         disabled={gerandoRotulo}
         className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg mt-3"
-        style={{ background: C.text, color: "#fff", opacity: gerandoRotulo ? 0.6 : 1 }}
+        style={{ background: "var(--text)", color: "#fff", opacity: gerandoRotulo ? 0.6 : 1 }}
       >
         <Download size={13} /> {gerandoRotulo ? "Gerando..." : "PDF · Rótulo Nutricional"}
       </button>
@@ -324,7 +324,7 @@ export function NutricionalClient({
               <span className="text-[12.5px] font-medium">Dados de rotulagem</span>
               <Badge>opcional</Badge>
             </div>
-            <span className="text-[11px]" style={{ color: C.faint }}>{camposPreenchidos} de 8 campos preenchidos</span>
+            <span className="text-[11px]" style={{ color: "var(--faint)" }}>{camposPreenchidos} de 8 campos preenchidos</span>
           </button>
           {rotulagemAberta && (
             <RotulagemForm
@@ -338,7 +338,7 @@ export function NutricionalClient({
       {paraVarejo && (
         <Card className="p-5 mt-4 max-w-lg">
           <h3 className="text-[13px] font-semibold mb-1">Falta pro rótulo ficar pronto</h3>
-          <p className="text-[11.5px] mb-3" style={{ color: C.sub }}>A tabela acima está no formato da norma, mas rótulo comercial exige mais do que ela. Nenhum destes é gerado pelo sistema.</p>
+          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>A tabela acima está no formato da norma, mas rótulo comercial exige mais do que ela. Nenhum destes é gerado pelo sistema.</p>
           {(
             [
               ["Valor nutricional validado", temOverride ? "Valor de laudo informado na ficha nutricional." : 'Os números vêm de cálculo por composição de ingrediente, não de laudo. Use o botão "Editar valores" pra informar o laudo (tolerância de fiscalização é 20%).', temOverride],
@@ -350,13 +350,13 @@ export function NutricionalClient({
               ["Registro sanitário", "Regularização do produto e do estabelecimento na vigilância sanitária (e SIF/SIE/SIM se for produto de origem animal). Fora do sistema.", false],
             ] as const
           ).map(([titulo, desc, feito]) => (
-            <div key={titulo} className="flex gap-2.5 py-2" style={{ borderTop: `1px solid ${C.border}` }}>
-              <div className="w-3.5 h-3.5 rounded shrink-0 mt-0.5 flex items-center justify-center" style={{ border: `1.5px solid ${feito ? C.accent : C.borderStrong}`, background: feito ? C.accent : "transparent" }}>
+            <div key={titulo} className="flex gap-2.5 py-2" style={{ borderTop: `1px solid ${"var(--border)"}` }}>
+              <div className="w-3.5 h-3.5 rounded shrink-0 mt-0.5 flex items-center justify-center" style={{ border: `1.5px solid ${feito ? "var(--accent)" : "var(--border-strong)"}`, background: feito ? "var(--accent)" : "transparent" }}>
                 {feito && <span style={{ color: "#fff", fontSize: 9, lineHeight: 1 }}>✓</span>}
               </div>
               <div>
-                <div className="text-[12.5px] font-medium" style={{ color: feito ? C.sub : C.text }}>{titulo}</div>
-                <div className="text-[11.5px]" style={{ color: C.sub }}>{desc}</div>
+                <div className="text-[12.5px] font-medium" style={{ color: feito ? "var(--sub)" : "var(--text)" }}>{titulo}</div>
+                <div className="text-[11.5px]" style={{ color: "var(--sub)" }}>{desc}</div>
               </div>
             </div>
           ))}

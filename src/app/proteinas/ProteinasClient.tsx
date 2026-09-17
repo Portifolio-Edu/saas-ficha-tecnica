@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Kpi } from "@/components/ficha/Kpi";
-import { C, nums } from "@/components/ficha/tema";
+import { nums } from "@/components/ficha/tema";
 import { NovoProcessamentoForm } from "@/components/proteinas/NovoProcessamentoForm";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
@@ -25,7 +25,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
     return (
       <div className="max-w-5xl">
         <Card className="p-6 text-center">
-          <p className="text-[13px]" style={{ color: C.sub }}>Nenhum insumo da categoria proteína cadastrado ainda. Cadastre um em Insumos primeiro.</p>
+          <p className="text-[13px]" style={{ color: "var(--sub)" }}>Nenhum insumo da categoria proteína cadastrado ainda. Cadastre um em Insumos primeiro.</p>
         </Card>
       </div>
     );
@@ -38,7 +38,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
 
   return (
     <div className="max-w-5xl">
-      <p className="text-[13px] mb-5" style={{ color: C.sub }}>
+      <p className="text-[13px] mb-5" style={{ color: "var(--sub)" }}>
         Cada lote de proteína processada (peixe, gado, frango) entra aqui com peso bruto recebido, valor pago, peso limpo, quanto virou apara reaproveitável e quanto foi descarte puro. O FC observado é medido, não estimado, e a média dos lotes substitui o FC cadastrado no cálculo de CMV em todo o sistema sempre que existir histórico. Isso também é registro de auditoria: dá pra ver quem processou cada lote e comparar rendimento entre pessoas.
       </p>
 
@@ -48,7 +48,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
             key={i.id}
             onClick={() => setProteinaSelecionada(i.id)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: i.id === insumo.id ? C.text : C.panel, color: i.id === insumo.id ? "#fff" : C.text, border: `1px solid ${i.id === insumo.id ? C.text : C.borderStrong}` }}
+            style={{ background: i.id === insumo.id ? "var(--text)" : "var(--panel)", color: i.id === insumo.id ? "#fff" : "var(--text)", border: `1px solid ${i.id === insumo.id ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {i.nome}
           </button>
@@ -56,7 +56,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
         <button
           onClick={() => setShowNovoProcessamento(!showNovoProcessamento)}
           className="ml-auto text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-          style={{ background: showNovoProcessamento ? C.bg : C.text, color: showNovoProcessamento ? C.text : "#fff", border: `1px solid ${showNovoProcessamento ? C.borderStrong : C.text}` }}
+          style={{ background: showNovoProcessamento ? "var(--bg)" : "var(--text)", color: showNovoProcessamento ? "var(--text)" : "#fff", border: `1px solid ${showNovoProcessamento ? "var(--border-strong)" : "var(--text)"}` }}
         >
           {showNovoProcessamento ? "Fechar" : "+ Registrar lote"}
         </button>
@@ -78,7 +78,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
 
       {lotes.length === 0 ? (
         <Card className="p-6 text-center">
-          <p className="text-[13px]" style={{ color: C.sub }}>
+          <p className="text-[13px]" style={{ color: "var(--sub)" }}>
             Nenhum lote de {insumo.nome} registrado ainda. O FC usado no cálculo de CMV continua sendo o cadastrado ({insumo.fatorCorrecao.toFixed(2)}) até o primeiro lote entrar.
           </p>
         </Card>
@@ -97,7 +97,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
 
           <Card className="p-6 mb-5">
             <h2 className="text-[14px] font-semibold mb-1">FC observado por lote</h2>
-            <p className="text-[12px] mb-4" style={{ color: C.sub }}>Linha tracejada é o FC cadastrado. Quanto mais alto acima dela, pior o rendimento real do lote.</p>
+            <p className="text-[12px] mb-4" style={{ color: "var(--sub)" }}>Linha tracejada é o FC cadastrado. Quanto mais alto acima dela, pior o rendimento real do lote.</p>
             <ChartFrame
               vazio={false}
               tituloVazio="Nenhum lote registrado ainda."
@@ -107,7 +107,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                 <CartesianGrid {...chartGridProps} />
                 <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
                 <YAxis domain={["dataMin - 0.03", "dataMax + 0.03"]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={(v: number) => v.toFixed(2)} />
-                <ReferenceLine y={insumo.fatorCorrecao} stroke={C.borderStrong} strokeDasharray="4 4" label={{ value: "FC cadastrado", position: "insideTopRight", fontSize: 10, fill: C.sub }} />
+                <ReferenceLine y={insumo.fatorCorrecao} stroke={"var(--border-strong)"} strokeDasharray="4 4" label={{ value: "FC cadastrado", position: "insideTopRight", fontSize: 10, fill: "var(--sub)" }} />
                 <Tooltip
                   content={({ payload }) => {
                     if (!payload || !payload.length) return null;
@@ -126,9 +126,9 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                 <Line
                   type="monotone"
                   dataKey="fcObservado"
-                  stroke={C.text}
+                  stroke={"var(--text)"}
                   strokeWidth={2}
-                  dot={{ r: 4, fill: C.text }}
+                  dot={{ r: 4, fill: "var(--text)" }}
                   isAnimationActive
                   animationDuration={CHART_ANIMATION_DURATION}
                   animationEasing={CHART_ANIMATION_EASING}
@@ -138,12 +138,12 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
           </Card>
 
           <Card>
-            <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${C.border}` }}>
+            <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
               <h2 className="text-[13px] font-semibold">Histórico de lotes (auditoria)</h2>
             </div>
             <table className="w-full text-[12px]">
               <thead>
-                <tr style={{ color: C.faint }} className="text-left text-[10px] uppercase tracking-wide">
+                <tr style={{ color: "var(--faint)" }} className="text-left text-[10px] uppercase tracking-wide">
                   <th className="py-2.5 px-5 font-medium">Data</th>
                   <th className="py-2.5 px-2 font-medium">Responsável</th>
                   <th className="py-2.5 px-2 font-medium">Fornecedor</th>
@@ -160,20 +160,20 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                   const descarteAlto = l.pesoDescartePuro / l.pesoBrutoRecebido > 0.08;
                   return (
                     <>
-                      <tr key={l.id} style={{ borderTop: `1px solid ${C.border}` }}>
+                      <tr key={l.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                         <td className="py-2 px-5">{formatarData(l.processadoEm)}</td>
                         <td className="py-2 px-2 font-medium">{l.responsavel}</td>
-                        <td className="py-2 px-2" style={{ color: C.sub }}>{l.fornecedor ?? "—"}</td>
+                        <td className="py-2 px-2" style={{ color: "var(--sub)" }}>{l.fornecedor ?? "—"}</td>
                         <td className="py-2 px-2 text-right" style={nums}>{l.pesoBrutoRecebido.toFixed(2)}kg</td>
                         <td className="py-2 px-2 text-right" style={nums}>R$ {l.valorPagoKg.toFixed(2)}</td>
                         <td className="py-2 px-2 text-right" style={nums}>{l.pesoLiquidoResultante.toFixed(2)}kg</td>
-                        <td className="py-2 px-2 text-right" style={{ ...nums, color: C.sub }}>{l.pesoAparasReaproveitaveis.toFixed(2)}kg</td>
-                        <td className="py-2 px-2 text-right" style={{ ...nums, color: descarteAlto ? C.danger : C.text }}>{l.pesoDescartePuro.toFixed(2)}kg</td>
+                        <td className="py-2 px-2 text-right" style={{ ...nums, color: "var(--sub)" }}>{l.pesoAparasReaproveitaveis.toFixed(2)}kg</td>
+                        <td className="py-2 px-2 text-right" style={{ ...nums, color: descarteAlto ? "var(--danger)" : "var(--text)" }}>{l.pesoDescartePuro.toFixed(2)}kg</td>
                         <td className="py-2 px-5 text-right font-medium" style={nums}>{l.fcObservado.toFixed(3)}</td>
                       </tr>
                       {l.observacao && (
                         <tr key={`${l.id}-obs`}>
-                          <td colSpan={9} className="pb-2 px-5 text-[11.5px]" style={{ color: C.sub }}>Obs: {l.observacao}</td>
+                          <td colSpan={9} className="pb-2 px-5 text-[11.5px]" style={{ color: "var(--sub)" }}>Obs: {l.observacao}</td>
                         </tr>
                       )}
                     </>

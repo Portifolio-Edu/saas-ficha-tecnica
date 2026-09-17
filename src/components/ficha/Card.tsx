@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { C, shadow } from "./tema";
+import { shadow } from "./tema";
 
 export function Card({
   children,
@@ -13,7 +13,7 @@ export function Card({
   return (
     <div
       className={`rounded-xl ${className}`}
-      style={{ backgroundColor: C.panel, border: `1px solid ${C.border}`, boxShadow: shadow, ...style }}
+      style={{ backgroundColor: "var(--panel)", border: `1px solid ${"var(--border)"}`, boxShadow: shadow, ...style }}
     >
       {children}
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, inputStyle } from "@/components/ficha/tema";
+import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
@@ -42,7 +42,7 @@ export function InsumoForm({
   };
 
   return (
-    <div className="px-5 py-4" style={{ borderTop: `1px solid ${C.border}`, background: C.bg }}>
+    <div className="px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
       <div className="grid grid-cols-6 gap-2 mb-2">
         <Input placeholder="Nome do insumo" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
         <select value={categoria} onChange={(e) => setCategoria(e.target.value as Categoria)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
@@ -66,10 +66,10 @@ export function InsumoForm({
       </div>
       <ErroBanner erro={erro} />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : insumo ? "Salvar alterações" : "Salvar insumo"}
         </button>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           Cancelar
         </button>
       </div>

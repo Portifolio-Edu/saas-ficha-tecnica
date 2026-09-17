@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, inputStyle } from "@/components/ficha/tema";
+import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
@@ -82,7 +82,7 @@ export function ReceitaForm({
   };
 
   return (
-    <div className="px-5 py-4" style={{ borderTop: `1px solid ${C.border}`, background: C.bg }}>
+    <div className="px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
       <div className="grid grid-cols-6 gap-2 mb-2">
         <Input placeholder="Nome do prato" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
         <Input placeholder="Categoria (opcional)" value={categoria} onChange={(e) => setCategoria(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
@@ -107,12 +107,12 @@ export function ReceitaForm({
           {ficha.map((f, idx) => {
             const label = f.insumoId ? insumoPorId.get(f.insumoId)?.nome : preparoPorId.get(f.subReceitaId!)?.nomePrato;
             return (
-              <div key={idx} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded-md" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
+              <div key={idx} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded-md" style={{ background: "var(--panel)", border: `1px solid ${"var(--border)"}` }}>
                 <span>
                   {label} · {f.pesoLiquido}{f.unidade}
-                  {f.subReceitaId && <span style={{ color: C.faint }}> · preparo próprio</span>}
+                  {f.subReceitaId && <span style={{ color: "var(--faint)" }}> · preparo próprio</span>}
                 </span>
-                <button onClick={() => removerLinha(idx)} style={{ color: C.danger }}>
+                <button onClick={() => removerLinha(idx)} style={{ color: "var(--danger)" }}>
                   remover
                 </button>
               </div>
@@ -127,7 +127,7 @@ export function ReceitaForm({
             key={t}
             onClick={() => trocarTipoLinha(t)}
             className="text-[12px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: tipoLinha === t ? C.text : C.panel, color: tipoLinha === t ? "#fff" : C.text, border: `1px solid ${tipoLinha === t ? C.text : C.borderStrong}` }}
+            style={{ background: tipoLinha === t ? "var(--text)" : "var(--panel)", color: tipoLinha === t ? "#fff" : "var(--text)", border: `1px solid ${tipoLinha === t ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {t === "insumo" ? "Insumo" : "Preparo próprio"}
           </button>
@@ -154,7 +154,7 @@ export function ReceitaForm({
             <option key={u} value={u}>{u}</option>
           ))}
         </select>
-        <button onClick={addLinha} className="text-[12.5px] font-medium px-3 py-1.5 rounded-md" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={addLinha} className="text-[12.5px] font-medium px-3 py-1.5 rounded-md" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           + ingrediente
         </button>
       </div>
@@ -170,10 +170,10 @@ export function ReceitaForm({
       <ErroBanner erro={erro} />
 
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : receita ? "Salvar alterações" : "Salvar prato"}
         </button>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           Cancelar
         </button>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, inputStyle, nums } from "@/components/ficha/tema";
+import { inputStyle, nums } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
@@ -78,18 +78,18 @@ export function NovoProcessamentoForm({
       <div className="flex items-center gap-3 mb-2">
         <Input placeholder="Fornecedor (opcional)" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 flex-1" />
         {fcPreview && (
-          <div className="text-[12.5px]" style={{ color: C.sub }}>
-            FC do lote: <b style={{ ...nums, color: C.text }}>{fcPreview.toFixed(3)}</b>
+          <div className="text-[12.5px]" style={{ color: "var(--sub)" }}>
+            FC do lote: <b style={{ ...nums, color: "var(--text)" }}>{fcPreview.toFixed(3)}</b>
           </div>
         )}
         {descartePuro !== null && (
-          <div className="text-[12.5px]" style={{ color: reconciliacaoInvalida ? C.danger : C.sub }}>
-            Descarte puro: <b style={{ ...nums, color: reconciliacaoInvalida ? C.danger : C.text }}>{descartePuro.toFixed(2)}kg</b>
+          <div className="text-[12.5px]" style={{ color: reconciliacaoInvalida ? "var(--danger)" : "var(--sub)" }}>
+            Descarte puro: <b style={{ ...nums, color: reconciliacaoInvalida ? "var(--danger)" : "var(--text)" }}>{descartePuro.toFixed(2)}kg</b>
           </div>
         )}
       </div>
       {reconciliacaoInvalida && (
-        <div className="text-[12px] mb-2" style={{ color: C.danger }}>Peso líquido + aparas passa do peso bruto recebido, confere os números antes de salvar.</div>
+        <div className="text-[12px] mb-2" style={{ color: "var(--danger)" }}>Peso líquido + aparas passa do peso bruto recebido, confere os números antes de salvar.</div>
       )}
       <Input
         placeholder="Observação (ex: peixe chegou machucado, corte impreciso, produto vencendo)"
@@ -99,10 +99,10 @@ export function NovoProcessamentoForm({
       />
       <ErroBanner erro={erro} />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Salvar lote"}
         </button>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           Cancelar
         </button>
       </div>

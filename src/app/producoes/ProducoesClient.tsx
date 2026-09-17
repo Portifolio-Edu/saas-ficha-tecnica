@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ficha/Card";
-import { C, inputStyle, nums, shadow } from "@/components/ficha/tema";
+import { inputStyle, nums, shadow } from "@/components/ficha/tema";
 import { NovaProducaoForm } from "@/components/producoes/NovaProducaoForm";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
@@ -163,7 +163,7 @@ export function ProducoesClient({
   return (
     <div className="max-w-5xl space-y-6">
       {erroAcao && (
-        <div className="text-[12.5px] rounded-lg px-3.5 py-2 flex items-center justify-between" style={{ background: C.dangerSoft, color: C.danger }}>
+        <div className="text-[12.5px] rounded-lg px-3.5 py-2 flex items-center justify-between" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
           {erroAcao}
           <button onClick={() => setErroAcao(null)} className="font-medium ml-3">
             fechar
@@ -175,17 +175,17 @@ export function ProducoesClient({
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-[14px] font-semibold">Quadro de produção</h2>
           <div className="flex items-center gap-2">
-            <span className="text-[11.5px]" style={{ color: C.faint }}>Turno</span>
+            <span className="text-[11.5px]" style={{ color: "var(--faint)" }}>Turno</span>
             <select value={turnoId ?? ""} onChange={(e) => setTurnoId(e.target.value || null)} className="text-[12px] px-2 py-1 rounded-md" style={inputStyle}>
               {turnos.map((t) => (
                 <option key={t.id} value={t.id}>{t.nome}{t.horario ? ` (${t.horario})` : ""}</option>
               ))}
             </select>
-            <span className="text-[11.5px]" style={{ color: C.faint }}>chefe</span>
+            <span className="text-[11.5px]" style={{ color: "var(--faint)" }}>chefe</span>
             <input value={chefeTurno} onChange={(e) => setChefeTurno(e.target.value)} placeholder="nome" className="text-[12px] px-2 py-1 rounded-md w-24" style={inputStyle} />
           </div>
         </div>
-        <p className="text-[12px] mb-3" style={{ color: C.sub }}>A cozinha move o lote de coluna conforme trabalha. Cada card carrega o número do lote, então dá pra rastrear depois o que saiu de onde.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>A cozinha move o lote de coluna conforme trabalha. Cada card carrega o número do lote, então dá pra rastrear depois o que saiu de onde.</p>
         <div className="grid grid-cols-4 gap-3">
           {colunas.map((col) => {
             const cardsProducao = producoes.filter((p) => p.status === col.id);
@@ -199,9 +199,9 @@ export function ProducoesClient({
                 key={col.id}
                 className="rounded-xl p-3 transition-colors"
                 style={{
-                  background: emHoverValido ? C.accentSoft : C.bg,
-                  border: `1.5px dashed ${emHoverValido ? C.accent : emHoverInvalido ? C.danger : "transparent"}`,
-                  outline: `1px solid ${emHoverValido || emHoverInvalido ? "transparent" : C.border}`,
+                  background: emHoverValido ? "var(--accent-soft)" : "var(--bg)",
+                  border: `1.5px dashed ${emHoverValido ? "var(--accent)" : emHoverInvalido ? "var(--danger)" : "transparent"}`,
+                  outline: `1px solid ${emHoverValido || emHoverInvalido ? "transparent" : "var(--border)"}`,
                   outlineOffset: -1,
                 }}
                 onDragOver={(e) => {
@@ -218,13 +218,13 @@ export function ProducoesClient({
                 }}
               >
                 <div className="flex items-baseline justify-between mb-0.5">
-                  <span className="text-[12.5px] font-semibold" style={{ color: col.id === "perda" && contagem > 0 ? C.danger : C.text }}>{col.titulo}</span>
-                  <span className="text-[12px] font-semibold" style={{ ...nums, color: col.id === "perda" && contagem > 0 ? C.danger : C.sub }}>{contagem}</span>
+                  <span className="text-[12.5px] font-semibold" style={{ color: col.id === "perda" && contagem > 0 ? "var(--danger)" : "var(--text)" }}>{col.titulo}</span>
+                  <span className="text-[12px] font-semibold" style={{ ...nums, color: col.id === "perda" && contagem > 0 ? "var(--danger)" : "var(--sub)" }}>{contagem}</span>
                 </div>
-                <div className="text-[10.5px] mb-2.5" style={{ color: C.faint }}>{col.desc}</div>
+                <div className="text-[10.5px] mb-2.5" style={{ color: "var(--faint)" }}>{col.desc}</div>
                 <div className="space-y-2">
                   {contagem === 0 && (
-                    <div className="text-[11px] py-2" style={{ color: podeSoltarAqui ? C.accent : C.faint }}>
+                    <div className="text-[11px] py-2" style={{ color: podeSoltarAqui ? "var(--accent)" : "var(--faint)" }}>
                       {podeSoltarAqui ? "Solte aqui" : "Nada aqui."}
                     </div>
                   )}
@@ -243,16 +243,16 @@ export function ProducoesClient({
                           setColunaAlvo(null);
                         }}
                         className="rounded-lg p-2.5 ftv-panel cursor-grab active:cursor-grabbing"
-                        style={{ border: `1px solid ${C.border}`, opacity: loteArrastando?.item === d ? 0.4 : 1 }}
+                        style={{ border: `1px solid ${"var(--border)"}`, opacity: loteArrastando?.item === d ? 0.4 : 1 }}
                       >
                         <div className="text-[12px] font-medium leading-tight">{d.nome}</div>
-                        <div className="text-[10.5px] mt-1" style={{ color: C.sub }}>{d.rendimentoLabel}</div>
+                        <div className="text-[10.5px] mt-1" style={{ color: "var(--sub)" }}>{d.rendimentoLabel}</div>
                         <div className="text-[10.5px] mt-1.5 flex items-baseline gap-1">
-                          <span className="font-semibold" style={{ ...nums, color: d.lotes <= 2 ? C.danger : C.text, fontSize: 13 }}>{d.lotes}</span>
-                          <span style={{ color: C.sub }}>lote{d.lotes > 1 ? "s" : ""} possível{d.lotes > 1 ? "eis" : ""}</span>
+                          <span className="font-semibold" style={{ ...nums, color: d.lotes <= 2 ? "var(--danger)" : "var(--text)", fontSize: 13 }}>{d.lotes}</span>
+                          <span style={{ color: "var(--sub)" }}>lote{d.lotes > 1 ? "s" : ""} possível{d.lotes > 1 ? "eis" : ""}</span>
                         </div>
-                        {d.gargalo && <div className="text-[10px] mt-1" style={{ color: C.faint }}>limite: {d.gargalo}</div>}
-                        <button onClick={() => iniciarProducao(d)} className="mt-2 w-full text-[11px] font-medium py-1.5 rounded-md" style={{ background: C.text, color: "#fff" }}>
+                        {d.gargalo && <div className="text-[10px] mt-1" style={{ color: "var(--faint)" }}>limite: {d.gargalo}</div>}
+                        <button onClick={() => iniciarProducao(d)} className="mt-2 w-full text-[11px] font-medium py-1.5 rounded-md" style={{ background: "var(--text)", color: "#fff" }}>
                           Iniciar produção
                         </button>
                       </div>
@@ -272,26 +272,26 @@ export function ProducoesClient({
                           setColunaAlvo(null);
                         }}
                         className={col.id !== "perda" ? "rounded-lg p-2.5 ftv-panel cursor-grab active:cursor-grabbing" : "rounded-lg p-2.5 ftv-panel"}
-                        style={{ border: `1px solid ${col.id === "perda" ? C.dangerSoft : C.border}`, opacity: loteArrastando?.item === pr ? 0.4 : 1 }}
+                        style={{ border: `1px solid ${col.id === "perda" ? "var(--danger-soft)" : "var(--border)"}`, opacity: loteArrastando?.item === pr ? 0.4 : 1 }}
                       >
-                        <div className="text-[10.5px] font-semibold" style={{ ...nums, color: C.sub }}>{pr.lote}</div>
+                        <div className="text-[10.5px] font-semibold" style={{ ...nums, color: "var(--sub)" }}>{pr.lote}</div>
                         <div className="text-[12px] font-medium leading-tight mt-0.5">{pr.nomeReceita}</div>
-                        <div className="text-[10.5px] mt-1" style={{ ...nums, color: C.sub }}>{pr.quantidade} {pr.unidadeRendimento} · {pr.responsavel}</div>
-                        <div className="text-[10px] mt-1 inline-block px-1.5 py-0.5 rounded" style={{ background: C.bg, color: C.sub }}>
+                        <div className="text-[10.5px] mt-1" style={{ ...nums, color: "var(--sub)" }}>{pr.quantidade} {pr.unidadeRendimento} · {pr.responsavel}</div>
+                        <div className="text-[10px] mt-1 inline-block px-1.5 py-0.5 rounded" style={{ background: "var(--bg)", color: "var(--sub)" }}>
                           {pr.nomeTurno ?? "—"} · chefe {pr.chefeTurno ?? "—"}
                         </div>
-                        {pr.validade && <div className="text-[10px] mt-0.5" style={{ color: C.faint }}>validade {pr.validade}</div>}
-                        {pr.motivoPerda && <div className="text-[10.5px] mt-1.5" style={{ color: C.danger }}>{pr.motivoPerda}</div>}
+                        {pr.validade && <div className="text-[10px] mt-0.5" style={{ color: "var(--faint)" }}>validade {pr.validade}</div>}
+                        {pr.motivoPerda && <div className="text-[10.5px] mt-1.5" style={{ color: "var(--danger)" }}>{pr.motivoPerda}</div>}
 
                         {col.id === "em_producao" && (
                           <div className="flex gap-1.5 mt-2">
-                            <button onClick={() => executarAcao(acaoAtualizarStatusProducao(pr.id, "produzido"))} className="flex-1 text-[11px] font-medium py-1.5 rounded-md" style={{ background: C.text, color: "#fff" }}>
+                            <button onClick={() => executarAcao(acaoAtualizarStatusProducao(pr.id, "produzido"))} className="flex-1 text-[11px] font-medium py-1.5 rounded-md" style={{ background: "var(--text)", color: "#fff" }}>
                               Concluir
                             </button>
                             <button
                               onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
                               className="text-[11px] font-medium py-1.5 px-2 rounded-md"
-                              style={{ border: `1px solid ${C.borderStrong}`, color: C.danger }}
+                              style={{ border: `1px solid ${"var(--border-strong)"}`, color: "var(--danger)" }}
                             >
                               Perda
                             </button>
@@ -302,7 +302,7 @@ export function ProducoesClient({
                           <button
                             onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
                             className="mt-2 w-full text-[11px] font-medium py-1.5 rounded-md"
-                            style={{ border: `1px solid ${C.borderStrong}`, color: C.danger }}
+                            style={{ border: `1px solid ${"var(--border-strong)"}`, color: "var(--danger)" }}
                           >
                             Registrar perda
                           </button>
@@ -322,12 +322,12 @@ export function ProducoesClient({
           <button
             onClick={() => setShowNovaProducao(!showNovaProducao)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovaProducao ? C.bg : C.text, color: showNovaProducao ? C.text : "#fff", border: `1px solid ${showNovaProducao ? C.borderStrong : C.text}` }}
+            style={{ background: showNovaProducao ? "var(--bg)" : "var(--text)", color: showNovaProducao ? "var(--text)" : "#fff", border: `1px solid ${showNovaProducao ? "var(--border-strong)" : "var(--text)"}` }}
           >
             {showNovaProducao ? "Fechar" : "+ Registrar produção"}
           </button>
         </div>
-        <p className="text-[12px] mb-3" style={{ color: C.sub }}>Detalhamento em porções por prato, com o insumo que vai faltar primeiro. O quadro acima mostra a mesma coisa em lotes.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Detalhamento em porções por prato, com o insumo que vai faltar primeiro. O quadro acima mostra a mesma coisa em lotes.</p>
 
         {showNovaProducao && (
           <Card className="mb-3">
@@ -345,7 +345,7 @@ export function ProducoesClient({
         <Card>
           <table className="w-full text-[12.5px]">
             <thead>
-              <tr style={{ color: C.faint }} className="text-left text-[10.5px] uppercase tracking-wide">
+              <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                 <th className="py-2.5 px-5 font-medium">Prato</th>
                 <th className="py-2.5 px-3 font-medium text-right">Rende por receita</th>
                 <th className="py-2.5 px-3 font-medium text-right">Ainda dá pra fazer</th>
@@ -354,21 +354,21 @@ export function ProducoesClient({
             </thead>
             <tbody>
               {capacidadePratos.map((p) => (
-                <tr key={p.receita.id} style={{ borderTop: `1px solid ${C.border}` }}>
+                <tr key={p.receita.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                   <td className="py-2.5 px-5 font-medium">{p.receita.nomePrato}</td>
                   <td className="py-2.5 px-3 text-right" style={nums}>{p.receita.rendimento} porç{p.receita.rendimento > 1 ? "ões" : "ão"}</td>
-                  <td className="py-2.5 px-3 text-right font-semibold" style={{ ...nums, color: p.porcoesPossiveis !== null && p.porcoesPossiveis < 10 ? C.danger : C.text }}>
-                    {p.porcoesPossiveis === null ? <span style={{ color: C.faint, fontWeight: 400 }}>sem estoque rastreado</span> : `${p.porcoesPossiveis} porções`}
+                  <td className="py-2.5 px-3 text-right font-semibold" style={{ ...nums, color: p.porcoesPossiveis !== null && p.porcoesPossiveis < 10 ? "var(--danger)" : "var(--text)" }}>
+                    {p.porcoesPossiveis === null ? <span style={{ color: "var(--faint)", fontWeight: 400 }}>sem estoque rastreado</span> : `${p.porcoesPossiveis} porções`}
                   </td>
-                  <td className="py-2.5 px-5" style={{ color: C.sub }}>
+                  <td className="py-2.5 px-5" style={{ color: "var(--sub)" }}>
                     {p.nomeGargalo ?? "—"}
-                    {p.semRastreio > 0 && <span style={{ color: C.faint }}> · {p.semRastreio} insumo{p.semRastreio > 1 ? "s" : ""} fora do cálculo</span>}
+                    {p.semRastreio > 0 && <span style={{ color: "var(--faint)" }}> · {p.semRastreio} insumo{p.semRastreio > 1 ? "s" : ""} fora do cálculo</span>}
                   </td>
                 </tr>
               ))}
               {capacidadePratos.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-6 px-5 text-center" style={{ color: C.faint }}>
+                  <td colSpan={4} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>
                     Nenhum prato final cadastrado ainda.
                   </td>
                 </tr>
@@ -384,19 +384,19 @@ export function ProducoesClient({
           style={{ background: "rgba(13,13,15,0.45)", zIndex: 50 }}
           onClick={() => setModalPerda(null)}
         >
-          <div className="rounded-xl p-5 w-full max-w-sm ftv-panel" style={{ background: C.panel, boxShadow: shadow }} onClick={(e) => e.stopPropagation()}>
+          <div className="rounded-xl p-5 w-full max-w-sm ftv-panel" style={{ background: "var(--panel)", boxShadow: shadow }} onClick={(e) => e.stopPropagation()}>
             <h3 className="text-[14px] font-semibold mb-1">Registrar perda</h3>
-            <p className="text-[12px] mb-3" style={{ color: C.sub }}>O que aconteceu com esse lote? O motivo fica registrado pra investigar depois — perda sem motivo não serve pra nada.</p>
+            <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>O que aconteceu com esse lote? O motivo fica registrado pra investigar depois — perda sem motivo não serve pra nada.</p>
             <textarea
               autoFocus
               value={modalPerda.motivo}
               onChange={(e) => setModalPerda({ ...modalPerda, motivo: e.target.value })}
               placeholder="Ex: esqueceu fora da câmara a noite toda, queimou na chapa, validade vencida..."
               className="text-[12.5px] px-2.5 py-2 rounded-md w-full mb-3"
-              style={{ border: `1px solid ${C.borderStrong}`, background: C.panel, minHeight: 84 }}
+              style={{ border: `1px solid ${"var(--border-strong)"}`, background: "var(--panel)", minHeight: 84 }}
             />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setModalPerda(null)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+              <button onClick={() => setModalPerda(null)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
                 Cancelar
               </button>
               <button
@@ -407,7 +407,7 @@ export function ProducoesClient({
                 }}
                 disabled={!modalPerda.motivo.trim()}
                 className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
-                style={{ background: C.danger, color: "#fff", opacity: modalPerda.motivo.trim() ? 1 : 0.5 }}
+                style={{ background: "var(--danger)", color: "#fff", opacity: modalPerda.motivo.trim() ? 1 : 0.5 }}
               >
                 Registrar perda
               </button>

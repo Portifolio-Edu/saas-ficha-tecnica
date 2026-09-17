@@ -1,4 +1,4 @@
-// Dados fictícios para o modo demo (/preview-tmp). Restaurante inventado:
+// Dados fictícios para o modo demo (/preview). Restaurante inventado:
 // "Cantina Bella Notte", uma pizzeria/cantina italiana. Todos os IDs,
 // referências cruzadas (receita -> insumo/sub-receita, produção -> receita,
 // processamento -> insumo proteico, fechamento -> receita) são consistentes
@@ -6,7 +6,7 @@
 // produzam resultados coerentes e não degenerados.
 //
 // Este arquivo é puramente de dados (sem "use client") e é consumido pelas
-// páginas server component em src/app/preview-tmp/<dominio>/page.tsx, que
+// páginas server component em src/app/preview/<dominio>/page.tsx, que
 // passam essas listas como props para os *Client.tsx reais de produção.
 
 import type { Categoria, Insumo } from "@/lib/dominio/insumo";

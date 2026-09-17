@@ -5,7 +5,7 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, Tooltip, 
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { Kpi } from "@/components/ficha/Kpi";
-import { C, nums } from "@/components/ficha/tema";
+import { nums } from "@/components/ficha/tema";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
 import { formatBRLEixo, formatPercent, formatPercentEixo } from "@/components/charts/format";
@@ -229,7 +229,7 @@ export function RelatoriosClient({
 
   return (
     <div className="max-w-5xl space-y-6">
-      <p className="text-[12.5px]" style={{ color: C.sub }}>Consolidado do que já está cadastrado nas outras telas -- ninguém digita nada duas vezes aqui.</p>
+      <p className="text-[12.5px]" style={{ color: "var(--sub)" }}>Consolidado do que já está cadastrado nas outras telas -- ninguém digita nada duas vezes aqui.</p>
 
       <div>
         <h2 className="text-[14px] font-semibold mb-3">Onde o dinheiro está vazando</h2>
@@ -243,7 +243,7 @@ export function RelatoriosClient({
       <div className="grid grid-cols-2 gap-3">
         <Card className="p-5">
           <h3 className="text-[13px] font-semibold mb-1">Perdas de produção por turno</h3>
-          <p className="text-[11.5px] mb-3" style={{ color: C.sub }}>Custo dos lotes descartados, separado pelo turno em que foram produzidos.</p>
+          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Custo dos lotes descartados, separado pelo turno em que foram produzidos.</p>
           <ChartFrame
             vazio={perdasPorTurno.length === 0}
             tituloVazio="Nenhuma perda de produção registrada ainda."
@@ -254,7 +254,7 @@ export function RelatoriosClient({
               <XAxis dataKey="turno" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
               <YAxis tick={axisTickStyle} tickLine={false} axisLine={false} tickFormatter={formatBRLEixo} />
               <Tooltip
-                cursor={{ fill: C.bg }}
+                cursor={{ fill: "var(--bg)" }}
                 content={({ payload }) => {
                   if (!payload || !payload.length) return null;
                   const d = payload[0].payload as { turno: string; custo: number; lotes: number };
@@ -271,9 +271,9 @@ export function RelatoriosClient({
               />
               <Bar dataKey="custo" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={CHART_ANIMATION_DURATION} animationEasing={CHART_ANIMATION_EASING}>
                 {perdasPorTurno.map((d, i) => (
-                  <Cell key={i} fill={d.custo > 0 ? C.danger : C.border} />
+                  <Cell key={i} fill={d.custo > 0 ? "var(--danger)" : "var(--border)"} />
                 ))}
-                <LabelList dataKey="custo" position="top" formatter={(v: string | number | boolean | null | undefined) => formatBRLEixo(Number(v))} style={{ fill: C.text, fontSize: 11, fontWeight: 600 }} />
+                <LabelList dataKey="custo" position="top" formatter={(v: string | number | boolean | null | undefined) => formatBRLEixo(Number(v))} style={{ fill: "var(--text)", fontSize: 11, fontWeight: 600 }} />
               </Bar>
             </BarChart>
           </ChartFrame>
@@ -281,7 +281,7 @@ export function RelatoriosClient({
 
         <Card className="p-5">
           <h3 className="text-[13px] font-semibold mb-1">Margem por prato</h3>
-          <p className="text-[11.5px] mb-3" style={{ color: C.sub }}>Vermelho está abaixo do alvo daquele prato.</p>
+          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Vermelho está abaixo do alvo daquele prato.</p>
           <ChartFrame
             vazio={margemPorPrato.length === 0}
             tituloVazio="Nenhum prato com preço de venda cadastrado ainda."
@@ -290,10 +290,10 @@ export function RelatoriosClient({
             <BarChart data={margemPorPrato} layout="vertical" margin={CHART_MARGIN_HORIZONTAL_BARS}>
               <CartesianGrid {...chartGridPropsHorizontalBars} />
               <XAxis type="number" domain={[0, 100]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} tickFormatter={formatPercentEixo} />
-              <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 10, fill: C.sub }} tickLine={false} axisLine={false} />
-              <ReferenceLine x={margemPorPrato[0]?.margemAlvo ?? 65} stroke={C.borderStrong} strokeDasharray="4 4" />
+              <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 10, fill: "var(--sub)" }} tickLine={false} axisLine={false} />
+              <ReferenceLine x={margemPorPrato[0]?.margemAlvo ?? 65} stroke={"var(--border-strong)"} strokeDasharray="4 4" />
               <Tooltip
-                cursor={{ fill: C.bg }}
+                cursor={{ fill: "var(--bg)" }}
                 content={({ payload }) => {
                   if (!payload || !payload.length) return null;
                   const d = payload[0].payload as { nome: string; margemPct: number; custoPorPorcao: number; margemAlvo: number };
@@ -310,9 +310,9 @@ export function RelatoriosClient({
               />
               <Bar dataKey="margemPct" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={CHART_ANIMATION_DURATION} animationEasing={CHART_ANIMATION_EASING}>
                 {margemPorPrato.map((p, i) => (
-                  <Cell key={i} fill={p.margemPct < p.margemAlvo ? C.danger : C.text} />
+                  <Cell key={i} fill={p.margemPct < p.margemAlvo ? "var(--danger)" : "var(--text)"} />
                 ))}
-                <LabelList dataKey="margemPct" position="right" formatter={(v: string | number | boolean | null | undefined) => formatPercent(Number(v))} style={{ fill: C.text, fontSize: 11, fontWeight: 600 }} />
+                <LabelList dataKey="margemPct" position="right" formatter={(v: string | number | boolean | null | undefined) => formatPercent(Number(v))} style={{ fill: "var(--text)", fontSize: 11, fontWeight: 600 }} />
               </Bar>
             </BarChart>
           </ChartFrame>
@@ -321,11 +321,11 @@ export function RelatoriosClient({
 
       <div>
         <h2 className="text-[14px] font-semibold mb-1">Desempenho por responsável</h2>
-        <p className="text-[12px] mb-3" style={{ color: C.sub }}>Cruzamento do que cada pessoa registrou nas outras telas. Serve pra treinar quem precisa, não pra punir: descarte alto pode ser técnica de corte, mas também pode ser matéria-prima ruim do fornecedor.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Cruzamento do que cada pessoa registrou nas outras telas. Serve pra treinar quem precisa, não pra punir: descarte alto pode ser técnica de corte, mas também pode ser matéria-prima ruim do fornecedor.</p>
         <Card>
           <table className="w-full text-[12.5px]">
             <thead>
-              <tr style={{ color: C.faint }} className="text-left text-[10.5px] uppercase tracking-wide">
+              <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                 <th className="py-2.5 px-5 font-medium">Responsável</th>
                 <th className="py-2.5 px-3 font-medium text-right">Lotes de proteína</th>
                 <th className="py-2.5 px-3 font-medium text-right">Descarte médio</th>
@@ -335,19 +335,19 @@ export function RelatoriosClient({
             </thead>
             <tbody>
               {desempenhoPorPessoa.map((d) => (
-                <tr key={d.nome} style={{ borderTop: `1px solid ${C.border}` }}>
+                <tr key={d.nome} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                   <td className="py-2.5 px-5 font-medium">{d.nome}</td>
                   <td className="py-2.5 px-3 text-right" style={nums}>{d.lotesProteina || "—"}</td>
-                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: d.descarteMedio !== null && d.descarteMedio > 10 ? C.danger : C.text }}>
+                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: d.descarteMedio !== null && d.descarteMedio > 10 ? "var(--danger)" : "var(--text)" }}>
                     {d.descarteMedio !== null ? `${d.descarteMedio.toFixed(1)}%` : "—"}
                   </td>
-                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: d.perdasTurno > 0 ? C.danger : C.faint }}>{d.perdasTurno || "—"}</td>
-                  <td className="py-2.5 px-5 text-right" style={{ ...nums, color: d.tempForaFaixa > 0 ? C.danger : C.faint }}>{d.tempForaFaixa || "—"}</td>
+                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: d.perdasTurno > 0 ? "var(--danger)" : "var(--faint)" }}>{d.perdasTurno || "—"}</td>
+                  <td className="py-2.5 px-5 text-right" style={{ ...nums, color: d.tempForaFaixa > 0 ? "var(--danger)" : "var(--faint)" }}>{d.tempForaFaixa || "—"}</td>
                 </tr>
               ))}
               {desempenhoPorPessoa.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 px-5 text-center" style={{ color: C.faint }}>Nenhum responsável registrado ainda nas outras telas.</td>
+                  <td colSpan={5} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>Nenhum responsável registrado ainda nas outras telas.</td>
                 </tr>
               )}
             </tbody>
@@ -357,19 +357,19 @@ export function RelatoriosClient({
 
       <div>
         <h2 className="text-[14px] font-semibold mb-1">Pendências que precisam de decisão</h2>
-        <p className="text-[12px] mb-3" style={{ color: C.sub }}>{alertas.length} item{alertas.length !== 1 ? "s" : ""} aberto{alertas.length !== 1 ? "s" : ""} agora.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>{alertas.length} item{alertas.length !== 1 ? "s" : ""} aberto{alertas.length !== 1 ? "s" : ""} agora.</p>
         <Card>
           <div className="px-5 py-1">
             {alertas.map((a, i) => (
-              <div key={i} className="flex items-start justify-between gap-4 py-2.5" style={{ borderTop: i ? `1px solid ${C.border}` : "none" }}>
+              <div key={i} className="flex items-start justify-between gap-4 py-2.5" style={{ borderTop: i ? `1px solid ${"var(--border)"}` : "none" }}>
                 <div className="flex gap-2.5">
                   <Badge acao>{a.tipo}</Badge>
                   <div className="text-[12.5px]">{a.texto}</div>
                 </div>
-                <div className="text-[11.5px] text-right shrink-0" style={{ color: C.sub }}>{a.acao}</div>
+                <div className="text-[11.5px] text-right shrink-0" style={{ color: "var(--sub)" }}>{a.acao}</div>
               </div>
             ))}
-            {alertas.length === 0 && <div className="text-[12.5px] py-4" style={{ color: C.sub }}>Nada pendente no momento.</div>}
+            {alertas.length === 0 && <div className="text-[12.5px] py-4" style={{ color: "var(--sub)" }}>Nada pendente no momento.</div>}
           </div>
         </Card>
       </div>

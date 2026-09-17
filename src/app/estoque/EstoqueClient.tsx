@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
-import { C, inputStyle, nums } from "@/components/ficha/tema";
+import { inputStyle, nums } from "@/components/ficha/tema";
 import { NovoEstoqueForm } from "@/components/estoque/NovoEstoqueForm";
 import { EditarEstoqueForm } from "@/components/estoque/EditarEstoqueForm";
 import { NovaMovimentacaoForm } from "@/components/estoque/NovaMovimentacaoForm";
@@ -55,12 +55,12 @@ export function EstoqueClient({
           <button
             onClick={() => setShowNovoEstoque(!showNovoEstoque)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoEstoque ? C.bg : C.text, color: showNovoEstoque ? C.text : "#fff", border: `1px solid ${showNovoEstoque ? C.borderStrong : C.text}` }}
+            style={{ background: showNovoEstoque ? "var(--bg)" : "var(--text)", color: showNovoEstoque ? "var(--text)" : "#fff", border: `1px solid ${showNovoEstoque ? "var(--border-strong)" : "var(--text)"}` }}
           >
             {showNovoEstoque ? "Fechar" : "+ Rastrear insumo"}
           </button>
         </div>
-        <p className="text-[12px] mb-3" style={{ color: C.sub }}>Só aparece quem tem movimentação lançada. Insumo sem rastreio não vira zero, fica de fora do cálculo.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Só aparece quem tem movimentação lançada. Insumo sem rastreio não vira zero, fica de fora do cálculo.</p>
 
         {showNovoEstoque && (
           <Card className="mb-3">
@@ -79,7 +79,7 @@ export function EstoqueClient({
         <Card>
           <table className="w-full text-[12.5px]">
             <thead>
-              <tr style={{ color: C.faint }} className="text-left text-[10.5px] uppercase tracking-wide">
+              <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                 <th className="py-2.5 px-5 font-medium">Insumo</th>
                 <th className="py-2.5 px-3 font-medium">Categoria</th>
                 <th className="py-2.5 px-3 font-medium text-right">Saldo atual</th>
@@ -95,15 +95,15 @@ export function EstoqueClient({
                   <>
                     <tr
                       key={e.insumoId}
-                      style={{ borderTop: `1px solid ${C.border}`, cursor: "pointer" }}
+                      style={{ borderTop: `1px solid ${"var(--border)"}`, cursor: "pointer" }}
                       onClick={() => setEditandoInsumoId(editandoEsteAqui ? null : e.insumoId)}
                     >
                       <td className="py-2.5 px-5 font-medium">{e.nome}</td>
-                      <td className="py-2.5 px-3" style={{ color: C.sub }}>{CATEGORIAS.find((c) => c.id === e.categoria)?.label ?? e.categoria}</td>
-                      <td className="py-2.5 px-3 text-right font-semibold" style={{ ...nums, color: abaixo ? C.danger : C.text }}>
+                      <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === e.categoria)?.label ?? e.categoria}</td>
+                      <td className="py-2.5 px-3 text-right font-semibold" style={{ ...nums, color: abaixo ? "var(--danger)" : "var(--text)" }}>
                         {e.saldoAtual}{e.unidadeMedida}{abaixo && " · repor"}
                       </td>
-                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: C.sub }}>{e.estoqueMinimo}{e.unidadeMedida}</td>
+                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{e.estoqueMinimo}{e.unidadeMedida}</td>
                       <td className="py-2.5 px-5 text-right" style={nums}>R$ {(e.saldoAtual * e.precoUnitario).toFixed(2)}</td>
                     </tr>
                     {editandoEsteAqui && (
@@ -114,7 +114,7 @@ export function EstoqueClient({
               })}
               {estoqueFiltrado.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 px-5 text-center" style={{ color: C.faint }}>
+                  <td colSpan={5} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>
                     Nenhum insumo rastreado ainda.
                   </td>
                 </tr>
@@ -130,12 +130,12 @@ export function EstoqueClient({
           <button
             onClick={() => setShowNovaMovimentacao(!showNovaMovimentacao)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovaMovimentacao ? C.bg : C.text, color: showNovaMovimentacao ? C.text : "#fff", border: `1px solid ${showNovaMovimentacao ? C.borderStrong : C.text}` }}
+            style={{ background: showNovaMovimentacao ? "var(--bg)" : "var(--text)", color: showNovaMovimentacao ? "var(--text)" : "#fff", border: `1px solid ${showNovaMovimentacao ? "var(--border-strong)" : "var(--text)"}` }}
           >
             {showNovaMovimentacao ? "Fechar" : "+ Registrar movimentação"}
           </button>
         </div>
-        <p className="text-[12px] mb-3" style={{ color: C.sub }}>Compra entra, venda e perda saem. Ajuste manual serve pra corrigir contagem ou registrar desperdício.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Compra entra, venda e perda saem. Ajuste manual serve pra corrigir contagem ou registrar desperdício.</p>
 
         {showNovaMovimentacao && (
           <Card className="mb-3">
@@ -147,15 +147,15 @@ export function EstoqueClient({
           <div className="px-5 py-1">
             {movimentacoes.map((m, idx) => {
               const label = { entrada: "Entrada", saida_venda: "Saída (venda)", ajuste: "Ajuste" }[m.tipo];
-              const cor = m.tipo === "entrada" ? C.text : m.tipo === "ajuste" ? C.danger : C.sub;
+              const cor = m.tipo === "entrada" ? "var(--text)" : m.tipo === "ajuste" ? "var(--danger)" : "var(--sub)";
               return (
-                <div key={m.id} className="flex items-center justify-between text-[12.5px] py-2.5" style={{ borderTop: idx ? `1px solid ${C.border}` : "none" }}>
+                <div key={m.id} className="flex items-center justify-between text-[12.5px] py-2.5" style={{ borderTop: idx ? `1px solid ${"var(--border)"}` : "none" }}>
                   <div>
                     <span className="font-medium">{m.nomeInsumo}</span>
-                    {m.origem && <span style={{ color: C.faint }}> · {m.origem}</span>}
+                    {m.origem && <span style={{ color: "var(--faint)" }}> · {m.origem}</span>}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span style={{ color: C.faint }}>{formatarData(m.criadoEm)}</span>
+                    <span style={{ color: "var(--faint)" }}>{formatarData(m.criadoEm)}</span>
                     <span style={{ ...nums, color: cor }}>{m.tipo === "entrada" ? "+" : "-"}{m.quantidade}{m.unidadeMedida}</span>
                     <Badge acao={m.tipo === "ajuste"}>{label}</Badge>
                   </div>
@@ -163,7 +163,7 @@ export function EstoqueClient({
               );
             })}
             {movimentacoes.length === 0 && (
-              <div className="py-6 text-center text-[12.5px]" style={{ color: C.faint }}>
+              <div className="py-6 text-center text-[12.5px]" style={{ color: "var(--faint)" }}>
                 Nenhuma movimentação registrada ainda.
               </div>
             )}
@@ -180,12 +180,12 @@ export function EstoqueClient({
               setShowNovoFornecedor(!showNovoFornecedor);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoFornecedor ? C.bg : C.text, color: showNovoFornecedor ? C.text : "#fff", border: `1px solid ${showNovoFornecedor ? C.borderStrong : C.text}` }}
+            style={{ background: showNovoFornecedor ? "var(--bg)" : "var(--text)", color: showNovoFornecedor ? "var(--text)" : "#fff", border: `1px solid ${showNovoFornecedor ? "var(--border-strong)" : "var(--text)"}` }}
           >
             {showNovoFornecedor ? "Fechar" : "+ Novo fornecedor"}
           </button>
         </div>
-        <p className="text-[12px] mb-3" style={{ color: C.sub }}>Contato fica no sistema, não na cabeça de quem faz compra. Se o responsável sai, quem entra assume sem perder telefone, janela de entrega nem prazo de urgência.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Contato fica no sistema, não na cabeça de quem faz compra. Se o responsável sai, quem entra assume sem perder telefone, janela de entrega nem prazo de urgência.</p>
 
         {showNovoFornecedor && (
           <Card className="mb-3">
@@ -201,12 +201,12 @@ export function EstoqueClient({
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="text-[13.5px] font-semibold">{f.empresa}</div>
-                    <div className="text-[12px]" style={{ color: C.sub }}>{f.fornece}</div>
+                    <div className="text-[12px]" style={{ color: "var(--sub)" }}>{f.fornece}</div>
                   </div>
                   <div className="flex items-start gap-4">
                     <div className="text-right">
                       <div className="text-[13px] font-medium" style={nums}>{f.telefone}</div>
-                      <div className="text-[11.5px]" style={{ color: C.sub }}>{f.contato}</div>
+                      <div className="text-[11.5px]" style={{ color: "var(--sub)" }}>{f.contato}</div>
                     </div>
                     <div className="flex flex-col items-end gap-1 pt-0.5">
                       <button
@@ -215,11 +215,11 @@ export function EstoqueClient({
                           setFornecedorEditando(editandoEsteAqui ? null : f);
                         }}
                         className="text-[11.5px] font-medium"
-                        style={{ color: C.text }}
+                        style={{ color: "var(--text)" }}
                       >
                         editar
                       </button>
-                      <button onClick={() => excluirFornecedorComConfirmacao(f)} className="text-[11.5px] font-medium" style={{ color: C.danger }}>
+                      <button onClick={() => excluirFornecedorComConfirmacao(f)} className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
                         excluir
                       </button>
                     </div>
@@ -228,21 +228,21 @@ export function EstoqueClient({
                 {editandoEsteAqui ? (
                   <NovoFornecedorForm fornecedor={f} onCancel={() => setFornecedorEditando(null)} onSaved={() => setFornecedorEditando(null)} />
                 ) : (
-                  <div className="grid grid-cols-4 gap-3 text-[11.5px]" style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+                  <div className="grid grid-cols-4 gap-3 text-[11.5px]" style={{ borderTop: `1px solid ${"var(--border)"}`, paddingTop: 12 }}>
                     <div>
-                      <div style={{ color: C.faint }}>E-mail</div>
+                      <div style={{ color: "var(--faint)" }}>E-mail</div>
                       <div className="mt-0.5">{f.email || "—"}</div>
                     </div>
                     <div>
-                      <div style={{ color: C.faint }}>Dias de entrega</div>
+                      <div style={{ color: "var(--faint)" }}>Dias de entrega</div>
                       <div className="mt-0.5">{f.diasEntrega || "—"}</div>
                     </div>
                     <div>
-                      <div style={{ color: C.faint }}>Horário</div>
+                      <div style={{ color: "var(--faint)" }}>Horário</div>
                       <div className="mt-0.5">{f.horarioEntrega || "—"}</div>
                     </div>
                     <div>
-                      <div style={{ color: C.faint }}>Pedido de urgência</div>
+                      <div style={{ color: "var(--faint)" }}>Pedido de urgência</div>
                       <div className="mt-0.5">{f.prazoUrgencia || "—"}</div>
                     </div>
                   </div>
@@ -251,7 +251,7 @@ export function EstoqueClient({
             );
           })}
           {fornecedores.length === 0 && (
-            <div className="text-[12.5px] py-4" style={{ color: C.faint }}>
+            <div className="text-[12.5px] py-4" style={{ color: "var(--faint)" }}>
               Nenhum fornecedor cadastrado ainda.
             </div>
           )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, nums } from "@/components/ficha/tema";
+import { nums } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
@@ -28,17 +28,17 @@ export function InsumoNutricaoForm({ insumo, dados, onCancel, onSaved }: { insum
   };
 
   return (
-    <div className="px-4 py-3 rounded-lg" style={{ background: C.bg, border: `1px solid ${C.border}` }}>
+    <div className="px-4 py-3 rounded-lg" style={{ background: "var(--bg)", border: `1px solid ${"var(--border)"}` }}>
       <div className="flex items-center gap-2 mb-2">
         <span className="text-[12px] font-medium flex-1">{insumo.nome}</span>
-        <span className="text-[11px]" style={{ color: C.faint }}>valores por</span>
+        <span className="text-[11px]" style={{ color: "var(--faint)" }}>valores por</span>
         <Input type="number" value={baseGramas} onChange={(e) => setBaseGramas(e.target.value)} className="text-[12px] px-2 py-1 w-16 text-right" style={nums} />
-        <span className="text-[11px]" style={{ color: C.faint }}>g/mL</span>
+        <span className="text-[11px]" style={{ color: "var(--faint)" }}>g/mL</span>
       </div>
       <div className="grid grid-cols-2 gap-2 mb-3">
         {CAMPOS_NUTRICIONAIS.map((c) => (
           <div key={c} className="flex items-center gap-2">
-            <span className="text-[11.5px] flex-1" style={{ color: C.sub }}>{LABEL_CAMPO[c]}</span>
+            <span className="text-[11.5px] flex-1" style={{ color: "var(--sub)" }}>{LABEL_CAMPO[c]}</span>
             <Input
               type="number"
               value={valores[c]}
@@ -51,10 +51,10 @@ export function InsumoNutricaoForm({ insumo, dados, onCancel, onSaved }: { insum
       </div>
       <ErroBanner erro={erro} className="mb-2" />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Salvar"}
         </button>
-        <button onClick={onCancel} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={onCancel} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           Cancelar
         </button>
       </div>

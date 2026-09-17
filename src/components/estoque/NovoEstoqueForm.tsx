@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, inputStyle } from "@/components/ficha/tema";
+import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
@@ -17,8 +17,8 @@ export function NovoEstoqueForm({ insumosDisponiveis, onCancel, onSaved }: { ins
   if (insumosDisponiveis.length === 0) {
     return (
       <div className="px-5 py-4">
-        <p className="text-[12.5px] mb-3" style={{ color: C.sub }}>Todos os insumos cadastrados já têm estoque rastreado. Cadastre um insumo novo na aba Insumos primeiro.</p>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>Fechar</button>
+        <p className="text-[12.5px] mb-3" style={{ color: "var(--sub)" }}>Todos os insumos cadastrados já têm estoque rastreado. Cadastre um insumo novo na aba Insumos primeiro.</p>
+        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>Fechar</button>
       </div>
     );
   }
@@ -43,10 +43,10 @@ export function NovoEstoqueForm({ insumosDisponiveis, onCancel, onSaved }: { ins
       </div>
       <ErroBanner erro={erro} />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Adicionar ao estoque"}
         </button>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           Cancelar
         </button>
       </div>

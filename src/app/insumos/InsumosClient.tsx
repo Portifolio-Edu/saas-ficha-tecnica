@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CookingPot } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
-import { C, nums } from "@/components/ficha/tema";
+import { nums } from "@/components/ficha/tema";
 import { InsumoForm } from "@/components/insumos/InsumoForm";
 import { PreparoForm } from "@/components/insumos/PreparoForm";
 import { CATEGORIAS, type Insumo } from "@/lib/dominio/insumo";
@@ -50,7 +50,7 @@ export function InsumosClient({
   return (
     <div className="max-w-5xl space-y-6">
       <Card>
-        <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.border}` }}>
+        <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
           <h2 className="text-[13px] font-semibold">Insumos comprados</h2>
           <button
             onClick={() => {
@@ -58,7 +58,7 @@ export function InsumosClient({
               setShowNovoInsumo(!showNovoInsumo);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoInsumo ? C.bg : C.text, color: showNovoInsumo ? C.text : "#fff", border: `1px solid ${showNovoInsumo ? C.borderStrong : C.text}` }}
+            style={{ background: showNovoInsumo ? "var(--bg)" : "var(--text)", color: showNovoInsumo ? "var(--text)" : "#fff", border: `1px solid ${showNovoInsumo ? "var(--border-strong)" : "var(--text)"}` }}
           >
             {showNovoInsumo ? "Fechar" : "+ Novo insumo"}
           </button>
@@ -66,7 +66,7 @@ export function InsumosClient({
         {showNovoInsumo && <InsumoForm onCancel={() => setShowNovoInsumo(false)} onSaved={() => setShowNovoInsumo(false)} />}
         <table className="w-full text-[13px]">
           <thead>
-            <tr style={{ color: C.faint }} className="text-left text-[11px] uppercase tracking-wide">
+            <tr style={{ color: "var(--faint)" }} className="text-left text-[11px] uppercase tracking-wide">
               <th className="py-2.5 px-5 font-medium">Insumo</th>
               <th className="py-2.5 px-3 font-medium">Categoria</th>
               <th className="py-2.5 px-3 font-medium">Unidade</th>
@@ -84,16 +84,16 @@ export function InsumosClient({
               const editandoEsteAqui = insumoEditando?.id === i.id;
               return (
                 <>
-                  <tr key={i.id} style={{ borderTop: `1px solid ${C.border}` }}>
+                  <tr key={i.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                     <td className="py-2.5 px-5">{i.nome}</td>
-                    <td className="py-2.5 px-3" style={{ color: C.sub }}>{CATEGORIAS.find((c) => c.id === i.categoria)?.label ?? i.categoria}</td>
-                    <td className="py-2.5 px-3" style={{ color: C.sub }}>{i.unidadeMedida}</td>
-                    <td className="py-2.5 px-3" style={{ color: C.sub }}>{i.tamanhoEmbalagem} {i.unidadeMedida}</td>
+                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === i.categoria)?.label ?? i.categoria}</td>
+                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.unidadeMedida}</td>
+                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.tamanhoEmbalagem} {i.unidadeMedida}</td>
                     <td className="py-2.5 px-3 text-right" style={nums}>R$ {i.precoEmbalagem.toFixed(2)}</td>
                     <td className="py-2.5 px-3 text-right" style={nums}>R$ {i.precoUnitario.toFixed(2)}</td>
-                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: i.fatorCorrecao > 1 ? C.danger : C.faint }}>{i.fatorCorrecao.toFixed(2)}</td>
-                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: abaixoMinimo ? C.danger : C.text }}>
-                      {i.estoque ? `${i.estoque.saldoAtual}${i.unidadeMedida}${abaixoMinimo ? " · abaixo do mín." : ""}` : <span style={{ color: C.faint }}>não rastreado</span>}
+                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: i.fatorCorrecao > 1 ? "var(--danger)" : "var(--faint)" }}>{i.fatorCorrecao.toFixed(2)}</td>
+                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: abaixoMinimo ? "var(--danger)" : "var(--text)" }}>
+                      {i.estoque ? `${i.estoque.saldoAtual}${i.unidadeMedida}${abaixoMinimo ? " · abaixo do mín." : ""}` : <span style={{ color: "var(--faint)" }}>não rastreado</span>}
                     </td>
                     <td className="py-2.5 px-5 text-right whitespace-nowrap">
                       <button
@@ -102,11 +102,11 @@ export function InsumosClient({
                           setInsumoEditando(editandoEsteAqui ? null : i);
                         }}
                         className="text-[11.5px] font-medium mr-3"
-                        style={{ color: C.text }}
+                        style={{ color: "var(--text)" }}
                       >
                         editar
                       </button>
-                      <button onClick={() => excluirInsumoComConfirmacao(i)} className="text-[11.5px] font-medium" style={{ color: C.danger }}>
+                      <button onClick={() => excluirInsumoComConfirmacao(i)} className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
                         excluir
                       </button>
                     </td>
@@ -123,7 +123,7 @@ export function InsumosClient({
             })}
             {insumos.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-6 px-5 text-center text-[12.5px]" style={{ color: C.faint }}>
+                <td colSpan={9} className="py-6 px-5 text-center text-[12.5px]" style={{ color: "var(--faint)" }}>
                   Nenhum insumo cadastrado ainda.
                 </td>
               </tr>
@@ -141,14 +141,14 @@ export function InsumosClient({
               setShowNovoPreparo(!showNovoPreparo);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoPreparo ? C.bg : C.text, color: showNovoPreparo ? C.text : "#fff", border: `1px solid ${showNovoPreparo ? C.borderStrong : C.text}` }}
+            style={{ background: showNovoPreparo ? "var(--bg)" : "var(--text)", color: showNovoPreparo ? "var(--text)" : "#fff", border: `1px solid ${showNovoPreparo ? "var(--border-strong)" : "var(--text)"}` }}
             disabled={insumos.length === 0}
             title={insumos.length === 0 ? "Cadastre um insumo primeiro" : undefined}
           >
             {showNovoPreparo ? "Fechar" : "+ Nova receita"}
           </button>
         </div>
-        <p className="text-[12px] mb-3" style={{ color: C.sub }}>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>
           Receitas feitas na casa que viram componente de outros pratos.
         </p>
         {showNovoPreparo && (
@@ -162,14 +162,14 @@ export function InsumosClient({
             const custoUnitario = calcularCustoPorPorcao(prep.id, contexto);
             return (
               <Card key={prep.id}>
-                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
                   <div className="flex items-center gap-2">
-                    <CookingPot size={14} style={{ color: C.sub }} />
+                    <CookingPot size={14} style={{ color: "var(--sub)" }} />
                     <span className="text-[13px] font-semibold">{prep.nomePrato}</span>
                     <Badge>preparo próprio</Badge>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="text-[12px]" style={{ ...nums, color: C.sub }}>
+                    <div className="text-[12px]" style={{ ...nums, color: "var(--sub)" }}>
                       rende {prep.rendimento}{prep.unidadeRendimento} · R$ {custoUnitario.toFixed(2)}/{prep.unidadeRendimento}
                     </div>
                     <button
@@ -178,11 +178,11 @@ export function InsumosClient({
                         setPreparoEditando(editandoEsteAqui ? null : prep);
                       }}
                       className="text-[11.5px] font-medium"
-                      style={{ color: C.text }}
+                      style={{ color: "var(--text)" }}
                     >
                       editar
                     </button>
-                    <button onClick={() => excluirPreparoComConfirmacao(prep)} className="text-[11.5px] font-medium" style={{ color: C.danger }}>
+                    <button onClick={() => excluirPreparoComConfirmacao(prep)} className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
                       excluir
                     </button>
                   </div>
@@ -199,9 +199,9 @@ export function InsumosClient({
                       const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
                       const custo = pesoConvertido * fc * insumo.precoUnitario;
                       return (
-                        <div key={f.id} className="flex justify-between text-[12.5px] py-2" style={{ borderTop: `1px solid ${C.border}` }}>
+                        <div key={f.id} className="flex justify-between text-[12.5px] py-2" style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                           <span>
-                            {insumo.nome} <span style={{ color: C.faint }}>· {f.pesoLiquido}{f.unidade} · FC {fc.toFixed(2)}</span>
+                            {insumo.nome} <span style={{ color: "var(--faint)" }}>· {f.pesoLiquido}{f.unidade} · FC {fc.toFixed(2)}</span>
                           </span>
                           <span style={nums}>R$ {custo.toFixed(2)}</span>
                         </div>
@@ -213,7 +213,7 @@ export function InsumosClient({
             );
           })}
           {preparos.length === 0 && (
-            <div className="text-[12.5px] py-4" style={{ color: C.faint }}>
+            <div className="text-[12.5px] py-4" style={{ color: "var(--faint)" }}>
               Nenhum preparo próprio cadastrado ainda.
             </div>
           )}

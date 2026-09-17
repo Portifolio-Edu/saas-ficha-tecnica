@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
-import { C, nums } from "@/components/ficha/tema";
+import { nums } from "@/components/ficha/tema";
 import { ReceitaForm } from "@/components/receitas/ReceitaForm";
 import { Donut, type FatiaDonut } from "@/components/charts/Donut";
 import { CHART_MIN_HEIGHT } from "@/components/charts/theme";
@@ -135,14 +135,14 @@ export function ReceitasClient({
   return (
     <div className="max-w-5xl space-y-3">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-[12.5px]" style={{ color: C.sub }}>{receitas.length} prato{receitas.length !== 1 ? "s" : ""} cadastrado{receitas.length !== 1 ? "s" : ""}.</p>
+        <p className="text-[12.5px]" style={{ color: "var(--sub)" }}>{receitas.length} prato{receitas.length !== 1 ? "s" : ""} cadastrado{receitas.length !== 1 ? "s" : ""}.</p>
         <button
           onClick={() => {
             setEditando(null);
             setShowNova(!showNova);
           }}
           className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-          style={{ background: showNova ? C.bg : C.text, color: showNova ? C.text : "#fff", border: `1px solid ${showNova ? C.borderStrong : C.text}` }}
+          style={{ background: showNova ? "var(--bg)" : "var(--text)", color: showNova ? "var(--text)" : "#fff", border: `1px solid ${showNova ? "var(--border-strong)" : "var(--text)"}` }}
           disabled={insumos.length === 0}
           title={insumos.length === 0 ? "Cadastre um insumo primeiro" : undefined}
         >
@@ -171,19 +171,19 @@ export function ReceitasClient({
           <Card key={p.id}>
             <button className="w-full flex items-center justify-between px-5 py-4 text-left" onClick={() => setExpandido(aberto ? null : p.id)}>
               <div className="flex items-center gap-3">
-                {aberto ? <ChevronDown size={15} style={{ color: C.faint }} /> : <ChevronRight size={15} style={{ color: C.faint }} />}
+                {aberto ? <ChevronDown size={15} style={{ color: "var(--faint)" }} /> : <ChevronRight size={15} style={{ color: "var(--faint)" }} />}
                 <span className="text-[14px] font-semibold">{p.nomePrato}</span>
                 {abaixoDoAlvo && <Badge acao>margem baixa</Badge>}
               </div>
-              <div className="flex items-center gap-5 text-[12.5px]" style={{ ...nums, color: C.sub }}>
+              <div className="flex items-center gap-5 text-[12.5px]" style={{ ...nums, color: "var(--sub)" }}>
                 <span>CMV {cmvPct.toFixed(1)}%</span>
-                <span style={{ color: abaixoDoAlvo ? C.danger : C.text, fontWeight: 600 }}>margem {margemPct.toFixed(1)}%</span>
-                <span className="font-semibold" style={{ color: C.text }}>R$ {(p.precoVenda ?? 0).toFixed(2)}</span>
+                <span style={{ color: abaixoDoAlvo ? "var(--danger)" : "var(--text)", fontWeight: 600 }}>margem {margemPct.toFixed(1)}%</span>
+                <span className="font-semibold" style={{ color: "var(--text)" }}>R$ {(p.precoVenda ?? 0).toFixed(2)}</span>
               </div>
             </button>
 
             {aberto && (
-              <div className="px-5 pb-5" style={{ borderTop: `1px solid ${C.border}` }}>
+              <div className="px-5 pb-5" style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                 {editandoEsteAqui ? (
                   <ReceitaForm insumos={insumos} preparos={preparos} receita={p} onCancel={() => setEditando(null)} onSaved={() => setEditando(null)} />
                 ) : (
@@ -220,7 +220,7 @@ export function ReceitasClient({
                         <>
                           <table className="w-full text-[12.5px] mt-4 mb-4">
                             <thead>
-                              <tr style={{ color: C.faint }} className="text-left text-[10.5px] uppercase tracking-wide">
+                              <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                                 <th className="py-2 pr-3 font-medium">Insumo</th>
                                 <th className="py-2 pr-3 font-medium text-right">Peso líq.</th>
                                 <th className="py-2 pr-3 font-medium text-right">FC</th>
@@ -230,7 +230,7 @@ export function ReceitasClient({
                             </thead>
                             <tbody>
                               {linhasComCusto.map((l) => (
-                                <tr key={l.id} style={{ borderTop: `1px solid ${C.border}` }}>
+                                <tr key={l.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                                   <td className="py-2 pr-3">
                                     {l.nome} {l.ehPreparo && <Badge>preparo próprio</Badge>}
                                   </td>
@@ -240,7 +240,7 @@ export function ReceitasClient({
                                   <td className="py-2 text-right font-medium" style={nums}>R$ {l.custo.toFixed(2)}</td>
                                 </tr>
                               ))}
-                              <tr style={{ borderTop: `1.5px solid ${C.borderStrong}` }}>
+                              <tr style={{ borderTop: `1.5px solid ${"var(--border-strong)"}` }}>
                                 <td className="py-2.5 pr-3 font-semibold" colSpan={4}>CMV total</td>
                                 <td className="py-2.5 text-right font-semibold" style={nums}>R$ {cmv.toFixed(2)}</td>
                               </tr>
@@ -249,7 +249,7 @@ export function ReceitasClient({
 
                           <div className="mb-4">
                             <h4 className="text-[12px] font-semibold mb-1">Custo por ingrediente</h4>
-                            <p className="text-[11.5px] mb-2" style={{ color: C.sub }}>
+                            <p className="text-[11.5px] mb-2" style={{ color: "var(--sub)" }}>
                               {ordenadoPorCusto.length > TOP_DONUT ? `Os ${TOP_DONUT} maiores custos, resto agrupado em "Outros".` : "Participação de cada item no custo total do prato."}
                             </p>
                             <Donut
@@ -270,10 +270,10 @@ export function ReceitasClient({
                         [`Preço sugerido (margem ${(margemAlvo * 100).toFixed(0)}%)`, `R$ ${precoSugerido.toFixed(2)}`, null, false],
                         ["Margem no preço atual", `${margemPct.toFixed(1)}%`, null, abaixoDoAlvo],
                       ].map(([label, value, extra, alerta], idx) => (
-                        <div key={idx} className="rounded-lg p-3" style={{ background: C.bg }}>
-                          <div className="text-[11px]" style={{ color: C.sub }}>{label}</div>
-                          <div className="text-[14px] font-semibold mt-0.5" style={{ ...nums, color: alerta ? C.danger : C.text }}>
-                            {value} {extra && <span className="text-[11px] font-normal" style={{ color: C.faint }}>({extra})</span>}
+                        <div key={idx} className="rounded-lg p-3" style={{ background: "var(--bg)" }}>
+                          <div className="text-[11px]" style={{ color: "var(--sub)" }}>{label}</div>
+                          <div className="text-[14px] font-semibold mt-0.5" style={{ ...nums, color: alerta ? "var(--danger)" : "var(--text)" }}>
+                            {value} {extra && <span className="text-[11px] font-normal" style={{ color: "var(--faint)" }}>({extra})</span>}
                           </div>
                         </div>
                       ))}
@@ -284,7 +284,7 @@ export function ReceitasClient({
                         onClick={() => gerarPdfCustos(p)}
                         disabled={gerandoPdf === `${p.id}-custos`}
                         className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
-                        style={{ background: C.text, color: "#fff", opacity: gerandoPdf === `${p.id}-custos` ? 0.6 : 1 }}
+                        style={{ background: "var(--text)", color: "#fff", opacity: gerandoPdf === `${p.id}-custos` ? 0.6 : 1 }}
                       >
                         <Download size={13} /> {gerandoPdf === `${p.id}-custos` ? "Gerando..." : "PDF · Ficha de Custos"}
                       </button>
@@ -292,17 +292,17 @@ export function ReceitasClient({
                         onClick={() => gerarPdfOperacional(p)}
                         disabled={gerandoPdf === `${p.id}-operacional`}
                         className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
-                        style={{ border: `1px solid ${C.borderStrong}`, opacity: gerandoPdf === `${p.id}-operacional` ? 0.6 : 1 }}
+                        style={{ border: `1px solid ${"var(--border-strong)"}`, opacity: gerandoPdf === `${p.id}-operacional` ? 0.6 : 1 }}
                       >
                         <Download size={13} /> {gerandoPdf === `${p.id}-operacional` ? "Gerando..." : "PDF · Ficha Operacional"}
                       </button>
                     </div>
 
                     <div className="flex gap-2">
-                      <button onClick={() => setEditando(p)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+                      <button onClick={() => setEditando(p)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
                         Editar
                       </button>
-                      <button onClick={() => excluirComConfirmacao(p)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ color: C.danger, border: `1px solid ${C.borderStrong}` }}>
+                      <button onClick={() => excluirComConfirmacao(p)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ color: "var(--danger)", border: `1px solid ${"var(--border-strong)"}` }}>
                         Excluir
                       </button>
                     </div>
@@ -315,7 +315,7 @@ export function ReceitasClient({
       })}
 
       {receitas.length === 0 && !showNova && (
-        <div className="text-[12.5px] py-6 text-center" style={{ color: C.faint }}>
+        <div className="text-[12.5px] py-6 text-center" style={{ color: "var(--faint)" }}>
           Nenhum prato cadastrado ainda.
         </div>
       )}

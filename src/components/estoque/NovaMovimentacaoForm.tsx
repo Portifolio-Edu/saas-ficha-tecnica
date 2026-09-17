@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { C, inputStyle } from "@/components/ficha/tema";
+import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
@@ -18,8 +18,8 @@ export function NovaMovimentacaoForm({ estoque, onCancel, onSaved }: { estoque: 
   if (estoque.length === 0) {
     return (
       <div className="px-5 py-4">
-        <p className="text-[12.5px] mb-3" style={{ color: C.sub }}>Rastreie um insumo primeiro pra poder lançar entrada ou ajuste de estoque.</p>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>Fechar</button>
+        <p className="text-[12.5px] mb-3" style={{ color: "var(--sub)" }}>Rastreie um insumo primeiro pra poder lançar entrada ou ajuste de estoque.</p>
+        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>Fechar</button>
       </div>
     );
   }
@@ -39,7 +39,7 @@ export function NovaMovimentacaoForm({ estoque, onCancel, onSaved }: { estoque: 
             key={id}
             onClick={() => setTipo(id)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: tipo === id ? C.text : C.panel, color: tipo === id ? "#fff" : C.text, border: `1px solid ${tipo === id ? C.text : C.borderStrong}` }}
+            style={{ background: tipo === id ? "var(--text)" : "var(--panel)", color: tipo === id ? "#fff" : "var(--text)", border: `1px solid ${tipo === id ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {label}
           </button>
@@ -55,14 +55,14 @@ export function NovaMovimentacaoForm({ estoque, onCancel, onSaved }: { estoque: 
         <Input placeholder="Origem (ex: compra fornecedor)" value={origem} onChange={(e) => setOrigem(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
       </div>
       {tipo === "ajuste" && (
-        <p className="text-[11.5px] mb-3" style={{ color: C.faint }}>Ajuste subtrai do saldo atual — serve pra registrar perda ou corrigir contagem pra baixo.</p>
+        <p className="text-[11.5px] mb-3" style={{ color: "var(--faint)" }}>Ajuste subtrai do saldo atual — serve pra registrar perda ou corrigir contagem pra baixo.</p>
       )}
       <ErroBanner erro={erro} />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: C.text, color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Registrar movimentação"}
         </button>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${C.borderStrong}` }}>
+        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           Cancelar
         </button>
       </div>

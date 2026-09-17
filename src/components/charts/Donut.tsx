@@ -1,7 +1,6 @@
 "use client";
 
 import { Cell, Legend, Pie, PieChart, Tooltip } from "recharts";
-import { C } from "@/components/ficha/tema";
 import { ChartFrame } from "./ChartFrame";
 import { ChartTooltipCard } from "./ChartTooltipCard";
 import { formatBRL, formatPercent } from "./format";
@@ -29,7 +28,7 @@ function rotuloFatia({ cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 
   const x = cx + raio * Math.cos(-midAngle * RADIAN);
   const y = cy + raio * Math.sin(-midAngle * RADIAN);
   return (
-    <text x={x} y={y} fill={C.sub} fontSize={11} textAnchor={x > cx ? "start" : "end"} dominantBaseline="central">
+    <text x={x} y={y} fill={"var(--sub)"} fontSize={11} textAnchor={x > cx ? "start" : "end"} dominantBaseline="central">
       {`${name} · ${(percent * 100).toFixed(0)}%`}
     </text>
   );
@@ -74,7 +73,7 @@ export function Donut({
             );
           }}
         />
-        <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8} formatter={(value) => <span style={{ color: C.sub, fontSize: 11 }}>{value}</span>} />
+        <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8} formatter={(value) => <span style={{ color: "var(--sub)", fontSize: 11 }}>{value}</span>} />
         <Pie
           data={dados}
           dataKey="valor"
@@ -86,10 +85,10 @@ export function Donut({
           animationDuration={CHART_ANIMATION_DURATION}
           animationEasing={CHART_ANIMATION_EASING}
           label={rotuloFatia}
-          labelLine={{ stroke: C.borderStrong, strokeWidth: 1 }}
+          labelLine={{ stroke: "var(--border-strong)", strokeWidth: 1 }}
         >
           {dados.map((d, i) => (
-            <Cell key={d.nome} fill={d.outros ? CATEGORICAL_OUTROS_COLOR : corCategorica(i)} stroke={C.panel} strokeWidth={2} />
+            <Cell key={d.nome} fill={d.outros ? CATEGORICAL_OUTROS_COLOR : corCategorica(i)} stroke={"var(--panel)"} strokeWidth={2} />
           ))}
         </Pie>
       </PieChart>
