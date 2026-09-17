@@ -6,6 +6,8 @@ import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { C, nums } from "@/components/ficha/tema";
 import { ReceitaForm } from "@/components/receitas/ReceitaForm";
+import { Donut, type FatiaDonut } from "@/components/charts/Donut";
+import { CHART_MIN_HEIGHT } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import { construirContexto, paraInsumoCalc, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
@@ -186,18 +188,9 @@ export function ReceitasClient({
                   <ReceitaForm insumos={insumos} preparos={preparos} receita={p} onCancel={() => setEditando(null)} onSaved={() => setEditando(null)} />
                 ) : (
                   <>
-                    <table className="w-full text-[12.5px] mt-4 mb-4">
-                      <thead>
-                        <tr style={{ color: C.faint }} className="text-left text-[10.5px] uppercase tracking-wide">
-                          <th className="py-2 pr-3 font-medium">Insumo</th>
-                          <th className="py-2 pr-3 font-medium text-right">Peso líq.</th>
-                          <th className="py-2 pr-3 font-medium text-right">FC</th>
-                          <th className="py-2 pr-3 font-medium text-right">Preço/unid.</th>
-                          <th className="py-2 font-medium text-right">Custo</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {p.ficha.map((f) => {
+                    {(() => {
+                      const linhasComCusto = p.ficha
+                        .map((f) => {
                           if (f.insumoId) {
                             const insumo = insumoPorId.get(f.insumoId);
                             if (!insumo) return null;
@@ -205,38 +198,70 @@ export function ReceitasClient({
                             const fc = fatorCorrecaoEfetivo(insumoCalc, lotesProteina);
                             const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
                             const custo = pesoConvertido * fc * insumo.precoUnitario;
-                            return (
-                              <tr key={f.id} style={{ borderTop: `1px solid ${C.border}` }}>
-                                <td className="py-2 pr-3">{insumo.nome}</td>
-                                <td className="py-2 pr-3 text-right" style={nums}>{f.pesoLiquido} {f.unidade}</td>
-                                <td className="py-2 pr-3 text-right" style={nums}>{fc.toFixed(3)}</td>
-                                <td className="py-2 pr-3 text-right" style={nums}>R$ {insumo.precoUnitario.toFixed(2)}</td>
-                                <td className="py-2 text-right font-medium" style={nums}>R$ {custo.toFixed(2)}</td>
-                              </tr>
-                            );
+                            return { id: f.id, nome: insumo.nome, pesoLiquido: f.pesoLiquido, unidade: f.unidade, fc: fc as number | null, precoUnitario: insumo.precoUnitario, custo, ehPreparo: false };
                           }
                           const preparo = preparoPorId.get(f.subReceitaId!);
                           if (!preparo) return null;
                           const custoUnitarioPreparo = calcularCustoPorPorcao(preparo.id, contexto);
                           const custo = f.pesoLiquido * custoUnitarioPreparo;
-                          return (
-                            <tr key={f.id} style={{ borderTop: `1px solid ${C.border}` }}>
-                              <td className="py-2 pr-3">
-                                {preparo.nomePrato} <Badge>preparo próprio</Badge>
-                              </td>
-                              <td className="py-2 pr-3 text-right" style={nums}>{f.pesoLiquido} {f.unidade}</td>
-                              <td className="py-2 pr-3 text-right" style={nums}>—</td>
-                              <td className="py-2 pr-3 text-right" style={nums}>R$ {custoUnitarioPreparo.toFixed(2)}</td>
-                              <td className="py-2 text-right font-medium" style={nums}>R$ {custo.toFixed(2)}</td>
-                            </tr>
-                          );
-                        })}
-                        <tr style={{ borderTop: `1.5px solid ${C.borderStrong}` }}>
-                          <td className="py-2.5 pr-3 font-semibold" colSpan={4}>CMV total</td>
-                          <td className="py-2.5 text-right font-semibold" style={nums}>R$ {cmv.toFixed(2)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          return { id: f.id, nome: preparo.nomePrato, pesoLiquido: f.pesoLiquido, unidade: f.unidade, fc: null as number | null, precoUnitario: custoUnitarioPreparo, custo, ehPreparo: true };
+                        })
+                        .filter((l): l is NonNullable<typeof l> => l !== null);
+
+                      const ordenadoPorCusto = [...linhasComCusto].filter((l) => l.custo > 0).sort((a, b) => b.custo - a.custo);
+                      const TOP_DONUT = 5;
+                      const restante = ordenadoPorCusto.slice(TOP_DONUT).reduce((s, l) => s + l.custo, 0);
+                      const donutDados: FatiaDonut[] = [
+                        ...ordenadoPorCusto.slice(0, TOP_DONUT).map((l) => ({ nome: l.nome, valor: l.custo })),
+                        ...(restante > 0 ? [{ nome: "Outros", valor: restante, outros: true }] : []),
+                      ];
+
+                      return (
+                        <>
+                          <table className="w-full text-[12.5px] mt-4 mb-4">
+                            <thead>
+                              <tr style={{ color: C.faint }} className="text-left text-[10.5px] uppercase tracking-wide">
+                                <th className="py-2 pr-3 font-medium">Insumo</th>
+                                <th className="py-2 pr-3 font-medium text-right">Peso líq.</th>
+                                <th className="py-2 pr-3 font-medium text-right">FC</th>
+                                <th className="py-2 pr-3 font-medium text-right">Preço/unid.</th>
+                                <th className="py-2 font-medium text-right">Custo</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {linhasComCusto.map((l) => (
+                                <tr key={l.id} style={{ borderTop: `1px solid ${C.border}` }}>
+                                  <td className="py-2 pr-3">
+                                    {l.nome} {l.ehPreparo && <Badge>preparo próprio</Badge>}
+                                  </td>
+                                  <td className="py-2 pr-3 text-right" style={nums}>{l.pesoLiquido} {l.unidade}</td>
+                                  <td className="py-2 pr-3 text-right" style={nums}>{l.fc !== null ? l.fc.toFixed(3) : "—"}</td>
+                                  <td className="py-2 pr-3 text-right" style={nums}>R$ {l.precoUnitario.toFixed(2)}</td>
+                                  <td className="py-2 text-right font-medium" style={nums}>R$ {l.custo.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                              <tr style={{ borderTop: `1.5px solid ${C.borderStrong}` }}>
+                                <td className="py-2.5 pr-3 font-semibold" colSpan={4}>CMV total</td>
+                                <td className="py-2.5 text-right font-semibold" style={nums}>R$ {cmv.toFixed(2)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                          <div className="mb-4">
+                            <h4 className="text-[12px] font-semibold mb-1">Custo por ingrediente</h4>
+                            <p className="text-[11.5px] mb-2" style={{ color: C.sub }}>
+                              {ordenadoPorCusto.length > TOP_DONUT ? `Os ${TOP_DONUT} maiores custos, resto agrupado em "Outros".` : "Participação de cada item no custo total do prato."}
+                            </p>
+                            <Donut
+                              dados={donutDados}
+                              altura={CHART_MIN_HEIGHT}
+                              tituloVazio="Nenhum custo calculado ainda."
+                              dicaVazio="Adicione insumos ou preparos na ficha desse prato pra ver a composição do custo aqui."
+                            />
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     <div className="grid grid-cols-4 gap-3 mb-4">
                       {[

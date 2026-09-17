@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Kpi } from "@/components/ficha/Kpi";
 import { C, nums } from "@/components/ficha/tema";
 import { NovoProcessamentoForm } from "@/components/proteinas/NovoProcessamentoForm";
+import { ChartFrame } from "@/components/charts/ChartFrame";
+import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
+import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Processamento } from "@/lib/dominio/processamento";
 
@@ -95,28 +98,43 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
           <Card className="p-6 mb-5">
             <h2 className="text-[14px] font-semibold mb-1">FC observado por lote</h2>
             <p className="text-[12px] mb-4" style={{ color: C.sub }}>Linha tracejada é o FC cadastrado. Quanto mais alto acima dela, pior o rendimento real do lote.</p>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={lotes.map((l) => ({ ...l, dataLabel: formatarData(l.processadoEm) }))} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke={C.border} vertical={false} />
-                <XAxis dataKey="dataLabel" tick={{ fontSize: 11, fill: C.faint }} tickLine={false} axisLine={{ stroke: C.border }} />
-                <YAxis domain={["dataMin - 0.03", "dataMax + 0.03"]} tick={{ fontSize: 11, fill: C.faint }} tickLine={false} axisLine={{ stroke: C.border }} width={40} />
-                <ReferenceLine y={insumo.fatorCorrecao} stroke={C.borderStrong} strokeDasharray="4 4" label={{ value: "FC cadastrado", position: "right", fontSize: 10, fill: C.sub }} />
+            <ChartFrame
+              vazio={false}
+              tituloVazio="Nenhum lote registrado ainda."
+              dicaVazio="Registre um lote de processamento pra esse gráfico aparecer aqui."
+            >
+              <LineChart data={lotes.map((l) => ({ ...l, dataLabel: formatarData(l.processadoEm) }))} margin={CHART_MARGIN}>
+                <CartesianGrid {...chartGridProps} />
+                <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
+                <YAxis domain={["dataMin - 0.03", "dataMax + 0.03"]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={(v: number) => v.toFixed(2)} />
+                <ReferenceLine y={insumo.fatorCorrecao} stroke={C.borderStrong} strokeDasharray="4 4" label={{ value: "FC cadastrado", position: "insideTopRight", fontSize: 10, fill: C.sub }} />
                 <Tooltip
                   content={({ payload }) => {
                     if (!payload || !payload.length) return null;
                     const p = payload[0].payload as Processamento & { dataLabel: string };
                     return (
-                      <div className="text-xs p-2.5 rounded-lg" style={{ background: C.text, color: "#fff" }}>
-                        <div className="font-semibold">{p.dataLabel} · {p.responsavel}</div>
-                        <div style={nums}>FC do lote: {p.fcObservado.toFixed(3)}</div>
-                        <div style={nums}>{p.pesoBrutoRecebido}kg bruto → {p.pesoLiquidoResultante}kg líquido</div>
-                      </div>
+                      <ChartTooltipCard
+                        titulo={`${p.dataLabel} · ${p.responsavel}`}
+                        linhas={[
+                          { rotulo: "FC do lote", valor: p.fcObservado.toFixed(3) },
+                          { rotulo: "Bruto → líquido", valor: `${p.pesoBrutoRecebido}kg → ${p.pesoLiquidoResultante}kg` },
+                        ]}
+                      />
                     );
                   }}
                 />
-                <Line type="monotone" dataKey="fcObservado" stroke={C.text} strokeWidth={2} dot={{ r: 4, fill: C.text }} />
+                <Line
+                  type="monotone"
+                  dataKey="fcObservado"
+                  stroke={C.text}
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: C.text }}
+                  isAnimationActive
+                  animationDuration={CHART_ANIMATION_DURATION}
+                  animationEasing={CHART_ANIMATION_EASING}
+                />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartFrame>
           </Card>
 
           <Card>

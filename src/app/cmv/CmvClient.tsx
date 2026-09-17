@@ -1,10 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { Kpi } from "@/components/ficha/Kpi";
 import { C, inputStyle, nums } from "@/components/ficha/tema";
+import { ChartFrame } from "@/components/charts/ChartFrame";
+import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
+import { formatPercent, formatPercentEixo } from "@/components/charts/format";
+import { CATEGORICAL_PALETTE, CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
@@ -15,6 +20,12 @@ import { calcularFechamentoCmv } from "@/lib/calculo/fechamentoCmv";
 import { acaoCriarFechamento } from "./actions";
 
 const GAP_ALERTA_PP = 3;
+
+// CMV real x teorico e uma comparacao de identidade (2 series), nao de
+// status -- verde do accent fica proximo demais do preto do texto pra
+// distinguir num grafico pequeno, entao usa o primeiro tom categorico
+// (mesma paleta validada do donut) pro "real", mantendo o teorico em C.text.
+const COR_CMV_REAL = CATEGORICAL_PALETTE[0];
 
 function primeiroDiaDoMes(): string {
   const d = new Date();
@@ -169,6 +180,21 @@ export function CmvClient({
         };
       }),
     [fechamentos, pratoPorId, contexto],
+  );
+
+  // Historico vem do mais recente pro mais antigo (mesma ordem de fechamentos,
+  // usada na tabela de auditoria); a evolucao anual precisa de ordem
+  // cronologica crescente pra ler da esquerda pra direita.
+  const evolucaoCmvAnual = useMemo(
+    () =>
+      [...historico]
+        .sort((a, b) => a.fechamento.periodoInicio.localeCompare(b.fechamento.periodoInicio))
+        .map((h) => ({
+          periodo: formatarPeriodo(h.fechamento.periodoInicio, h.fechamento.periodoFim),
+          cmvReal: h.cmvRealPctHist,
+          cmvTeorico: h.cmvTeoricoPctHist,
+        })),
+    [historico],
   );
 
   return (
@@ -350,6 +376,41 @@ export function CmvClient({
         <p className="text-[12px] mb-3" style={{ color: C.sub }}>
           CMV real de um período fechado nunca muda (vem do estoque contado na época). O teórico aqui é recalculado com a ficha técnica atual, então pode se afastar um pouco do teórico do dia do fechamento se preço de insumo ou ficha mudaram desde então.
         </p>
+
+        <Card className="p-5 mb-3">
+          <h3 className="text-[13px] font-semibold mb-1">Evolução do CMV real x teórico</h3>
+          <p className="text-[11.5px] mb-3" style={{ color: C.sub }}>Cada ponto é um fechamento salvo, em ordem cronológica.</p>
+          <ChartFrame
+            vazio={evolucaoCmvAnual.length === 0}
+            tituloVazio="Nenhum fechamento salvo ainda."
+            dicaVazio="Salve o fechamento do período acima pra esse gráfico começar a preencher."
+          >
+            <LineChart data={evolucaoCmvAnual} margin={CHART_MARGIN}>
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="periodo" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
+              <YAxis tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} tickFormatter={formatPercentEixo} />
+              <Legend verticalAlign="top" height={28} iconType="circle" iconSize={8} formatter={(value) => <span style={{ color: C.sub, fontSize: 11 }}>{value}</span>} />
+              <Tooltip
+                content={({ payload, label }) => {
+                  if (!payload || !payload.length) return null;
+                  const d = payload[0].payload as { periodo: string; cmvReal: number; cmvTeorico: number };
+                  return (
+                    <ChartTooltipCard
+                      titulo={String(label)}
+                      linhas={[
+                        { rotulo: "CMV real", valor: formatPercent(d.cmvReal), cor: COR_CMV_REAL },
+                        { rotulo: "CMV teórico", valor: formatPercent(d.cmvTeorico), cor: C.text },
+                      ]}
+                    />
+                  );
+                }}
+              />
+              <Line type="monotone" dataKey="cmvTeorico" name="CMV teórico" stroke={C.text} strokeWidth={2} dot={{ r: 4, fill: C.text }} isAnimationActive animationDuration={CHART_ANIMATION_DURATION} animationEasing={CHART_ANIMATION_EASING} />
+              <Line type="monotone" dataKey="cmvReal" name="CMV real" stroke={COR_CMV_REAL} strokeWidth={2} dot={{ r: 4, fill: COR_CMV_REAL }} isAnimationActive animationDuration={CHART_ANIMATION_DURATION} animationEasing={CHART_ANIMATION_EASING} />
+            </LineChart>
+          </ChartFrame>
+        </Card>
+
         <Card>
           <table className="w-full text-[12.5px]">
             <thead>

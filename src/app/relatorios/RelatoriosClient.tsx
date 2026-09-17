@@ -1,11 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { Kpi } from "@/components/ficha/Kpi";
 import { C, nums } from "@/components/ficha/tema";
+import { ChartFrame } from "@/components/charts/ChartFrame";
+import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
+import { formatBRLEixo, formatPercent, formatPercentEixo } from "@/components/charts/format";
+import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, CHART_MARGIN_HORIZONTAL_BARS, axisLineStyle, axisTickStyle, chartGridProps, chartGridPropsHorizontalBars } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
@@ -240,68 +244,78 @@ export function RelatoriosClient({
         <Card className="p-5">
           <h3 className="text-[13px] font-semibold mb-1">Perdas de produção por turno</h3>
           <p className="text-[11.5px] mb-3" style={{ color: C.sub }}>Custo dos lotes descartados, separado pelo turno em que foram produzidos.</p>
-          {perdasPorTurno.length === 0 ? (
-            <div className="text-[12.5px] py-6 text-center" style={{ color: C.faint }}>Nenhuma perda de produção registrada ainda.</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={perdasPorTurno} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
-                <CartesianGrid stroke={C.border} vertical={false} />
-                <XAxis dataKey="turno" tick={{ fontSize: 11, fill: C.faint }} tickLine={false} axisLine={{ stroke: C.border }} />
-                <YAxis tick={{ fontSize: 11, fill: C.faint }} tickLine={false} axisLine={false} />
-                <Tooltip
-                  content={({ payload }) => {
-                    if (!payload || !payload.length) return null;
-                    const d = payload[0].payload as { turno: string; custo: number; lotes: number };
-                    return (
-                      <div className="text-xs p-2.5 rounded-lg" style={{ background: C.text, color: "#fff" }}>
-                        <div className="font-semibold">{d.turno}</div>
-                        <div style={nums}>R$ {d.custo.toFixed(2)} · {d.lotes} lote{d.lotes !== 1 ? "s" : ""}</div>
-                      </div>
-                    );
-                  }}
-                />
-                <Bar dataKey="custo" radius={[4, 4, 0, 0]}>
-                  {perdasPorTurno.map((d, i) => (
-                    <Cell key={i} fill={d.custo > 0 ? C.danger : C.border} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <ChartFrame
+            vazio={perdasPorTurno.length === 0}
+            tituloVazio="Nenhuma perda de produção registrada ainda."
+            dicaVazio="Registre uma perda no quadro de Produções pra esse gráfico aparecer aqui."
+          >
+            <BarChart data={perdasPorTurno} margin={CHART_MARGIN}>
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="turno" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
+              <YAxis tick={axisTickStyle} tickLine={false} axisLine={false} tickFormatter={formatBRLEixo} />
+              <Tooltip
+                cursor={{ fill: C.bg }}
+                content={({ payload }) => {
+                  if (!payload || !payload.length) return null;
+                  const d = payload[0].payload as { turno: string; custo: number; lotes: number };
+                  return (
+                    <ChartTooltipCard
+                      titulo={d.turno}
+                      linhas={[
+                        { rotulo: "Custo perdido", valor: formatBRLEixo(d.custo), destaque: d.custo > 0 },
+                        { rotulo: "Lotes", valor: `${d.lotes}` },
+                      ]}
+                    />
+                  );
+                }}
+              />
+              <Bar dataKey="custo" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={CHART_ANIMATION_DURATION} animationEasing={CHART_ANIMATION_EASING}>
+                {perdasPorTurno.map((d, i) => (
+                  <Cell key={i} fill={d.custo > 0 ? C.danger : C.border} />
+                ))}
+                <LabelList dataKey="custo" position="top" formatter={(v: string | number | boolean | null | undefined) => formatBRLEixo(Number(v))} style={{ fill: C.text, fontSize: 11, fontWeight: 600 }} />
+              </Bar>
+            </BarChart>
+          </ChartFrame>
         </Card>
 
         <Card className="p-5">
           <h3 className="text-[13px] font-semibold mb-1">Margem por prato</h3>
           <p className="text-[11.5px] mb-3" style={{ color: C.sub }}>Vermelho está abaixo do alvo daquele prato.</p>
-          {margemPorPrato.length === 0 ? (
-            <div className="text-[12.5px] py-6 text-center" style={{ color: C.faint }}>Nenhum prato com preço de venda cadastrado ainda.</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={margemPorPrato} layout="vertical" margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke={C.border} horizontal={false} />
-                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: C.faint }} tickLine={false} axisLine={{ stroke: C.border }} />
-                <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 10, fill: C.sub }} tickLine={false} axisLine={false} />
-                <ReferenceLine x={margemPorPrato[0]?.margemAlvo ?? 65} stroke={C.borderStrong} strokeDasharray="4 4" />
-                <Tooltip
-                  content={({ payload }) => {
-                    if (!payload || !payload.length) return null;
-                    const d = payload[0].payload as { nome: string; margemPct: number; custoPorPorcao: number };
-                    return (
-                      <div className="text-xs p-2.5 rounded-lg" style={{ background: C.text, color: "#fff" }}>
-                        <div className="font-semibold">{d.nome}</div>
-                        <div style={nums}>margem {d.margemPct.toFixed(1)}% · CMV R$ {d.custoPorPorcao.toFixed(2)}</div>
-                      </div>
-                    );
-                  }}
-                />
-                <Bar dataKey="margemPct" radius={[0, 4, 4, 0]}>
-                  {margemPorPrato.map((p, i) => (
-                    <Cell key={i} fill={p.margemPct < p.margemAlvo ? C.danger : C.text} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <ChartFrame
+            vazio={margemPorPrato.length === 0}
+            tituloVazio="Nenhum prato com preço de venda cadastrado ainda."
+            dicaVazio="Cadastre o preço de venda do prato em Receitas & Fichas pra ele entrar nesse gráfico."
+          >
+            <BarChart data={margemPorPrato} layout="vertical" margin={CHART_MARGIN_HORIZONTAL_BARS}>
+              <CartesianGrid {...chartGridPropsHorizontalBars} />
+              <XAxis type="number" domain={[0, 100]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} tickFormatter={formatPercentEixo} />
+              <YAxis type="category" dataKey="nome" width={110} tick={{ fontSize: 10, fill: C.sub }} tickLine={false} axisLine={false} />
+              <ReferenceLine x={margemPorPrato[0]?.margemAlvo ?? 65} stroke={C.borderStrong} strokeDasharray="4 4" />
+              <Tooltip
+                cursor={{ fill: C.bg }}
+                content={({ payload }) => {
+                  if (!payload || !payload.length) return null;
+                  const d = payload[0].payload as { nome: string; margemPct: number; custoPorPorcao: number; margemAlvo: number };
+                  return (
+                    <ChartTooltipCard
+                      titulo={d.nome}
+                      linhas={[
+                        { rotulo: "Margem", valor: formatPercent(d.margemPct), destaque: d.margemPct < d.margemAlvo },
+                        { rotulo: "CMV", valor: formatBRLEixo(d.custoPorPorcao) },
+                      ]}
+                    />
+                  );
+                }}
+              />
+              <Bar dataKey="margemPct" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={CHART_ANIMATION_DURATION} animationEasing={CHART_ANIMATION_EASING}>
+                {margemPorPrato.map((p, i) => (
+                  <Cell key={i} fill={p.margemPct < p.margemAlvo ? C.danger : C.text} />
+                ))}
+                <LabelList dataKey="margemPct" position="right" formatter={(v: string | number | boolean | null | undefined) => formatPercent(Number(v))} style={{ fill: C.text, fontSize: 11, fontWeight: 600 }} />
+              </Bar>
+            </BarChart>
+          </ChartFrame>
         </Card>
       </div>
 
