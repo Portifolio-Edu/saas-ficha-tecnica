@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ficha Técnica — Demo Visual</title>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/prop-types@15/prop-types.js"></script>
+<script src="https://unpkg.com/recharts@2/umd/Recharts.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+
+<style>
+  :root {
+    --bg: #FAFAFA;
+    --panel: #FFFFFF;
+    --border: #ECECEE;
+    --border-strong: #DEDEE2;
+    --text: #0D0D0F;
+    --sub: #6E6E76;
+    --faint: #A3A3AA;
+    --accent: #2F5233;
+    --accent-soft: #EAF0EA;
+    --danger: #9A2E1F;
+    --danger-soft: #FBECE8;
+    --shadow: 0 1px 2px rgba(13,13,15,0.03), 0 6px 16px rgba(13,13,15,0.04);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  #root { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 232px; flex-shrink: 0; background: var(--panel); border-right: 1px solid var(--border);
+    position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 14px 10px;
+  }
+  .sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 10px 10px 16px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  .sidebar-brand-title { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+  .sidebar-brand-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); }
+  .nav-link {
+    display: flex; align-items: center; gap: 10px; padding: 7px 12px; font-size: 13px; color: var(--sub);
+    text-decoration: none; border-radius: 8px; margin-bottom: 2px; cursor: pointer;
+  }
+  .nav-link:hover { background: var(--bg); color: var(--text); }
+  .nav-link .num { font-size: 10.5px; color: var(--faint); font-variant-numeric: tabular-nums; width: 14px; }
+  .sidebar-footer { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--faint); padding-left: 12px; }
+
+  .main { flex: 1; min-width: 0; padding: 0 0 80px; }
+  .banner {
+    background: var(--accent-soft); color: var(--accent); font-size: 13px; padding: 12px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section { padding: 40px 40px 24px; border-bottom: 1px dashed var(--border-strong); scroll-margin-top: 12px; }
+  .section:last-child { border-bottom: none; }
+  .section-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin-bottom: 6px; font-weight: 600; }
+  .section-title { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .section-desc { font-size: 13px; color: var(--sub); max-width: 720px; margin: 0 0 22px; line-height: 1.5; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+  .card-pad { padding: 20px; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; }
+
+  .grid { display: grid; gap: 12px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) { .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+
+  .kpi-label { font-size: 12.5px; color: var(--sub); }
+  .kpi-value { font-size: 26px; font-weight: 700; margin-top: 6px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .kpi-value.alerta { color: var(--danger); }
+  .kpi-sub { font-size: 11.5px; color: var(--faint); margin-top: 6px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  thead th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); font-weight: 600; padding: 10px 16px; }
+  thead th.right, td.right { text-align: right; }
+  tbody td { padding: 9px 16px; border-top: 1px solid var(--border); }
+  tbody tr:hover { background: var(--bg); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; background: var(--bg); color: var(--sub); }
+  .badge.alerta { background: var(--danger-soft); color: var(--danger); }
+  .badge.ok { background: var(--accent-soft); color: var(--accent); }
+
+  .checklist-item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid var(--border); font-size: 13px; }
+  .checklist-item:first-child { border-top: none; }
+  .checkbox { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border-strong); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .checkbox.checked { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .muted { color: var(--faint); text-decoration: line-through; }
+
+  .recipe-card { padding: 18px 20px; }
+  .recipe-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .recipe-meta { font-size: 12px; color: var(--sub); margin-bottom: 14px; }
+  .recipe-bar-track { height: 6px; border-radius: 999px; background: var(--bg); overflow: hidden; margin-top: 4px; }
+  .recipe-bar-fill { height: 100%; border-radius: 999px; background: var(--accent); }
+  .recipe-bar-fill.alerta { background: var(--danger); }
+
+  .alert-card { display: flex; gap: 12px; padding: 14px 16px; border-top: 1px solid var(--border); }
+  .alert-card:first-child { border-top: none; }
+  .alert-dot { width: 8px; height: 8px; border-radius: 999px; margin-top: 5px; flex-shrink: 0; }
+  .alert-title { font-size: 13px; font-weight: 600; }
+  .alert-desc { font-size: 12px; color: var(--sub); margin-top: 2px; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState } = React;
+const {
+  ResponsiveContainer, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  CartesianGrid, XAxis, YAxis, Tooltip, Legend, ReferenceLine,
+} = Recharts;
+
+const C = {
+  accent: "#2F5233", danger: "#9A2E1F", sub: "#6E6E76", border: "#ECECEE", faint: "#A3A3AA",
+};
+const PIE_COLORS = ["#2F5233", "#6E8F73", "#B9CDB9", "#DEDEE2"];
+
+function brl(n) {
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+// ---------------------------------------------------------------------------
+// Dados fictícios — "Cantina Bella Notte" (pizzeria/trattoria)
+// ---------------------------------------------------------------------------
+
+const INSUMOS = [
+  { nome: "Farinha de Trigo Tipo 1", categoria: "Secos", unidade: "kg", preco: 4.2, estoque: 38, minimo: 15 },
+  { nome: "Molho de Tomate Pelati", categoria: "Secos", unidade: "kg", preco: 6.8, estoque: 22, minimo: 10 },
+  { nome: "Muçarela de Búfala", categoria: "Laticínios", unidade: "kg", preco: 42.0, estoque: 6.4, minimo: 8 },
+  { nome: "Manjericão Fresco", categoria: "Hortifruti", unidade: "kg", preco: 28.0, estoque: 1.1, minimo: 1.5 },
+  { nome: "Azeite Extra Virgem", categoria: "Secos", unidade: "L", preco: 34.5, estoque: 9, minimo: 4 },
+  { nome: "Filé de Frango", categoria: "Proteínas", unidade: "kg", preco: 18.9, estoque: 24, minimo: 10, fc: 1.18 },
+  { nome: "Contra Filé Bovino", categoria: "Proteínas", unidade: "kg", preco: 46.0, estoque: 14, minimo: 8, fc: 1.22 },
+  { nome: "Salmão Fresco", categoria: "Proteínas", unidade: "kg", preco: 68.0, estoque: 5, minimo: 6, fc: 1.35 },
+  { nome: "Camarão Médio", categoria: "Proteínas", unidade: "kg", preco: 54.0, estoque: 7, minimo: 5, fc: 1.15 },
+  { nome: "Cebola", categoria: "Hortifruti", unidade: "kg", preco: 3.1, estoque: 30, minimo: 10 },
+  { nome: "Alho", categoria: "Hortifruti", unidade: "kg", preco: 14.0, estoque: 4, minimo: 3 },
+  { nome: "Fermento Biológico", categoria: "Secos", unidade: "kg", preco: 22.0, estoque: 2, minimo: 1 },
+];
+
+const RECEITAS = {
+  preparos: [
+    { nome: "Massa de Pizza (disco 280g)", rendimento: "10 discos", custoUnidade: 1.85 },
+    { nome: "Molho de Tomate Temperado", rendimento: "4 L", custoUnidade: 7.9 },
+  ],
+  pratos: [
+    { nome: "Pizza Margherita", custo: 12.4, precoVenda: 54.0 },
+    { nome: "Pizza Quatro Queijos", custo: 17.8, precoVenda: 62.0 },
+    { nome: "Frango à Parmegiana", custo: 14.6, precoVenda: 58.0 },
+    { nome: "Filé ao Molho Madeira", custo: 21.3, precoVenda: 79.0 },
+    { nome: "Salmão Grelhado", custo: 26.9, precoVenda: 84.0 },
+    { nome: "Risoto de Camarão", custo: 19.7, precoVenda: 72.0 },
+  ],
+  metaCmv: 30,
+};
+RECEITAS.pratos.forEach((p) => {
+  p.cmv = (p.custo / p.precoVenda) * 100;
+  p.margem = p.precoVenda - p.custo;
+});
+
+const PROCESSAMENTOS = [
+  { data: "02/09", insumo: "Contra Filé Bovino", responsavel: "Marcos", fc: 1.24, bruto: 18.0, liquido: 14.5 },
+  { data: "05/09", insumo: "Contra Filé Bovino", responsavel: "Marcos", fc: 1.21, bruto: 20.0, liquido: 16.5 },
+  { data: "08/09", insumo: "Salmão Fresco", responsavel: "Júlia", fc: 1.42, bruto: 10.0, liquido: 7.0 },
+  { data: "11/09", insumo: "Salmão Fresco", responsavel: "Júlia", fc: 1.33, bruto: 9.0, liquido: 6.8 },
+  { data: "13/09", insumo: "Camarão Médio", responsavel: "Marcos", fc: 1.16, bruto: 6.0, liquido: 5.2 },
+  { data: "15/09", insumo: "Filé de Frango", responsavel: "Ana", fc: 1.19, bruto: 15.0, liquido: 12.6 },
+];
+
+const PRODUCOES = [
+  { data: "10/09", turno: "Almoço", receita: "Massa de Pizza", qtd: 40, perda: 2, responsavel: "Ana" },
+  { data: "10/09", turno: "Jantar", receita: "Molho de Tomate Temperado", qtd: 8, perda: 0, responsavel: "Ana" },
+  { data: "11/09", turno: "Almoço", receita: "Massa de Pizza", qtd: 35, perda: 0, responsavel: "Marcos" },
+  { data: "12/09", turno: "Jantar", receita: "Massa de Pizza", qtd: 50, perda: 6, responsavel: "Ana" },
+  { data: "13/09", turno: "Almoço", receita: "Molho de Tomate Temperado", qtd: 8, perda: 1, responsavel: "Júlia" },
+  { data: "14/09", turno: "Jantar", receita: "Massa de Pizza", qtd: 45, perda: 0, responsavel: "Marcos" },
+  { data: "15/09", turno: "Almoço", receita: "Massa de Pizza", qtd: 30, perda: 0, responsavel: "Ana" },
+  { data: "16/09", turno: "Jantar", receita: "Molho de Tomate Temperado", qtd: 12, perda: 0, responsavel: "Marcos" },
+];
+
+const CHECKLISTS = [
+  { nome: "Abertura de cozinha", momento: "Abertura", itens: [
+    { texto: "Conferir temperatura das câmaras frias", ok: true },
+    { texto: "Higienizar bancadas e utensílios", ok: true },
+    { texto: "Checar validade de insumos abertos", ok: true },
+    { texto: "Ligar equipamentos (forno, chapa)", ok: false },
+  ]},
+  { nome: "Fechamento de cozinha", momento: "Fechamento", itens: [
+    { texto: "Guardar insumos perecíveis", ok: true },
+    { texto: "Registrar temperatura final das câmaras", ok: true },
+    { texto: "Limpeza geral da cozinha", ok: true },
+    { texto: "Conferir estoque para reposição do dia seguinte", ok: true },
+  ]},
+];
+
+const MOVIMENTACOES = [
+  { data: "14/09", insumo: "Muçarela de Búfala", tipo: "saída", qtd: 4.2 },
+  { data: "14/09", insumo: "Farinha de Trigo Tipo 1", tipo: "entrada", qtd: 25 },
+  { data: "15/09", insumo: "Manjericão Fresco", tipo: "saída", qtd: 0.9 },
+  { data: "15/09", insumo: "Salmão Fresco", tipo: "entrada", qtd: 8 },
+  { data: "16/09", insumo: "Salmão Fresco", tipo: "saída", qtd: 6.5 },
+];
+
+const FORNECEDORES = [
+  { nome: "Distribuidora Toscana", insumos: "Farinha, Azeite, Molho Pelati", prazo: "2 dias" },
+  { nome: "Laticínios São Bento", insumos: "Muçarela de Búfala", prazo: "1 dia" },
+  { nome: "Hortifruti Raiz", insumos: "Manjericão, Cebola, Alho", prazo: "1 dia" },
+  { nome: "Peixaria Mar Azul", insumos: "Salmão Fresco, Camarão Médio", prazo: "1 dia" },
+  { nome: "Frigorífico Pampa", insumos: "Contra Filé Bovino, Filé de Frango", prazo: "2 dias" },
+];
+
+const NUTRICIONAL = [
+  { prato: "Pizza Margherita", porcao: "150 g", kcal: 380, proteina: 15, carbo: 45, gordura: 14, sodio: 620 },
+  { prato: "Frango à Parmegiana", porcao: "300 g", kcal: 520, proteina: 38, carbo: 32, gordura: 24, sodio: 780 },
+  { prato: "Salmão Grelhado", porcao: "220 g", kcal: 410, proteina: 34, carbo: 6, gordura: 27, sodio: 410 },
+];
+
+const LOCAIS_TEMPERATURA = [
+  { nome: "Câmara Fria 1", faixa: "0°C a 5°C", leituras: [
+    { hora: "08h", temp: 3.1 }, { hora: "12h", temp: 3.4 }, { hora: "16h", temp: 4.8 }, { hora: "20h", temp: 7.2 },
+  ]},
+  { nome: "Freezer", faixa: "-18°C a -12°C", leituras: [
+    { hora: "08h", temp: -16 }, { hora: "12h", temp: -15 }, { hora: "16h", temp: -15.5 }, { hora: "20h", temp: -16.2 },
+  ]},
+];
+
+const FECHAMENTOS_CMV = [
+  { periodo: "01/08 – 31/08", meta: 30, realizado: 31.4 },
+  { periodo: "01/09 – 15/09", meta: 30, realizado: 33.8 },
+];
+
+const ALERTAS = [
+  { tipo: "danger", titulo: "Estoque crítico: Muçarela de Búfala", desc: "6,4kg em estoque, abaixo do mínimo de 8kg." },
+  { tipo: "danger", titulo: "Estoque crítico: Salmão Fresco", desc: "5kg em estoque, abaixo do mínimo de 6kg." },
+  { tipo: "danger", titulo: "Câmara Fria 1 fora da faixa", desc: "Leitura de 20h registrou 7,2°C (faixa ideal: 0–5°C)." },
+  { tipo: "alerta", titulo: "CMV acima da meta no período 01/09–15/09", desc: "33,8% realizado vs. 30% de meta." },
+  { tipo: "alerta", titulo: "FC observado alto no processamento de Salmão (08/09)", desc: "1,42 observado vs. 1,35 cadastrado." },
+];
+
+// ---------------------------------------------------------------------------
+// Blocos de UI reutilizáveis
+// ---------------------------------------------------------------------------
+
+function Section({ id, eyebrow, title, desc, children }) {
+  return (
+    <section id={id} className="section">
+      <div className="section-eyebrow">{eyebrow}</div>
+      <h2 className="section-title">{title}</h2>
+      <p className="section-desc">{desc}</p>
+      {children}
+    </section>
+  );
+}
+
+function Kpi({ label, value, sub, alerta }) {
+  return (
+    <div className="card card-pad">
+      <div className="kpi-label">{label}</div>
+      <div className={"kpi-value" + (alerta ? " alerta" : "")}>{value}</div>
+      {sub && <div className="kpi-sub">{sub}</div>}
+    </div>
+  );
+}
+
+function Badge({ children, tipo }) {
+  return <span className={"badge" + (tipo ? " " + tipo : "")}>{children}</span>;
+}
+
+function ChartCard({ title, desc, height, children }) {
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card-header">{title}</div>
+      <div className="card-pad">
+        {desc && <p style={{ fontSize: 12, color: C.sub, marginTop: -6, marginBottom: 14 }}>{desc}</p>}
+        <ResponsiveContainer width="100%" height={height || 240}>
+          {children}
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function TableCard({ title, headers, children }) {
+  return (
+    <div className="card">
+      {title && <div className="card-header">{title}</div>}
+      <table>
+        <thead><tr>{headers.map((h, i) => <th key={i} className={h.right ? "right" : ""}>{h.label}</th>)}</tr></thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Telas
+// ---------------------------------------------------------------------------
+
+function TelaInsumos() {
+  const baixoEstoque = INSUMOS.filter((i) => i.estoque < i.minimo).length;
+  const valorTotal = INSUMOS.reduce((s, i) => s + i.estoque * i.preco, 0);
+  return (
+    <Section id="insumos" eyebrow="01 · Cadastro" title="Insumos"
+      desc="Todo ingrediente usado nas receitas: preço, unidade, estoque atual e mínimo, e fator de correção para os que passam por processamento (proteínas).">
+      <div className="grid grid-3" style={{ marginBottom: 16 }}>
+        <Kpi label="Insumos cadastrados" value={INSUMOS.length} />
+        <Kpi label="Valor total em estoque" value={brl(valorTotal)} />
+        <Kpi label="Abaixo do mínimo" value={baixoEstoque} alerta={baixoEstoque > 0} sub="precisam de reposição" />
+      </div>
+      <TableCard title="Todos os insumos" headers={[
+        { label: "Nome" }, { label: "Categoria" }, { label: "Preço", right: true },
+        { label: "Estoque", right: true }, { label: "Mínimo", right: true }, { label: "Status", right: true },
+      ]}>
+        {INSUMOS.map((i, idx) => {
+          const baixo = i.estoque < i.minimo;
+          return (
+            <tr key={idx}>
+              <td>{i.nome}{i.fc && <span style={{ color: C.faint, fontSize: 11 }}> · FC {i.fc.toFixed(2)}</span>}</td>
+              <td style={{ color: C.sub }}>{i.categoria}</td>
+              <td className="right num">{brl(i.preco)}/{i.unidade}</td>
+              <td className="right num">{i.estoque}{i.unidade}</td>
+              <td className="right num" style={{ color: C.sub }}>{i.minimo}{i.unidade}</td>
+              <td className="right">{baixo ? <Badge tipo="alerta">Baixo</Badge> : <Badge tipo="ok">OK</Badge>}</td>
+            </tr>
+          );
+        })}
+      </TableCard>
+    </Section>
+  );
+}
+
+function TelaCmv() {
+  return (
+    <Section id="cmv" eyebrow="02 · Financeiro" title="Fechamento de CMV"
+      desc="Compara o CMV realizado (baseado no que foi de fato consumido/comprado) contra a meta definida para o período.">
+      <div className="grid grid-3" style={{ marginBottom: 16 }}>
+        <Kpi label="Meta de CMV" value={RECEITAS.metaCmv + "%"} />
+        <Kpi label="Realizado (período atual)" value={FECHAMENTOS_CMV[1].realizado.toFixed(1) + "%"} alerta sub="3,8 p.p. acima da meta" />
+        <Kpi label="Períodos fechados" value={FECHAMENTOS_CMV.length} />
+      </div>
+      <ChartCard title="Meta vs. realizado por período">
+        <BarChart data={FECHAMENTOS_CMV} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke={C.border} />
+          <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={{ stroke: C.border }} />
+          <YAxis tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={false} unit="%" width={44} />
+          <Tooltip formatter={(v) => v.toFixed(1) + "%"} />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Bar dataKey="meta" name="Meta" fill="#DEDEE2" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="realizado" name="Realizado" fill={C.danger} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ChartCard>
+    </Section>
+  );
+}
+
+function TelaProducoes() {
+  const total = PRODUCOES.reduce((s, p) => s + p.qtd, 0);
+  const perdas = PRODUCOES.reduce((s, p) => s + p.perda, 0);
+  return (
+    <Section id="producoes" eyebrow="03 · Operação" title="Produções"
+      desc="Registro de cada lote produzido em cozinha: o que foi feito, em qual turno, quantidade e eventuais perdas.">
+      <div className="grid grid-3" style={{ marginBottom: 16 }}>
+        <Kpi label="Unidades produzidas (período)" value={total} />
+        <Kpi label="Perdas registradas" value={perdas} alerta={perdas > 5} sub={((perdas / total) * 100).toFixed(1) + "% do total"} />
+        <Kpi label="Lotes registrados" value={PRODUCOES.length} />
+      </div>
+      <ChartCard title="Produção por dia">
+        <BarChart data={PRODUCOES} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke={C.border} />
+          <XAxis dataKey="data" tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={{ stroke: C.border }} />
+          <YAxis tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={false} width={30} />
+          <Tooltip />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Bar dataKey="qtd" name="Produzido" fill={C.accent} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="perda" name="Perda" fill={C.danger} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ChartCard>
+      <TableCard title="Histórico de lotes" headers={[
+        { label: "Data" }, { label: "Turno" }, { label: "Receita" }, { label: "Qtd", right: true }, { label: "Perda", right: true }, { label: "Responsável" },
+      ]}>
+        {PRODUCOES.map((p, idx) => (
+          <tr key={idx}>
+            <td>{p.data}</td><td style={{ color: C.sub }}>{p.turno}</td><td>{p.receita}</td>
+            <td className="right num">{p.qtd}</td>
+            <td className="right num" style={{ color: p.perda > 0 ? C.danger : C.faint }}>{p.perda}</td>
+            <td style={{ color: C.sub }}>{p.responsavel}</td>
+          </tr>
+        ))}
+      </TableCard>
+    </Section>
+  );
+}
+
+function TelaChecklists() {
+  return (
+    <Section id="checklists" eyebrow="04 · Rotina" title="Checklists de Turno"
+      desc="Listas de verificação de abertura e fechamento, com itens marcados conforme executados pela equipe.">
+      <div className="grid grid-2">
+        {CHECKLISTS.map((c, idx) => {
+          const feitos = c.itens.filter((i) => i.ok).length;
+          return (
+            <div className="card" key={idx}>
+              <div className="card-header" style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>{c.nome}</span>
+                <span style={{ color: C.sub, fontWeight: 400 }}>{feitos}/{c.itens.length}</span>
+              </div>
+              {c.itens.map((item, j) => (
+                <div className="checklist-item" key={j}>
+                  <span className={"checkbox" + (item.ok ? " checked" : "")}>{item.ok ? "✓" : ""}</span>
+                  <span className={item.ok ? "" : "muted"}>{item.texto}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </Section>
+  );
+}
+
+function TelaEstoque() {
+  const criticos = INSUMOS.filter((i) => i.estoque < i.minimo);
+  return (
+    <Section id="estoque" eyebrow="05 · Controle" title="Estoque"
+      desc="Nível atual de cada insumo frente ao mínimo definido, e o histórico de entradas e saídas registradas.">
+      <ChartCard title="Estoque atual vs. mínimo (itens críticos)" height={200}>
+        <BarChart data={criticos} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 0 }}>
+          <CartesianGrid horizontal={false} stroke={C.border} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={false} />
+          <YAxis type="category" dataKey="nome" tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={false} width={140} />
+          <Tooltip />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Bar dataKey="estoque" name="Estoque atual" fill={C.danger} radius={[0, 4, 4, 0]} barSize={14} />
+          <Bar dataKey="minimo" name="Mínimo" fill="#DEDEE2" radius={[0, 4, 4, 0]} barSize={14} />
+        </BarChart>
+      </ChartCard>
+      <TableCard title="Movimentações recentes" headers={[
+        { label: "Data" }, { label: "Insumo" }, { label: "Tipo" }, { label: "Quantidade", right: true },
+      ]}>
+        {MOVIMENTACOES.map((m, idx) => (
+          <tr key={idx}>
+            <td>{m.data}</td><td>{m.insumo}</td>
+            <td><Badge tipo={m.tipo === "entrada" ? "ok" : undefined}>{m.tipo}</Badge></td>
+            <td className="right num">{m.qtd}</td>
+          </tr>
+        ))}
+      </TableCard>
+      <div style={{ marginTop: 16 }}>
+        <TableCard title="Fornecedores" headers={[{ label: "Fornecedor" }, { label: "Insumos" }, { label: "Prazo de entrega", right: true }]}>
+          {FORNECEDORES.map((f, idx) => (
+            <tr key={idx}><td>{f.nome}</td><td style={{ color: C.sub }}>{f.insumos}</td><td className="right">{f.prazo}</td></tr>
+          ))}
+        </TableCard>
+      </div>
+    </Section>
+  );
+}
+
+function TelaProteinas() {
+  return (
+    <Section id="proteinas" eyebrow="06 · Rendimento" title="Manipulação de Proteínas"
+      desc="Cada lote de proteína processada registra peso bruto, peso líquido e o fator de correção observado — comparado ao FC cadastrado.">
+      <ChartCard title="FC observado por lote" desc="Linha tracejada é o FC cadastrado (1,35) para o Salmão Fresco, o item mais sensível no momento.">
+        <LineChart data={PROCESSAMENTOS.filter((p) => p.insumo === "Salmão Fresco")} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <CartesianGrid stroke={C.border} />
+          <XAxis dataKey="data" tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={{ stroke: C.border }} />
+          <YAxis domain={[1.2, 1.5]} tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={false} width={36} />
+          <ReferenceLine y={1.35} stroke={C.faint} strokeDasharray="4 4" />
+          <Tooltip />
+          <Line type="monotone" dataKey="fc" stroke={C.danger} strokeWidth={2} dot={{ r: 4 }} />
+        </LineChart>
+      </ChartCard>
+      <TableCard title="Histórico de lotes (todas as proteínas)" headers={[
+        { label: "Data" }, { label: "Insumo" }, { label: "Responsável" }, { label: "Bruto → líquido", right: true }, { label: "FC", right: true },
+      ]}>
+        {PROCESSAMENTOS.map((p, idx) => (
+          <tr key={idx}>
+            <td>{p.data}</td><td>{p.insumo}</td><td style={{ color: C.sub }}>{p.responsavel}</td>
+            <td className="right num">{p.bruto}kg → {p.liquido}kg</td>
+            <td className="right num" style={{ fontWeight: 600 }}>{p.fc.toFixed(2)}</td>
+          </tr>
+        ))}
+      </TableCard>
+    </Section>
+  );
+}
+
+function TelaNutricional() {
+  const dish = NUTRICIONAL[1];
+  const pieData = [
+    { name: "Proteína", value: dish.proteina * 4 },
+    { name: "Carboidrato", value: dish.carbo * 4 },
+    { name: "Gordura", value: dish.gordura * 9 },
+  ];
+  return (
+    <Section id="nutricional" eyebrow="07 · Rotulagem" title="Ficha Nutricional"
+      desc="Valores nutricionais por porção calculados a partir dos insumos de cada receita, prontos para gerar o rótulo.">
+      <div className="grid" style={{ gridTemplateColumns: "1.4fr 1fr", marginBottom: 16 }}>
+        <TableCard title="Valores por porção" headers={[
+          { label: "Prato" }, { label: "Porção" }, { label: "Kcal", right: true }, { label: "Proteína", right: true }, { label: "Carbo", right: true }, { label: "Gordura", right: true }, { label: "Sódio", right: true },
+        ]}>
+          {NUTRICIONAL.map((n, idx) => (
+            <tr key={idx}>
+              <td>{n.prato}</td><td style={{ color: C.sub }}>{n.porcao}</td>
+              <td className="right num">{n.kcal}</td><td className="right num">{n.proteina}g</td>
+              <td className="right num">{n.carbo}g</td><td className="right num">{n.gordura}g</td>
+              <td className="right num">{n.sodio}mg</td>
+            </tr>
+          ))}
+        </TableCard>
+        <ChartCard title={"Calorias por macro — " + dish.prato} height={200}>
+          <PieChart>
+            <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
+              {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
+            </Pie>
+            <Tooltip formatter={(v) => v.toFixed(0) + " kcal"} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+          </PieChart>
+        </ChartCard>
+      </div>
+    </Section>
+  );
+}
+
+function TelaSeguranca() {
+  return (
+    <Section id="seguranca" eyebrow="08 · Compliance" title="Segurança Alimentar"
+      desc="Leituras periódicas de temperatura por local de armazenamento, com alerta quando saem da faixa segura.">
+      <ChartCard title="Câmara Fria 1 — temperatura ao longo do dia" desc="Faixa ideal: 0°C a 5°C. A leitura das 20h saiu da faixa.">
+        <LineChart data={LOCAIS_TEMPERATURA[0].leituras} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <CartesianGrid stroke={C.border} />
+          <XAxis dataKey="hora" tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={{ stroke: C.border }} />
+          <YAxis tick={{ fontSize: 11, fill: C.sub }} tickLine={false} axisLine={false} width={36} unit="°" />
+          <ReferenceLine y={5} stroke={C.danger} strokeDasharray="4 4" />
+          <Tooltip formatter={(v) => v + "°C"} />
+          <Line type="monotone" dataKey="temp" stroke={C.accent} strokeWidth={2} dot={{ r: 4 }} />
+        </LineChart>
+      </ChartCard>
+      <div className="grid grid-2">
+        {LOCAIS_TEMPERATURA.map((l, idx) => (
+          <TableCard key={idx} title={l.nome + " · faixa " + l.faixa} headers={[{ label: "Horário" }, { label: "Temperatura", right: true }]}>
+            {l.leituras.map((r, j) => {
+              const fora = l.nome.includes("Câmara") ? r.temp > 5 : (r.temp > -12 || r.temp < -18);
+              return (
+                <tr key={j}>
+                  <td>{r.hora}</td>
+                  <td className="right num" style={{ color: fora ? C.danger : "inherit", fontWeight: fora ? 600 : 400 }}>
+                    {r.temp}°C {fora && <Badge tipo="alerta">fora da faixa</Badge>}
+                  </td>
+                </tr>
+              );
+            })}
+          </TableCard>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function TelaReceitas() {
+  return (
+    <Section id="receitas" eyebrow="09 · Fichas técnicas" title="Receitas & Fichas"
+      desc="Custo, preço de venda e CMV de cada prato, calculado a partir dos insumos e preparos usados na receita.">
+      <div className="grid grid-3">
+        {RECEITAS.pratos.map((p, idx) => {
+          const alerta = p.cmv > RECEITAS.metaCmv;
+          return (
+            <div className="card recipe-card" key={idx}>
+              <div className="recipe-title">{p.nome}</div>
+              <div className="recipe-meta">Custo {brl(p.custo)} · Venda {brl(p.precoVenda)}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
+                <span style={{ color: C.sub }}>CMV</span>
+                <span style={{ fontWeight: 600, color: alerta ? C.danger : "inherit" }}>{p.cmv.toFixed(1)}%</span>
+              </div>
+              <div className="recipe-bar-track">
+                <div className={"recipe-bar-fill" + (alerta ? " alerta" : "")} style={{ width: Math.min(p.cmv, 100) + "%" }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginTop: 10, color: C.sub }}>
+                <span>Margem de contribuição</span><span className="num">{brl(p.margem)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <TableCard title="Preparos (sub-receitas)" headers={[{ label: "Preparo" }, { label: "Rendimento", right: true }, { label: "Custo por unidade", right: true }]}>
+          {RECEITAS.preparos.map((p, idx) => (
+            <tr key={idx}><td>{p.nome}</td><td className="right">{p.rendimento}</td><td className="right num">{brl(p.custoUnidade)}</td></tr>
+          ))}
+        </TableCard>
+      </div>
+    </Section>
+  );
+}
+
+function TelaRelatorios() {
+  const cores = { danger: C.danger, alerta: "#B8862E" };
+  return (
+    <Section id="relatorios" eyebrow="10 · Visão consolidada" title="Relatórios"
+      desc="Painel de alertas que cruza estoque, CMV, temperatura e rendimento de proteínas — tudo que precisa de atenção agora, num só lugar.">
+      <div className="grid grid-4" style={{ marginBottom: 16 }}>
+        <Kpi label="Alertas ativos" value={ALERTAS.length} alerta sub="em 4 áreas diferentes" />
+        <Kpi label="Insumos críticos" value={2} alerta />
+        <Kpi label="CMV acima da meta" value="3,8 p.p." alerta />
+        <Kpi label="Leituras fora da faixa" value={1} alerta />
+      </div>
+      <div className="card">
+        <div className="card-header">Todos os alertas</div>
+        {ALERTAS.map((a, idx) => (
+          <div className="alert-card" key={idx}>
+            <span className="alert-dot" style={{ background: cores[a.tipo] || C.faint }} />
+            <div>
+              <div className="alert-title">{a.titulo}</div>
+              <div className="alert-desc">{a.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shell
+// ---------------------------------------------------------------------------
+
+const NAV = [
+  { id: "insumos", label: "Insumos" },
+  { id: "cmv", label: "Fechamento de CMV" },
+  { id: "producoes", label: "Produções" },
+  { id: "checklists", label: "Checklists de Turno" },
+  { id: "estoque", label: "Estoque" },
+  { id: "proteinas", label: "Manipulação de Proteínas" },
+  { id: "nutricional", label: "Ficha Nutricional" },
+  { id: "seguranca", label: "Segurança Alimentar" },
+  { id: "receitas", label: "Receitas & Fichas" },
+  { id: "relatorios", label: "Relatórios" },
+];
+
+function App() {
+  const [ativo, setAtivo] = useState("insumos");
+  const irPara = (id) => {
+    setAtivo(id);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+  return (
+    <React.Fragment>
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <span className="sidebar-brand-dot" />
+          <span className="sidebar-brand-title">Ficha Técnica</span>
+        </div>
+        <nav>
+          {NAV.map((n, idx) => (
+            <a key={n.id} className="nav-link" onClick={() => irPara(n.id)}
+              style={ativo === n.id ? { background: "#FAFAFA", color: "#0D0D0F", fontWeight: 600 } : {}}>
+              <span className="num">{String(idx + 1).padStart(2, "0")}</span>{n.label}
+            </a>
+          ))}
+        </nav>
+        <div className="sidebar-footer">Cantina Bella Notte<br />demo visual · dados fictícios</div>
+      </aside>
+      <main className="main">
+        <div className="banner">
+          Demonstração estática offline — todas as telas do app, uma abaixo da outra, com dados fictícios da
+          &nbsp;<strong>Cantina Bella Notte</strong>. Sem backend, sem persistência: é só pra revisão visual.
+        </div>
+        <TelaInsumos />
+        <TelaCmv />
+        <TelaProducoes />
+        <TelaChecklists />
+        <TelaEstoque />
+        <TelaProteinas />
+        <TelaNutricional />
+        <TelaSeguranca />
+        <TelaReceitas />
+        <TelaRelatorios />
+      </main>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
