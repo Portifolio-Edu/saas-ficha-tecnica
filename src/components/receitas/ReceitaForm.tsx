@@ -4,9 +4,10 @@ import { useState } from "react";
 import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
+import { UploadFoto } from "@/components/receitas/UploadFoto";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
 import { UNIDADES, type Insumo } from "@/lib/dominio/insumo";
-import type { DestinoVenda, FormaFisica, LinhaFichaInput, Receita, ReceitaInput } from "@/lib/dominio/receita";
+import type { DestinoVenda, EtapaReceitaInput, FormaFisica, LinhaFichaInput, Receita, ReceitaInput } from "@/lib/dominio/receita";
 import type { UnidadeMedida } from "@/lib/calculo/types";
 import { acaoCriarReceita, acaoAtualizarReceita } from "@/app/receitas/actions";
 
@@ -32,7 +33,9 @@ export function ReceitaForm({
   const [formaFisica, setFormaFisica] = useState<FormaFisica>(receita?.formaFisica ?? "solido");
   const [destinoVenda, setDestinoVenda] = useState<DestinoVenda>(receita?.destinoVenda ?? "proprio");
   const [modoPreparo, setModoPreparo] = useState(receita?.modoPreparo ?? "");
+  const [fotoUrl, setFotoUrl] = useState<string | null>(receita?.fotoUrl ?? null);
   const [ficha, setFicha] = useState<LinhaFichaInput[]>(receita?.ficha.map((f) => ({ ...f })) ?? []);
+  const [etapas, setEtapas] = useState<EtapaReceitaInput[]>(receita?.etapas.map((e) => ({ ...e })) ?? []);
   const { salvando, erro, executar } = useAcaoFormulario(onSaved);
 
   const [tipoLinha, setTipoLinha] = useState<"insumo" | "sub_receita">("insumo");
@@ -61,6 +64,11 @@ export function ReceitaForm({
   };
   const removerLinha = (idx: number) => setFicha(ficha.filter((_, i) => i !== idx));
 
+  const addEtapa = () => setEtapas([...etapas, { ordem: etapas.length + 1, titulo: null, texto: null, fotoUrl: null }]);
+  const removerEtapa = (idx: number) => setEtapas(etapas.filter((_, i) => i !== idx));
+  const atualizarEtapa = (idx: number, parcial: Partial<EtapaReceitaInput>) =>
+    setEtapas(etapas.map((e, i) => (i === idx ? { ...e, ...parcial } : e)));
+
   const salvar = () => {
     if (!nome.trim() || !precoVenda || !rendimento || ficha.length === 0) return;
     const input: ReceitaInput = {
@@ -76,7 +84,9 @@ export function ReceitaForm({
       destinoVenda,
       margemAlvo: null,
       modoPreparo: modoPreparo.trim() || null,
+      fotoUrl,
       ficha,
+      etapas: etapas.map((e, idx) => ({ ...e, ordem: idx + 1 })),
     };
     executar(() => (receita ? acaoAtualizarReceita(receita.id, input) : acaoCriarReceita(input)));
   };
@@ -166,6 +176,50 @@ export function ReceitaForm({
         className="text-[12.5px] px-2.5 py-2 rounded-md w-full mb-3"
         style={{ ...inputStyle, minHeight: 80 }}
       />
+
+      <div className="mb-4">
+        <h4 className="text-[12px] font-semibold mb-1.5">Foto de padronização do prato</h4>
+        <UploadFoto valor={fotoUrl} onChange={setFotoUrl} alturaPreview={120} />
+      </div>
+
+      <div className="mb-4">
+        <h4 className="text-[12px] font-semibold mb-1.5">Etapas de produção</h4>
+        {etapas.length > 0 && (
+          <div className="space-y-2 mb-2">
+            {etapas.map((etapa, idx) => (
+              <div key={idx} className="rounded-md p-2.5" style={{ background: "var(--panel)", border: `1px solid ${"var(--border)"}` }}>
+                <div className="flex items-start gap-2.5">
+                  <span className="text-[11px] font-semibold mt-1.5" style={{ color: "var(--faint)" }}>
+                    {idx + 1}.
+                  </span>
+                  <div className="flex-1 space-y-1.5">
+                    <Input
+                      placeholder="Título da etapa (opcional)"
+                      value={etapa.titulo ?? ""}
+                      onChange={(e) => atualizarEtapa(idx, { titulo: e.target.value || null })}
+                      className="text-[12.5px] px-2.5 py-1.5 w-full"
+                    />
+                    <textarea
+                      placeholder="Descrição da etapa"
+                      value={etapa.texto ?? ""}
+                      onChange={(e) => atualizarEtapa(idx, { texto: e.target.value || null })}
+                      className="text-[12.5px] px-2.5 py-2 rounded-md w-full"
+                      style={{ ...inputStyle, minHeight: 60 }}
+                    />
+                    <UploadFoto valor={etapa.fotoUrl} onChange={(url) => atualizarEtapa(idx, { fotoUrl: url })} alturaPreview={90} />
+                  </div>
+                  <button onClick={() => removerEtapa(idx)} className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
+                    remover
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button onClick={addEtapa} className="text-[12.5px] font-medium px-3 py-1.5 rounded-md" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
+          + etapa
+        </button>
+      </div>
 
       <ErroBanner erro={erro} />
 

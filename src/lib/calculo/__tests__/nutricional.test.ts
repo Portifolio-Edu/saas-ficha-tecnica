@@ -130,7 +130,9 @@ describe('calcularNutricaoReceita', () => {
       destinoVenda: 'proprio',
       margemAlvo: null,
       modoPreparo: null,
+      fotoUrl: null,
       ficha: [],
+      etapas: [],
       ...overrides,
     };
   }

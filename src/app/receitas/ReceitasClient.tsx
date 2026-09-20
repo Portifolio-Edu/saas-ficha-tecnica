@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Download } from "lucide-react";
+import { ChevronDown, ChevronRight, Download, ClipboardList } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { nums } from "@/components/ficha/tema";
 import { ReceitaForm } from "@/components/receitas/ReceitaForm";
+import { FichaProducaoModal } from "@/components/receitas/FichaProducaoModal";
 import { Donut, type FatiaDonut } from "@/components/charts/Donut";
 import { CHART_MIN_HEIGHT } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
@@ -39,6 +40,7 @@ export function ReceitasClient({
   const [showNova, setShowNova] = useState(false);
   const [editando, setEditando] = useState<Receita | null>(null);
   const [gerandoPdf, setGerandoPdf] = useState<string | null>(null);
+  const [fichaProducao, setFichaProducao] = useState<Receita | null>(null);
 
   const contexto = construirContexto(insumos, [...receitas, ...preparos], processamentos);
   const lotesProteina = processamentos.map(paraProcessamentoCalc);
@@ -279,6 +281,16 @@ export function ReceitasClient({
                       ))}
                     </div>
 
+                    <div className="mb-3">
+                      <button
+                        onClick={() => setFichaProducao(p)}
+                        className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
+                        style={{ border: `1px solid ${"var(--border-strong)"}` }}
+                      >
+                        <ClipboardList size={13} /> Ver ficha de produção
+                      </button>
+                    </div>
+
                     <div className="flex gap-2 mb-3">
                       <button
                         onClick={() => gerarPdfCustos(p)}
@@ -318,6 +330,15 @@ export function ReceitasClient({
         <div className="text-[12.5px] py-6 text-center" style={{ color: "var(--faint)" }}>
           Nenhum prato cadastrado ainda.
         </div>
+      )}
+
+      {fichaProducao && (
+        <FichaProducaoModal
+          receita={fichaProducao}
+          insumos={insumos}
+          todasReceitas={[...receitas, ...preparos]}
+          onClose={() => setFichaProducao(null)}
+        />
       )}
     </div>
   );

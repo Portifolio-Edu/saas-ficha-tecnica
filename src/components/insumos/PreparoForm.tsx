@@ -56,7 +56,9 @@ export function PreparoForm({
       destinoVenda: "proprio",
       margemAlvo: null,
       modoPreparo: preparo?.modoPreparo ?? null,
+      fotoUrl: preparo?.fotoUrl ?? null,
       ficha,
+      etapas: preparo?.etapas.map((e) => ({ ordem: e.ordem, titulo: e.titulo, texto: e.texto, fotoUrl: e.fotoUrl })) ?? [],
     };
     executar(() => (preparo ? acaoAtualizarPreparo(preparo.id, input) : acaoCriarPreparo(input)));
   };

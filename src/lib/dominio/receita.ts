@@ -17,6 +17,17 @@ export interface LinhaFicha extends LinhaFichaInput {
   id: string;
 }
 
+export interface EtapaReceitaInput {
+  ordem: number;
+  titulo: string | null;
+  texto: string | null;
+  fotoUrl: string | null;
+}
+
+export interface EtapaReceita extends EtapaReceitaInput {
+  id: string;
+}
+
 export interface Receita {
   id: string;
   nomePrato: string;
@@ -31,7 +42,9 @@ export interface Receita {
   destinoVenda: DestinoVenda;
   margemAlvo: number | null;
   modoPreparo: string | null;
+  fotoUrl: string | null;
   ficha: LinhaFicha[];
+  etapas: EtapaReceita[];
 }
 
 export interface ReceitaInput {
@@ -47,5 +60,7 @@ export interface ReceitaInput {
   destinoVenda: DestinoVenda;
   margemAlvo: number | null;
   modoPreparo: string | null;
+  fotoUrl: string | null;
   ficha: LinhaFichaInput[];
+  etapas: EtapaReceitaInput[];
 }

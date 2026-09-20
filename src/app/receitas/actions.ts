@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { getClienteAtual } from "@/lib/dados/cliente";
-import { criarReceita, atualizarReceita, excluirReceita, type ReceitaInput } from "@/lib/dados/receitas";
+import { criarReceita, atualizarReceita, excluirReceita, uploadFotoReceita, type ReceitaInput } from "@/lib/dados/receitas";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
+export type ResultadoUpload = { ok: true; url: string } | { ok: false; erro: string };
 
 function paraResultado(e: unknown): Resultado {
   return { ok: false, erro: e instanceof Error ? e.message : "Erro desconhecido." };
@@ -39,5 +40,18 @@ export async function acaoExcluirReceita(id: string): Promise<Resultado> {
     return { ok: true };
   } catch (e) {
     return paraResultado(e);
+  }
+}
+
+export async function acaoUploadFotoReceita(formData: FormData): Promise<ResultadoUpload> {
+  const cliente = await getClienteAtual();
+  if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  const arquivo = formData.get("arquivo");
+  if (!(arquivo instanceof File) || arquivo.size === 0) return { ok: false, erro: "Nenhum arquivo enviado." };
+  try {
+    const url = await uploadFotoReceita(cliente.id, arquivo);
+    return { ok: true, url };
+  } catch (e) {
+    return { ok: false, erro: e instanceof Error ? e.message : "Erro desconhecido." };
   }
 }

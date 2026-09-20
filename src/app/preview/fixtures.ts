@@ -10,7 +10,7 @@
 // passam essas listas como props para os *Client.tsx reais de produção.
 
 import type { Categoria, Insumo } from "@/lib/dominio/insumo";
-import type { LinhaFicha, Receita } from "@/lib/dominio/receita";
+import type { EtapaReceita, LinhaFicha, Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
 import type { Producao, Turno } from "@/lib/dominio/producao";
 import type { Checklist, ChecklistItem } from "@/lib/dominio/checklist";
@@ -53,6 +53,10 @@ function linha(id: string, parcial: Partial<LinhaFicha> & { pesoLiquido: number;
   return { id, insumoId: null, subReceitaId: null, ...parcial };
 }
 
+function etapa(id: string, ordem: number, titulo: string, texto: string): EtapaReceita {
+  return { id, ordem, titulo, texto, fotoUrl: null };
+}
+
 // =========================================================================
 // Receitas — 3 preparos (sub-receitas) + 6 pratos finais que as referenciam.
 // =========================================================================
@@ -72,12 +76,14 @@ export const receitasPreparos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: null,
     modoPreparo: "Misturar farinha, fermento, azeite e sal; sovar, deixar crescer 2h e dividir em 10 discos de 220g.",
+    fotoUrl: null,
     ficha: [
       linha("pr-massa-l1", { insumoId: "i-farinha", pesoLiquido: 2.2, unidade: "kg" }),
       linha("pr-massa-l2", { insumoId: "i-fermento", pesoLiquido: 0.05, unidade: "kg" }),
       linha("pr-massa-l3", { insumoId: "i-azeite", pesoLiquido: 0.15, unidade: "l" }),
       linha("pr-massa-l4", { insumoId: "i-sal", pesoLiquido: 0.04, unidade: "kg" }),
     ],
+    etapas: [],
   },
   {
     id: "pr-molho-tomate",
@@ -93,6 +99,7 @@ export const receitasPreparos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: null,
     modoPreparo: "Refogar cebola e alho no azeite, adicionar tomate, sal e manjericão; cozinhar em fogo baixo por 40min.",
+    fotoUrl: null,
     ficha: [
       linha("pr-molho-l1", { insumoId: "i-tomate", pesoLiquido: 5, unidade: "kg" }),
       linha("pr-molho-l2", { insumoId: "i-cebola", pesoLiquido: 0.6, unidade: "kg" }),
@@ -101,6 +108,7 @@ export const receitasPreparos: Receita[] = [
       linha("pr-molho-l5", { insumoId: "i-sal", pesoLiquido: 0.05, unidade: "kg" }),
       linha("pr-molho-l6", { insumoId: "i-manjericao", pesoLiquido: 0.03, unidade: "kg" }),
     ],
+    etapas: [],
   },
   {
     id: "pr-molho-branco",
@@ -116,12 +124,14 @@ export const receitasPreparos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: null,
     modoPreparo: "Derreter manteiga, adicionar farinha formando roux, incorporar leite aos poucos e temperar com sal.",
+    fotoUrl: null,
     ficha: [
       linha("pr-branco-l1", { insumoId: "i-manteiga", pesoLiquido: 0.2, unidade: "kg" }),
       linha("pr-branco-l2", { insumoId: "i-farinha", pesoLiquido: 0.2, unidade: "kg" }),
       linha("pr-branco-l3", { insumoId: "i-leite", pesoLiquido: 2, unidade: "l" }),
       linha("pr-branco-l4", { insumoId: "i-sal", pesoLiquido: 0.02, unidade: "kg" }),
     ],
+    etapas: [],
   },
 ];
 
@@ -140,12 +150,19 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.68,
     modoPreparo: "Abrir o disco de massa, cobrir com molho de tomate, mussarela e manjericão fresco; assar a 380°C por 3min.",
+    fotoUrl: null,
     ficha: [
       linha("pt-marg-l1", { subReceitaId: "pr-massa-pizza", pesoLiquido: 1, unidade: "un" }),
       linha("pt-marg-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.15, unidade: "l" }),
       linha("pt-marg-l3", { insumoId: "i-mussarela", pesoLiquido: 0.15, unidade: "kg" }),
       linha("pt-marg-l4", { insumoId: "i-manjericao", pesoLiquido: 0.01, unidade: "kg" }),
       linha("pt-marg-l5", { insumoId: "i-azeite", pesoLiquido: 0.02, unidade: "l" }),
+    ],
+    etapas: [
+      etapa("pt-marg-e1", 1, "Abrir o disco de massa", "Esticar a massa de pizza pré-preparada até 30cm de diâmetro, deixando a borda levemente mais grossa."),
+      etapa("pt-marg-e2", 2, "Espalhar o molho", "Cobrir o disco com uma camada fina e uniforme de molho de tomate caseiro, deixando 2cm livres na borda."),
+      etapa("pt-marg-e3", 3, "Finalizar a montagem", "Distribuir a mussarela por igual e finalizar com folhas de manjericão fresco e um fio de azeite."),
+      etapa("pt-marg-e4", 4, "Assar", "Assar em forno a 380°C por aproximadamente 3 minutos, até a borda dourar e o queijo derreter por completo."),
     ],
   },
   {
@@ -162,6 +179,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.65,
     modoPreparo: "Abrir o disco de massa, cobrir com molho de tomate, mussarela, calabresa fatiada e cebola; assar a 380°C por 3min.",
+    fotoUrl: null,
     ficha: [
       linha("pt-cal-l1", { subReceitaId: "pr-massa-pizza", pesoLiquido: 1, unidade: "un" }),
       linha("pt-cal-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.15, unidade: "l" }),
@@ -169,6 +187,7 @@ export const receitasPratos: Receita[] = [
       linha("pt-cal-l4", { insumoId: "i-calabresa", pesoLiquido: 0.12, unidade: "kg" }),
       linha("pt-cal-l5", { insumoId: "i-cebola", pesoLiquido: 0.05, unidade: "kg" }),
     ],
+    etapas: [],
   },
   {
     id: "pt-parmegiana",
@@ -184,6 +203,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.65,
     modoPreparo: "Empanar o filé de frango na farinha, fritar, cobrir com molho de tomate, mussarela e parmesão; gratinar.",
+    fotoUrl: null,
     ficha: [
       linha("pt-parm-l1", { insumoId: "i-frango", pesoLiquido: 0.2, unidade: "kg" }),
       linha("pt-parm-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.12, unidade: "l" }),
@@ -191,6 +211,11 @@ export const receitasPratos: Receita[] = [
       linha("pt-parm-l4", { insumoId: "i-parmesao", pesoLiquido: 0.02, unidade: "kg" }),
       linha("pt-parm-l5", { insumoId: "i-farinha", pesoLiquido: 0.03, unidade: "kg" }),
       linha("pt-parm-l6", { insumoId: "i-azeite", pesoLiquido: 0.02, unidade: "l" }),
+    ],
+    etapas: [
+      etapa("pt-parm-e1", 1, "Empanar o frango", "Temperar o filé de frango e empaná-lo na farinha de trigo, cobrindo bem toda a superfície."),
+      etapa("pt-parm-e2", 2, "Fritar", "Fritar em azeite quente até dourar por igual dos dois lados, escorrendo o excesso de óleo em papel absorvente."),
+      etapa("pt-parm-e3", 3, "Gratinar", "Cobrir o filé frito com molho de tomate, mussarela e parmesão ralado; gratinar no forno até derreter e dourar o queijo."),
     ],
   },
   {
@@ -209,6 +234,7 @@ export const receitasPratos: Receita[] = [
     // de propósito, para exercitar o estado de alerta nas telas de CMV/relatórios.
     margemAlvo: 0.72,
     modoPreparo: "Refogar camarão com alho e manteiga, finalizar o arroz com azeite, cebola e parmesão.",
+    fotoUrl: null,
     ficha: [
       linha("pt-risoto-l1", { insumoId: "i-camarao", pesoLiquido: 0.18, unidade: "kg" }),
       linha("pt-risoto-l2", { insumoId: "i-azeite", pesoLiquido: 0.02, unidade: "l" }),
@@ -217,6 +243,7 @@ export const receitasPratos: Receita[] = [
       linha("pt-risoto-l5", { insumoId: "i-manteiga", pesoLiquido: 0.02, unidade: "kg" }),
       linha("pt-risoto-l6", { insumoId: "i-cebola", pesoLiquido: 0.03, unidade: "kg" }),
     ],
+    etapas: [],
   },
   {
     id: "pt-lasanha",
@@ -232,12 +259,19 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.65,
     modoPreparo: "Montar camadas de carne refogada, molho de tomate, molho branco e mussarela; gratinar no forno.",
+    fotoUrl: null,
     ficha: [
       linha("pt-las-l1", { insumoId: "i-patinho", pesoLiquido: 0.15, unidade: "kg" }),
       linha("pt-las-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.2, unidade: "l" }),
       linha("pt-las-l3", { subReceitaId: "pr-molho-branco", pesoLiquido: 0.15, unidade: "l" }),
       linha("pt-las-l4", { insumoId: "i-mussarela", pesoLiquido: 0.1, unidade: "kg" }),
       linha("pt-las-l5", { insumoId: "i-parmesao", pesoLiquido: 0.02, unidade: "kg" }),
+    ],
+    etapas: [
+      etapa("pt-las-e1", 1, "Refogar a carne", "Refogar a carne bovina moída até dourar e misturar com o molho de tomate caseiro."),
+      etapa("pt-las-e2", 2, "Montar as camadas", "Intercalar camadas de massa de lasanha, carne com molho de tomate, molho branco e mussarela na travessa."),
+      etapa("pt-las-e3", 3, "Finalizar com parmesão", "Cobrir a última camada com parmesão ralado."),
+      etapa("pt-las-e4", 4, "Gratinar", "Levar ao forno até gratinar por completo e a superfície dourar."),
     ],
   },
   {
@@ -254,6 +288,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.7,
     modoPreparo: "Fatiar tomate e mussarela, intercalar, finalizar com manjericão, azeite e flor de sal.",
+    fotoUrl: null,
     ficha: [
       linha("pt-cap-l1", { insumoId: "i-tomate", pesoLiquido: 0.18, unidade: "kg" }),
       linha("pt-cap-l2", { insumoId: "i-mussarela", pesoLiquido: 0.12, unidade: "kg" }),
@@ -261,6 +296,7 @@ export const receitasPratos: Receita[] = [
       linha("pt-cap-l4", { insumoId: "i-azeite", pesoLiquido: 0.015, unidade: "l" }),
       linha("pt-cap-l5", { insumoId: "i-sal", pesoLiquido: 0.005, unidade: "kg" }),
     ],
+    etapas: [],
   },
 ];
 
