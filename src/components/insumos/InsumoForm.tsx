@@ -7,14 +7,17 @@ import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
 import { CATEGORIAS, UNIDADES, type Categoria, type Insumo, type InsumoInput } from "@/lib/dominio/insumo";
 import type { UnidadeMedida } from "@/lib/calculo/types";
+import type { LocalArmazenamento } from "@/lib/dominio/temperatura";
 import { acaoCriarInsumo, acaoAtualizarInsumo } from "@/app/insumos/actions";
 
 export function InsumoForm({
   insumo,
+  locais,
   onCancel,
   onSaved,
 }: {
   insumo?: Insumo;
+  locais: LocalArmazenamento[];
   onCancel: () => void;
   onSaved: () => void;
 }) {
@@ -25,6 +28,7 @@ export function InsumoForm({
   const [precoEmbalagem, setPrecoEmbalagem] = useState(insumo ? String(insumo.precoEmbalagem) : "");
   const [fc, setFc] = useState(insumo ? String(insumo.fatorCorrecao) : "1");
   const [pesoPorUnidade, setPesoPorUnidade] = useState(insumo?.pesoPorUnidade != null ? String(insumo.pesoPorUnidade) : "");
+  const [localArmazenamentoId, setLocalArmazenamentoId] = useState(insumo?.localArmazenamentoId ?? "");
   const { salvando, erro, executar } = useAcaoFormulario(onSaved);
 
   const salvar = () => {
@@ -37,6 +41,7 @@ export function InsumoForm({
       precoEmbalagem: parseFloat(precoEmbalagem),
       fatorCorrecao: parseFloat(fc) || 1,
       pesoPorUnidade: unidade === "un" && pesoPorUnidade ? parseFloat(pesoPorUnidade) : null,
+      localArmazenamentoId: localArmazenamentoId || null,
     };
     executar(() => (insumo ? acaoAtualizarInsumo(insumo.id, input) : acaoCriarInsumo(input)));
   };
@@ -63,6 +68,14 @@ export function InsumoForm({
         {unidade === "un" && (
           <Input placeholder="Peso por unidade (kg)" type="number" value={pesoPorUnidade} onChange={(e) => setPesoPorUnidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
         )}
+      </div>
+      <div className="grid grid-cols-6 gap-2 mb-3">
+        <select value={localArmazenamentoId} onChange={(e) => setLocalArmazenamentoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-3" style={inputStyle}>
+          <option value="">Sem local de armazenamento</option>
+          {locais.map((l) => (
+            <option key={l.id} value={l.id}>{l.nome}</option>
+          ))}
+        </select>
       </div>
       <ErroBanner erro={erro} />
       <div className="flex gap-2">

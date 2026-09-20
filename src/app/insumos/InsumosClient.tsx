@@ -9,6 +9,7 @@ import { InsumoForm } from "@/components/insumos/InsumoForm";
 import { PreparoForm } from "@/components/insumos/PreparoForm";
 import { CATEGORIAS, type Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
+import type { LocalArmazenamento } from "@/lib/dominio/temperatura";
 import { construirContexto, paraInsumoCalc, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
@@ -21,11 +22,13 @@ export function InsumosClient({
   preparos,
   todasReceitas,
   processamentos,
+  locais,
 }: {
   insumos: Insumo[];
   preparos: Receita[];
   todasReceitas: Receita[];
   processamentos: Processamento[];
+  locais: LocalArmazenamento[];
 }) {
   const [showNovoInsumo, setShowNovoInsumo] = useState(false);
   const [insumoEditando, setInsumoEditando] = useState<Insumo | null>(null);
@@ -63,7 +66,7 @@ export function InsumosClient({
             {showNovoInsumo ? "Fechar" : "+ Novo insumo"}
           </button>
         </div>
-        {showNovoInsumo && <InsumoForm onCancel={() => setShowNovoInsumo(false)} onSaved={() => setShowNovoInsumo(false)} />}
+        {showNovoInsumo && <InsumoForm locais={locais} onCancel={() => setShowNovoInsumo(false)} onSaved={() => setShowNovoInsumo(false)} />}
         <table className="w-full text-[13px]">
           <thead>
             <tr style={{ color: "var(--faint)" }} className="text-left text-[11px] uppercase tracking-wide">
@@ -114,7 +117,7 @@ export function InsumosClient({
                   {editandoEsteAqui && (
                     <tr>
                       <td colSpan={9} className="p-0">
-                        <InsumoForm insumo={i} onCancel={() => setInsumoEditando(null)} onSaved={() => setInsumoEditando(null)} />
+                        <InsumoForm insumo={i} locais={locais} onCancel={() => setInsumoEditando(null)} onSaved={() => setInsumoEditando(null)} />
                       </td>
                     </tr>
                   )}

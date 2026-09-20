@@ -6,34 +6,60 @@ import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
 import type { LocalArmazenamento, RegistroTemperaturaInput } from "@/lib/dominio/temperatura";
+import type { Insumo } from "@/lib/dominio/insumo";
 import { acaoRegistrarTemperatura } from "@/app/seguranca/actions";
 
-export function NovaTemperaturaForm({ locais, onCancel, onSaved }: { locais: LocalArmazenamento[]; onCancel: () => void; onSaved: () => void }) {
+export function NovaTemperaturaForm({
+  locais,
+  insumos,
+  onCancel,
+  onSaved,
+}: {
+  locais: LocalArmazenamento[];
+  insumos: Insumo[];
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
   const [localId, setLocalId] = useState(locais[0]?.id ?? "");
+  const [insumoId, setInsumoId] = useState("");
   const [temperatura, setTemperatura] = useState("");
   const [responsavel, setResponsavel] = useState("");
   const { salvando, erro, executar } = useAcaoFormulario(onSaved);
 
   const local = locais.find((l) => l.id === localId);
+  const insumosDoLocal = insumos.filter((i) => i.localArmazenamentoId === localId);
   const valor = parseFloat(temperatura);
   const foraDaFaixa = local && temperatura !== "" && ((local.temperaturaMinC != null && valor < local.temperaturaMinC) || (local.temperaturaMaxC != null && valor > local.temperaturaMaxC));
 
+  const trocarLocal = (id: string) => {
+    setLocalId(id);
+    setInsumoId("");
+  };
+
   const salvar = () => {
     if (!localId || temperatura === "" || !responsavel.trim()) return;
-    const input: RegistroTemperaturaInput = { localArmazenamentoId: localId, temperaturaC: valor, responsavel: responsavel.trim() };
+    const input: RegistroTemperaturaInput = { localArmazenamentoId: localId, temperaturaC: valor, responsavel: responsavel.trim(), insumoId: insumoId || null };
     executar(() => acaoRegistrarTemperatura(input));
   };
 
   return (
     <div className="px-5 py-4">
       <div className="grid grid-cols-4 gap-2 mb-2">
-        <select value={localId} onChange={(e) => setLocalId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+        <select value={localId} onChange={(e) => trocarLocal(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           {locais.map((l) => (
             <option key={l.id} value={l.id}>{l.nome}</option>
           ))}
         </select>
-        <Input placeholder="Temperatura (°C)" type="number" value={temperatura} onChange={(e) => setTemperatura(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <select value={insumoId} onChange={(e) => setInsumoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+          <option value="">Sem insumo específico (ronda geral)</option>
+          {insumosDoLocal.map((i) => (
+            <option key={i.id} value={i.id}>{i.nome}</option>
+          ))}
+        </select>
+      </div>
+      <div className="grid grid-cols-4 gap-2 mb-2">
+        <Input placeholder="Temperatura (°C)" type="number" value={temperatura} onChange={(e) => setTemperatura(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input placeholder="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
       </div>
       {foraDaFaixa && (
         <div className="text-[12px] mb-2" style={{ color: "var(--danger)" }}>

@@ -27,6 +27,7 @@ export interface Insumo {
   precoUnitario: number;
   fatorCorrecao: number;
   pesoPorUnidade: number | null;
+  localArmazenamentoId: string | null;
   estoque: { saldoAtual: number; estoqueMinimo: number } | null;
 }
 
@@ -38,4 +39,5 @@ export interface InsumoInput {
   precoEmbalagem: number;
   fatorCorrecao: number;
   pesoPorUnidade: number | null;
+  localArmazenamentoId: string | null;
 }

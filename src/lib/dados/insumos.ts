@@ -15,6 +15,7 @@ interface LinhaInsumo {
   preco_unitario: number;
   fator_correcao: number;
   peso_por_unidade: number | null;
+  local_armazenamento_id: string | null;
 }
 
 interface LinhaEstoque {
@@ -28,7 +29,7 @@ export async function listarInsumos(): Promise<Insumo[]> {
 
   const { data: insumos, error } = await supabase
     .from("insumos")
-    .select("id, nome, categoria, unidade_medida, tamanho_embalagem, preco_embalagem, preco_unitario, fator_correcao, peso_por_unidade")
+    .select("id, nome, categoria, unidade_medida, tamanho_embalagem, preco_embalagem, preco_unitario, fator_correcao, peso_por_unidade, local_armazenamento_id")
     .order("nome");
   if (error) throw new Error(mensagemErro(error));
 
@@ -55,6 +56,7 @@ export async function listarInsumos(): Promise<Insumo[]> {
     precoUnitario: Number(i.preco_unitario),
     fatorCorrecao: Number(i.fator_correcao),
     pesoPorUnidade: i.peso_por_unidade == null ? null : Number(i.peso_por_unidade),
+    localArmazenamentoId: i.local_armazenamento_id,
     estoque: estoquePorInsumo.get(i.id) ?? null,
   }));
 }
@@ -68,6 +70,7 @@ function paraLinhas(input: InsumoInput) {
     preco_embalagem: input.precoEmbalagem,
     fator_correcao: input.fatorCorrecao,
     peso_por_unidade: input.pesoPorUnidade,
+    local_armazenamento_id: input.localArmazenamentoId,
   };
 }
 

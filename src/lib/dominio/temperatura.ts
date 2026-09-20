@@ -18,10 +18,13 @@ export interface RegistroTemperatura {
   temperaturaC: number;
   responsavel: string;
   registradoEm: string;
+  insumoId: string | null;
+  nomeInsumo: string | null;
 }
 
 export interface RegistroTemperaturaInput {
   localArmazenamentoId: string;
   temperaturaC: number;
   responsavel: string;
+  insumoId: string | null;
 }

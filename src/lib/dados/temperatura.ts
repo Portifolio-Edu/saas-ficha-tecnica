@@ -59,14 +59,16 @@ interface LinhaRegistroJoin {
   temperatura_c: number;
   responsavel: string;
   registrado_em: string;
+  insumo_id: string | null;
   locais_armazenamento: { nome: string } | null;
+  insumos: { nome: string } | null;
 }
 
 export async function listarRegistrosTemperatura(limite = 60): Promise<RegistroTemperatura[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("registros_temperatura")
-    .select("id, local_armazenamento_id, temperatura_c, responsavel, registrado_em, locais_armazenamento(nome)")
+    .select("id, local_armazenamento_id, temperatura_c, responsavel, registrado_em, insumo_id, locais_armazenamento(nome), insumos(nome)")
     .order("registrado_em", { ascending: false })
     .limit(limite);
   if (error) throw new Error(mensagemErro(error));
@@ -80,6 +82,8 @@ export async function listarRegistrosTemperatura(limite = 60): Promise<RegistroT
       temperaturaC: Number(r.temperatura_c),
       responsavel: r.responsavel,
       registradoEm: r.registrado_em,
+      insumoId: r.insumo_id,
+      nomeInsumo: r.insumos?.nome ?? null,
     }));
 }
 
@@ -89,6 +93,7 @@ export async function registrarTemperatura(input: RegistroTemperaturaInput): Pro
     local_armazenamento_id: input.localArmazenamentoId,
     temperatura_c: input.temperaturaC,
     responsavel: input.responsavel,
+    insumo_id: input.insumoId,
   });
   if (error) throw new Error(mensagemErro(error));
 }

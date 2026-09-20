@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
+import { Badge } from "@/components/ficha/Badge";
 import { nums } from "@/components/ficha/tema";
 import { NovoLocalForm } from "@/components/seguranca/NovoLocalForm";
 import { NovaTemperaturaForm } from "@/components/seguranca/NovaTemperaturaForm";
+import { ChartFrame } from "@/components/charts/ChartFrame";
+import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
+import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
+import type { Insumo } from "@/lib/dominio/insumo";
 import { acaoExcluirLocal } from "./actions";
 
 function formatarDataHora(iso: string): string {
@@ -13,16 +19,28 @@ function formatarDataHora(iso: string): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export function SegurancaClient({ locais, registros }: { locais: LocalArmazenamento[]; registros: RegistroTemperatura[] }) {
+function foraDaFaixaDoLocal(local: LocalArmazenamento | null | undefined, temperaturaC: number): boolean {
+  return !!local && ((local.temperaturaMinC != null && temperaturaC < local.temperaturaMinC) || (local.temperaturaMaxC != null && temperaturaC > local.temperaturaMaxC));
+}
+
+export function SegurancaClient({ locais, registros, insumos }: { locais: LocalArmazenamento[]; registros: RegistroTemperatura[]; insumos: Insumo[] }) {
   const [showNovoLocal, setShowNovoLocal] = useState(false);
   const [localEditando, setLocalEditando] = useState<LocalArmazenamento | null>(null);
   const [showNovaTemperatura, setShowNovaTemperatura] = useState(false);
+  const [localSelecionadoId, setLocalSelecionadoId] = useState(locais[0]?.id ?? "");
 
   const excluirLocalComConfirmacao = async (local: LocalArmazenamento) => {
     if (!window.confirm(`Excluir "${local.nome}"? Isso também apaga o histórico de leituras desse local.`)) return;
     const resultado = await acaoExcluirLocal(local.id);
     if (!resultado.ok) window.alert(resultado.erro);
   };
+
+  const localSelecionado = locais.find((l) => l.id === localSelecionadoId) ?? null;
+  const leiturasLocal = registros
+    .filter((r) => r.localArmazenamentoId === localSelecionadoId)
+    .slice()
+    .sort((a, b) => new Date(a.registradoEm).getTime() - new Date(b.registradoEm).getTime())
+    .map((r) => ({ ...r, dataLabel: formatarDataHora(r.registradoEm) }));
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -51,7 +69,8 @@ export function SegurancaClient({ locais, registros }: { locais: LocalArmazename
         <div className="grid grid-cols-3 gap-3">
           {locais.map((local) => {
             const ultima = registros.find((r) => r.localArmazenamentoId === local.id);
-            const foraDaFaixa = !!ultima && ((local.temperaturaMinC != null && ultima.temperaturaC < local.temperaturaMinC) || (local.temperaturaMaxC != null && ultima.temperaturaC > local.temperaturaMaxC));
+            const foraDaFaixa = !!ultima && foraDaFaixaDoLocal(local, ultima.temperaturaC);
+            const insumosDoLocal = insumos.filter((i) => i.localArmazenamentoId === local.id);
             const editandoEsteAqui = localEditando?.id === local.id;
             return (
               <Card key={local.id} className="p-5">
@@ -66,6 +85,13 @@ export function SegurancaClient({ locais, registros }: { locais: LocalArmazename
                     <div className="text-[12px] mt-2" style={{ color: "var(--faint)" }}>
                       faixa ideal: {local.temperaturaMinC ?? "—"}°C a {local.temperaturaMaxC ?? "—"}°C
                     </div>
+                    {insumosDoLocal.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {insumosDoLocal.map((i) => (
+                          <Badge key={i.id}>{i.nome}</Badge>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex gap-3 mt-3">
                       <button
                         onClick={() => {
@@ -111,9 +137,80 @@ export function SegurancaClient({ locais, registros }: { locais: LocalArmazename
 
         {showNovaTemperatura && (
           <Card className="mb-4">
-            <NovaTemperaturaForm locais={locais} onCancel={() => setShowNovaTemperatura(false)} onSaved={() => setShowNovaTemperatura(false)} />
+            <NovaTemperaturaForm locais={locais} insumos={insumos} onCancel={() => setShowNovaTemperatura(false)} onSaved={() => setShowNovaTemperatura(false)} />
           </Card>
         )}
+
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {locais.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => setLocalSelecionadoId(l.id)}
+              className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+              style={{
+                background: l.id === localSelecionadoId ? "var(--text)" : "var(--panel)",
+                color: l.id === localSelecionadoId ? "#fff" : "var(--text)",
+                border: `1px solid ${l.id === localSelecionadoId ? "var(--text)" : "var(--border-strong)"}`,
+              }}
+            >
+              {l.nome}
+            </button>
+          ))}
+        </div>
+
+        <Card className="p-6 mb-5">
+          <h2 className="text-[14px] font-semibold mb-1">Oscilação de temperatura{localSelecionado ? ` — ${localSelecionado.nome}` : ""}</h2>
+          <p className="text-[12px] mb-4" style={{ color: "var(--sub)" }}>
+            Linhas tracejadas marcam os limites cadastrados pro local. Ponto maior e vermelho é leitura fora da faixa.
+          </p>
+          <ChartFrame
+            vazio={leiturasLocal.length === 0}
+            tituloVazio="Nenhuma leitura registrada para este local ainda."
+            dicaVazio="Registre uma leitura pra esse gráfico aparecer aqui."
+          >
+            <LineChart data={leiturasLocal} margin={CHART_MARGIN}>
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
+              <YAxis tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} unit="°" />
+              {localSelecionado?.temperaturaMinC != null && (
+                <ReferenceLine y={localSelecionado.temperaturaMinC} stroke="var(--border-strong)" strokeDasharray="4 4" label={{ value: "mín.", position: "insideBottomRight", fontSize: 10, fill: "var(--sub)" }} />
+              )}
+              {localSelecionado?.temperaturaMaxC != null && (
+                <ReferenceLine y={localSelecionado.temperaturaMaxC} stroke="var(--border-strong)" strokeDasharray="4 4" label={{ value: "máx.", position: "insideTopRight", fontSize: 10, fill: "var(--sub)" }} />
+              )}
+              <Tooltip
+                content={({ payload }) => {
+                  if (!payload || !payload.length) return null;
+                  const p = payload[0].payload as RegistroTemperatura & { dataLabel: string };
+                  const fora = foraDaFaixaDoLocal(localSelecionado, p.temperaturaC);
+                  return (
+                    <ChartTooltipCard
+                      titulo={`${p.dataLabel} · ${p.responsavel}`}
+                      linhas={[
+                        { rotulo: "Temperatura", valor: `${p.temperaturaC}°C`, destaque: fora },
+                        ...(p.nomeInsumo ? [{ rotulo: "Motivo", valor: p.nomeInsumo }] : []),
+                      ]}
+                    />
+                  );
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="temperaturaC"
+                stroke="var(--text)"
+                strokeWidth={2}
+                isAnimationActive
+                animationDuration={CHART_ANIMATION_DURATION}
+                animationEasing={CHART_ANIMATION_EASING}
+                dot={(props) => {
+                  const { cx, cy, payload, index } = props as unknown as { cx: number; cy: number; payload: RegistroTemperatura; index: number };
+                  const fora = foraDaFaixaDoLocal(localSelecionado, payload.temperaturaC);
+                  return <circle key={index} cx={cx} cy={cy} r={fora ? 6 : 3.5} fill={fora ? "var(--danger)" : "var(--text)"} />;
+                }}
+              />
+            </LineChart>
+          </ChartFrame>
+        </Card>
 
         <Card>
           <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
@@ -125,18 +222,20 @@ export function SegurancaClient({ locais, registros }: { locais: LocalArmazename
                 <th className="py-2.5 px-5 font-medium">Data</th>
                 <th className="py-2.5 px-3 font-medium">Local</th>
                 <th className="py-2.5 px-3 font-medium">Responsável</th>
+                <th className="py-2.5 px-3 font-medium">Insumo</th>
                 <th className="py-2.5 px-5 font-medium text-right">Temperatura</th>
               </tr>
             </thead>
             <tbody>
               {registros.map((r) => {
                 const local = locais.find((l) => l.id === r.localArmazenamentoId);
-                const foraDaFaixa = !!local && ((local.temperaturaMinC != null && r.temperaturaC < local.temperaturaMinC) || (local.temperaturaMaxC != null && r.temperaturaC > local.temperaturaMaxC));
+                const foraDaFaixa = foraDaFaixaDoLocal(local, r.temperaturaC);
                 return (
                   <tr key={r.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                     <td className="py-2.5 px-5">{formatarDataHora(r.registradoEm)}</td>
                     <td className="py-2.5 px-3">{r.nomeLocal}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{r.responsavel}</td>
+                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{r.nomeInsumo ?? "—"}</td>
                     <td className="py-2.5 px-5 text-right font-medium" style={{ ...nums, color: foraDaFaixa ? "var(--danger)" : "var(--text)" }}>
                       {r.temperaturaC}°C{foraDaFaixa && " · fora da faixa"}
                     </td>
@@ -145,7 +244,7 @@ export function SegurancaClient({ locais, registros }: { locais: LocalArmazename
               })}
               {registros.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>
+                  <td colSpan={5} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>
                     Nenhuma leitura registrada ainda.
                   </td>
                 </tr>

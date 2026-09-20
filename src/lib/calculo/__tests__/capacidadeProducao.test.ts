@@ -57,6 +57,7 @@ describe('linhasCapacidadeDaReceita', () => {
     precoUnitario: 0.01,
     fatorCorrecao: 1,
     pesoPorUnidade: null,
+    localArmazenamentoId: null,
     estoque: null,
   };
 
