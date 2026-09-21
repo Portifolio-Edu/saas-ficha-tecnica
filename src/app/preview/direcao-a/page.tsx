@@ -16,34 +16,8 @@ const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600
 
 const resumo = resumoVisaoGeral({ margemAlvoCliente, insumos, receitas: todasReceitas, processamentos, producoes, fechamentos });
 
-function posicao(valor: number, min: number, max: number) {
-  return Math.min(100, Math.max(0, ((valor - min) / (max - min)) * 100));
-}
-
-/** Régua de calibre: assinatura da direção -- lê o número como leitura de instrumento, não como estatística decorada. */
-function ReguaCalibre({ valorPos, alvoPos, foraDeFaixa }: { valorPos: number; alvoPos?: number; foraDeFaixa: boolean }) {
-  return (
-    <div className="a-regua">
-      <div className="a-regua-trilho">
-        {[0, 25, 50, 75, 100].map((t) => (
-          <span key={t} className="a-regua-tick" style={{ left: `${t}%` }} />
-        ))}
-        {alvoPos !== undefined && <span className="a-regua-alvo" style={{ left: `${alvoPos}%` }} />}
-        <span className={`a-regua-marcador ${foraDeFaixa ? "a-fora" : ""}`} style={{ left: `${valorPos}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function KpiCalibre({ label, valor, pos, alvoPos, foraDeFaixa, unidade }: { label: string; valor: string; pos: number | null; alvoPos?: number; foraDeFaixa: boolean; unidade: string }) {
-  return (
-    <div className="a-kpi">
-      <div className="a-kpi-label">{label}</div>
-      <div className={`a-kpi-valor ${foraDeFaixa ? "a-fora" : ""}`} style={nums}>{valor}</div>
-      <div className="a-kpi-unidade">{unidade}</div>
-      {pos !== null && <ReguaCalibre valorPos={pos} alvoPos={alvoPos} foraDeFaixa={foraDeFaixa} />}
-    </div>
-  );
+function clamp(v: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, v));
 }
 
 const COLUNAS_KANBAN: { status: "em_producao" | "produzido" | "perda"; rotulo: string }[] = [
@@ -55,8 +29,12 @@ const COLUNAS_KANBAN: { status: "em_producao" | "produzido" | "perda"; rotulo: s
 export default function DirecaoA() {
   const [tema, setTema] = useState<"light" | "dark">("dark");
 
-  const cmvPos = resumo.cmvMedio !== null ? posicao(resumo.cmvMedio, 15, 55) : null;
-  const margemPos = resumo.margemMedia !== null ? posicao(resumo.margemMedia, 20, 80) : null;
+  // Momento de confiança total da direção: o mostrador gigante -- a margem
+  // média vira leitura de instrumento em escala real, não estatística
+  // discreta. É a primeira coisa que a tela mostra.
+  const margemDeg = resumo.margemMedia !== null ? clamp(resumo.margemMedia, 0, 100) * 3.6 : 0;
+  const alvoDeg = clamp(resumo.margemAlvoMedia, 0, 100) * 3.6;
+  const foraDoAlvo = resumo.margemMedia !== null && resumo.margemMedia < resumo.margemAlvoMedia;
 
   return (
     <div data-direcao="a" data-theme={tema} className={plexMono.className} style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh" }}>
@@ -90,35 +68,41 @@ export default function DirecaoA() {
         [data-direcao="a"] .a-toggle button { padding: 5px 10px; font-size: 10.5px; letter-spacing: 0.08em; font-weight: 600; color: var(--faint); background: transparent; }
         [data-direcao="a"] .a-toggle button.ativo { background: var(--accent); color: var(--bg); }
 
-        [data-direcao="a"] .a-kpi { background: var(--panel); border-radius: 4px; padding: 16px 18px 14px; box-shadow: var(--shadow); position: relative; transition: transform 160ms ease; }
-        [data-direcao="a"] .a-kpi:hover { transform: translateY(-1px); }
-        [data-direcao="a"] .a-kpi-label { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
-        [data-direcao="a"] .a-kpi-valor { font-size: 30px; font-weight: 700; margin-top: 6px; line-height: 1; color: var(--accent); white-space: nowrap; }
-        [data-direcao="a"] .a-kpi-valor.a-fora { color: var(--a-excesso); }
-        [data-direcao="a"] .a-kpi-unidade { font-size: 10px; color: var(--faint); margin-top: 3px; }
+        /* Mostrador gigante -- o momento saturado e sem hesitação da direção. */
+        [data-direcao="a"] .a-mostrador-bloco { display: flex; align-items: center; gap: 40px; padding: 36px 40px; background: var(--panel); border-radius: 8px; box-shadow: var(--shadow); }
+        [data-direcao="a"] .a-mostrador { width: 260px; height: 260px; border-radius: 50%; position: relative; flex-shrink: 0; transition: filter 220ms ease; }
+        [data-direcao="a"] .a-mostrador::before { content: ""; position: absolute; inset: 22px; border-radius: 50%; background: var(--panel); }
+        [data-direcao="a"] .a-mostrador-alvo { position: absolute; top: 6px; left: 50%; width: 3px; height: 20px; background: var(--text); transform-origin: 50% 124px; margin-left: -1.5px; border-radius: 2px; }
+        [data-direcao="a"] .a-mostrador-miolo { position: absolute; inset: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        [data-direcao="a"] .a-mostrador-valor { font-size: 64px; font-weight: 700; line-height: 1; color: var(--accent); }
+        [data-direcao="a"] .a-mostrador-valor.a-fora { color: var(--a-excesso); }
+        [data-direcao="a"] .a-mostrador-rotulo { font-size: 11px; letter-spacing: 0.1em; color: var(--faint); margin-top: 8px; text-align: center; }
+        [data-direcao="a"] .a-mostrador-bloco:hover .a-mostrador { filter: drop-shadow(0 0 22px color-mix(in srgb, var(--accent) 45%, transparent)); }
+        [data-direcao="a"] .a-mostrador-bloco:hover .a-mostrador-valor { animation: a-settle 420ms cubic-bezier(0.22, 1.6, 0.4, 1); }
+        @keyframes a-settle { 0% { transform: scale(1.08); } 55% { transform: scale(0.98); } 100% { transform: scale(1); } }
+        [data-direcao="a"] .a-mostrador-legenda { max-width: 260px; }
+        [data-direcao="a"] .a-mostrador-legenda-titulo { font-size: 13px; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 6px; }
+        [data-direcao="a"] .a-mostrador-legenda-texto { font-size: 12px; color: var(--sub); line-height: 1.5; }
+        [data-direcao="a"] .a-mostrador-legenda-alvo { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 11.5px; color: var(--faint); }
+        [data-direcao="a"] .a-mostrador-legenda-alvo span.a-marca { width: 3px; height: 14px; background: var(--text); border-radius: 2px; }
 
-        [data-direcao="a"] .a-regua { margin-top: 12px; }
-        [data-direcao="a"] .a-regua-trilho { position: relative; height: 3px; background: var(--border); border-radius: 2px; }
-        [data-direcao="a"] .a-regua-tick { position: absolute; top: -2px; width: 1px; height: 7px; background: var(--border-strong); }
-        [data-direcao="a"] .a-regua-alvo { position: absolute; top: -4px; width: 2px; height: 11px; background: var(--faint); }
-        [data-direcao="a"] .a-regua-marcador { position: absolute; top: -3px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: var(--accent); border: 2px solid var(--panel); transition: left 200ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 150ms ease; }
-        [data-direcao="a"] .a-regua-marcador.a-fora { background: var(--a-excesso); }
-        [data-direcao="a"] .a-kpi:hover .a-regua-marcador { transform: scale(1.35); }
-        [data-direcao="a"] .a-kpi:hover .a-regua-tick { animation: a-varredura 500ms ease-out; }
-        [data-direcao="a"] .a-regua-tick:nth-child(2) { animation-delay: 40ms; }
-        [data-direcao="a"] .a-regua-tick:nth-child(3) { animation-delay: 80ms; }
-        [data-direcao="a"] .a-regua-tick:nth-child(4) { animation-delay: 120ms; }
-        [data-direcao="a"] .a-regua-tick:nth-child(5) { animation-delay: 160ms; }
-        @keyframes a-varredura { 0% { background: var(--accent); height: 11px; top: -4px; } 100% { background: var(--border-strong); height: 7px; top: -2px; } }
+        /* Tira compacta de leitura secundária -- deliberadamente menor que o mostrador. */
+        [data-direcao="a"] .a-tira { display: flex; background: var(--panel); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
+        [data-direcao="a"] .a-tira-item { flex: 1; padding: 14px 18px; border-right: 1px solid var(--border); transition: background 150ms ease; }
+        [data-direcao="a"] .a-tira-item:last-child { border-right: none; }
+        [data-direcao="a"] .a-tira-item:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+        [data-direcao="a"] .a-tira-label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+        [data-direcao="a"] .a-tira-valor { font-size: 20px; font-weight: 700; margin-top: 4px; color: var(--text); white-space: nowrap; }
+        [data-direcao="a"] .a-tira-valor.a-fora { color: var(--a-excesso); }
+        [data-direcao="a"] .a-tira-item:hover .a-tira-valor { animation: a-tick 220ms ease; }
+        @keyframes a-tick { 0% { transform: translateX(0); } 30% { transform: translateX(-1.5px); } 60% { transform: translateX(1px); } 100% { transform: translateX(0); } }
 
         [data-direcao="a"] table tr:hover td { background: color-mix(in srgb, var(--accent) 6%, transparent); }
-        [data-direcao="a"] table tr:hover .a-tick-valor { animation: a-tick 220ms ease; }
-        @keyframes a-tick { 0% { transform: translateX(0); } 30% { transform: translateX(-1.5px); } 60% { transform: translateX(1px); } 100% { transform: translateX(0); } }
 
         [data-direcao="a"] .a-kanban-col { background: var(--panel); border-radius: 4px; box-shadow: var(--shadow); }
         [data-direcao="a"] .a-kanban-head { font-size: 10px; letter-spacing: 0.1em; padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--faint); display: flex; justify-content: space-between; }
         [data-direcao="a"] .a-kanban-card { margin: 8px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 3px; border-left: 3px solid var(--card-cor, var(--border-strong)); font-size: 11.5px; transition: border-color 150ms ease, transform 150ms ease; }
-        [data-direcao="a"] .a-kanban-card:hover { transform: translateX(2px); border-color: var(--card-cor, var(--border-strong)); }
+        [data-direcao="a"] .a-kanban-card:hover { transform: translateX(2px); }
 
         @media (prefers-reduced-motion: reduce) {
           [data-direcao="a"] * { animation: none !important; transition: none !important; }
@@ -136,17 +120,36 @@ export default function DirecaoA() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-8 py-8 space-y-8">
-        <div className="text-[12px]" style={{ color: "var(--sub)" }}>
-          Margem alvo: <span style={{ ...nums, color: "var(--text)", fontWeight: 600 }}>{(margemAlvoCliente * 100).toFixed(0)}%</span>
-          {" · leitura de instrumento, faixa de tolerância marcada na régua abaixo de cada valor"}
+      <div className="max-w-5xl mx-auto px-8 py-10 space-y-8">
+        {/* Mostrador gigante -- primeira coisa da tela, escala de instrumento real */}
+        <div className="a-mostrador-bloco">
+          <div className="a-mostrador" style={{ background: `conic-gradient(var(--accent) 0deg ${margemDeg}deg, var(--border) ${margemDeg}deg 360deg)` }}>
+            <span className="a-mostrador-alvo" style={{ transform: `rotate(${alvoDeg}deg)` }} />
+            <div className="a-mostrador-miolo">
+              <div className={`a-mostrador-valor ${foraDoAlvo ? "a-fora" : ""}`} style={nums}>{resumo.margemMedia !== null ? resumo.margemMedia.toFixed(0) : "—"}</div>
+              <div className="a-mostrador-rotulo">% MARGEM MÉDIA</div>
+            </div>
+          </div>
+          <div className="a-mostrador-legenda">
+            <div className="a-mostrador-legenda-titulo">LEITURA DO CARDÁPIO</div>
+            <div className="a-mostrador-legenda-texto">Ponteiro cheio = 100% de margem. O traço marca onde a margem alvo do cliente fica no mostrador.</div>
+            <div className="a-mostrador-legenda-alvo"><span className="a-marca" />alvo: {(margemAlvoCliente * 100).toFixed(0)}%</div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
-          <KpiCalibre label="CMV médio dos pratos" valor={resumo.cmvMedio !== null ? `${resumo.cmvMedio.toFixed(1)}` : "—"} unidade="% da receita" pos={cmvPos} alvoPos={posicao(35, 15, 55)} foraDeFaixa={resumo.cmvMedio !== null && resumo.cmvMedio > 35} />
-          <KpiCalibre label="Margem média atual" valor={resumo.margemMedia !== null ? `${resumo.margemMedia.toFixed(1)}` : "—"} unidade="%" pos={margemPos} alvoPos={posicao(resumo.margemAlvoMedia, 20, 80)} foraDeFaixa={resumo.margemMedia !== null && resumo.margemMedia < resumo.margemAlvoMedia} />
-          <KpiCalibre label="Pratos abaixo da margem alvo" valor={String(resumo.abaixoDoAlvo)} unidade={`de ${resumo.comPreco.length} com preço`} pos={null} foraDeFaixa={resumo.abaixoDoAlvo > 0} />
-          <KpiCalibre label={`Perda de estoque em ${resumo.nomeMes}`} valor={formatBRL(resumo.perdaTotalReais)} unidade={`${resumo.perdasDoMes.length} lote(s) no mês`} pos={null} foraDeFaixa={resumo.perdaTotalReais > 0} />
+        <div className="a-tira">
+          <div className="a-tira-item">
+            <div className="a-tira-label">CMV médio</div>
+            <div className="a-tira-valor" style={nums}>{resumo.cmvMedio !== null ? `${resumo.cmvMedio.toFixed(1)}%` : "—"}</div>
+          </div>
+          <div className="a-tira-item">
+            <div className="a-tira-label">Abaixo da margem alvo</div>
+            <div className={`a-tira-valor ${resumo.abaixoDoAlvo > 0 ? "a-fora" : ""}`} style={nums}>{resumo.abaixoDoAlvo} <span style={{ fontSize: 12, fontWeight: 500, color: "var(--faint)" }}>de {resumo.comPreco.length}</span></div>
+          </div>
+          <div className="a-tira-item">
+            <div className="a-tira-label">Perda em {resumo.nomeMes}</div>
+            <div className={`a-tira-valor ${resumo.perdaTotalReais > 0 ? "a-fora" : ""}`} style={nums}>{formatBRL(resumo.perdaTotalReais)}</div>
+          </div>
         </div>
 
         <div>
@@ -203,59 +206,57 @@ export default function DirecaoA() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-[1.3fr_1fr] gap-6">
-          <div>
-            <h2 className="text-[13px] font-semibold mb-1" style={{ letterSpacing: "0.02em" }}>PERDAS RECENTES</h2>
-            <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Últimos lotes descartados, motivo registrado no ponto de origem.</p>
-            <Card>
-              {resumo.perdasRecentes.length === 0 ? (
-                <div className="py-8 text-center text-[12px]" style={{ color: "var(--faint)" }}>Nenhuma perda registrada ainda.</div>
-              ) : (
-                <table className="w-full text-[12px]">
-                  <thead>
-                    <tr style={{ color: "var(--faint)" }} className="text-left text-[10px] uppercase tracking-wide">
-                      <th className="py-2.5 px-5 font-medium">Lote</th>
-                      <th className="py-2.5 px-3 font-medium">Prato/preparo</th>
-                      <th className="py-2.5 px-3 font-medium text-right">Qtd.</th>
-                      <th className="py-2.5 px-5 font-medium">Motivo</th>
+        <div>
+          <h2 className="text-[13px] font-semibold mb-1" style={{ letterSpacing: "0.02em" }}>PERDAS RECENTES</h2>
+          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Últimos lotes descartados, motivo registrado no ponto de origem.</p>
+          <Card>
+            {resumo.perdasRecentes.length === 0 ? (
+              <div className="py-8 text-center text-[12px]" style={{ color: "var(--faint)" }}>Nenhuma perda registrada ainda.</div>
+            ) : (
+              <table className="w-full text-[12px]">
+                <thead>
+                  <tr style={{ color: "var(--faint)" }} className="text-left text-[10px] uppercase tracking-wide">
+                    <th className="py-2.5 px-5 font-medium">Lote</th>
+                    <th className="py-2.5 px-3 font-medium">Prato/preparo</th>
+                    <th className="py-2.5 px-3 font-medium text-right">Qtd.</th>
+                    <th className="py-2.5 px-5 font-medium">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resumo.perdasRecentes.map((p) => (
+                    <tr key={p.id} style={{ borderTop: "1px solid var(--border)" }}>
+                      <td className="py-2.5 px-5 font-medium" style={nums}>{p.lote}</td>
+                      <td className="py-2.5 px-3">{p.nomeReceita}</td>
+                      <td className="py-2.5 px-3 text-right" style={nums}>{p.quantidade} {p.unidadeRendimento}</td>
+                      <td className="py-2.5 px-5" style={{ color: "var(--a-excesso)" }}>{p.motivoPerda ?? "—"}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {resumo.perdasRecentes.map((p) => (
-                      <tr key={p.id} style={{ borderTop: "1px solid var(--border)" }}>
-                        <td className="py-2.5 px-5 font-medium" style={nums}>{p.lote}</td>
-                        <td className="py-2.5 px-3">{p.nomeReceita}</td>
-                        <td className="py-2.5 px-3 text-right a-tick-valor" style={{ ...nums, display: "inline-block" }}>{p.quantidade} {p.unidadeRendimento}</td>
-                        <td className="py-2.5 px-5" style={{ color: "var(--a-excesso)" }}>{p.motivoPerda ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </Card>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        </div>
 
-          <div>
-            <h2 className="text-[13px] font-semibold mb-1" style={{ letterSpacing: "0.02em" }}>PRODUÇÃO AGORA</h2>
-            <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Lotes em curso hoje, por estado.</p>
-            <div className="grid grid-cols-3 gap-2">
-              {COLUNAS_KANBAN.map((col) => {
-                const itens = producoes.filter((p) => p.status === col.status);
-                const cor = col.status === "produzido" ? "var(--accent)" : col.status === "perda" ? "var(--danger)" : "var(--a-excesso)";
-                return (
-                  <div key={col.status} className="a-kanban-col">
-                    <div className="a-kanban-head"><span>{col.rotulo}</span><span style={nums}>{itens.length}</span></div>
-                    {itens.slice(0, 3).map((it) => (
-                      <div key={it.id} className="a-kanban-card" style={{ ["--card-cor" as string]: cor }}>
-                        <div style={{ fontWeight: 600 }}>{it.nomeReceita}</div>
-                        <div style={{ color: "var(--faint)", fontSize: 10.5, marginTop: 2, ...nums }}>{it.lote} · {it.quantidade} {it.unidadeRendimento}</div>
-                      </div>
-                    ))}
-                    {itens.length === 0 && <div className="px-3 pb-3 text-[11px]" style={{ color: "var(--faint)" }}>vazio</div>}
-                  </div>
-                );
-              })}
-            </div>
+        <div>
+          <h2 className="text-[13px] font-semibold mb-1" style={{ letterSpacing: "0.02em" }}>PRODUÇÃO AGORA</h2>
+          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Lotes em curso hoje, por estado.</p>
+          <div className="grid grid-cols-3 gap-2">
+            {COLUNAS_KANBAN.map((col) => {
+              const itens = producoes.filter((p) => p.status === col.status);
+              const cor = col.status === "produzido" ? "var(--accent)" : col.status === "perda" ? "var(--danger)" : "var(--a-excesso)";
+              return (
+                <div key={col.status} className="a-kanban-col">
+                  <div className="a-kanban-head"><span>{col.rotulo}</span><span style={nums}>{itens.length}</span></div>
+                  {itens.slice(0, 3).map((it) => (
+                    <div key={it.id} className="a-kanban-card" style={{ ["--card-cor" as string]: cor }}>
+                      <div style={{ fontWeight: 600 }}>{it.nomeReceita}</div>
+                      <div style={{ color: "var(--faint)", fontSize: 10.5, marginTop: 2, ...nums }}>{it.lote} · {it.quantidade} {it.unidadeRendimento}</div>
+                    </div>
+                  ))}
+                  {itens.length === 0 && <div className="px-3 pb-3 text-[11px]" style={{ color: "var(--faint)" }}>vazio</div>}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
