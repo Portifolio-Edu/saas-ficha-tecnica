@@ -84,7 +84,7 @@ export function AppShell({
 
       <main id="conteudo" className="flex-1 flex flex-col overflow-auto">
         <div className="h-16 shrink-0 flex items-center px-8" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
-          <h1 className="text-[15px] font-semibold" style={{ letterSpacing: "-0.01em" }}>{tituloPagina}</h1>
+          <h1 className="text-[19px] font-semibold" style={{ letterSpacing: "-0.02em" }}>{tituloPagina}</h1>
         </div>
         <div className="p-8 flex-1">{children}</div>
       </main>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
@@ -8,16 +9,19 @@ import { Kpi } from "@/components/ficha/Kpi";
 import { inputStyle, nums } from "@/components/ficha/tema";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
+import { Donut, type FatiaDonut } from "@/components/charts/Donut";
 import { formatPercent, formatPercentEixo } from "@/components/charts/format";
-import { CATEGORICAL_PALETTE, CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
+import { CATEGORICAL_PALETTE, CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, CHART_MIN_HEIGHT, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
 import type { FechamentoCmv, NovoFechamentoInput } from "@/lib/dominio/fechamentoCmv";
-import { construirContexto } from "@/lib/dados/adaptadores";
+import { construirContexto, linhasCustoDetalhado, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
 import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { calcularFechamentoCmv } from "@/lib/calculo/fechamentoCmv";
 import { acaoCriarFechamento } from "./actions";
+
+const TOP_DONUT = 5;
 
 const GAP_ALERTA_PP = 3;
 
@@ -66,9 +70,13 @@ export function CmvClient({
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
+  const [pratoExpandido, setPratoExpandido] = useState<string | null>(null);
 
   const contexto = useMemo(() => construirContexto(insumos, [...pratos, ...preparos], processamentos), [insumos, pratos, preparos, processamentos]);
   const pratoPorId = useMemo(() => new Map(pratos.map((p) => [p.id, p])), [pratos]);
+  const insumoPorId = useMemo(() => new Map(insumos.map((i) => [i.id, i])), [insumos]);
+  const preparoPorId = useMemo(() => new Map(preparos.map((p) => [p.id, p])), [preparos]);
+  const lotesProteina = useMemo(() => processamentos.map(paraProcessamentoCalc), [processamentos]);
 
   const importarVendas = () => {
     const linhas = textoImportacao.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -322,7 +330,7 @@ export function CmvClient({
 
       <div>
         <h2 className="text-[14px] font-semibold mb-1">CMV por prato</h2>
-        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Ordenado por faturamento. O que vende muito com margem baixa costuma pesar mais que o que vende pouco com margem ruim.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Ordenado por faturamento. O que vende muito com margem baixa costuma pesar mais que o que vende pouco com margem ruim. Clique num prato pra ver de onde vem o custo dele.</p>
         <Card>
           <table className="w-full text-[12.5px]">
             <thead>
@@ -337,22 +345,59 @@ export function CmvClient({
               </tr>
             </thead>
             <tbody>
-              {linhasCmv.map((l) => (
-                <tr key={l.receita.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
-                  <td className="py-2.5 px-5">
-                    <span className="font-medium">{l.receita.nomePrato}</span>
-                    {l.qtdVendida === 0 && (
-                      <span className="ml-2"><Badge acao>sem vendas cadastradas</Badge></span>
-                    )}
-                  </td>
-                  <td className="py-2.5 px-3 text-right" style={nums}>{l.qtdVendida}</td>
-                  <td className="py-2.5 px-3 text-right" style={nums}>R$ {(l.receita.precoVenda ?? 0).toFixed(2)}</td>
-                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoPorPorcao.toFixed(2)}</td>
-                  <td className="py-2.5 px-3 text-right" style={nums}>R$ {l.faturamentoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoTeoricoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-5 text-right font-medium" style={nums}>R$ {l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                </tr>
-              ))}
+              {linhasCmv.map((l) => {
+                const aberto = pratoExpandido === l.receita.id;
+                return (
+                  <Fragment key={l.receita.id}>
+                    <tr
+                      className="cursor-pointer"
+                      style={{ borderTop: `1px solid ${"var(--border)"}` }}
+                      onClick={() => setPratoExpandido(aberto ? null : l.receita.id)}
+                    >
+                      <td className="py-2.5 px-5">
+                        <span className="inline-flex items-center gap-1.5 font-medium">
+                          {aberto ? <ChevronDown size={13} style={{ color: "var(--faint)" }} /> : <ChevronRight size={13} style={{ color: "var(--faint)" }} />}
+                          {l.receita.nomePrato}
+                        </span>
+                        {l.qtdVendida === 0 && (
+                          <span className="ml-2"><Badge acao>sem vendas cadastradas</Badge></span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-right" style={nums}>{l.qtdVendida}</td>
+                      <td className="py-2.5 px-3 text-right" style={nums}>R$ {(l.receita.precoVenda ?? 0).toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoPorPorcao.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right" style={nums}>R$ {l.faturamentoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoTeoricoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                      <td className="py-2.5 px-5 text-right font-medium" style={nums}>R$ {l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                    </tr>
+                    {aberto && (() => {
+                      const linhasComCusto = linhasCustoDetalhado(l.receita, insumoPorId, preparoPorId, lotesProteina, contexto);
+                      const ordenadoPorCusto = [...linhasComCusto].filter((c) => c.custo > 0).sort((a, b) => b.custo - a.custo);
+                      const restante = ordenadoPorCusto.slice(TOP_DONUT).reduce((s, c) => s + c.custo, 0);
+                      const donutDados: FatiaDonut[] = [
+                        ...ordenadoPorCusto.slice(0, TOP_DONUT).map((c) => ({ nome: c.nome, valor: c.custo })),
+                        ...(restante > 0 ? [{ nome: "Outros", valor: restante, outros: true }] : []),
+                      ];
+                      return (
+                        <tr style={{ background: "var(--bg)" }}>
+                          <td colSpan={7} className="px-5 py-4">
+                            <h4 className="text-[12px] font-semibold mb-1">Custo por ingrediente · {l.receita.nomePrato}</h4>
+                            <p className="text-[11.5px] mb-2" style={{ color: "var(--sub)" }}>
+                              {ordenadoPorCusto.length > TOP_DONUT ? `Os ${TOP_DONUT} maiores custos, resto agrupado em "Outros".` : "Participação de cada item no custo total do prato."}
+                            </p>
+                            <Donut
+                              dados={donutDados}
+                              altura={CHART_MIN_HEIGHT}
+                              tituloVazio="Nenhum custo calculado ainda."
+                              dicaVazio="Adicione insumos ou preparos na ficha desse prato pra ver a composição do custo aqui."
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </Fragment>
+                );
+              })}
               {linhasCmv.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>Nenhum prato final cadastrado ainda.</td>

@@ -18,7 +18,8 @@
   --status-estoque-soft: #E7F1F9;
   --status-producao: #8A5A00;
   --status-producao-soft: #FBF0D9;
-  --shadow: 0 1px 2px rgba(13, 13, 15, 0.03), 0 6px 16px rgba(13, 13, 15, 0.04);
+  --shadow: 0 1px 2px rgba(23, 23, 30, 0.04), 0 8px 24px rgba(23, 23, 30, 0.07);
+  --shadow-lift: 0 2px 4px rgba(23, 23, 30, 0.05), 0 16px 40px rgba(23, 23, 30, 0.10);
 }
 
 [data-theme="dark"] {
@@ -38,7 +39,8 @@
   --status-estoque-soft: #16232F;
   --status-producao: #D9A93A;
   --status-producao-soft: #302710;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 20px rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.55);
 }
 
 @layer base {
@@ -51,9 +53,11 @@
   body {
     background: var(--bg);
     color: var(--text);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   }
   h1, h2, h3 {
     text-wrap: pretty;
+    letter-spacing: -0.015em;
   }
   button, a, input, select, textarea {
     transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease, filter 150ms ease, transform 100ms ease;

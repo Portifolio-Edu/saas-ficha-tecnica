@@ -12,8 +12,8 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl ${className}`}
-      style={{ backgroundColor: "var(--panel)", border: `1px solid ${"var(--border)"}`, boxShadow: shadow, ...style }}
+      className={`rounded-2xl ${className}`}
+      style={{ backgroundColor: "var(--panel)", boxShadow: shadow, ...style }}
     >
       {children}
     </div>

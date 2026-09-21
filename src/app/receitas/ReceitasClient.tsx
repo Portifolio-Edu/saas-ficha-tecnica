@@ -7,11 +7,9 @@ import { Badge } from "@/components/ficha/Badge";
 import { nums } from "@/components/ficha/tema";
 import { ReceitaForm } from "@/components/receitas/ReceitaForm";
 import { FichaProducaoModal } from "@/components/receitas/FichaProducaoModal";
-import { Donut, type FatiaDonut } from "@/components/charts/Donut";
-import { CHART_MIN_HEIGHT } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
-import { construirContexto, paraInsumoCalc, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
+import { construirContexto, linhasCustoDetalhado, paraInsumoCalc, paraProcessamentoCalc } from "@/lib/dados/adaptadores";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { calcularCmvReceita, calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
@@ -193,32 +191,7 @@ export function ReceitasClient({
                 ) : (
                   <>
                     {(() => {
-                      const linhasComCusto = p.ficha
-                        .map((f) => {
-                          if (f.insumoId) {
-                            const insumo = insumoPorId.get(f.insumoId);
-                            if (!insumo) return null;
-                            const insumoCalc = paraInsumoCalc(insumo);
-                            const fc = fatorCorrecaoEfetivo(insumoCalc, lotesProteina);
-                            const pesoConvertido = converterParaUnidadeDoInsumo(f.pesoLiquido, f.unidade, insumoCalc);
-                            const custo = pesoConvertido * fc * insumo.precoUnitario;
-                            return { id: f.id, nome: insumo.nome, pesoLiquido: f.pesoLiquido, unidade: f.unidade, fc: fc as number | null, precoUnitario: insumo.precoUnitario, custo, ehPreparo: false };
-                          }
-                          const preparo = preparoPorId.get(f.subReceitaId!);
-                          if (!preparo) return null;
-                          const custoUnitarioPreparo = calcularCustoPorPorcao(preparo.id, contexto);
-                          const custo = f.pesoLiquido * custoUnitarioPreparo;
-                          return { id: f.id, nome: preparo.nomePrato, pesoLiquido: f.pesoLiquido, unidade: f.unidade, fc: null as number | null, precoUnitario: custoUnitarioPreparo, custo, ehPreparo: true };
-                        })
-                        .filter((l): l is NonNullable<typeof l> => l !== null);
-
-                      const ordenadoPorCusto = [...linhasComCusto].filter((l) => l.custo > 0).sort((a, b) => b.custo - a.custo);
-                      const TOP_DONUT = 5;
-                      const restante = ordenadoPorCusto.slice(TOP_DONUT).reduce((s, l) => s + l.custo, 0);
-                      const donutDados: FatiaDonut[] = [
-                        ...ordenadoPorCusto.slice(0, TOP_DONUT).map((l) => ({ nome: l.nome, valor: l.custo })),
-                        ...(restante > 0 ? [{ nome: "Outros", valor: restante, outros: true }] : []),
-                      ];
+                      const linhasComCusto = linhasCustoDetalhado(p, insumoPorId, preparoPorId, lotesProteina, contexto);
 
                       return (
                         <>
@@ -250,19 +223,6 @@ export function ReceitasClient({
                               </tr>
                             </tbody>
                           </table>
-
-                          <div className="mb-4">
-                            <h4 className="text-[12px] font-semibold mb-1">Custo por ingrediente</h4>
-                            <p className="text-[11.5px] mb-2" style={{ color: "var(--sub)" }}>
-                              {ordenadoPorCusto.length > TOP_DONUT ? `Os ${TOP_DONUT} maiores custos, resto agrupado em "Outros".` : "Participação de cada item no custo total do prato."}
-                            </p>
-                            <Donut
-                              dados={donutDados}
-                              altura={CHART_MIN_HEIGHT}
-                              tituloVazio="Nenhum custo calculado ainda."
-                              dicaVazio="Adicione insumos ou preparos na ficha desse prato pra ver a composição do custo aqui."
-                            />
-                          </div>
                         </>
                       );
                     })()}
