@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { IBM_Plex_Mono } from "next/font/google";
-import { Cell, LabelList, ReferenceArea, ReferenceLine, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from "recharts";
-import { Card } from "@/components/ficha/Card";
-import { nums } from "@/components/ficha/tema";
+import { useEffect, useRef, useState } from "react";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Cell, ReferenceArea, ReferenceLine, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from "recharts";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
 import { formatBRL, formatPercentEixo } from "@/components/charts/format";
@@ -12,7 +10,9 @@ import { axisLineStyle, axisTickStyle, CHART_MARGIN } from "@/components/charts/
 import { resumoVisaoGeral } from "../_shared/resumoVisaoGeral";
 import { NOME_RESTAURANTE, insumos, todasReceitas, processamentos, producoes, fechamentos, margemAlvoCliente } from "../fixtures";
 
+const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const numsA = { fontFamily: plexMono.style.fontFamily, fontVariantNumeric: "tabular-nums" } as const;
 
 const resumo = resumoVisaoGeral({ margemAlvoCliente, insumos, receitas: todasReceitas, processamentos, producoes, fechamentos });
 
@@ -20,89 +20,198 @@ function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
 }
 
-const COLUNAS_KANBAN: { status: "em_producao" | "produzido" | "perda"; rotulo: string }[] = [
-  { status: "em_producao", rotulo: "EM PROCESSO" },
-  { status: "produzido", rotulo: "CONCLUÍDO" },
-  { status: "perda", rotulo: "REJEITADO" },
+/** Ease-out com leve overshoot -- ponteiro físico se assentando, nunca fade, nunca instantâneo. */
+function easeBackOut(t: number, s = 1.70158) {
+  const p = t - 1;
+  return 1 + (s + 1) * p * p * p + s * p * p;
+}
+
+function useValorAssentado(alvo: number, ms = 850) {
+  const [valor, setValor] = useState(0);
+  const reduzido = useRef(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") reduzido.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduzido.current) {
+      setValor(alvo);
+      return;
+    }
+    let raf = 0;
+    const inicio = performance.now();
+    function tick(agora: number) {
+      const t = clamp((agora - inicio) / ms, 0, 1);
+      setValor(alvo * easeBackOut(t));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [alvo, ms]);
+  return valor;
+}
+
+function IconAlvo({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+    </svg>
+  );
+}
+
+function IconAlerta({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <path d="M12 3.5 21.5 20h-19L12 3.5Z" />
+      <path d="M12 10v4.5" />
+      <circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
+ * Leitura calibrada -- assinatura da direção. Todo valor com meta/faixa é
+ * régua, não card com número solto: trilho, zona de risco impressa (só
+ * aparece a --sinal onde há risco real), marca de alvo e ponteiro que se
+ * assenta com overshoot físico, nunca fade.
+ */
+function LeituraCalibrada({
+  rotulo,
+  valor,
+  sufixo,
+  min,
+  max,
+  alvo,
+  direcaoBoa,
+  tamanho = "secundario",
+}: {
+  rotulo: string;
+  valor: number | null;
+  sufixo: string;
+  min: number;
+  max: number;
+  alvo: number;
+  direcaoBoa: "acima" | "abaixo";
+  tamanho?: "hero" | "secundario";
+}) {
+  const valorSeguro = valor ?? min;
+  const foraDeEspec = valor !== null && (direcaoBoa === "acima" ? valor < alvo : valor > alvo);
+  const posValor = clamp(((valorSeguro - min) / (max - min)) * 100, 0, 100);
+  const posAlvo = clamp(((alvo - min) / (max - min)) * 100, 0, 100);
+  const posAnimada = useValorAssentado(posValor);
+  const numeroAnimado = useValorAssentado(valor ?? 0);
+
+  const zonaInicio = direcaoBoa === "acima" ? 0 : posAlvo;
+  const zonaFim = direcaoBoa === "acima" ? posAlvo : 100;
+
+  return (
+    <div className={tamanho === "hero" ? "a-leitura a-leitura-hero" : "a-leitura"}>
+      <div className="a-leitura-topo">
+        <div className="a-leitura-rotulo">{rotulo}</div>
+        <div className={`a-leitura-valor ${foraDeEspec ? "a-sinal" : ""}`} style={numsA}>
+          {valor !== null ? numeroAnimado.toFixed(1) : "—"}<span className="a-leitura-sufixo">{sufixo}</span>
+        </div>
+      </div>
+      <div className="a-regua">
+        <div className="a-regua-trilho" />
+        <div className="a-regua-zona" style={{ left: `${zonaInicio}%`, width: `${zonaFim - zonaInicio}%` }} />
+        <div className="a-regua-alvo" style={{ left: `${posAlvo}%` }} />
+        <div className={`a-regua-ponteiro ${foraDeEspec ? "a-sinal" : ""}`} style={{ left: `${posAnimada}%` }} />
+      </div>
+      <div className="a-leitura-legenda">
+        <span className="a-leitura-legenda-item"><IconAlvo /> alvo {alvo.toFixed(0)}{sufixo}</span>
+      </div>
+    </div>
+  );
+}
+
+const COLUNAS_ESTACAO: { status: "em_producao" | "produzido" | "perda"; rotulo: string; risco: boolean }[] = [
+  { status: "em_producao", rotulo: "Em processo", risco: false },
+  { status: "produzido", rotulo: "Concluído", risco: false },
+  { status: "perda", rotulo: "Rejeitado", risco: true },
 ];
 
 export default function DirecaoA() {
   const [tema, setTema] = useState<"light" | "dark">("dark");
 
-  // Momento de confiança total da direção: o mostrador gigante -- a margem
-  // média vira leitura de instrumento em escala real, não estatística
-  // discreta. É a primeira coisa que a tela mostra.
-  const margemDeg = resumo.margemMedia !== null ? clamp(resumo.margemMedia, 0, 100) * 3.6 : 0;
-  const alvoDeg = clamp(resumo.margemAlvoMedia, 0, 100) * 3.6;
-  const foraDoAlvo = resumo.margemMedia !== null && resumo.margemMedia < resumo.margemAlvoMedia;
+  const abaixoNum = useValorAssentado(resumo.abaixoDoAlvo);
+  const perdaNum = useValorAssentado(resumo.perdaTotalReais);
 
   return (
-    <div data-direcao="a" data-theme={tema} className={plexMono.className} style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh" }}>
+    <div data-direcao="a" data-theme={tema} className={plexSans.className} style={{ background: "var(--fundo)", color: "var(--tinta)", minHeight: "100vh" }}>
       <style>{`
         [data-direcao="a"][data-theme="light"] {
-          --bg: #EDF1F2; --panel: #FFFFFF; --border: #D7E0E3; --border-strong: #B7C6CB;
-          --text: #131A1D; --sub: #4F6167; --faint: #63757B;
-          --accent: #0E7D68; --accent-soft: #DCF0EA; --danger: #B23D2A; --danger-soft: #F6E1DA;
-          --a-excesso: #96631A; --a-excesso-soft: #F1E4CC;
-          --font-geist-mono: ${plexMono.style.fontFamily}; --font-geist-sans: ${plexMono.style.fontFamily};
-          --shadow: 0 1px 2px rgba(19,26,29,.06), 0 8px 22px rgba(19,26,29,.07);
+          --fundo: #FAFAFA; --tinta: #15161B; --sinal: #FF3B1F;
+          --sub: color-mix(in srgb, var(--tinta) 58%, var(--fundo));
+          --faint: color-mix(in srgb, var(--tinta) 38%, var(--fundo));
+          --painel: color-mix(in srgb, var(--tinta) 2.5%, var(--fundo));
+          --linha: color-mix(in srgb, var(--tinta) 10%, transparent);
+          --linha-forte: color-mix(in srgb, var(--tinta) 22%, transparent);
         }
         [data-direcao="a"][data-theme="dark"] {
-          --bg: #10161A; --panel: #1A2126; --border: #262F35; --border-strong: #37434B;
-          --text: #E7EEF1; --sub: #93A4AB; --faint: #71838A;
-          --accent: #3ED6B0; --accent-soft: #1B3730; --danger: #E8543F; --danger-soft: #3A231C;
-          --a-excesso: #F0A63B; --a-excesso-soft: #3A2E17;
-          --font-geist-mono: ${plexMono.style.fontFamily}; --font-geist-sans: ${plexMono.style.fontFamily};
-          --shadow: 0 1px 2px rgba(0,0,0,.5), 0 12px 30px rgba(0,0,0,.5);
+          --fundo: #15161B; --tinta: #FAFAFA; --sinal: #FF3B1F;
+          --sub: color-mix(in srgb, var(--tinta) 58%, var(--fundo));
+          --faint: color-mix(in srgb, var(--tinta) 38%, var(--fundo));
+          --painel: color-mix(in srgb, var(--tinta) 4%, var(--fundo));
+          --linha: color-mix(in srgb, var(--tinta) 12%, transparent);
+          --linha-forte: color-mix(in srgb, var(--tinta) 24%, transparent);
         }
-        [data-direcao="a"] .rounded-2xl { border-radius: 4px; }
-        [data-direcao="a"] { letter-spacing: -0.005em; }
+        [data-direcao="a"] { font-family: ${plexSans.style.fontFamily}; letter-spacing: 0; }
+        [data-direcao="a"] .a-mono { font-family: ${plexMono.style.fontFamily}; }
 
-        [data-direcao="a"] .a-topo { border-bottom: 1px solid var(--border); }
-        [data-direcao="a"] .a-lcd {
-          border: 1px solid var(--border-strong); background: var(--bg); color: var(--accent);
-          padding: 3px 10px; border-radius: 2px; letter-spacing: 0.12em; font-size: 11px; font-weight: 600;
-          text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
-        }
-        [data-direcao="a"] .a-toggle { border: 1px solid var(--border-strong); border-radius: 2px; overflow: hidden; display: flex; }
-        [data-direcao="a"] .a-toggle button { padding: 5px 10px; font-size: 10.5px; letter-spacing: 0.08em; font-weight: 600; color: var(--faint); background: transparent; }
-        [data-direcao="a"] .a-toggle button.ativo { background: var(--accent); color: var(--bg); }
+        [data-direcao="a"] .a-topo { border-bottom: 1px solid var(--linha); }
+        [data-direcao="a"] .a-marca { font-weight: 600; font-size: 13px; }
+        [data-direcao="a"] .a-restaurante { font-family: ${plexMono.style.fontFamily}; font-size: 11px; letter-spacing: 0.04em; color: var(--sub); border: 1px solid var(--linha-forte); padding: 3px 9px; border-radius: 2px; }
+        [data-direcao="a"] .a-toggle { display: flex; border: 1px solid var(--linha-forte); border-radius: 2px; overflow: hidden; }
+        [data-direcao="a"] .a-toggle button { padding: 5px 11px; font-size: 10.5px; letter-spacing: 0.06em; font-weight: 600; color: var(--faint); }
+        [data-direcao="a"] .a-toggle button.ativo { background: var(--tinta); color: var(--fundo); }
 
-        /* Mostrador gigante -- o momento saturado e sem hesitação da direção. */
-        [data-direcao="a"] .a-mostrador-bloco { display: flex; align-items: center; gap: 40px; padding: 36px 40px; background: var(--panel); border-radius: 8px; box-shadow: var(--shadow); }
-        [data-direcao="a"] .a-mostrador { width: 260px; height: 260px; border-radius: 50%; position: relative; flex-shrink: 0; transition: filter 220ms ease; }
-        [data-direcao="a"] .a-mostrador::before { content: ""; position: absolute; inset: 22px; border-radius: 50%; background: var(--panel); }
-        [data-direcao="a"] .a-mostrador-alvo { position: absolute; top: 6px; left: 50%; width: 3px; height: 20px; background: var(--text); transform-origin: 50% 124px; margin-left: -1.5px; border-radius: 2px; }
-        [data-direcao="a"] .a-mostrador-miolo { position: absolute; inset: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        [data-direcao="a"] .a-mostrador-valor { font-size: 64px; font-weight: 700; line-height: 1; color: var(--accent); }
-        [data-direcao="a"] .a-mostrador-valor.a-fora { color: var(--a-excesso); }
-        [data-direcao="a"] .a-mostrador-rotulo { font-size: 11px; letter-spacing: 0.1em; color: var(--faint); margin-top: 8px; text-align: center; }
-        [data-direcao="a"] .a-mostrador-bloco:hover .a-mostrador { filter: drop-shadow(0 0 22px color-mix(in srgb, var(--accent) 45%, transparent)); }
-        [data-direcao="a"] .a-mostrador-bloco:hover .a-mostrador-valor { animation: a-settle 420ms cubic-bezier(0.22, 1.6, 0.4, 1); }
-        @keyframes a-settle { 0% { transform: scale(1.08); } 55% { transform: scale(0.98); } 100% { transform: scale(1); } }
-        [data-direcao="a"] .a-mostrador-legenda { max-width: 260px; }
-        [data-direcao="a"] .a-mostrador-legenda-titulo { font-size: 13px; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 6px; }
-        [data-direcao="a"] .a-mostrador-legenda-texto { font-size: 12px; color: var(--sub); line-height: 1.5; }
-        [data-direcao="a"] .a-mostrador-legenda-alvo { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 11.5px; color: var(--faint); }
-        [data-direcao="a"] .a-mostrador-legenda-alvo span.a-marca { width: 3px; height: 14px; background: var(--text); border-radius: 2px; }
+        /* Painel: sem sombra -- separação é linha fina, nunca elevação. */
+        [data-direcao="a"] .a-painel { background: var(--painel); border: 1px solid var(--linha); border-radius: 2px; }
 
-        /* Tira compacta de leitura secundária -- deliberadamente menor que o mostrador. */
-        [data-direcao="a"] .a-tira { display: flex; background: var(--panel); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
-        [data-direcao="a"] .a-tira-item { flex: 1; padding: 14px 18px; border-right: 1px solid var(--border); transition: background 150ms ease; }
-        [data-direcao="a"] .a-tira-item:last-child { border-right: none; }
-        [data-direcao="a"] .a-tira-item:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
-        [data-direcao="a"] .a-tira-label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
-        [data-direcao="a"] .a-tira-valor { font-size: 20px; font-weight: 700; margin-top: 4px; color: var(--text); white-space: nowrap; }
-        [data-direcao="a"] .a-tira-valor.a-fora { color: var(--a-excesso); }
-        [data-direcao="a"] .a-tira-item:hover .a-tira-valor { animation: a-tick 220ms ease; }
-        @keyframes a-tick { 0% { transform: translateX(0); } 30% { transform: translateX(-1.5px); } 60% { transform: translateX(1px); } 100% { transform: translateX(0); } }
+        /* Leitura calibrada -- a régua é a unidade central da direção. */
+        [data-direcao="a"] .a-leitura { padding: 20px 22px; }
+        [data-direcao="a"] .a-leitura-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        [data-direcao="a"] .a-leitura-rotulo { font-size: 12.5px; color: var(--sub); font-weight: 500; }
+        [data-direcao="a"] .a-leitura-valor { font-weight: 600; text-align: right; white-space: nowrap; font-size: 26px; }
+        [data-direcao="a"] .a-leitura-valor.a-sinal { color: var(--sinal); }
+        [data-direcao="a"] .a-leitura-sufixo { font-size: 0.55em; margin-left: 2px; color: var(--faint); }
+        [data-direcao="a"] .a-leitura-hero { padding: 30px 32px 26px; }
+        [data-direcao="a"] .a-leitura-hero .a-leitura-rotulo { font-size: 14px; }
+        [data-direcao="a"] .a-leitura-hero .a-leitura-valor { font-size: 72px; }
+        [data-direcao="a"] .a-leitura-hero .a-regua-trilho { height: 3px; }
+        [data-direcao="a"] .a-leitura-hero .a-regua { height: 20px; }
+        [data-direcao="a"] .a-leitura-hero .a-regua-ponteiro { width: 4px; height: 20px; margin-left: -2px; }
 
-        [data-direcao="a"] table tr:hover td { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+        [data-direcao="a"] .a-regua { position: relative; height: 14px; }
+        [data-direcao="a"] .a-regua-trilho { position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: var(--linha-forte); }
+        [data-direcao="a"] .a-regua-zona { position: absolute; top: 50%; height: 6px; margin-top: -3px; background: color-mix(in srgb, var(--sinal) 12%, transparent); }
+        [data-direcao="a"] .a-regua-alvo { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--tinta); }
+        [data-direcao="a"] .a-regua-alvo::after { content: ""; position: absolute; top: -3px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; background: var(--tinta); border-radius: 50%; }
+        [data-direcao="a"] .a-regua-ponteiro { position: absolute; top: 50%; width: 3px; height: 14px; margin-top: -7px; margin-left: -1.5px; background: var(--tinta); border-radius: 1px; transition: left 850ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+        [data-direcao="a"] .a-regua-ponteiro.a-sinal { background: var(--sinal); }
 
-        [data-direcao="a"] .a-kanban-col { background: var(--panel); border-radius: 4px; box-shadow: var(--shadow); }
-        [data-direcao="a"] .a-kanban-head { font-size: 10px; letter-spacing: 0.1em; padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--faint); display: flex; justify-content: space-between; }
-        [data-direcao="a"] .a-kanban-card { margin: 8px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 3px; border-left: 3px solid var(--card-cor, var(--border-strong)); font-size: 11.5px; transition: border-color 150ms ease, transform 150ms ease; }
-        [data-direcao="a"] .a-kanban-card:hover { transform: translateX(2px); }
+        [data-direcao="a"] .a-leitura-legenda { margin-top: 10px; display: flex; gap: 14px; }
+        [data-direcao="a"] .a-leitura-legenda-item { display: flex; align-items: center; gap: 5px; font-size: 10.5px; letter-spacing: 0.03em; color: var(--faint); }
+
+        /* Leituras secundárias sem faixa contínua -- readout mecânico simples. */
+        [data-direcao="a"] .a-readout { padding: 16px 20px; display: flex; align-items: baseline; justify-content: space-between; }
+        [data-direcao="a"] .a-readout-rotulo { font-size: 12.5px; color: var(--sub); }
+        [data-direcao="a"] .a-readout-valor { font-size: 22px; font-weight: 600; text-align: right; display: flex; align-items: center; gap: 6px; }
+        [data-direcao="a"] .a-readout-valor.a-sinal { color: var(--sinal); }
+        [data-direcao="a"] .a-readout-sub { font-size: 11px; color: var(--faint); font-weight: 400; margin-left: 4px; }
+
+        [data-direcao="a"] table tr:hover td { background: color-mix(in srgb, var(--tinta) 4%, transparent); }
+        [data-direcao="a"] td, [data-direcao="a"] th { border-color: var(--linha); }
+
+        /* Estação (kanban): indicador mecânico de nível, não tag colorida. */
+        [data-direcao="a"] .a-estacao-head { padding: 10px 12px; border-bottom: 1px solid var(--linha); display: flex; flex-direction: column; gap: 7px; }
+        [data-direcao="a"] .a-estacao-titulo { display: flex; justify-content: space-between; align-items: baseline; font-size: 11.5px; font-weight: 500; }
+        [data-direcao="a"] .a-estacao-nivel { display: flex; gap: 2px; }
+        [data-direcao="a"] .a-estacao-seg { flex: 1; height: 4px; background: var(--linha-forte); }
+        [data-direcao="a"] .a-estacao-seg.a-cheio { background: var(--tinta); }
+        [data-direcao="a"] .a-estacao-seg.a-cheio.a-sinal { background: var(--sinal); }
+        [data-direcao="a"] .a-estacao-item { padding: 9px 12px; border-bottom: 1px solid var(--linha); font-size: 11.5px; }
+        [data-direcao="a"] .a-estacao-item:last-child { border-bottom: none; }
 
         @media (prefers-reduced-motion: reduce) {
           [data-direcao="a"] * { animation: none !important; transition: none !important; }
@@ -111,63 +220,52 @@ export default function DirecaoA() {
 
       <header className="a-topo flex items-center justify-between px-8 py-4">
         <div className="flex items-center gap-4">
-          <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.02em" }}>FICHA TÉCNICA <span style={{ color: "var(--faint)", fontWeight: 500 }}>/ CALIBRE</span></div>
-          <div className="a-lcd">{NOME_RESTAURANTE.toUpperCase()}</div>
+          <div className="a-marca">Ficha Técnica</div>
+          <div className="a-restaurante">{NOME_RESTAURANTE.toUpperCase()}</div>
         </div>
         <div className="a-toggle">
-          <button className={tema === "light" ? "ativo" : ""} onClick={() => setTema("light")}>CLARO</button>
-          <button className={tema === "dark" ? "ativo" : ""} onClick={() => setTema("dark")}>ESCURO</button>
+          <button className={tema === "light" ? "ativo" : ""} onClick={() => setTema("light")}>Claro</button>
+          <button className={tema === "dark" ? "ativo" : ""} onClick={() => setTema("dark")}>Escuro</button>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-8 py-10 space-y-8">
-        {/* Mostrador gigante -- primeira coisa da tela, escala de instrumento real */}
-        <div className="a-mostrador-bloco">
-          <div className="a-mostrador" style={{ background: `conic-gradient(var(--accent) 0deg ${margemDeg}deg, var(--border) ${margemDeg}deg 360deg)` }}>
-            <span className="a-mostrador-alvo" style={{ transform: `rotate(${alvoDeg}deg)` }} />
-            <div className="a-mostrador-miolo">
-              <div className={`a-mostrador-valor ${foraDoAlvo ? "a-fora" : ""}`} style={nums}>{resumo.margemMedia !== null ? resumo.margemMedia.toFixed(0) : "—"}</div>
-              <div className="a-mostrador-rotulo">% MARGEM MÉDIA</div>
-            </div>
-          </div>
-          <div className="a-mostrador-legenda">
-            <div className="a-mostrador-legenda-titulo">LEITURA DO CARDÁPIO</div>
-            <div className="a-mostrador-legenda-texto">Ponteiro cheio = 100% de margem. O traço marca onde a margem alvo do cliente fica no mostrador.</div>
-            <div className="a-mostrador-legenda-alvo"><span className="a-marca" />alvo: {(margemAlvoCliente * 100).toFixed(0)}%</div>
-          </div>
+      <div className="max-w-5xl mx-auto px-8 py-10 space-y-6">
+        {/* Uma leitura domina a hierarquia da tela; a outra recebe o mesmo
+            tratamento de régua, em escala menor -- nunca duas competindo. */}
+        <div className="a-painel">
+          <LeituraCalibrada rotulo="Margem média dos pratos" valor={resumo.margemMedia} sufixo="%" min={0} max={100} alvo={resumo.margemAlvoMedia} direcaoBoa="acima" tamanho="hero" />
+        </div>
+        <div className="a-painel">
+          <LeituraCalibrada rotulo="CMV médio dos pratos" valor={resumo.cmvMedio} sufixo="%" min={0} max={60} alvo={35} direcaoBoa="abaixo" />
         </div>
 
-        <div className="a-tira">
-          <div className="a-tira-item">
-            <div className="a-tira-label">CMV médio</div>
-            <div className="a-tira-valor" style={nums}>{resumo.cmvMedio !== null ? `${resumo.cmvMedio.toFixed(1)}%` : "—"}</div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="a-painel a-readout">
+            <div className="a-readout-rotulo">Pratos abaixo da margem alvo</div>
+            <div className={`a-readout-valor ${resumo.abaixoDoAlvo > 0 ? "a-sinal" : ""}`} style={numsA}>
+              {resumo.abaixoDoAlvo > 0 && <IconAlerta />}
+              {abaixoNum.toFixed(0)}<span className="a-readout-sub">de {resumo.comPreco.length}</span>
+            </div>
           </div>
-          <div className="a-tira-item">
-            <div className="a-tira-label">Abaixo da margem alvo</div>
-            <div className={`a-tira-valor ${resumo.abaixoDoAlvo > 0 ? "a-fora" : ""}`} style={nums}>{resumo.abaixoDoAlvo} <span style={{ fontSize: 12, fontWeight: 500, color: "var(--faint)" }}>de {resumo.comPreco.length}</span></div>
-          </div>
-          <div className="a-tira-item">
-            <div className="a-tira-label">Perda em {resumo.nomeMes}</div>
-            <div className={`a-tira-valor ${resumo.perdaTotalReais > 0 ? "a-fora" : ""}`} style={nums}>{formatBRL(resumo.perdaTotalReais)}</div>
+          <div className="a-painel a-readout">
+            <div className="a-readout-rotulo">Perda de estoque em {resumo.nomeMes}</div>
+            <div className={`a-readout-valor ${resumo.perdaTotalReais > 0 ? "a-sinal" : ""}`} style={numsA}>
+              {resumo.perdaTotalReais > 0 && <IconAlerta />}
+              {formatBRL(perdaNum)}
+            </div>
           </div>
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="text-[13px] font-semibold" style={{ letterSpacing: "0.02em" }}>ENGENHARIA DE CARDÁPIO</h2>
-            <div className="flex items-center gap-3 text-[10.5px]" style={{ color: "var(--faint)" }}>
-              <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-2 rounded-full" style={{ background: "var(--accent)" }} /> na faixa</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block w-2 h-2 rounded-full" style={{ background: "var(--a-excesso)" }} /> fora da faixa</span>
-            </div>
-          </div>
-          <Card className="p-6">
+          <h2 className="text-[13px] font-semibold mb-3">Engenharia de cardápio</h2>
+          <div className="a-painel p-6">
             <ChartFrame vazio={resumo.comPreco.length === 0} tituloVazio="Nenhum prato com preço de venda cadastrado ainda." dicaVazio="Cadastre o preço de venda em Receitas & Fichas pra esse gráfico começar a preencher.">
               <ScatterChart margin={CHART_MARGIN}>
-                <XAxis type="number" dataKey="qtdVendida" name="Vendas" domain={[0, resumo.xMax]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} label={{ value: "VENDAS NO PERÍODO", position: "insideBottom", offset: -5, fontSize: 10, fill: "var(--faint)" }} />
-                <YAxis type="number" dataKey="margemPct" name="Margem %" domain={[resumo.yMin, resumo.yMax]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={formatPercentEixo} />
+                <XAxis type="number" dataKey="qtdVendida" name="Vendas" domain={[0, resumo.xMax]} tick={{ ...axisTickStyle, fontFamily: plexMono.style.fontFamily }} tickLine={false} axisLine={axisLineStyle} label={{ value: "Vendas no período", position: "insideBottom", offset: -5, fontSize: 11, fill: "var(--faint)" }} />
+                <YAxis type="number" dataKey="margemPct" name="Margem %" domain={[resumo.yMin, resumo.yMax]} tick={{ ...axisTickStyle, fontFamily: plexMono.style.fontFamily }} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={formatPercentEixo} />
                 <ZAxis type="number" dataKey="qtdVendida" range={[160, 420]} />
-                <ReferenceArea x1={0} x2={resumo.xMax} y1={resumo.yMin} y2={resumo.margemAlvoMedia} fill="var(--a-excesso)" fillOpacity={0.06} />
-                <ReferenceLine y={resumo.margemAlvoMedia} stroke="var(--border-strong)" strokeDasharray="2 3" strokeWidth={1.2} label={{ value: `ALVO ${resumo.margemAlvoMedia.toFixed(0)}%`, position: "insideBottomRight", fontSize: 10, fill: "var(--sub)" }} />
+                <ReferenceArea x1={0} x2={resumo.xMax} y1={resumo.yMin} y2={resumo.margemAlvoMedia} fill="var(--sinal)" fillOpacity={0.05} />
+                <ReferenceLine y={resumo.margemAlvoMedia} stroke="var(--linha-forte)" strokeDasharray="2 3" strokeWidth={1.2} label={{ value: `ALVO ${resumo.margemAlvoMedia.toFixed(0)}%`, position: "insideBottomRight", fontSize: 10, fill: "var(--sub)" }} />
                 <Tooltip
                   cursor={{ strokeDasharray: "3 3" }}
                   content={({ payload }) => {
@@ -177,7 +275,7 @@ export default function DirecaoA() {
                       <ChartTooltipCard
                         titulo={p.receita.nomePrato}
                         linhas={[
-                          { rotulo: "Margem", valor: `${(p.margemPct as number).toFixed(1)}%`, cor: p.abaixoDoAlvo ? "var(--a-excesso)" : "var(--accent)", destaque: p.abaixoDoAlvo },
+                          { rotulo: "Margem", valor: `${(p.margemPct as number).toFixed(1)}%`, cor: p.abaixoDoAlvo ? "var(--sinal)" : "var(--tinta)", destaque: p.abaixoDoAlvo },
                           { rotulo: "Vendas no período", valor: String(p.qtdVendida) },
                           { rotulo: "CMV", valor: `${(p.cmvPct as number).toFixed(1)}%` },
                         ]}
@@ -187,73 +285,72 @@ export default function DirecaoA() {
                 />
                 <Scatter data={resumo.comPreco}>
                   {resumo.comPreco.map((p) => (
-                    <Cell key={p.receita.id} fill={p.abaixoDoAlvo ? "var(--a-excesso)" : "var(--accent)"} stroke="var(--panel)" strokeWidth={2} />
+                    <Cell key={p.receita.id} fill={p.abaixoDoAlvo ? "var(--sinal)" : "var(--tinta)"} stroke="var(--painel)" strokeWidth={2} />
                   ))}
-                  <LabelList
-                    dataKey="receita.nomePrato"
-                    content={(props) => {
-                      const { x, y, value } = props as { x: number; y: number; value: string };
-                      return (
-                        <text x={x} y={y - 14} textAnchor="middle" fontSize={10.5} fontWeight={500} fill="var(--text)">
-                          {value}
-                        </text>
-                      );
-                    }}
-                  />
                 </Scatter>
               </ScatterChart>
             </ChartFrame>
-          </Card>
+          </div>
         </div>
 
         <div>
-          <h2 className="text-[13px] font-semibold mb-1" style={{ letterSpacing: "0.02em" }}>PERDAS RECENTES</h2>
+          <h2 className="text-[13px] font-semibold mb-1">Perdas recentes</h2>
           <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Últimos lotes descartados, motivo registrado no ponto de origem.</p>
-          <Card>
+          <div className="a-painel">
             {resumo.perdasRecentes.length === 0 ? (
               <div className="py-8 text-center text-[12px]" style={{ color: "var(--faint)" }}>Nenhuma perda registrada ainda.</div>
             ) : (
               <table className="w-full text-[12px]">
                 <thead>
                   <tr style={{ color: "var(--faint)" }} className="text-left text-[10px] uppercase tracking-wide">
-                    <th className="py-2.5 px-5 font-medium">Lote</th>
+                    <th className="py-2.5 px-5 font-medium a-mono">Lote</th>
                     <th className="py-2.5 px-3 font-medium">Prato/preparo</th>
-                    <th className="py-2.5 px-3 font-medium text-right">Qtd.</th>
+                    <th className="py-2.5 px-3 font-medium text-right a-mono">Qtd.</th>
                     <th className="py-2.5 px-5 font-medium">Motivo</th>
                   </tr>
                 </thead>
                 <tbody>
                   {resumo.perdasRecentes.map((p) => (
-                    <tr key={p.id} style={{ borderTop: "1px solid var(--border)" }}>
-                      <td className="py-2.5 px-5 font-medium" style={nums}>{p.lote}</td>
+                    <tr key={p.id} style={{ borderTop: "1px solid var(--linha)" }}>
+                      <td className="py-2.5 px-5 font-medium a-mono">{p.lote}</td>
                       <td className="py-2.5 px-3">{p.nomeReceita}</td>
-                      <td className="py-2.5 px-3 text-right" style={nums}>{p.quantidade} {p.unidadeRendimento}</td>
-                      <td className="py-2.5 px-5" style={{ color: "var(--a-excesso)" }}>{p.motivoPerda ?? "—"}</td>
+                      <td className="py-2.5 px-3 text-right a-mono">{p.quantidade} {p.unidadeRendimento}</td>
+                      <td className="py-2.5 px-5" style={{ color: "var(--sinal)" }}>{p.motivoPerda ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-          </Card>
+          </div>
         </div>
 
         <div>
-          <h2 className="text-[13px] font-semibold mb-1" style={{ letterSpacing: "0.02em" }}>PRODUÇÃO AGORA</h2>
-          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Lotes em curso hoje, por estado.</p>
-          <div className="grid grid-cols-3 gap-2">
-            {COLUNAS_KANBAN.map((col) => {
+          <h2 className="text-[13px] font-semibold mb-1">Produção agora</h2>
+          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Estações em curso hoje, com nível de carga.</p>
+          <div className="grid grid-cols-3 gap-4">
+            {COLUNAS_ESTACAO.map((col) => {
               const itens = producoes.filter((p) => p.status === col.status);
-              const cor = col.status === "produzido" ? "var(--accent)" : col.status === "perda" ? "var(--danger)" : "var(--a-excesso)";
+              const nivel = clamp(itens.length, 0, 5);
               return (
-                <div key={col.status} className="a-kanban-col">
-                  <div className="a-kanban-head"><span>{col.rotulo}</span><span style={nums}>{itens.length}</span></div>
+                <div key={col.status} className="a-painel">
+                  <div className="a-estacao-head">
+                    <div className="a-estacao-titulo">
+                      <span>{col.rotulo}</span>
+                      <span className="a-mono">{itens.length}</span>
+                    </div>
+                    <div className="a-estacao-nivel">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className={`a-estacao-seg ${i < nivel ? "a-cheio" : ""} ${i < nivel && col.risco ? "a-sinal" : ""}`} />
+                      ))}
+                    </div>
+                  </div>
                   {itens.slice(0, 3).map((it) => (
-                    <div key={it.id} className="a-kanban-card" style={{ ["--card-cor" as string]: cor }}>
+                    <div key={it.id} className="a-estacao-item">
                       <div style={{ fontWeight: 600 }}>{it.nomeReceita}</div>
-                      <div style={{ color: "var(--faint)", fontSize: 10.5, marginTop: 2, ...nums }}>{it.lote} · {it.quantidade} {it.unidadeRendimento}</div>
+                      <div className="a-mono" style={{ color: "var(--faint)", fontSize: 10.5, marginTop: 2 }}>{it.lote} · {it.quantidade} {it.unidadeRendimento}</div>
                     </div>
                   ))}
-                  {itens.length === 0 && <div className="px-3 pb-3 text-[11px]" style={{ color: "var(--faint)" }}>vazio</div>}
+                  {itens.length === 0 && <div className="px-3 py-3 text-[11px]" style={{ color: "var(--faint)" }}>vazio</div>}
                 </div>
               );
             })}
