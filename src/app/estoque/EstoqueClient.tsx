@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { inputStyle, nums } from "@/components/ficha/tema";
@@ -92,9 +92,8 @@ export function EstoqueClient({
                 const abaixo = e.saldoAtual < e.estoqueMinimo;
                 const editandoEsteAqui = editandoInsumoId === e.insumoId;
                 return (
-                  <>
+                  <Fragment key={e.insumoId}>
                     <tr
-                      key={e.insumoId}
                       style={{ borderTop: `1px solid ${"var(--border)"}`, cursor: "pointer" }}
                       onClick={() => setEditandoInsumoId(editandoEsteAqui ? null : e.insumoId)}
                     >
@@ -109,7 +108,7 @@ export function EstoqueClient({
                     {editandoEsteAqui && (
                       <EditarEstoqueForm linha={e} onCancel={() => setEditandoInsumoId(null)} onSaved={() => setEditandoInsumoId(null)} />
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
               {estoqueFiltrado.length === 0 && (

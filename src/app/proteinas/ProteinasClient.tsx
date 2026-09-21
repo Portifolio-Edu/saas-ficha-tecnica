@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Kpi } from "@/components/ficha/Kpi";
@@ -159,8 +159,8 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                 {lotes.map((l) => {
                   const descarteAlto = l.pesoDescartePuro / l.pesoBrutoRecebido > 0.08;
                   return (
-                    <>
-                      <tr key={l.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
+                    <Fragment key={l.id}>
+                      <tr style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                         <td className="py-2 px-5">{formatarData(l.processadoEm)}</td>
                         <td className="py-2 px-2 font-medium">{l.responsavel}</td>
                         <td className="py-2 px-2" style={{ color: "var(--sub)" }}>{l.fornecedor ?? "—"}</td>
@@ -176,7 +176,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                           <td colSpan={9} className="pb-2 px-5 text-[11.5px]" style={{ color: "var(--sub)" }}>Obs: {l.observacao}</td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

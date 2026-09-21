@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { CookingPot } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
@@ -86,8 +86,8 @@ export function InsumosClient({
               const abaixoMinimo = i.estoque && i.estoque.saldoAtual < i.estoque.estoqueMinimo;
               const editandoEsteAqui = insumoEditando?.id === i.id;
               return (
-                <>
-                  <tr key={i.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
+                <Fragment key={i.id}>
+                  <tr style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                     <td className="py-2.5 px-5">{i.nome}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === i.categoria)?.label ?? i.categoria}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.unidadeMedida}</td>
@@ -121,7 +121,7 @@ export function InsumosClient({
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
             {insumos.length === 0 && (

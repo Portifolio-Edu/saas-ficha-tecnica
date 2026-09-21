@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { mensagemErro } from "./erros";
 
 export interface ClienteAtual {
   id: string;
@@ -45,7 +46,7 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
   const meta = (user.user_metadata ?? {}) as MetadadosCadastro;
   if (!meta.nome || !meta.nome_restaurante || !meta.telefone) return null;
 
-  const { data: criado } = await supabase
+  const { data: criado, error } = await supabase
     .from("clientes")
     .insert({
       user_id: user.id,
@@ -56,6 +57,10 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
     .select("id, nome, nome_restaurante, margem_alvo")
     .single();
 
+  // Não retorna null aqui: null significa "sem cadastro pendente" pras
+  // páginas que chamam getClienteAtual(), o que causaria um loop silencioso
+  // de redirect pro /login em vez de mostrar que o onboarding falhou.
+  if (error) throw new Error(mensagemErro(error));
   if (!criado) return null;
 
   return {
