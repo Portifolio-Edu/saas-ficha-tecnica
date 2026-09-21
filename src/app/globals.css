@@ -24,6 +24,11 @@
      nunca reaproveitada em botão de ação (isso continua --accent). */
   --marca: #5C3620;
   --marca-soft: #E7DACB;
+  /* Brasa: gradiente da brasa acesa -- laranja de fogo vivo esfriando pro
+     marrom Torrado. Reservado pra wordmark e pontos de identidade, nunca
+     em botão ou dado; é onde a marca gasta a ousadia de propósito. */
+  --brasa: linear-gradient(120deg, #E85A1C 0%, #C4451C 38%, var(--marca) 100%);
+  --brasa-glow: rgba(232, 90, 28, 0.18);
   --shadow: 0 1px 2px rgba(34, 26, 18, 0.05), 0 8px 24px rgba(34, 26, 18, 0.08);
   --shadow-lift: 0 2px 4px rgba(34, 26, 18, 0.06), 0 16px 40px rgba(34, 26, 18, 0.12);
 }
@@ -48,6 +53,8 @@
   --status-producao-soft: #34281A;
   --marca: #B8825A;
   --marca-soft: #3A2D20;
+  --brasa: linear-gradient(120deg, #F2874A 0%, #E0642E 38%, var(--marca) 100%);
+  --brasa-glow: rgba(242, 135, 74, 0.22);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.5);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.55);
 }
@@ -117,6 +124,15 @@
    esses três lugares, nunca corpo de texto ou dado. */
 .fonte-marca {
   font-family: var(--font-display), "Arial Narrow", sans-serif;
+}
+
+/* Texto em gradiente de brasa -- só a wordmark e o número-herói de KPI usam
+   isso; em qualquer outro lugar cor carrega significado, não decoração. */
+.texto-brasa {
+  background: var(--brasa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 /* Grão sutil de papel kraft -- reservado pra sidebar e pro cartão de ficha

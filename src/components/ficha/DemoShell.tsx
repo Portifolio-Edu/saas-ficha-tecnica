@@ -46,8 +46,9 @@ export function DemoShell({
   return (
     <div className="w-full min-h-screen flex" style={{ background: "var(--bg)", color: "var(--text)" }}>
       <aside className="w-56 shrink-0 flex flex-col textura-craft" style={{ backgroundColor: "var(--panel)", borderRight: `1px solid ${"var(--border)"}` }}>
-        <div className="px-5 pt-4 pb-3" style={{ borderBottom: `2px solid ${"var(--marca)"}` }}>
-          <div className="fonte-marca leading-[0.92]" style={{ color: "var(--marca)", fontSize: 19, letterSpacing: "0.01em" }}>
+        <div className="relative px-5 pt-5 pb-4" style={{ borderBottom: `2px solid ${"var(--marca)"}` }}>
+          <div aria-hidden className="absolute -left-6 -top-6 rounded-full" style={{ width: 90, height: 90, background: "var(--brasa-glow)", filter: "blur(18px)" }} />
+          <div className="relative fonte-marca texto-brasa leading-[0.88]" style={{ fontSize: 25, letterSpacing: "0.01em" }}>
             FICHA
             <br />
             TÉCNICA
@@ -92,7 +93,7 @@ export function DemoShell({
 
       <main id="conteudo" className="flex-1 flex flex-col overflow-auto">
         <div className="h-16 shrink-0 flex items-center px-8" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
-          <h1 className="text-[19px] font-semibold" style={{ letterSpacing: "-0.02em" }}>{tituloPagina}</h1>
+          <h1 className="text-[26px] font-bold" style={{ letterSpacing: "-0.025em" }}>{tituloPagina}</h1>
         </div>
         <div className="p-8 flex-1">{children}</div>
       </main>
