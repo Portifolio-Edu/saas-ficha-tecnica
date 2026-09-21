@@ -143,74 +143,104 @@ export default function DirecaoA() {
           --fundo: #FAFAFA; --tinta: #15161B; --sinal: #FF3B1F;
           --sub: color-mix(in srgb, var(--tinta) 58%, var(--fundo));
           --faint: color-mix(in srgb, var(--tinta) 38%, var(--fundo));
-          --painel: color-mix(in srgb, var(--tinta) 2.5%, var(--fundo));
-          --linha: color-mix(in srgb, var(--tinta) 10%, transparent);
-          --linha-forte: color-mix(in srgb, var(--tinta) 22%, transparent);
+          --painel: color-mix(in srgb, var(--tinta) 2%, var(--fundo));
+          --linha: color-mix(in srgb, var(--tinta) 9%, transparent);
+          --linha-forte: color-mix(in srgb, var(--tinta) 20%, transparent);
+          --realce: rgba(255,255,255,.75);
+          --sombra-fundo: rgba(21,22,27,.05);
+          --sombra-funda: rgba(21,22,27,.12);
         }
         [data-direcao="a"][data-theme="dark"] {
-          --fundo: #15161B; --tinta: #FAFAFA; --sinal: #FF3B1F;
+          --fundo: #15161B; --tinta: #FAFAFA; --sinal: #FF5A3D;
           --sub: color-mix(in srgb, var(--tinta) 58%, var(--fundo));
           --faint: color-mix(in srgb, var(--tinta) 38%, var(--fundo));
-          --painel: color-mix(in srgb, var(--tinta) 4%, var(--fundo));
-          --linha: color-mix(in srgb, var(--tinta) 12%, transparent);
-          --linha-forte: color-mix(in srgb, var(--tinta) 24%, transparent);
+          --painel: color-mix(in srgb, var(--tinta) 6%, var(--fundo));
+          --linha: color-mix(in srgb, var(--tinta) 11%, transparent);
+          --linha-forte: color-mix(in srgb, var(--tinta) 22%, transparent);
+          --realce: rgba(255,255,255,.06);
+          --sombra-fundo: rgba(0,0,0,.35);
+          --sombra-funda: rgba(0,0,0,.5);
         }
-        [data-direcao="a"] { font-family: ${plexSans.style.fontFamily}; letter-spacing: 0; }
+        [data-direcao="a"] { font-family: ${plexSans.style.fontFamily}; letter-spacing: 0; background: radial-gradient(1100px 520px at 50% -8%, color-mix(in srgb, var(--tinta) 3%, var(--fundo)), var(--fundo) 62%); }
         [data-direcao="a"] .a-mono { font-family: ${plexMono.style.fontFamily}; }
 
-        [data-direcao="a"] .a-topo { border-bottom: 1px solid var(--linha); }
-        [data-direcao="a"] .a-marca { font-weight: 600; font-size: 13px; }
-        [data-direcao="a"] .a-restaurante { font-family: ${plexMono.style.fontFamily}; font-size: 11px; letter-spacing: 0.04em; color: var(--sub); border: 1px solid var(--linha-forte); padding: 3px 9px; border-radius: 2px; }
-        [data-direcao="a"] .a-toggle { display: flex; border: 1px solid var(--linha-forte); border-radius: 2px; overflow: hidden; }
-        [data-direcao="a"] .a-toggle button { padding: 5px 11px; font-size: 10.5px; letter-spacing: 0.06em; font-weight: 600; color: var(--faint); }
-        [data-direcao="a"] .a-toggle button.ativo { background: var(--tinta); color: var(--fundo); }
+        [data-direcao="a"] .a-topo { position: relative; }
+        [data-direcao="a"] .a-topo::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--linha-forte) 15%, var(--linha-forte) 85%, transparent); }
+        [data-direcao="a"] .a-marca { font-weight: 700; font-size: 13.5px; letter-spacing: -0.01em; }
+        [data-direcao="a"] .a-restaurante { font-family: ${plexMono.style.fontFamily}; font-size: 11px; letter-spacing: 0.04em; color: var(--sub); border: 1px solid var(--linha-forte); padding: 4px 10px; border-radius: 999px; background: var(--painel); }
+        [data-direcao="a"] .a-toggle { display: flex; gap: 2px; border: 1px solid var(--linha); border-radius: 999px; padding: 3px; background: var(--painel); box-shadow: inset 0 1px 2px var(--sombra-fundo); }
+        [data-direcao="a"] .a-toggle button { padding: 5px 13px; font-size: 10.5px; letter-spacing: 0.06em; font-weight: 600; color: var(--faint); border-radius: 999px; transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease; }
+        [data-direcao="a"] .a-toggle button.ativo { background: var(--tinta); color: var(--fundo); box-shadow: 0 1px 3px var(--sombra-funda), inset 0 1px 0 var(--realce); }
 
-        /* Painel: sem sombra -- separação é linha fina, nunca elevação. */
-        [data-direcao="a"] .a-painel { background: var(--painel); border: 1px solid var(--linha); border-radius: 2px; }
+        /* Painel: nunca cartão flutuando com sombra suave -- a profundidade
+           vem de bisel (realce no topo, sombra contida por dentro), como
+           uma placa usinada encaixada no painel, não um card de dashboard. */
+        [data-direcao="a"] .a-painel {
+          background: var(--painel); border: 1px solid var(--linha); border-radius: 10px;
+          box-shadow: inset 0 1px 0 var(--realce), 0 1px 2px var(--sombra-fundo);
+        }
 
         /* Leitura calibrada -- a régua é a unidade central da direção. */
-        [data-direcao="a"] .a-leitura { padding: 20px 22px; }
-        [data-direcao="a"] .a-leitura-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-        [data-direcao="a"] .a-leitura-rotulo { font-size: 12.5px; color: var(--sub); font-weight: 500; }
-        [data-direcao="a"] .a-leitura-valor { font-weight: 600; text-align: right; white-space: nowrap; font-size: 26px; }
+        [data-direcao="a"] .a-leitura { padding: 22px 24px; }
+        [data-direcao="a"] .a-leitura-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+        [data-direcao="a"] .a-leitura-rotulo { font-size: 12px; color: var(--sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+        [data-direcao="a"] .a-leitura-valor { font-weight: 700; text-align: right; white-space: nowrap; font-size: 27px; letter-spacing: -0.01em; }
         [data-direcao="a"] .a-leitura-valor.a-sinal { color: var(--sinal); }
-        [data-direcao="a"] .a-leitura-sufixo { font-size: 0.55em; margin-left: 2px; color: var(--faint); }
-        [data-direcao="a"] .a-leitura-hero { padding: 30px 32px 26px; }
-        [data-direcao="a"] .a-leitura-hero .a-leitura-rotulo { font-size: 14px; }
-        [data-direcao="a"] .a-leitura-hero .a-leitura-valor { font-size: 72px; }
-        [data-direcao="a"] .a-leitura-hero .a-regua-trilho { height: 3px; }
-        [data-direcao="a"] .a-leitura-hero .a-regua { height: 20px; }
-        [data-direcao="a"] .a-leitura-hero .a-regua-ponteiro { width: 4px; height: 20px; margin-left: -2px; }
+        [data-direcao="a"] .a-leitura-sufixo { font-size: 0.5em; margin-left: 2px; color: var(--faint); font-weight: 600; }
+        [data-direcao="a"] .a-leitura-hero { padding: 34px 36px 30px; }
+        [data-direcao="a"] .a-leitura-hero .a-leitura-rotulo { font-size: 13px; }
+        [data-direcao="a"] .a-leitura-hero .a-leitura-valor { font-size: 84px; font-weight: 700; }
+        [data-direcao="a"] .a-leitura-hero .a-regua { height: 26px; }
+        [data-direcao="a"] .a-leitura-hero .a-regua-trilho { height: 8px; }
+        [data-direcao="a"] .a-leitura-hero .a-regua-ponteiro { width: 22px; height: 22px; margin-left: -11px; margin-top: -11px; border-radius: 50%; }
+        [data-direcao="a"] .a-leitura-hero .a-regua-alvo { width: 2px; }
+        [data-direcao="a"] .a-leitura-hero .a-regua-alvo::after { width: 7px; height: 7px; margin-left: -3.5px; }
 
-        [data-direcao="a"] .a-regua { position: relative; height: 14px; }
-        [data-direcao="a"] .a-regua-trilho { position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: var(--linha-forte); }
-        [data-direcao="a"] .a-regua-zona { position: absolute; top: 50%; height: 6px; margin-top: -3px; background: color-mix(in srgb, var(--sinal) 12%, transparent); }
-        [data-direcao="a"] .a-regua-alvo { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--tinta); }
+        [data-direcao="a"] .a-regua { position: relative; height: 16px; }
+        [data-direcao="a"] .a-regua-trilho {
+          position: absolute; left: 0; right: 0; top: 50%; height: 5px; margin-top: -2.5px; border-radius: 4px;
+          background: color-mix(in srgb, var(--tinta) 7%, var(--fundo));
+          box-shadow: inset 0 1.5px 2px var(--sombra-fundo), inset 0 -1px 0 var(--realce);
+        }
+        [data-direcao="a"] .a-regua-zona { position: absolute; top: 50%; height: 5px; margin-top: -2.5px; border-radius: 4px; background: color-mix(in srgb, var(--sinal) 16%, transparent); }
+        [data-direcao="a"] .a-regua-alvo { position: absolute; top: -4px; bottom: -4px; width: 1.5px; background: var(--tinta); border-radius: 1px; }
         [data-direcao="a"] .a-regua-alvo::after { content: ""; position: absolute; top: -3px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; background: var(--tinta); border-radius: 50%; }
-        [data-direcao="a"] .a-regua-ponteiro { position: absolute; top: 50%; width: 3px; height: 14px; margin-top: -7px; margin-left: -1.5px; background: var(--tinta); border-radius: 1px; transition: left 850ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-        [data-direcao="a"] .a-regua-ponteiro.a-sinal { background: var(--sinal); }
+        [data-direcao="a"] .a-regua-ponteiro {
+          position: absolute; top: 50%; width: 12px; height: 12px; margin-top: -6px; margin-left: -6px; border-radius: 50%;
+          background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--tinta) 82%, white 30%), var(--tinta) 70%);
+          box-shadow: 0 1px 3px var(--sombra-funda), 0 0 0 3px var(--painel), inset 0 1px 0 var(--realce);
+          transition: left 850ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        [data-direcao="a"] .a-regua-ponteiro.a-sinal { background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--sinal) 75%, white 35%), var(--sinal) 70%); }
 
-        [data-direcao="a"] .a-leitura-legenda { margin-top: 10px; display: flex; gap: 14px; }
-        [data-direcao="a"] .a-leitura-legenda-item { display: flex; align-items: center; gap: 5px; font-size: 10.5px; letter-spacing: 0.03em; color: var(--faint); }
+        [data-direcao="a"] .a-leitura-legenda { margin-top: 14px; display: flex; gap: 14px; }
+        [data-direcao="a"] .a-leitura-legenda-item { display: flex; align-items: center; gap: 5px; font-size: 10.5px; letter-spacing: 0.03em; color: var(--faint); font-weight: 500; }
 
         /* Leituras secundárias sem faixa contínua -- readout mecânico simples. */
-        [data-direcao="a"] .a-readout { padding: 16px 20px; display: flex; align-items: baseline; justify-content: space-between; }
-        [data-direcao="a"] .a-readout-rotulo { font-size: 12.5px; color: var(--sub); }
-        [data-direcao="a"] .a-readout-valor { font-size: 22px; font-weight: 600; text-align: right; display: flex; align-items: center; gap: 6px; }
+        [data-direcao="a"] .a-readout { padding: 18px 22px; display: flex; align-items: baseline; justify-content: space-between; }
+        [data-direcao="a"] .a-readout-rotulo { font-size: 12px; color: var(--sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        [data-direcao="a"] .a-readout-valor { font-size: 23px; font-weight: 700; text-align: right; display: flex; align-items: center; gap: 7px; letter-spacing: -0.01em; }
         [data-direcao="a"] .a-readout-valor.a-sinal { color: var(--sinal); }
-        [data-direcao="a"] .a-readout-sub { font-size: 11px; color: var(--faint); font-weight: 400; margin-left: 4px; }
+        [data-direcao="a"] .a-readout-sub { font-size: 11px; color: var(--faint); font-weight: 500; margin-left: 4px; }
+        [data-direcao="a"] .a-icone-badge {
+          display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%;
+          background: color-mix(in srgb, var(--sinal) 14%, transparent); color: var(--sinal);
+        }
 
         [data-direcao="a"] table tr:hover td { background: color-mix(in srgb, var(--tinta) 4%, transparent); }
         [data-direcao="a"] td, [data-direcao="a"] th { border-color: var(--linha); }
 
         /* Estação (kanban): indicador mecânico de nível, não tag colorida. */
-        [data-direcao="a"] .a-estacao-head { padding: 10px 12px; border-bottom: 1px solid var(--linha); display: flex; flex-direction: column; gap: 7px; }
-        [data-direcao="a"] .a-estacao-titulo { display: flex; justify-content: space-between; align-items: baseline; font-size: 11.5px; font-weight: 500; }
-        [data-direcao="a"] .a-estacao-nivel { display: flex; gap: 2px; }
-        [data-direcao="a"] .a-estacao-seg { flex: 1; height: 4px; background: var(--linha-forte); }
-        [data-direcao="a"] .a-estacao-seg.a-cheio { background: var(--tinta); }
-        [data-direcao="a"] .a-estacao-seg.a-cheio.a-sinal { background: var(--sinal); }
-        [data-direcao="a"] .a-estacao-item { padding: 9px 12px; border-bottom: 1px solid var(--linha); font-size: 11.5px; }
+        [data-direcao="a"] .a-estacao-head { padding: 12px 14px; border-bottom: 1px solid var(--linha); display: flex; flex-direction: column; gap: 8px; }
+        [data-direcao="a"] .a-estacao-titulo { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 600; }
+        [data-direcao="a"] .a-estacao-nivel { display: flex; gap: 3px; }
+        [data-direcao="a"] .a-estacao-seg {
+          flex: 1; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--tinta) 8%, var(--fundo));
+          box-shadow: inset 0 1px 1.5px var(--sombra-fundo);
+        }
+        [data-direcao="a"] .a-estacao-seg.a-cheio { background: linear-gradient(180deg, color-mix(in srgb, var(--tinta) 85%, white 25%), var(--tinta)); box-shadow: none; }
+        [data-direcao="a"] .a-estacao-seg.a-cheio.a-sinal { background: linear-gradient(180deg, color-mix(in srgb, var(--sinal) 80%, white 30%), var(--sinal)); }
+        [data-direcao="a"] .a-estacao-item { padding: 10px 14px; border-bottom: 1px solid var(--linha); font-size: 11.5px; }
         [data-direcao="a"] .a-estacao-item:last-child { border-bottom: none; }
 
         @media (prefers-reduced-motion: reduce) {
@@ -229,7 +259,7 @@ export default function DirecaoA() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-8 py-10 space-y-6">
+      <div className="max-w-5xl mx-auto px-8 py-14 space-y-8">
         {/* Uma leitura domina a hierarquia da tela; a outra recebe o mesmo
             tratamento de régua, em escala menor -- nunca duas competindo. */}
         <div className="a-painel">
@@ -243,21 +273,21 @@ export default function DirecaoA() {
           <div className="a-painel a-readout">
             <div className="a-readout-rotulo">Pratos abaixo da margem alvo</div>
             <div className={`a-readout-valor ${resumo.abaixoDoAlvo > 0 ? "a-sinal" : ""}`} style={numsA}>
-              {resumo.abaixoDoAlvo > 0 && <IconAlerta />}
+              {resumo.abaixoDoAlvo > 0 && <span className="a-icone-badge"><IconAlerta /></span>}
               {abaixoNum.toFixed(0)}<span className="a-readout-sub">de {resumo.comPreco.length}</span>
             </div>
           </div>
           <div className="a-painel a-readout">
             <div className="a-readout-rotulo">Perda de estoque em {resumo.nomeMes}</div>
             <div className={`a-readout-valor ${resumo.perdaTotalReais > 0 ? "a-sinal" : ""}`} style={numsA}>
-              {resumo.perdaTotalReais > 0 && <IconAlerta />}
+              {resumo.perdaTotalReais > 0 && <span className="a-icone-badge"><IconAlerta /></span>}
               {formatBRL(perdaNum)}
             </div>
           </div>
         </div>
 
         <div>
-          <h2 className="text-[13px] font-semibold mb-3">Engenharia de cardápio</h2>
+          <h2 className="text-[13.5px] font-bold mb-3 tracking-tight">Engenharia de cardápio</h2>
           <div className="a-painel p-6">
             <ChartFrame vazio={resumo.comPreco.length === 0} tituloVazio="Nenhum prato com preço de venda cadastrado ainda." dicaVazio="Cadastre o preço de venda em Receitas & Fichas pra esse gráfico começar a preencher.">
               <ScatterChart margin={CHART_MARGIN}>
@@ -294,7 +324,7 @@ export default function DirecaoA() {
         </div>
 
         <div>
-          <h2 className="text-[13px] font-semibold mb-1">Perdas recentes</h2>
+          <h2 className="text-[13.5px] font-bold mb-1 tracking-tight">Perdas recentes</h2>
           <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Últimos lotes descartados, motivo registrado no ponto de origem.</p>
           <div className="a-painel">
             {resumo.perdasRecentes.length === 0 ? (
@@ -325,7 +355,7 @@ export default function DirecaoA() {
         </div>
 
         <div>
-          <h2 className="text-[13px] font-semibold mb-1">Produção agora</h2>
+          <h2 className="text-[13.5px] font-bold mb-1 tracking-tight">Produção agora</h2>
           <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Estações em curso hoje, com nível de carga.</p>
           <div className="grid grid-cols-3 gap-4">
             {COLUNAS_ESTACAO.map((col) => {
