@@ -150,7 +150,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.68,
     modoPreparo: "Abrir o disco de massa, cobrir com molho de tomate, mussarela e manjericão fresco; assar a 380°C por 3min.",
-    fotoUrl: null,
+    fotoUrl: "https://picsum.photos/seed/pizza-margherita-padrao/900/650",
     ficha: [
       linha("pt-marg-l1", { subReceitaId: "pr-massa-pizza", pesoLiquido: 1, unidade: "un" }),
       linha("pt-marg-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.15, unidade: "l" }),

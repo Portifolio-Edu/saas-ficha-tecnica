@@ -3,42 +3,51 @@
 
 :root {
   color-scheme: light;
-  --bg: #FAFAFA;
-  --panel: #FFFFFF;
-  --border: #ECECEE;
-  --border-strong: #DEDEE2;
-  --text: #0D0D0F;
-  --sub: #6E6E76;
-  --faint: #A3A3AA;
+  /* Bancada: pedra/kraft de bancada, não cream editorial. */
+  --bg: #EDE7DA;
+  --panel: #F8F4EA;
+  --border: #DED4BE;
+  --border-strong: #CBBEA0;
+  /* Giz/Fuligem: tinta quase-preta, não cinza-frio de sistema. */
+  --text: #221A12;
+  --sub: #6F6252;
+  --faint: #A89A83;
   --accent: #2F5233;
-  --accent-soft: #EAF0EA;
+  --accent-soft: #E4E9DF;
   --danger: #9A2E1F;
-  --danger-soft: #FBECE8;
+  --danger-soft: #F5E4DA;
   --status-estoque: #1F5C8B;
-  --status-estoque-soft: #E7F1F9;
+  --status-estoque-soft: #DFE9EF;
   --status-producao: #8A5A00;
-  --status-producao-soft: #FBF0D9;
-  --shadow: 0 1px 2px rgba(23, 23, 30, 0.04), 0 8px 24px rgba(23, 23, 30, 0.07);
-  --shadow-lift: 0 2px 4px rgba(23, 23, 30, 0.05), 0 16px 40px rgba(23, 23, 30, 0.10);
+  --status-producao-soft: #F2E5C9;
+  /* Torrado: marrom de crosta torrada -- única cor de marca/identidade,
+     nunca reaproveitada em botão de ação (isso continua --accent). */
+  --marca: #5C3620;
+  --marca-soft: #E7DACB;
+  --shadow: 0 1px 2px rgba(34, 26, 18, 0.05), 0 8px 24px rgba(34, 26, 18, 0.08);
+  --shadow-lift: 0 2px 4px rgba(34, 26, 18, 0.06), 0 16px 40px rgba(34, 26, 18, 0.12);
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0D0D0F;
-  --panel: #17171A;
-  --border: #27272B;
-  --border-strong: #3A3A40;
-  --text: #F2F2F3;
-  --sub: #A3A3AA;
-  --faint: #6E6E76;
+  /* Carvão/Fuligem: preto quente de chapa/ferro fundido, não preto de tela. */
+  --bg: #17130F;
+  --panel: #221B15;
+  --border: #332920;
+  --border-strong: #453629;
+  --text: #F3ECDF;
+  --sub: #B3A691;
+  --faint: #7A6E5C;
   --accent: #6FA976;
-  --accent-soft: #1E2A20;
+  --accent-soft: #24301F;
   --danger: #E2685A;
-  --danger-soft: #3A1F1B;
+  --danger-soft: #3A241C;
   --status-estoque: #5B9BD5;
-  --status-estoque-soft: #16232F;
+  --status-estoque-soft: #1D2A22;
   --status-producao: #D9A93A;
-  --status-producao-soft: #302710;
+  --status-producao-soft: #34281A;
+  --marca: #B8825A;
+  --marca-soft: #3A2D20;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.5);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.55);
 }
@@ -96,4 +105,31 @@
 
 .pular-para-conteudo:focus {
   left: 0;
+}
+
+/* Wordmark, título de estado vazio, cabeçalho da ficha de produção -- só
+   esses três lugares, nunca corpo de texto ou dado. */
+.fonte-marca {
+  font-family: var(--font-display), "Arial Narrow", sans-serif;
+}
+
+/* Grão sutil de papel kraft -- reservado pra sidebar e pro cartão de ficha
+   de produção (os dois lugares "de identidade"), nunca em tabela densa. */
+.textura-craft {
+  position: relative;
+  isolation: isolate;
+}
+.textura-craft::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.textura-craft > * {
+  position: relative;
+  z-index: 1;
 }

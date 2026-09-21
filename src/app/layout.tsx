@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Big_Shoulders_Stencil } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -9,6 +9,15 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Face de identidade -- só pra wordmark, estado vazio e ficha de produção
+// (nunca pro corpo do app). Estêncil industrial: registro de placa de
+// câmara fria / caixa de estoque seco, não de cardápio bonito.
+const bigShouldersStencil = Big_Shoulders_Stencil({
+  variable: "--font-display",
+  weight: ["800"],
   subsets: ["latin"],
 });
 
@@ -43,7 +52,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${bigShouldersStencil.variable} antialiased`}
       >
         <a href="#conteudo" className="pular-para-conteudo">Pular para o conteúdo</a>
         {children}

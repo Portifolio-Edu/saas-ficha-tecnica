@@ -40,16 +40,26 @@ export function FichaProducaoModal({
     <>
       <div
         className="fixed inset-0 flex items-center justify-center p-4"
-        style={{ background: "rgba(13,13,15,0.45)", zIndex: 50 }}
+        style={{ background: "rgba(17,13,9,0.55)", zIndex: 50 }}
         onClick={onClose}
       >
-        <div
-          className="rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-          style={{ background: "var(--panel)", boxShadow: shadow }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
-            <h3 className="text-[15px] font-semibold">Ficha de produção — {receita.nomePrato}</h3>
+        <div className="relative w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          {/* nota de clipe -- o mesmo gesto de prender a ficha no varal da cozinha; fica
+              fora do cartão com scroll pra não ser cortada pelo overflow dele. */}
+          <div
+            aria-hidden
+            className="absolute left-1/2 -translate-x-1/2 -top-1.5 rounded-full"
+            style={{ width: 40, height: 14, background: "var(--marca)", boxShadow: "0 2px 4px rgba(0,0,0,0.25)", zIndex: 1 }}
+          />
+          <div
+            className="rounded-lg max-h-[90vh] overflow-y-auto textura-craft mt-2.5"
+            style={{ background: "var(--panel)", boxShadow: shadow, border: "1px solid var(--border)" }}
+          >
+          <div className="flex items-center justify-between px-5 pt-6 pb-4" style={{ borderBottom: `2px solid ${"var(--marca)"}` }}>
+            <div>
+              <div className="fonte-marca" style={{ color: "var(--marca)", fontSize: 13, letterSpacing: "0.04em" }}>FICHA DE PRODUÇÃO</div>
+              <h3 className="text-[17px] font-semibold mt-0.5" style={{ letterSpacing: "-0.01em" }}>{receita.nomePrato}</h3>
+            </div>
             <button onClick={onClose} aria-label="Fechar" style={{ color: "var(--faint)" }}>
               <X size={18} />
             </button>
@@ -57,14 +67,17 @@ export function FichaProducaoModal({
 
           <div className="px-5 py-4">
             {receita.fotoUrl ? (
-              <div className="relative mb-5">
+              <div className="relative mb-6 mt-1" style={{ transform: "rotate(-0.6deg)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={receita.fotoUrl}
                   alt={receita.nomePrato}
-                  className="rounded-lg w-full"
-                  style={{ minHeight: 400, objectFit: "cover", width: "100%" }}
+                  className="w-full"
+                  style={{ minHeight: 400, objectFit: "cover", width: "100%", boxShadow: "0 6px 20px rgba(0,0,0,0.22)" }}
                 />
+                {/* fita nos dois cantos superiores -- foto de padronização presa na bancada */}
+                <span aria-hidden className="absolute -top-2.5 left-6 rounded-[1px]" style={{ width: 44, height: 16, background: "rgba(243,236,223,0.55)", transform: "rotate(-4deg)", boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }} />
+                <span aria-hidden className="absolute -top-2.5 right-6 rounded-[1px]" style={{ width: 44, height: 16, background: "rgba(243,236,223,0.55)", transform: "rotate(3deg)", boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }} />
                 <button
                   onClick={() => setAmpliada(true)}
                   className="absolute bottom-3 right-3 flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg"
@@ -78,12 +91,12 @@ export function FichaProducaoModal({
                 className="rounded-lg flex items-center justify-center mb-5"
                 style={{ minHeight: 400, border: "1px dashed var(--border-strong)", background: "var(--bg)" }}
               >
-                <span className="text-[12.5px]" style={{ color: "var(--faint)" }}>Sem foto cadastrada</span>
+                <span className="text-[12.5px]" style={{ color: "var(--faint)" }}>Sem foto de padronização ainda</span>
               </div>
             )}
 
             <div className="mb-5">
-              <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--sub)" }}>
+              <h4 className="text-[12.5px] font-semibold mb-2" style={{ color: "var(--marca)" }}>
                 Ingredientes
               </h4>
               {receita.ficha.length === 0 ? (
@@ -105,7 +118,7 @@ export function FichaProducaoModal({
             </div>
 
             <div>
-              <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--sub)" }}>
+              <h4 className="text-[12.5px] font-semibold mb-2" style={{ color: "var(--marca)" }}>
                 Passo a passo
               </h4>
               {etapasOrdenadas.length === 0 ? (
@@ -115,8 +128,8 @@ export function FichaProducaoModal({
                   {etapasOrdenadas.map((etapa, idx) => (
                     <div key={etapa.id} className="flex gap-3 rounded-lg p-3" style={{ background: "var(--bg)" }}>
                       <div
-                        className="flex items-center justify-center rounded-full font-semibold shrink-0"
-                        style={{ width: 26, height: 26, background: "var(--accent)", color: "#fff", fontSize: 12 }}
+                        className="fonte-marca flex items-center justify-center rounded-full shrink-0"
+                        style={{ width: 26, height: 26, background: "var(--marca)", color: "var(--panel)", fontSize: 12 }}
                       >
                         {idx + 1}
                       </div>
@@ -138,6 +151,7 @@ export function FichaProducaoModal({
                 </div>
               )}
             </div>
+          </div>
           </div>
         </div>
       </div>

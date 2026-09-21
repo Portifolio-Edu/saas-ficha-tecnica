@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  ChefHat, Carrot, ClipboardList, LineChart, Settings, AlertTriangle,
+  Carrot, ClipboardList, LineChart, Settings, AlertTriangle,
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -47,12 +47,15 @@ export function AppShell({
 
   return (
     <div className="w-full min-h-screen flex" style={{ background: "var(--bg)", color: "var(--text)" }}>
-      <aside className="w-56 shrink-0 flex flex-col" style={{ backgroundColor: "var(--panel)", borderRight: `1px solid ${"var(--border)"}` }}>
-        <div className="px-5 h-16 flex items-center gap-2" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
-          <ChefHat size={16} style={{ color: "var(--text)" }} />
-          <span className="text-[14px] font-semibold" style={{ letterSpacing: "-0.01em" }}>Ficha Técnica</span>
+      <aside className="w-56 shrink-0 flex flex-col textura-craft" style={{ backgroundColor: "var(--panel)", borderRight: `1px solid ${"var(--border)"}` }}>
+        <div className="px-5 pt-4 pb-3" style={{ borderBottom: `2px solid ${"var(--marca)"}` }}>
+          <div className="fonte-marca leading-[0.92]" style={{ color: "var(--marca)", fontSize: 19, letterSpacing: "0.01em" }}>
+            FICHA
+            <br />
+            TÉCNICA
+          </div>
         </div>
-        <nav className="flex-1 py-3 px-2.5 space-y-0.5">
+        <nav className="flex-1 py-3 pr-2.5 space-y-0.5">
           {NAV.map((n) => {
             const active = n.href != null && pathname.startsWith(n.href);
             const Icon = n.icon;
@@ -66,8 +69,15 @@ export function AppShell({
               <Link
                 key={n.id}
                 href={n.href}
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[13px] text-left rounded-md"
-                style={{ color: active ? "var(--text)" : "var(--sub)", background: active ? "var(--bg)" : "transparent", fontWeight: active ? 600 : 400 }}
+                className="w-full flex items-center gap-2.5 py-1.5 text-[13px] text-left"
+                style={{
+                  color: active ? "var(--text)" : "var(--sub)",
+                  background: active ? "var(--marca-soft)" : "transparent",
+                  fontWeight: active ? 600 : 400,
+                  borderLeft: `3px solid ${active ? "var(--marca)" : "transparent"}`,
+                  borderRadius: "0 8px 8px 0",
+                  paddingLeft: 9,
+                }}
               >
                 {conteudo}
               </Link>
