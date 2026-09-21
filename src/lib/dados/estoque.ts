@@ -99,26 +99,22 @@ export async function listarMovimentacoes(limite = 30): Promise<Movimentacao[]> 
  * pra baixo -- correção pra cima é só lançar como entrada). saida_venda não tem
  * formulário aqui: no handoff ela é lançada em lote a partir da importação de
  * vendas do fechamento de CMV, não digitada uma a uma.
+ *
+ * O ajuste de saldo roda como RPC atômica (ajustar_saldo_estoque) em vez de
+ * SELECT+UPDATE no cliente, pra não perder update sob concorrência. Chamamos
+ * a RPC antes de inserir a movimentação: se o ajuste de saldo falhar, nada é
+ * gravado; se o INSERT do histórico falhar depois, fica só uma lacuna no
+ * histórico (saldo já correto), o que é preferível a saldo e histórico
+ * dessincronizados.
  */
 export async function registrarMovimentacao(insumoId: string, tipo: "entrada" | "ajuste", quantidade: number, origem: string): Promise<void> {
   const supabase = await createClient();
 
-  const { data: estoqueAtual, error: erroLeitura } = await supabase
-    .from("estoque")
-    .select("saldo_atual")
-    .eq("insumo_id", insumoId)
-    .single();
-  if (erroLeitura) throw new Error(mensagemErro(erroLeitura));
-
   const delta = tipo === "entrada" ? quantidade : -quantidade;
-  const novoSaldo = Number(estoqueAtual.saldo_atual) + delta;
+
+  const { error: erroRpc } = await supabase.rpc("ajustar_saldo_estoque", { p_insumo_id: insumoId, p_delta: delta });
+  if (erroRpc) throw new Error(mensagemErro(erroRpc));
 
   const { error: erroInsert } = await supabase.from("movimentacoes_estoque").insert({ insumo_id: insumoId, tipo, quantidade, origem });
   if (erroInsert) throw new Error(mensagemErro(erroInsert));
-
-  const { error: erroUpdate } = await supabase
-    .from("estoque")
-    .update({ saldo_atual: novoSaldo, atualizado_em: new Date().toISOString() })
-    .eq("insumo_id", insumoId);
-  if (erroUpdate) throw new Error(mensagemErro(erroUpdate));
 }

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getClienteAtual } from "@/lib/dados/cliente";
-import { contarProducoesPorReceita, criarProducao, atualizarStatusProducao } from "@/lib/dados/producoes";
+import { criarProducaoComLoteAutomatico, criarProducao, atualizarStatusProducao } from "@/lib/dados/producoes";
 import type { ProducaoInput, StatusProducao, TipoItemProducao } from "@/lib/dominio/producao";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
@@ -38,9 +38,8 @@ export async function acaoIniciarProducao(
   const cliente = await getClienteAtual();
   if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
   try {
-    const existentes = await contarProducoesPorReceita(receitaId);
-    const input: ProducaoInput = {
-      lote: gerarLote(nomeReceita, existentes + 1),
+    await criarProducaoComLoteAutomatico(cliente.id, receitaId, (sequencia): ProducaoInput => ({
+      lote: gerarLote(nomeReceita, sequencia),
       tipo,
       receitaId,
       quantidade: rendimento,
@@ -48,8 +47,7 @@ export async function acaoIniciarProducao(
       turnoId,
       chefeTurno,
       validade: null,
-    };
-    await criarProducao(cliente.id, input);
+    }));
     revalidatePath("/producoes");
     return { ok: true };
   } catch (e) {

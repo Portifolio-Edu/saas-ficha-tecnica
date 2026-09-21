@@ -93,9 +93,9 @@ export async function contarProducoesPorReceita(receitaId: string): Promise<numb
   return count ?? 0;
 }
 
-export async function criarProducao(clienteId: string, input: ProducaoInput): Promise<void> {
+async function inserirProducao(clienteId: string, input: ProducaoInput) {
   const supabase = await createClient();
-  const { error } = await supabase.from("producoes").insert({
+  return supabase.from("producoes").insert({
     cliente_id: clienteId,
     lote: input.lote,
     receita_id: input.receitaId,
@@ -106,7 +106,38 @@ export async function criarProducao(clienteId: string, input: ProducaoInput): Pr
     validade: input.validade,
     status: "em_producao",
   });
+}
+
+export async function criarProducao(clienteId: string, input: ProducaoInput): Promise<void> {
+  const { error } = await inserirProducao(clienteId, input);
   if (error) throw new Error(mensagemErro(error));
+}
+
+const MAX_TENTATIVAS_LOTE = 5;
+
+/**
+ * Cria a produção com lote gerado automaticamente ("iniciar produção" a
+ * partir de um card do quadro), retentando com o próximo número de sequência
+ * quando o lote colide (23505 na constraint producoes_cliente_lote_unico).
+ * A sequência inicial vem de um COUNT sem lock -- duas chamadas concorrentes
+ * pra mesma receita podem calcular o mesmo número --, então é a constraint
+ * unique no banco que detecta a colisão de verdade; o retry aqui só lida com
+ * o erro esperado em vez de deixar a ação falhar pro usuário.
+ */
+export async function criarProducaoComLoteAutomatico(
+  clienteId: string,
+  receitaId: string,
+  montarInput: (sequencia: number) => ProducaoInput,
+): Promise<void> {
+  let sequencia = (await contarProducoesPorReceita(receitaId)) + 1;
+
+  for (let tentativa = 1; tentativa <= MAX_TENTATIVAS_LOTE; tentativa++) {
+    const { error } = await inserirProducao(clienteId, montarInput(sequencia));
+    if (!error) return;
+    if (error.code !== "23505") throw new Error(mensagemErro(error));
+    sequencia++;
+  }
+  throw new Error("Não foi possível gerar um código de lote único depois de várias tentativas. Tente novamente.");
 }
 
 export async function atualizarStatusProducao(id: string, status: StatusProducao, motivoPerda: string | null = null): Promise<void> {

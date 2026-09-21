@@ -135,44 +135,23 @@ function paraLinhaReceita(input: ReceitaInput) {
   };
 }
 
+/**
+ * Substitui a ficha inteira via RPC (delete+insert dentro da mesma function
+ * plpgsql, uma única transação): antes eram duas chamadas separadas ao
+ * Supabase e um INSERT que falhasse depois do DELETE já commitado deixava a
+ * receita sem ficha nenhuma.
+ */
 async function substituirFicha(receitaId: string, ficha: LinhaFichaInput[]): Promise<void> {
   const supabase = await createClient();
-
-  const { error: erroDelete } = await supabase.from("receita_insumos").delete().eq("receita_id", receitaId);
-  if (erroDelete) throw new Error(mensagemErro(erroDelete));
-
-  if (ficha.length === 0) return;
-
-  const { error: erroInsert } = await supabase.from("receita_insumos").insert(
-    ficha.map((linha) => ({
-      receita_id: receitaId,
-      insumo_id: linha.insumoId,
-      sub_receita_id: linha.subReceitaId,
-      peso_liquido: linha.pesoLiquido,
-      unidade: linha.unidade,
-    })),
-  );
-  if (erroInsert) throw new Error(mensagemErro(erroInsert));
+  const { error } = await supabase.rpc("substituir_receita_insumos", { p_receita_id: receitaId, p_linhas: ficha });
+  if (error) throw new Error(mensagemErro(error));
 }
 
+/** Mesmo raciocínio de substituirFicha, pra receita_etapas. */
 async function substituirEtapas(receitaId: string, etapas: EtapaReceitaInput[]): Promise<void> {
   const supabase = await createClient();
-
-  const { error: erroDelete } = await supabase.from("receita_etapas").delete().eq("receita_id", receitaId);
-  if (erroDelete) throw new Error(mensagemErro(erroDelete));
-
-  if (etapas.length === 0) return;
-
-  const { error: erroInsert } = await supabase.from("receita_etapas").insert(
-    etapas.map((etapa) => ({
-      receita_id: receitaId,
-      ordem: etapa.ordem,
-      titulo: etapa.titulo,
-      texto: etapa.texto,
-      foto_url: etapa.fotoUrl,
-    })),
-  );
-  if (erroInsert) throw new Error(mensagemErro(erroInsert));
+  const { error } = await supabase.rpc("substituir_receita_etapas", { p_receita_id: receitaId, p_etapas: etapas });
+  if (error) throw new Error(mensagemErro(error));
 }
 
 export async function criarReceita(clienteId: string, input: ReceitaInput): Promise<void> {
