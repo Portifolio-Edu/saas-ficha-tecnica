@@ -265,10 +265,11 @@ export function CmvClient({
         </div>
 
         <div className="grid grid-cols-4 gap-3 mb-3">
-          <Kpi label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
-          <Kpi label="CMV teórico (fichas)" value={`${cmvTeoricoPct.toFixed(1)}%`} sub={`R$ ${custoTeoricoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
-          <Kpi label="CMV real (estoque)" value={`${cmvRealPct.toFixed(1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={`R$ ${consumoReal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
+          <Kpi flat label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
+          <Kpi flat label="CMV teórico (fichas)" value={`${cmvTeoricoPct.toFixed(1)}%`} sub={`R$ ${custoTeoricoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
+          <Kpi flat label="CMV real (estoque)" value={`${cmvRealPct.toFixed(1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={`R$ ${consumoReal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
           <Kpi
+            flat
             label="Gap não explicado"
             value={`${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1)} p.p.`}
             alerta={gapPct > GAP_ALERTA_PP}

@@ -11,7 +11,9 @@
   /* Giz/Fuligem: tinta quase-preta, não cinza-frio de sistema. */
   --text: #221A12;
   --sub: #6F6252;
-  --faint: #A89A83;
+  /* #A89A83 media 2.5:1 no painel -- falha AA de texto (4.5:1). Escurecido
+     só o suficiente pra passar (auditoria avoid-ai-design, WCAG). */
+  --faint: #6E6556;
   --accent: #2F5233;
   --accent-soft: #E4E9DF;
   --danger: #9A2E1F;
@@ -42,10 +44,13 @@
   --border-strong: #453629;
   --text: #F3ECDF;
   --sub: #B3A691;
-  --faint: #7A6E5C;
+  /* #7A6E5C media 3.4:1 -- falha AA. Clareado o mínimo pra passar 4.5:1. */
+  --faint: #8F8576;
   --accent: #6FA976;
   --accent-soft: #24301F;
-  --danger: #E2685A;
+  /* #E2685A media 4.39:1 sobre --danger-soft (banner/toast de erro) --
+     abaixo do piso AA de 4.5:1. Clareado o mínimo pra passar. */
+  --danger: #E36E60;
   --danger-soft: #3A241C;
   --status-estoque: #5B9BD5;
   --status-estoque-soft: #1D2A22;

@@ -110,15 +110,17 @@ export function VisaoGeralClient({
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <Kpi label="CMV médio dos pratos" value={cmvMedio !== null ? `${cmvMedio.toFixed(1)}%` : "—"} sub={comPreco.length === 0 ? "cadastre preço de venda nos pratos" : undefined} />
-        <Kpi label="Margem média atual" value={margemMedia !== null ? `${margemMedia.toFixed(1)}%` : "—"} />
+        <Kpi flat label="CMV médio dos pratos" value={cmvMedio !== null ? `${cmvMedio.toFixed(1)}%` : "—"} sub={comPreco.length === 0 ? "cadastre preço de venda nos pratos" : undefined} />
+        <Kpi flat label="Margem média atual" value={margemMedia !== null ? `${margemMedia.toFixed(1)}%` : "—"} />
         <Kpi
+          flat
           label="Pratos abaixo da margem alvo"
           value={abaixoDoAlvo}
           alerta={abaixoDoAlvo > 0}
           sub={`de ${comPreco.length} com preço cadastrado`}
         />
         <Kpi
+          flat
           label={`Perda de estoque em ${nomeMes}`}
           value={formatBRL(perdaTotalReais)}
           alerta={perdaTotalReais > 0}
