@@ -15,6 +15,7 @@ import type { Processamento } from "@/lib/dominio/processamento";
 import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
 import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
 import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
+import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirInsumo, acaoExcluirPreparo } from "./actions";
 
 export function InsumosClient({
@@ -34,6 +35,7 @@ export function InsumosClient({
   const [insumoEditando, setInsumoEditando] = useState<Insumo | null>(null);
   const [showNovoPreparo, setShowNovoPreparo] = useState(false);
   const [preparoEditando, setPreparoEditando] = useState<Receita | null>(null);
+  const { mostrarErro } = useToast();
 
   const contexto = construirContexto(insumos, todasReceitas, processamentos);
   const lotesProteina = processamentos.map(paraProcessamentoCalc);
@@ -41,13 +43,13 @@ export function InsumosClient({
   const excluirInsumoComConfirmacao = async (insumo: Insumo) => {
     if (!window.confirm(`Excluir "${insumo.nome}"? Isso não pode ser desfeito.`)) return;
     const resultado = await acaoExcluirInsumo(insumo.id);
-    if (!resultado.ok) window.alert(resultado.erro);
+    if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
   const excluirPreparoComConfirmacao = async (preparo: Receita) => {
     if (!window.confirm(`Excluir "${preparo.nomePrato}"? Isso não pode ser desfeito.`)) return;
     const resultado = await acaoExcluirPreparo(preparo.id);
-    if (!resultado.ok) window.alert(resultado.erro);
+    if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
   return (

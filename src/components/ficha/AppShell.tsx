@@ -7,6 +7,7 @@ import {
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ToastContainer } from "./Toast";
 
 // Mesma lista/ordem/ícones de ficha-tecnica-mvp.jsx. Todo item do menu já
 // tem rota real e não fica mais inerte.
@@ -99,6 +100,7 @@ export function AppShell({
         </div>
         <div className="p-8 flex-1">{children}</div>
       </main>
+      <ToastContainer />
     </div>
   );
 }

@@ -25,7 +25,7 @@ export default function PreviewIndexPage() {
       <div className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex items-center gap-2 mb-6">
           <ChefHat size={20} />
-          <span className="text-[15px] font-semibold" style={{ letterSpacing: "-0.01em" }}>Ficha Técnica</span>
+          <h1 className="text-[15px] font-semibold" style={{ letterSpacing: "-0.01em" }}>Ficha Técnica</h1>
         </div>
 
         <div

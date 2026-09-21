@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { inputStyle, nums } from "@/components/ficha/tema";
+import { useToast } from "@/components/ficha/Toast";
 import { InsumoNutricaoForm } from "@/components/nutricional/InsumoNutricaoForm";
 import { RotulagemForm } from "@/components/nutricional/RotulagemForm";
 import { LABEL_CAMPO } from "@/components/nutricional/labels";
@@ -69,6 +70,7 @@ export function NutricionalClient({
   const [insumoEditandoId, setInsumoEditandoId] = useState<string | null>(null);
   const [rotulagemAberta, setRotulagemAberta] = useState(false);
   const [gerandoRotulo, setGerandoRotulo] = useState(false);
+  const { mostrarErro } = useToast();
 
   const insumoPorId = useMemo(() => new Map(insumos.map((i) => [i.id, i])), [insumos]);
   const receitaPorId = useMemo(() => new Map([...pratos, ...preparos].map((r) => [r.id, r])), [pratos, preparos]);
@@ -80,7 +82,7 @@ export function NutricionalClient({
 
   const executarAcaoSimples = async (promessa: Promise<{ ok: boolean; erro?: string }>) => {
     const resultado = await promessa;
-    if (!resultado.ok) window.alert(resultado.erro ?? "Erro desconhecido.");
+    if (!resultado.ok) mostrarErro(resultado.erro ?? "Erro desconhecido.");
   };
 
   if (pratos.length === 0) {

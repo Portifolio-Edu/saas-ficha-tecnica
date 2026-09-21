@@ -6,6 +6,7 @@ import {
   ChefHat, Carrot, ClipboardList, LineChart, Settings, AlertTriangle,
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator,
 } from "lucide-react";
+import { ToastContainer } from "./Toast";
 
 // Cópia de AppShell.tsx para o modo demo (/preview), que roda sem sessão
 // Supabase real. Único conteúdo alterado: todo href do NAV ganha o prefixo
@@ -97,6 +98,7 @@ export function DemoShell({
         </div>
         <div className="p-8 flex-1">{children}</div>
       </main>
+      <ToastContainer />
     </div>
   );
 }

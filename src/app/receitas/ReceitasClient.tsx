@@ -19,6 +19,7 @@ import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
 import { calcularPrecoSugerido } from "@/lib/calculo/precificacao";
 import type { LinhaFichaCustosPdf } from "@/lib/pdf/FichaCustosPdf";
 import type { LinhaFichaOperacionalPdf } from "@/lib/pdf/FichaOperacionalPdf";
+import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirReceita } from "./actions";
 
 export function ReceitasClient({
@@ -41,6 +42,7 @@ export function ReceitasClient({
   const [editando, setEditando] = useState<Receita | null>(null);
   const [gerandoPdf, setGerandoPdf] = useState<string | null>(null);
   const [fichaProducao, setFichaProducao] = useState<Receita | null>(null);
+  const { mostrarErro } = useToast();
 
   const contexto = construirContexto(insumos, [...receitas, ...preparos], processamentos);
   const lotesProteina = processamentos.map(paraProcessamentoCalc);
@@ -50,7 +52,7 @@ export function ReceitasClient({
   const excluirComConfirmacao = async (receita: Receita) => {
     if (!window.confirm(`Excluir "${receita.nomePrato}"? Isso não pode ser desfeito.`)) return;
     const resultado = await acaoExcluirReceita(receita.id);
-    if (!resultado.ok) window.alert(resultado.erro);
+    if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
   // Import dinâmico do @react-pdf/renderer (biblioteca pesada) só quando o

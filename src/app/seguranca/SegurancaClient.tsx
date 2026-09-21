@@ -12,6 +12,7 @@ import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
 import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { Insumo } from "@/lib/dominio/insumo";
+import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirLocal } from "./actions";
 
 function formatarDataHora(iso: string): string {
@@ -28,11 +29,12 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
   const [localEditando, setLocalEditando] = useState<LocalArmazenamento | null>(null);
   const [showNovaTemperatura, setShowNovaTemperatura] = useState(false);
   const [localSelecionadoId, setLocalSelecionadoId] = useState(locais[0]?.id ?? "");
+  const { mostrarErro } = useToast();
 
   const excluirLocalComConfirmacao = async (local: LocalArmazenamento) => {
     if (!window.confirm(`Excluir "${local.nome}"? Isso também apaga o histórico de leituras desse local.`)) return;
     const resultado = await acaoExcluirLocal(local.id);
-    if (!resultado.ok) window.alert(resultado.erro);
+    if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
   const localSelecionado = locais.find((l) => l.id === localSelecionadoId) ?? null;

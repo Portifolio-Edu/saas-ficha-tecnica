@@ -49,7 +49,7 @@ export function ConfiguracoesClient() {
   return (
     <div className="max-w-md">
       <Card className="p-5">
-        <div className="text-[13px] font-semibold mb-1">Tema</div>
+        <h2 className="text-[13px] font-semibold mb-1">Tema</h2>
         <p className="text-[12.5px] mb-4" style={{ color: "var(--sub)" }}>
           Escolha a aparência do app. &quot;Sistema&quot; segue a preferência do seu navegador.
         </p>

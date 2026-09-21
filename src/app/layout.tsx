@@ -15,6 +15,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Ficha Técnica",
   description: "CMV, precificação e controle operacional para restaurantes.",
+  openGraph: {
+    title: "Ficha Técnica",
+    description: "CMV, precificação e controle operacional para restaurantes.",
+    type: "website",
+    locale: "pt_BR",
+  },
+  twitter: {
+    card: "summary",
+    title: "Ficha Técnica",
+    description: "CMV, precificação e controle operacional para restaurantes.",
+  },
 };
 
 export default function RootLayout({

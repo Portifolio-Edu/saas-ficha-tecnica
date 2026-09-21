@@ -11,6 +11,7 @@ import { NovoFornecedorForm } from "@/components/estoque/NovoFornecedorForm";
 import { CATEGORIAS, type Insumo } from "@/lib/dominio/insumo";
 import type { EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
 import type { Fornecedor } from "@/lib/dominio/fornecedor";
+import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirFornecedor } from "./actions";
 
 function formatarData(iso: string): string {
@@ -35,6 +36,7 @@ export function EstoqueClient({
   const [showNovaMovimentacao, setShowNovaMovimentacao] = useState(false);
   const [showNovoFornecedor, setShowNovoFornecedor] = useState(false);
   const [fornecedorEditando, setFornecedorEditando] = useState<Fornecedor | null>(null);
+  const { mostrarErro } = useToast();
 
   const insumosRastreados = new Set(estoque.map((e) => e.insumoId));
   const insumosDisponiveis = insumos.filter((i) => !insumosRastreados.has(i.id));
@@ -44,7 +46,7 @@ export function EstoqueClient({
   const excluirFornecedorComConfirmacao = async (fornecedor: Fornecedor) => {
     if (!window.confirm(`Excluir "${fornecedor.empresa}"? Isso não pode ser desfeito.`)) return;
     const resultado = await acaoExcluirFornecedor(fornecedor.id);
-    if (!resultado.ok) window.alert(resultado.erro);
+    if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
   return (

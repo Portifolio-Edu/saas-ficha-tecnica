@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { inputStyle, nums } from "@/components/ficha/tema";
+import { useToast } from "@/components/ficha/Toast";
 import type { Checklist, MomentoChecklist } from "@/lib/dominio/checklist";
 import { MOMENTOS } from "@/lib/dominio/checklist";
 import type { Turno } from "@/lib/dominio/producao";
@@ -19,6 +20,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
   const [editandoChecklist, setEditandoChecklist] = useState<string | null>(null);
   const [novoItemTexto, setNovoItemTexto] = useState("");
   const [erroAcao, setErroAcao] = useState<string | null>(null);
+  const { mostrarErro } = useToast();
 
   const criarChecklist = async () => {
     if (!novoNome.trim()) return;
@@ -35,7 +37,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
   const excluirChecklistComConfirmacao = async (ch: Checklist) => {
     if (!window.confirm(`Excluir o checklist "${ch.nome}"? Isso também apaga os itens e o histórico de execuções.`)) return;
     const resultado = await acaoExcluirChecklist(ch.id);
-    if (!resultado.ok) window.alert(resultado.erro);
+    if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
   const addItem = async (checklistId: string, ordem: number) => {
