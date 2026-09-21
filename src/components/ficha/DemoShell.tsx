@@ -13,7 +13,7 @@ import { ToastContainer } from "./Toast";
 // /preview, e "Sair" volta pro índice do demo em vez de deslogar de
 // verdade (não há sessão pra encerrar aqui). Não editar AppShell.tsx com isso.
 const NAV = [
-  { id: "visao-geral", label: "Visão Geral", icon: LineChart, href: null },
+  { id: "visao-geral", label: "Visão Geral", icon: LineChart, href: "/preview/visao-geral" },
   { id: "insumos", label: "Insumos", icon: Carrot, href: "/preview/insumos" },
   { id: "cmv", label: "Fechamento de CMV", icon: Calculator, href: "/preview/cmv" },
   { id: "producoes", label: "Produções", icon: CookingPot, href: "/preview/producoes" },
@@ -60,18 +60,6 @@ export function DemoShell({
                 {n.label}
               </>
             );
-            if (!n.href) {
-              return (
-                <div
-                  key={n.id}
-                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[13px] text-left rounded-md"
-                  style={{ color: "var(--faint)", opacity: 0.6, cursor: "default" }}
-                  title="Ainda não construído"
-                >
-                  {conteudo}
-                </div>
-              );
-            }
             return (
               <Link
                 key={n.id}

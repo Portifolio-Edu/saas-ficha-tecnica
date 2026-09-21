@@ -12,7 +12,7 @@ export default function NotFound() {
         <Link
           href="/"
           className="inline-block text-[12.5px] font-medium px-4 py-2 rounded-lg"
-          style={{ background: "var(--text)", color: "var(--panel)" }}
+          style={{ background: "var(--accent)", color: "var(--panel)" }}
         >
           Voltar ao início
         </Link>

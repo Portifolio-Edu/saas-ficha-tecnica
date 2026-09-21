@@ -29,7 +29,7 @@ export function EditarEstoqueForm({ linha, onCancel, onSaved }: { linha: Estoque
           <Input placeholder={`Saldo atual (${linha.unidadeMedida})`} type="number" value={atual} onChange={(e) => setAtual(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
           <Input placeholder={`Estoque mínimo (${linha.unidadeMedida})`} type="number" value={minimo} onChange={(e) => setMinimo(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
           <div className="col-span-2 flex gap-2">
-            <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+            <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
               Salvar
             </button>
             <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>

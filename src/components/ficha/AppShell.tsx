@@ -12,7 +12,7 @@ import { ToastContainer } from "./Toast";
 // Mesma lista/ordem/ícones de ficha-tecnica-mvp.jsx. Todo item do menu já
 // tem rota real e não fica mais inerte.
 const NAV = [
-  { id: "visao-geral", label: "Visão Geral", icon: LineChart, href: null },
+  { id: "visao-geral", label: "Visão Geral", icon: LineChart, href: "/visao-geral" },
   { id: "insumos", label: "Insumos", icon: Carrot, href: "/insumos" },
   { id: "cmv", label: "Fechamento de CMV", icon: Calculator, href: "/cmv" },
   { id: "producoes", label: "Produções", icon: CookingPot, href: "/producoes" },
@@ -62,18 +62,6 @@ export function AppShell({
                 {n.label}
               </>
             );
-            if (!n.href) {
-              return (
-                <div
-                  key={n.id}
-                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[13px] text-left rounded-md"
-                  style={{ color: "var(--faint)", opacity: 0.6, cursor: "default" }}
-                  title="Ainda não construído"
-                >
-                  {conteudo}
-                </div>
-              );
-            }
             return (
               <Link
                 key={n.id}

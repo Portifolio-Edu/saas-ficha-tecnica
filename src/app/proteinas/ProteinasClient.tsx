@@ -56,7 +56,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
         <button
           onClick={() => setShowNovoProcessamento(!showNovoProcessamento)}
           className="ml-auto text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-          style={{ background: showNovoProcessamento ? "var(--bg)" : "var(--text)", color: showNovoProcessamento ? "var(--text)" : "#fff", border: `1px solid ${showNovoProcessamento ? "var(--border-strong)" : "var(--text)"}` }}
+          style={{ background: showNovoProcessamento ? "var(--bg)" : "var(--accent)", color: showNovoProcessamento ? "var(--text)" : "#fff", border: `1px solid ${showNovoProcessamento ? "var(--border-strong)" : "var(--accent)"}` }}
         >
           {showNovoProcessamento ? "Fechar" : "+ Registrar lote"}
         </button>

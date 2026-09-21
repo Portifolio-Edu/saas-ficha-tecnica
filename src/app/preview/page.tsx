@@ -6,6 +6,7 @@ import {
 import { NOME_RESTAURANTE } from "./fixtures";
 
 const LINKS = [
+  { href: "/preview/visao-geral", label: "Visão Geral", icon: LineChart, descricao: "KPIs, engenharia de cardápio e perdas do mês" },
   { href: "/preview/insumos", label: "Insumos", icon: Carrot, descricao: "Cadastro de insumos e preparos-base" },
   { href: "/preview/cmv", label: "Fechamento de CMV", icon: Calculator, descricao: "Custo, margem e fechamentos de período" },
   { href: "/preview/producoes", label: "Produções", icon: CookingPot, descricao: "Lotes produzidos por turno" },

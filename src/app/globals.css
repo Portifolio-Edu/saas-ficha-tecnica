@@ -14,6 +14,10 @@
   --accent-soft: #EAF0EA;
   --danger: #9A2E1F;
   --danger-soft: #FBECE8;
+  --status-estoque: #1F5C8B;
+  --status-estoque-soft: #E7F1F9;
+  --status-producao: #8A5A00;
+  --status-producao-soft: #FBF0D9;
   --shadow: 0 1px 2px rgba(13, 13, 15, 0.03), 0 6px 16px rgba(13, 13, 15, 0.04);
 }
 
@@ -30,6 +34,10 @@
   --accent-soft: #1E2A20;
   --danger: #E2685A;
   --danger-soft: #3A1F1B;
+  --status-estoque: #5B9BD5;
+  --status-estoque-soft: #16232F;
+  --status-producao: #D9A93A;
+  --status-producao-soft: #302710;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 

@@ -135,6 +135,17 @@ export function ProducoesClient({
     { id: "perda", titulo: "Perdas", desc: "lote descartado" },
   ];
 
+  // Identidade de cor por etapa do fluxo: estoque=azul, em produção=amarelo,
+  // produzido=verde (--accent), perda=vermelho (--danger). Reaproveitada no
+  // cabeçalho da coluna, na borda dos cards e nos botões de ação -- o botão
+  // sempre herda a cor do destino pra onde ele move o lote.
+  const coresStatus: Record<ColunaId, { cor: string; fundo: string }> = {
+    estoque: { cor: "var(--status-estoque)", fundo: "var(--status-estoque-soft)" },
+    em_producao: { cor: "var(--status-producao)", fundo: "var(--status-producao-soft)" },
+    produzido: { cor: "var(--accent)", fundo: "var(--accent-soft)" },
+    perda: { cor: "var(--danger)", fundo: "var(--danger-soft)" },
+  };
+
   const executarAcao = async (promessa: Promise<{ ok: boolean; erro?: string }>) => {
     const resultado = await promessa;
     if (!resultado.ok) setErroAcao(resultado.erro ?? "Erro desconhecido.");
@@ -193,16 +204,17 @@ export function ProducoesClient({
             const emHoverValido = colunaAlvo === col.id && podeSoltarAqui;
             const emHoverInvalido = colunaAlvo === col.id && !!loteArrastando && !podeSoltarAqui;
             const contagem = col.id === "estoque" ? disponivelProduzir.length : cardsProducao.length;
+            const cor = coresStatus[col.id];
 
             return (
               <div
                 key={col.id}
                 className="rounded-xl p-3 transition-colors"
                 style={{
-                  background: emHoverValido ? "var(--accent-soft)" : "var(--bg)",
-                  border: `1.5px dashed ${emHoverValido ? "var(--accent)" : emHoverInvalido ? "var(--danger)" : "transparent"}`,
-                  outline: `1px solid ${emHoverValido || emHoverInvalido ? "transparent" : "var(--border)"}`,
-                  outlineOffset: -1,
+                  background: emHoverValido ? cor.fundo : "var(--panel)",
+                  border: "1px solid var(--border)",
+                  borderTop: `3px solid ${emHoverInvalido ? "var(--danger)" : cor.cor}`,
+                  boxShadow: emHoverValido || emHoverInvalido ? `0 0 0 2px ${emHoverInvalido ? "var(--danger)" : cor.cor} inset` : shadow,
                 }}
                 onDragOver={(e) => {
                   if (!loteArrastando) return;
@@ -218,13 +230,16 @@ export function ProducoesClient({
                 }}
               >
                 <div className="flex items-baseline justify-between mb-0.5">
-                  <span className="text-[12.5px] font-semibold" style={{ color: col.id === "perda" && contagem > 0 ? "var(--danger)" : "var(--text)" }}>{col.titulo}</span>
-                  <span className="text-[12px] font-semibold" style={{ ...nums, color: col.id === "perda" && contagem > 0 ? "var(--danger)" : "var(--sub)" }}>{contagem}</span>
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: "var(--text)" }}>
+                    <span className="inline-block rounded-full shrink-0" style={{ width: 7, height: 7, background: cor.cor }} />
+                    {col.titulo}
+                  </span>
+                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full" style={{ ...nums, background: cor.fundo, color: cor.cor }}>{contagem}</span>
                 </div>
                 <div className="text-[10.5px] mb-2.5" style={{ color: "var(--faint)" }}>{col.desc}</div>
                 <div className="space-y-2">
                   {contagem === 0 && (
-                    <div className="text-[11px] py-2" style={{ color: podeSoltarAqui ? "var(--accent)" : "var(--faint)" }}>
+                    <div className="text-[11px] py-2" style={{ color: podeSoltarAqui ? cor.cor : "var(--faint)" }}>
                       {podeSoltarAqui ? "Solte aqui" : "Nada aqui."}
                     </div>
                   )}
@@ -243,7 +258,7 @@ export function ProducoesClient({
                           setColunaAlvo(null);
                         }}
                         className="rounded-lg p-2.5 ftv-panel cursor-grab active:cursor-grabbing"
-                        style={{ border: `1px solid ${"var(--border)"}`, opacity: loteArrastando?.item === d ? 0.4 : 1 }}
+                        style={{ border: "1px solid var(--border)", borderLeft: `3px solid ${cor.cor}`, opacity: loteArrastando?.item === d ? 0.4 : 1 }}
                       >
                         <div className="text-[12px] font-medium leading-tight">{d.nome}</div>
                         <div className="text-[10.5px] mt-1" style={{ color: "var(--sub)" }}>{d.rendimentoLabel}</div>
@@ -252,7 +267,7 @@ export function ProducoesClient({
                           <span style={{ color: "var(--sub)" }}>lote{d.lotes > 1 ? "s" : ""} possível{d.lotes > 1 ? "eis" : ""}</span>
                         </div>
                         {d.gargalo && <div className="text-[10px] mt-1" style={{ color: "var(--faint)" }}>limite: {d.gargalo}</div>}
-                        <button onClick={() => iniciarProducao(d)} className="mt-2 w-full text-[11px] font-medium py-1.5 rounded-md" style={{ background: "var(--text)", color: "#fff" }}>
+                        <button onClick={() => iniciarProducao(d)} className="mt-2 w-full text-[11px] font-semibold py-1.5 rounded-md" style={{ background: "var(--status-producao-soft)", color: "var(--status-producao)" }}>
                           Iniciar produção
                         </button>
                       </div>
@@ -272,7 +287,7 @@ export function ProducoesClient({
                           setColunaAlvo(null);
                         }}
                         className={col.id !== "perda" ? "rounded-lg p-2.5 ftv-panel cursor-grab active:cursor-grabbing" : "rounded-lg p-2.5 ftv-panel"}
-                        style={{ border: `1px solid ${col.id === "perda" ? "var(--danger-soft)" : "var(--border)"}`, opacity: loteArrastando?.item === pr ? 0.4 : 1 }}
+                        style={{ border: "1px solid var(--border)", borderLeft: `3px solid ${cor.cor}`, opacity: loteArrastando?.item === pr ? 0.4 : 1 }}
                       >
                         <div className="text-[10.5px] font-semibold" style={{ ...nums, color: "var(--sub)" }}>{pr.lote}</div>
                         <div className="text-[12px] font-medium leading-tight mt-0.5">{pr.nomeReceita}</div>
@@ -285,13 +300,13 @@ export function ProducoesClient({
 
                         {col.id === "em_producao" && (
                           <div className="flex gap-1.5 mt-2">
-                            <button onClick={() => executarAcao(acaoAtualizarStatusProducao(pr.id, "produzido"))} className="flex-1 text-[11px] font-medium py-1.5 rounded-md" style={{ background: "var(--text)", color: "#fff" }}>
+                            <button onClick={() => executarAcao(acaoAtualizarStatusProducao(pr.id, "produzido"))} className="flex-1 text-[11px] font-semibold py-1.5 rounded-md" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
                               Concluir
                             </button>
                             <button
                               onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
-                              className="text-[11px] font-medium py-1.5 px-2 rounded-md"
-                              style={{ border: `1px solid ${"var(--border-strong)"}`, color: "var(--danger)" }}
+                              className="text-[11px] font-semibold py-1.5 px-2.5 rounded-md"
+                              style={{ background: "var(--danger-soft)", color: "var(--danger)" }}
                             >
                               Perda
                             </button>
@@ -301,8 +316,8 @@ export function ProducoesClient({
                         {col.id === "produzido" && (
                           <button
                             onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
-                            className="mt-2 w-full text-[11px] font-medium py-1.5 rounded-md"
-                            style={{ border: `1px solid ${"var(--border-strong)"}`, color: "var(--danger)" }}
+                            className="mt-2 w-full text-[11px] font-semibold py-1.5 rounded-md"
+                            style={{ background: "var(--danger-soft)", color: "var(--danger)" }}
                           >
                             Registrar perda
                           </button>
@@ -322,7 +337,7 @@ export function ProducoesClient({
           <button
             onClick={() => setShowNovaProducao(!showNovaProducao)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovaProducao ? "var(--bg)" : "var(--text)", color: showNovaProducao ? "var(--text)" : "#fff", border: `1px solid ${showNovaProducao ? "var(--border-strong)" : "var(--text)"}` }}
+            style={{ background: showNovaProducao ? "var(--bg)" : "var(--accent)", color: showNovaProducao ? "var(--text)" : "#fff", border: `1px solid ${showNovaProducao ? "var(--border-strong)" : "var(--accent)"}` }}
           >
             {showNovaProducao ? "Fechar" : "+ Registrar produção"}
           </button>

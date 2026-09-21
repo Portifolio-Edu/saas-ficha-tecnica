@@ -217,7 +217,7 @@ export function CmvClient({
           />
           {erroImportacao && <div className="text-[11.5px] mt-2" style={{ color: "var(--danger)" }}>{erroImportacao}</div>}
           <div className="flex items-center gap-2 mt-3">
-            <button onClick={importarVendas} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff" }}>
+            <button onClick={importarVendas} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff" }}>
               Importar vendas
             </button>
             {vendasImportadas && (
@@ -306,7 +306,7 @@ export function CmvClient({
             onClick={salvarFechamento}
             disabled={salvando || !resultado || periodoFim < periodoInicio}
             className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
-            style={{ background: "var(--text)", color: "#fff", opacity: salvando || !resultado || periodoFim < periodoInicio ? 0.6 : 1 }}
+            style={{ background: "var(--accent)", color: "#fff", opacity: salvando || !resultado || periodoFim < periodoInicio ? 0.6 : 1 }}
           >
             {salvando ? "Salvando..." : "Salvar fechamento do período"}
           </button>

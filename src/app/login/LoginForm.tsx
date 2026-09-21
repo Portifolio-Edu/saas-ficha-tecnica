@@ -52,7 +52,7 @@ export function LoginForm() {
           type="submit"
           disabled={pendente}
           className="w-full text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
-          style={{ background: "var(--text)", color: "#fff", opacity: pendente ? 0.6 : 1 }}
+          style={{ background: "var(--accent)", color: "#fff", opacity: pendente ? 0.6 : 1 }}
         >
           {pendente ? "Entrando..." : "Entrar"}
         </button>

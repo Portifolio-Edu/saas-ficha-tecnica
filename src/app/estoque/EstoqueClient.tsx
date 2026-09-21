@@ -57,7 +57,7 @@ export function EstoqueClient({
           <button
             onClick={() => setShowNovoEstoque(!showNovoEstoque)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoEstoque ? "var(--bg)" : "var(--text)", color: showNovoEstoque ? "var(--text)" : "#fff", border: `1px solid ${showNovoEstoque ? "var(--border-strong)" : "var(--text)"}` }}
+            style={{ background: showNovoEstoque ? "var(--bg)" : "var(--accent)", color: showNovoEstoque ? "var(--text)" : "#fff", border: `1px solid ${showNovoEstoque ? "var(--border-strong)" : "var(--accent)"}` }}
           >
             {showNovoEstoque ? "Fechar" : "+ Rastrear insumo"}
           </button>
@@ -131,7 +131,7 @@ export function EstoqueClient({
           <button
             onClick={() => setShowNovaMovimentacao(!showNovaMovimentacao)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovaMovimentacao ? "var(--bg)" : "var(--text)", color: showNovaMovimentacao ? "var(--text)" : "#fff", border: `1px solid ${showNovaMovimentacao ? "var(--border-strong)" : "var(--text)"}` }}
+            style={{ background: showNovaMovimentacao ? "var(--bg)" : "var(--accent)", color: showNovaMovimentacao ? "var(--text)" : "#fff", border: `1px solid ${showNovaMovimentacao ? "var(--border-strong)" : "var(--accent)"}` }}
           >
             {showNovaMovimentacao ? "Fechar" : "+ Registrar movimentação"}
           </button>
@@ -181,7 +181,7 @@ export function EstoqueClient({
               setShowNovoFornecedor(!showNovoFornecedor);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoFornecedor ? "var(--bg)" : "var(--text)", color: showNovoFornecedor ? "var(--text)" : "#fff", border: `1px solid ${showNovoFornecedor ? "var(--border-strong)" : "var(--text)"}` }}
+            style={{ background: showNovoFornecedor ? "var(--bg)" : "var(--accent)", color: showNovoFornecedor ? "var(--text)" : "#fff", border: `1px solid ${showNovoFornecedor ? "var(--border-strong)" : "var(--accent)"}` }}
           >
             {showNovoFornecedor ? "Fechar" : "+ Novo fornecedor"}
           </button>

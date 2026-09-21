@@ -116,7 +116,7 @@ export function FichaProducaoModal({
                     <div key={etapa.id} className="flex gap-3 rounded-lg p-3" style={{ background: "var(--bg)" }}>
                       <div
                         className="flex items-center justify-center rounded-full font-semibold shrink-0"
-                        style={{ width: 26, height: 26, background: "var(--text)", color: "#fff", fontSize: 12 }}
+                        style={{ width: 26, height: 26, background: "var(--accent)", color: "#fff", fontSize: 12 }}
                       >
                         {idx + 1}
                       </div>

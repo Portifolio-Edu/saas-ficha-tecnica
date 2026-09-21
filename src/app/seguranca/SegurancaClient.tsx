@@ -55,7 +55,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
               setShowNovoLocal(!showNovoLocal);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoLocal ? "var(--bg)" : "var(--text)", color: showNovoLocal ? "var(--text)" : "#fff", border: `1px solid ${showNovoLocal ? "var(--border-strong)" : "var(--text)"}` }}
+            style={{ background: showNovoLocal ? "var(--bg)" : "var(--accent)", color: showNovoLocal ? "var(--text)" : "#fff", border: `1px solid ${showNovoLocal ? "var(--border-strong)" : "var(--accent)"}` }}
           >
             {showNovoLocal ? "Fechar" : "+ Novo local"}
           </button>
@@ -128,7 +128,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
           <button
             onClick={() => setShowNovaTemperatura(!showNovaTemperatura)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovaTemperatura ? "var(--bg)" : "var(--text)", color: showNovaTemperatura ? "var(--text)" : "#fff", border: `1px solid ${showNovaTemperatura ? "var(--border-strong)" : "var(--text)"}` }}
+            style={{ background: showNovaTemperatura ? "var(--bg)" : "var(--accent)", color: showNovaTemperatura ? "var(--text)" : "#fff", border: `1px solid ${showNovaTemperatura ? "var(--border-strong)" : "var(--accent)"}` }}
             disabled={locais.length === 0}
             title={locais.length === 0 ? "Cadastre um local primeiro" : undefined}
           >

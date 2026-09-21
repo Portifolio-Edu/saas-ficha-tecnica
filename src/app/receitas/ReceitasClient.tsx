@@ -146,7 +146,7 @@ export function ReceitasClient({
             setShowNova(!showNova);
           }}
           className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-          style={{ background: showNova ? "var(--bg)" : "var(--text)", color: showNova ? "var(--text)" : "#fff", border: `1px solid ${showNova ? "var(--border-strong)" : "var(--text)"}` }}
+          style={{ background: showNova ? "var(--bg)" : "var(--accent)", color: showNova ? "var(--text)" : "#fff", border: `1px solid ${showNova ? "var(--border-strong)" : "var(--accent)"}` }}
           disabled={insumos.length === 0}
           title={insumos.length === 0 ? "Cadastre um insumo primeiro" : undefined}
         >
@@ -298,7 +298,7 @@ export function ReceitasClient({
                         onClick={() => gerarPdfCustos(p)}
                         disabled={gerandoPdf === `${p.id}-custos`}
                         className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
-                        style={{ background: "var(--text)", color: "#fff", opacity: gerandoPdf === `${p.id}-custos` ? 0.6 : 1 }}
+                        style={{ background: "var(--accent)", color: "#fff", opacity: gerandoPdf === `${p.id}-custos` ? 0.6 : 1 }}
                       >
                         <Download size={13} /> {gerandoPdf === `${p.id}-custos` ? "Gerando..." : "PDF · Ficha de Custos"}
                       </button>

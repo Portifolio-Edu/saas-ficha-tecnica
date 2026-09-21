@@ -51,7 +51,7 @@ export function InsumoNutricaoForm({ insumo, dados, onCancel, onSaved }: { insum
       </div>
       <ErroBanner erro={erro} className="mb-2" />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--text)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Salvar"}
         </button>
         <button onClick={onCancel} className="text-[12px] font-medium px-3 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>

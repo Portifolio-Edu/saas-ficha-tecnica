@@ -63,7 +63,7 @@ export function InsumosClient({
               setShowNovoInsumo(!showNovoInsumo);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoInsumo ? "var(--bg)" : "var(--text)", color: showNovoInsumo ? "var(--text)" : "#fff", border: `1px solid ${showNovoInsumo ? "var(--border-strong)" : "var(--text)"}` }}
+            style={{ background: showNovoInsumo ? "var(--bg)" : "var(--accent)", color: showNovoInsumo ? "var(--text)" : "#fff", border: `1px solid ${showNovoInsumo ? "var(--border-strong)" : "var(--accent)"}` }}
           >
             {showNovoInsumo ? "Fechar" : "+ Novo insumo"}
           </button>
@@ -146,7 +146,7 @@ export function InsumosClient({
               setShowNovoPreparo(!showNovoPreparo);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoPreparo ? "var(--bg)" : "var(--text)", color: showNovoPreparo ? "var(--text)" : "#fff", border: `1px solid ${showNovoPreparo ? "var(--border-strong)" : "var(--text)"}` }}
+            style={{ background: showNovoPreparo ? "var(--bg)" : "var(--accent)", color: showNovoPreparo ? "var(--text)" : "#fff", border: `1px solid ${showNovoPreparo ? "var(--border-strong)" : "var(--accent)"}` }}
             disabled={insumos.length === 0}
             title={insumos.length === 0 ? "Cadastre um insumo primeiro" : undefined}
           >
