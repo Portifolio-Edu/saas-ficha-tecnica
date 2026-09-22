@@ -97,7 +97,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
           </div>
 
           <Card className="p-6 mb-5">
-            <h2 className="text-[14px] font-semibold mb-1">FC observado por lote</h2>
+            <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">FC observado por lote</h2>
             <p className="text-[12px] mb-4" style={{ color: "var(--sub)" }}>Linha tracejada é o FC cadastrado. Quanto mais alto acima dela, pior o rendimento real do lote.</p>
             <ChartFrame
               vazio={false}
@@ -107,8 +107,15 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
               <LineChart data={lotes.map((l) => ({ ...l, dataLabel: formatarData(l.processadoEm) }))} margin={CHART_MARGIN}>
                 <CartesianGrid {...chartGridProps} />
                 <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
-                <YAxis domain={["dataMin - 0.03", "dataMax + 0.03"]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={(v: number) => formatNumero(v, 2)} />
-                <ReferenceLine y={insumo.fatorCorrecao} stroke={"var(--border-strong)"} strokeDasharray="4 4" label={{ value: "FC cadastrado", position: "insideTopRight", fontSize: 10, fill: "var(--sub)" }} />
+                {/* SISTEMA premium: o eixo inclui o FC cadastrado, senão a linha tracejada de referência
+                    ficava fora do gráfico (ex.: cadastrado 1,12 com lotes entre 1,16 e 1,22).
+                    Antes: domain={["dataMin - 0.03", "dataMax + 0.03"]}. */}
+                <YAxis
+                  domain={[
+                    (min: number) => Math.min(min, insumo.fatorCorrecao) - 0.03,
+                    (max: number) => Math.max(max, insumo.fatorCorrecao) + 0.03,
+                  ]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={(v: number) => formatNumero(v, 2)} />
+                <ReferenceLine y={insumo.fatorCorrecao} stroke={"var(--tinta-faint)"} strokeDasharray="4 4" label={{ value: "FC cadastrado", position: "insideTopRight", fontSize: 10, fill: "var(--sub)" }} />
                 <Tooltip
                   content={({ payload }) => {
                     if (!payload || !payload.length) return null;
