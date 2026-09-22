@@ -148,6 +148,10 @@ export default function CmvCreme() {
       </header>
 
       <div className="max-w-5xl mx-auto px-10 py-10 space-y-8">
+        {/* As 4 colunas aqui SÃO iguais de propósito: cada card carrega
+            exatamente a mesma forma de informação (1 rótulo + 1 número
+            principal + no máx. 1 valor de apoio) -- é o caso de exceção da
+            regra, não um grid padrão esquecido. */}
         <div className="grid grid-cols-4 gap-4">
           <KpiCreme label="Faturamento do período" valor={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
           <KpiCreme label="CMV teórico (fichas)" valor={`${cmvTeoricoPct.toFixed(1)}%`} sub={`R$ ${custoTeoricoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
@@ -155,7 +159,12 @@ export default function CmvCreme() {
           <KpiCreme label="Gap não explicado" valor={`${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1)} p.p.`} alerta={gapPct > GAP_ALERTA_PP} sub={`R$ ${Math.abs(gapReais).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         </div>
 
-        <div className="grid grid-cols-[1fr_1.1fr] gap-6">
+        {/* Donut x linha do tempo não dividem 50/50: o donut é 1 prato, 1
+            corte (participação de custo, até 5 fatias). A evolução é 2
+            séries (real x teórico) cruzadas com N períodos e uma linha de
+            referência -- duas dimensões de leitura (tempo x percentual)
+            contra uma do donut. 1.46:1 a favor do gráfico de linha. */}
+        <div className="grid grid-cols-[1fr_1.46fr] gap-6">
           <div className="cc-card p-7">
             <h2 className="text-[14px] font-semibold mb-1">Custo por ingrediente</h2>
             <p className="text-[12px] mb-4" style={{ color: "var(--sub)" }}>{pratoDonut?.nomePrato ?? "—"}, maior faturamento do período.</p>

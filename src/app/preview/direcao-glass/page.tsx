@@ -140,9 +140,12 @@ export default function DirecaoGlass() {
         .g-toggle button { padding: 6px 14px; font-size: 12px; font-weight: 600; border-radius: 999px; color: var(--g-sub); transition: background 160ms ease, color 160ms ease; }
         .g-toggle button.ativo { background: var(--g-cobre); color: #fff; }
 
-        /* Hero assimétrico: um anel domina, os outros três números viram
-           lista quieta ao lado -- nunca quatro caixas iguais competindo. */
-        .g-hero { display: grid; grid-template-columns: 300px 1fr; gap: 0; margin-bottom: 18px; border-radius: 26px; overflow: hidden; box-shadow: var(--g-sombra); }
+        /* Hero assimétrico: proporção 3:7, não decoração. O anel carrega 1
+           métrica (valor + rótulo + legenda de alvo = 3 unidades de
+           informação); a lista carrega 3 métricas em linha (rótulo+valor,
+           uma delas com um "de N" extra = 7 unidades). 3:7 é a razão real
+           de conteúdo, não 300px escolhido por olho. */
+        .g-hero { display: grid; grid-template-columns: 3fr 7fr; gap: 0; margin-bottom: 18px; border-radius: 26px; overflow: hidden; box-shadow: var(--g-sombra); }
         .g-hero-anel-bloco {
           background: var(--g-vidro); border: 1px solid var(--g-vidro-borda); backdrop-filter: blur(20px) saturate(160%);
           padding: 30px 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
@@ -174,7 +177,13 @@ export default function DirecaoGlass() {
            vidro repetido -- só o hero e a barra lateral usam blur de verdade. */
         .g-painel { background: var(--g-painel); border: 1px solid var(--g-painel-borda); border-radius: 20px; }
 
-        .g-grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+        /* Perdas x Produção não dividem 50/50: perdas tem 4 campos por linha
+           e um deles (motivo) é frase livre, sem teto de caracteres --
+           precisa de mais coluna pra não quebrar em 3 linhas. Produção tem
+           3 campos, todos token curto (nome do prato, lote, status), que
+           cabem bem numa coluna mais estreita. 1.5:1 reflete essa largura de
+           campo, não a contagem de linhas do dia (que muda todo dia). */
+        .g-grid-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
         .g-secao-titulo { font-family: ${fraunces.style.fontFamily}; font-style: italic; font-size: 17px; font-weight: 600; padding: 20px 24px 3px; }
         .g-secao-sub { font-size: 12px; color: var(--g-sub); padding: 0 24px 14px; }
 
@@ -291,7 +300,7 @@ export default function DirecaoGlass() {
               ) : (
                 <table className="g-tabela">
                   <thead>
-                    <tr><th>Lote</th><th>Prato</th><th>Qtd.</th></tr>
+                    <tr><th>Lote</th><th>Prato</th><th>Qtd.</th><th style={{ textAlign: "left" }}>Motivo</th></tr>
                   </thead>
                   <tbody>
                     {resumo.perdasRecentes.map((p) => (
@@ -299,6 +308,7 @@ export default function DirecaoGlass() {
                         <td style={nums}>{p.lote}</td>
                         <td>{p.nomeReceita}</td>
                         <td style={nums}>{p.quantidade} {p.unidadeRendimento}</td>
+                        <td style={{ color: "var(--g-vermelho)", textAlign: "left" }}>{p.motivoPerda ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
