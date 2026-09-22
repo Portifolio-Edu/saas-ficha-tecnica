@@ -39,7 +39,8 @@ export function BotaoAgenteIa({
       <>
         <button
           onClick={() => setAberto(true)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[12px] font-extrabold transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98] ${className}`}
+          // POLIMENTO shell: 44px de altura pro toque no tablet (antes py-1.5, ~30px).
+          className={`flex items-center gap-2 px-3.5 min-h-[var(--alvo-toque)] rounded-full border text-[12.5px] font-extrabold transition-all shadow-sm active:scale-[0.98] ${className}`}
           style={{
             background: "linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(124, 58, 237, 0.15) 100%)",
             borderColor: "rgba(124, 58, 237, 0.35)",

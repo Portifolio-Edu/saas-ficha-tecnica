@@ -287,6 +287,8 @@ export function DemoShell({
             </h1>
           </div>
 
+          {/* POLIMENTO shell: botões de tema e do agente com 44px de altura (antes ~30px),
+              alvo de toque do tablet (--alvo-toque, DESIGN.md). */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Botão de Atalho do Agente IA no Cabeçalho */}
             <BotaoAgenteIa variante="cabecalho" />
@@ -301,7 +303,7 @@ export function DemoShell({
             >
               <button
                 onClick={() => alternarTema("light")}
-                className={`px-2.5 sm:px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
+                className={`px-3 sm:px-3.5 min-h-[var(--alvo-toque)] rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
                   tema === "light"
                     ? "bg-[var(--tinta)] text-[var(--panel)] shadow-sm"
                     : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
@@ -315,7 +317,7 @@ export function DemoShell({
               </button>
               <button
                 onClick={() => alternarTema("dark")}
-                className={`px-2.5 sm:px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
+                className={`px-3 sm:px-3.5 min-h-[var(--alvo-toque)] rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
                   tema === "dark"
                     ? "bg-[var(--tinta)] text-[var(--fundo)] shadow-sm"
                     : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
@@ -332,7 +334,11 @@ export function DemoShell({
         </header>
         <div className="p-5 md:p-8 flex-1 animate-fade-in">{children}</div>
       </main>
-      <BotaoAgenteIa variante="flutuante" />
+      {/* POLIMENTO shell: saiu o botão flutuante do Agente IA (<BotaoAgenteIa variante="flutuante" />).
+          Ele repetia o botão "Agente IA · demo" da barra superior, cobria cards e colunas
+          (Perdas no quadro de Produções) e, como as duas variantes escutam o evento
+          "abrir-agente-ia", abrir o agente por um botão de tela abria DOIS modais.
+          Pra voltar, recoloque a linha acima antes do <ToastContainer />. */}
       <ToastContainer />
     </div>
   );
