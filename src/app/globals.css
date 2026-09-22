@@ -325,3 +325,18 @@
   border: 1px solid var(--linha);
   box-shadow: none;
 }
+
+/* SISTEMA premium (2026-09-22): cabeçalho de tabela em caixa normal, 12px, peso
+   500, em todas as telas (padrão Stripe/Linear). Antes cada tabela usava
+   "uppercase tracking-wide" em 10,5–11,5px. Fica fora de @layer de propósito,
+   pra valer sobre as classes utilitárias das telas. Pra voltar, apague o bloco. */
+thead tr,
+thead th {
+  text-transform: none;
+  letter-spacing: 0;
+}
+thead th {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tinta-faint);
+}
