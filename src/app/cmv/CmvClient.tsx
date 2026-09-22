@@ -10,7 +10,7 @@ import { inputStyle, nums } from "@/components/ficha/tema";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
 import { Donut, type FatiaDonut } from "@/components/charts/Donut";
-import { formatBRL, formatBRLEixo, formatPercent, formatPercentEixo } from "@/components/charts/format";
+import { formatBRL, formatBRLEixo, formatPercent, formatPercentEixo, formatNumero } from "@/components/charts/format";
 import { CATEGORICAL_PALETTE, CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, CHART_MIN_HEIGHT, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
@@ -266,11 +266,11 @@ export function CmvClient({
 
         <div className="grid grid-cols-4 gap-3 mb-3">
           <Kpi label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
-          <Kpi label="CMV teórico (fichas)" value={`${cmvTeoricoPct.toFixed(1)}%`} sub={formatBRLEixo(custoTeoricoPeriodo)} />
-          <Kpi label="CMV real (estoque)" value={`${cmvRealPct.toFixed(1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={formatBRLEixo(consumoReal)} />
+          <Kpi label="CMV teórico (fichas)" value={`${formatNumero(cmvTeoricoPct, 1)}%`} sub={formatBRLEixo(custoTeoricoPeriodo)} />
+          <Kpi label="CMV real (estoque)" value={`${formatNumero(cmvRealPct, 1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={formatBRLEixo(consumoReal)} />
           <Kpi
             label="Gap não explicado"
-            value={`${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1)} p.p.`}
+            value={`${gapPct > 0 ? "+" : ""}${formatNumero(gapPct, 1)} p.p.`}
             alerta={gapPct > GAP_ALERTA_PP}
             sub={`R$ ${Math.abs(gapReais).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} ${gapReais > 0 ? "a mais que o previsto" : "abaixo do previsto"}`}
           />
@@ -305,7 +305,7 @@ export function CmvClient({
 
         {gapPct > GAP_ALERTA_PP && (
           <div className="rounded-lg p-4 mt-3 text-[12.5px]" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
-            <b>Gap de {gapPct.toFixed(1)} pontos percentuais.</b> Saiu R$ {gapReais.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} a mais de insumo do que as fichas previam. As causas prováveis, em ordem: porção maior que a ficha manda, perda não registrada, rendimento de proteína pior que o cadastrado, ou desvio. As telas de Manipulação de Proteínas e Produções ajudam a isolar qual é.
+            <b>Gap de {formatNumero(gapPct, 1)} pontos percentuais.</b> Saiu R$ {gapReais.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} a mais de insumo do que as fichas previam. As causas prováveis, em ordem: porção maior que a ficha manda, perda não registrada, rendimento de proteína pior que o cadastrado, ou desvio. As telas de Manipulação de Proteínas e Produções ajudam a isolar qual é.
           </div>
         )}
 
@@ -472,10 +472,10 @@ export function CmvClient({
                 <tr key={fechamento.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                   <td className="py-2.5 px-5 font-medium">{formatarPeriodo(fechamento.periodoInicio, fechamento.periodoFim)}</td>
                   <td className="py-2.5 px-3 text-right" style={nums}>R$ {fechamento.faturamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{cmvTeoricoPctHist.toFixed(1)}%</td>
-                  <td className="py-2.5 px-3 text-right" style={nums}>{cmvRealPctHist.toFixed(1)}%</td>
+                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatNumero(cmvTeoricoPctHist, 1)}%</td>
+                  <td className="py-2.5 px-3 text-right" style={nums}>{formatNumero(cmvRealPctHist, 1)}%</td>
                   <td className="py-2.5 px-5 text-right font-medium" style={{ ...nums, color: gapPctHist > GAP_ALERTA_PP ? "var(--danger)" : "var(--text)" }}>
-                    {gapPctHist > 0 ? "+" : ""}{gapPctHist.toFixed(1)} p.p.
+                    {gapPctHist > 0 ? "+" : ""}{formatNumero(gapPctHist, 1)} p.p.
                   </td>
                 </tr>
               ))}

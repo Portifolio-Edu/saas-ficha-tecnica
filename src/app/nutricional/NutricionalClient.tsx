@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { formatNumero, formatQtd } from "@/components/charts/format";
 import { usePathname } from "next/navigation";
 import { Download, Sparkles } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
@@ -149,9 +150,9 @@ export function NutricionalClient({
         const vdValor = l.vd ? calcularPercentualVD(n, l.campo) : null;
         return {
           label: l.label.trim(),
-          valorPorcao: `${n[l.campo].toFixed(1)}${l.un}${l.kj ? ` (${(n[l.campo] * 4.184).toFixed(0)}kJ)` : ""}`,
-          valorPor100: n100 ? `${n100[l.campo].toFixed(1)}${l.un}` : "—",
-          vd: vdValor !== null ? `${vdValor.toFixed(0)}%` : "—",
+          valorPorcao: `${formatNumero(n[l.campo], 1)}${l.un}${l.kj ? ` (${formatNumero((n[l.campo] * 4.184), 0)}kJ)` : ""}`,
+          valorPor100: n100 ? `${formatNumero(n100[l.campo], 1)}${l.un}` : "—",
+          vd: vdValor !== null ? `${formatNumero(vdValor, 0)}%` : "—",
         };
       });
 
@@ -369,7 +370,7 @@ export function NutricionalClient({
         <div className="mb-2" style={{ borderBottom: `3px solid ${paraVarejo ? "#000" : "var(--accent)"}`, paddingBottom: 6 }}>
           <div className="text-[14px] font-bold" style={paraVarejo ? { color: "#000" } : {}}>INFORMAÇÃO NUTRICIONAL</div>
           <div className="text-[11px] mt-0.5" style={{ color: paraVarejo ? "#000" : "var(--sub)" }}>
-            {prato.rendimento} porç{prato.rendimento > 1 ? "ões" : "ão"} por embalagem{prato.pesoPorcaoG ? ` · porção de ${prato.pesoPorcaoG}g` : ""}
+            {formatQtd(prato.rendimento)} porç{prato.rendimento > 1 ? "ões" : "ão"} por embalagem{prato.pesoPorcaoG ? ` · porção de ${prato.pesoPorcaoG}g` : ""}
           </div>
         </div>
         {!nutriCompleta && (
@@ -391,13 +392,13 @@ export function NutricionalClient({
                 <tr key={l.label} style={{ borderTop: `1px solid ${paraVarejo ? "#999" : "var(--border)"}` }}>
                   <td className="py-1.5" style={{ color: paraVarejo ? "#000" : l.label.startsWith("   ") ? "var(--sub)" : "var(--text)" }}>{l.label}</td>
                   <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : "var(--text)" }}>
-                    {n[l.campo].toFixed(1)}{l.un}{l.kj ? ` (${(n[l.campo] * 4.184).toFixed(0)}kJ)` : ""}
+                    {formatNumero(n[l.campo], 1)}{l.un}{l.kj ? ` (${formatNumero((n[l.campo] * 4.184), 0)}kJ)` : ""}
                   </td>
                   <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : "var(--sub)" }}>
-                    {n100 ? `${n100[l.campo].toFixed(1)}${l.un}` : "—"}
+                    {n100 ? `${formatNumero(n100[l.campo], 1)}${l.un}` : "—"}
                   </td>
                   <td className="py-1.5 text-right" style={{ ...nums, color: paraVarejo ? "#000" : "var(--sub)" }}>
-                    {vdValor !== null ? `${vdValor.toFixed(0)}%` : "—"}
+                    {vdValor !== null ? `${formatNumero(vdValor, 0)}%` : "—"}
                   </td>
                 </tr>
               );

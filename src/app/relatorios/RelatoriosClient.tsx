@@ -8,7 +8,7 @@ import { Kpi } from "@/components/ficha/Kpi";
 import { nums } from "@/components/ficha/tema";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
-import { formatBRL, formatBRLEixo, formatPercent, formatPercentEixo } from "@/components/charts/format";
+import { formatBRL, formatBRLEixo, formatPercent, formatPercentEixo, formatNumero, formatQtd } from "@/components/charts/format";
 import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, CHART_MARGIN_HORIZONTAL_BARS, axisLineStyle, axisTickStyle, chartGridProps, chartGridPropsHorizontalBars } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
@@ -131,7 +131,7 @@ export function RelatoriosClient({
         const precoSugerido = custoPorPorcao / (1 - margemAlvo / 100);
         lista.push({
           tipo: "Margem",
-          texto: `${receita.nomePrato} com margem de ${margemPct.toFixed(1)}%, abaixo do alvo de ${margemAlvo.toFixed(0)}%`,
+          texto: `${receita.nomePrato} com margem de ${formatNumero(margemPct, 1)}%, abaixo do alvo de ${formatNumero(margemAlvo, 0)}%`,
           acao: `Preço sugerido: ${formatBRL(precoSugerido)} (hoje ${formatBRL((receita.precoVenda ?? 0))})`,
         });
       }
@@ -144,7 +144,7 @@ export function RelatoriosClient({
       if (Math.abs(diferenca) > 2) {
         lista.push({
           tipo: "FC",
-          texto: `${insumo.nome} rende ${diferenca > 0 ? "menos" : "mais"} que o previsto (FC observado ${fcObs.toFixed(3)} contra ${insumo.fatorCorrecao.toFixed(2)} cadastrado)`,
+          texto: `${insumo.nome} rende ${diferenca > 0 ? "menos" : "mais"} que o previsto (FC observado ${formatNumero(fcObs, 3)} contra ${formatNumero(insumo.fatorCorrecao, 2)} cadastrado)`,
           acao: "CMV dos pratos que usam esse insumo já usa o FC observado, não precisa mexer em nada",
         });
       }
@@ -154,7 +154,7 @@ export function RelatoriosClient({
       if (insumo.estoque && insumo.estoque.saldoAtual < insumo.estoque.estoqueMinimo) {
         lista.push({
           tipo: "Estoque",
-          texto: `${insumo.nome} abaixo do estoque mínimo (${insumo.estoque.saldoAtual}${insumo.unidadeMedida} de ${insumo.estoque.estoqueMinimo}${insumo.unidadeMedida})`,
+          texto: `${insumo.nome} abaixo do estoque mínimo (${formatQtd(insumo.estoque.saldoAtual)}${insumo.unidadeMedida} de ${formatQtd(insumo.estoque.estoqueMinimo)}${insumo.unidadeMedida})`,
           acao: "Repor estoque",
         });
       }
@@ -176,7 +176,7 @@ export function RelatoriosClient({
     if (gapUltimoFechamento && gapUltimoFechamento.gapPct > GAP_ALERTA_PP) {
       lista.push({
         tipo: "CMV",
-        texto: `Gap de ${gapUltimoFechamento.gapPct.toFixed(1)} pontos percentuais no último fechamento de CMV`,
+        texto: `Gap de ${formatNumero(gapUltimoFechamento.gapPct, 1)} pontos percentuais no último fechamento de CMV`,
         acao: `R$ ${gapUltimoFechamento.gapReais.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} a mais de insumo do que as fichas previam`,
       });
     }
@@ -339,7 +339,7 @@ export function RelatoriosClient({
                   <td className="py-2.5 px-5 font-medium">{d.nome}</td>
                   <td className="py-2.5 px-3 text-right" style={nums}>{d.lotesProteina || "—"}</td>
                   <td className="py-2.5 px-3 text-right" style={{ ...nums, color: d.descarteMedio !== null && d.descarteMedio > 10 ? "var(--danger)" : "var(--text)" }}>
-                    {d.descarteMedio !== null ? `${d.descarteMedio.toFixed(1)}%` : "—"}
+                    {d.descarteMedio !== null ? `${formatNumero(d.descarteMedio, 1)}%` : "—"}
                   </td>
                   <td className="py-2.5 px-3 text-right" style={{ ...nums, color: d.perdasTurno > 0 ? "var(--danger)" : "var(--faint)" }}>{d.perdasTurno || "—"}</td>
                   <td className="py-2.5 px-5 text-right" style={{ ...nums, color: d.tempForaFaixa > 0 ? "var(--danger)" : "var(--faint)" }}>{d.tempForaFaixa || "—"}</td>

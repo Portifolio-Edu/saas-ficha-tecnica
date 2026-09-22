@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatNumero } from "@/components/charts/format";
 import { inputStyle, nums } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
@@ -79,12 +80,12 @@ export function NovoProcessamentoForm({
         <Input placeholder="Fornecedor (opcional)" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 flex-1" />
         {fcPreview && (
           <div className="text-[12.5px]" style={{ color: "var(--sub)" }}>
-            FC do lote: <b style={{ ...nums, color: "var(--text)" }}>{fcPreview.toFixed(3)}</b>
+            FC do lote: <b style={{ ...nums, color: "var(--text)" }}>{formatNumero(fcPreview, 3)}</b>
           </div>
         )}
         {descartePuro !== null && (
           <div className="text-[12.5px]" style={{ color: reconciliacaoInvalida ? "var(--danger)" : "var(--sub)" }}>
-            Descarte puro: <b style={{ ...nums, color: reconciliacaoInvalida ? "var(--danger)" : "var(--text)" }}>{descartePuro.toFixed(2)}kg</b>
+            Descarte puro: <b style={{ ...nums, color: reconciliacaoInvalida ? "var(--danger)" : "var(--text)" }}>{formatNumero(descartePuro, 2)}kg</b>
           </div>
         )}
       </div>

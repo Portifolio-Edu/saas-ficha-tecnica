@@ -11,7 +11,7 @@ import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
 import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Processamento } from "@/lib/dominio/processamento";
-import { formatBRL } from "@/components/charts/format";
+import { formatBRL, formatNumero, formatQtd } from "@/components/charts/format";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -80,18 +80,18 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
       {lotes.length === 0 ? (
         <Card className="p-6 text-center">
           <p className="text-[13px]" style={{ color: "var(--sub)" }}>
-            Nenhum lote de {insumo.nome} registrado ainda. O FC usado no cálculo de CMV continua sendo o cadastrado ({insumo.fatorCorrecao.toFixed(2)}) até o primeiro lote entrar.
+            Nenhum lote de {insumo.nome} registrado ainda. O FC usado no cálculo de CMV continua sendo o cadastrado ({formatNumero(insumo.fatorCorrecao, 2)}) até o primeiro lote entrar.
           </p>
         </Card>
       ) : (
         <>
           <div className="grid grid-cols-3 gap-3 mb-5">
-            <Kpi label="FC cadastrado (referência)" value={insumo.fatorCorrecao.toFixed(2)} />
+            <Kpi label="FC cadastrado (referência)" value={formatNumero(insumo.fatorCorrecao, 2)} />
             <Kpi
               label="FC observado (média dos lotes)"
-              value={fcObservadoMedio!.toFixed(3)}
+              value={formatNumero(fcObservadoMedio!, 3)}
               alerta={Math.abs(diferenca) > 2}
-              sub={`${diferenca >= 0 ? "+" : ""}${diferenca.toFixed(1)}% vs. cadastrado`}
+              sub={`${diferenca >= 0 ? "+" : ""}${formatNumero(diferenca, 1)}% vs. cadastrado`}
             />
             <Kpi label="Lotes registrados" value={lotes.length} sub="insumo usado no cálculo de CMV agora" />
           </div>
@@ -107,7 +107,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
               <LineChart data={lotes.map((l) => ({ ...l, dataLabel: formatarData(l.processadoEm) }))} margin={CHART_MARGIN}>
                 <CartesianGrid {...chartGridProps} />
                 <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
-                <YAxis domain={["dataMin - 0.03", "dataMax + 0.03"]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={(v: number) => v.toFixed(2)} />
+                <YAxis domain={["dataMin - 0.03", "dataMax + 0.03"]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={(v: number) => formatNumero(v, 2)} />
                 <ReferenceLine y={insumo.fatorCorrecao} stroke={"var(--border-strong)"} strokeDasharray="4 4" label={{ value: "FC cadastrado", position: "insideTopRight", fontSize: 10, fill: "var(--sub)" }} />
                 <Tooltip
                   content={({ payload }) => {
@@ -117,8 +117,8 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                       <ChartTooltipCard
                         titulo={`${p.dataLabel} · ${p.responsavel}`}
                         linhas={[
-                          { rotulo: "FC do lote", valor: p.fcObservado.toFixed(3) },
-                          { rotulo: "Bruto → líquido", valor: `${p.pesoBrutoRecebido}kg → ${p.pesoLiquidoResultante}kg` },
+                          { rotulo: "FC do lote", valor: formatNumero(p.fcObservado, 3) },
+                          { rotulo: "Bruto → líquido", valor: `${formatQtd(p.pesoBrutoRecebido)}kg → ${formatQtd(p.pesoLiquidoResultante)}kg` },
                         ]}
                       />
                     );
@@ -165,12 +165,12 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                         <td className="py-2 px-5">{formatarData(l.processadoEm)}</td>
                         <td className="py-2 px-2 font-medium">{l.responsavel}</td>
                         <td className="py-2 px-2" style={{ color: "var(--sub)" }}>{l.fornecedor ?? "—"}</td>
-                        <td className="py-2 px-2 text-right" style={nums}>{l.pesoBrutoRecebido.toFixed(2)}kg</td>
+                        <td className="py-2 px-2 text-right" style={nums}>{formatNumero(l.pesoBrutoRecebido, 2)}kg</td>
                         <td className="py-2 px-2 text-right" style={nums}>{formatBRL(l.valorPagoKg)}</td>
-                        <td className="py-2 px-2 text-right" style={nums}>{l.pesoLiquidoResultante.toFixed(2)}kg</td>
-                        <td className="py-2 px-2 text-right" style={{ ...nums, color: "var(--sub)" }}>{l.pesoAparasReaproveitaveis.toFixed(2)}kg</td>
-                        <td className="py-2 px-2 text-right" style={{ ...nums, color: descarteAlto ? "var(--danger)" : "var(--text)" }}>{l.pesoDescartePuro.toFixed(2)}kg</td>
-                        <td className="py-2 px-5 text-right font-medium" style={nums}>{l.fcObservado.toFixed(3)}</td>
+                        <td className="py-2 px-2 text-right" style={nums}>{formatNumero(l.pesoLiquidoResultante, 2)}kg</td>
+                        <td className="py-2 px-2 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatNumero(l.pesoAparasReaproveitaveis, 2)}kg</td>
+                        <td className="py-2 px-2 text-right" style={{ ...nums, color: descarteAlto ? "var(--danger)" : "var(--text)" }}>{formatNumero(l.pesoDescartePuro, 2)}kg</td>
+                        <td className="py-2 px-5 text-right font-medium" style={nums}>{formatNumero(l.fcObservado, 3)}</td>
                       </tr>
                       {l.observacao && (
                         <tr key={`${l.id}-obs`}>

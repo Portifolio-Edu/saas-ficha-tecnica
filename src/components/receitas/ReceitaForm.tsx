@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatQtd } from "@/components/charts/format";
 import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
@@ -119,7 +120,7 @@ export function ReceitaForm({
             return (
               <div key={idx} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded-md" style={{ background: "var(--panel)", border: `1px solid ${"var(--border)"}` }}>
                 <span>
-                  {label} · {f.pesoLiquido}{f.unidade}
+                  {label} · {formatQtd(f.pesoLiquido)}{f.unidade}
                   {f.subReceitaId && <span style={{ color: "var(--faint)" }}> · preparo próprio</span>}
                 </span>
                 <button onClick={() => removerLinha(idx)} style={{ color: "var(--danger)" }}>

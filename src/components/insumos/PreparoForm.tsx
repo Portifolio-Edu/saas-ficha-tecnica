@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatQtd } from "@/components/charts/format";
 import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
@@ -82,7 +83,7 @@ export function PreparoForm({
             return (
               <div key={idx} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded-md" style={{ background: "var(--panel)", border: `1px solid ${"var(--border)"}` }}>
                 <span>
-                  {insumo?.nome} · {f.pesoLiquido}
+                  {insumo?.nome} · {formatQtd(f.pesoLiquido)}
                   {f.unidade}
                 </span>
                 <button onClick={() => removerLinha(idx)} style={{ color: "var(--danger)" }}>

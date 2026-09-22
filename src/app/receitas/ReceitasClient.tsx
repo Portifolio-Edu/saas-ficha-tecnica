@@ -19,7 +19,7 @@ import type { LinhaFichaCustosPdf } from "@/lib/pdf/FichaCustosPdf";
 import type { LinhaFichaOperacionalPdf } from "@/lib/pdf/FichaOperacionalPdf";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirReceita } from "./actions";
-import { formatBRL } from "@/components/charts/format";
+import { formatBRL, formatNumero, formatQtd } from "@/components/charts/format";
 
 export function ReceitasClient({
   receitas,
@@ -179,8 +179,8 @@ export function ReceitasClient({
                 {abaixoDoAlvo && <Badge acao>margem baixa</Badge>}
               </div>
               <div className="flex items-center gap-5 text-[12.5px]" style={{ ...nums, color: "var(--sub)" }}>
-                <span>CMV {cmvPct.toFixed(1)}%</span>
-                <span style={{ color: abaixoDoAlvo ? "var(--danger)" : "var(--text)", fontWeight: 600 }}>margem {margemPct.toFixed(1)}%</span>
+                <span>CMV {formatNumero(cmvPct, 1)}%</span>
+                <span style={{ color: abaixoDoAlvo ? "var(--danger)" : "var(--text)", fontWeight: 600 }}>margem {formatNumero(margemPct, 1)}%</span>
                 <span className="font-semibold" style={{ color: "var(--text)" }}>{formatBRL((p.precoVenda ?? 0))}</span>
               </div>
             </button>
@@ -212,8 +212,8 @@ export function ReceitasClient({
                                   <td className="py-2 pr-3">
                                     {l.nome} {l.ehPreparo && <Badge>preparo próprio</Badge>}
                                   </td>
-                                  <td className="py-2 pr-3 text-right" style={nums}>{l.pesoLiquido} {l.unidade}</td>
-                                  <td className="py-2 pr-3 text-right" style={nums}>{l.fc !== null ? l.fc.toFixed(3) : "—"}</td>
+                                  <td className="py-2 pr-3 text-right" style={nums}>{formatQtd(l.pesoLiquido)} {l.unidade}</td>
+                                  <td className="py-2 pr-3 text-right" style={nums}>{l.fc !== null ? formatNumero(l.fc, 3) : "—"}</td>
                                   <td className="py-2 pr-3 text-right" style={nums}>{formatBRL(l.precoUnitario)}</td>
                                   <td className="py-2 text-right font-medium" style={nums}>{formatBRL(l.custo)}</td>
                                 </tr>
@@ -230,10 +230,10 @@ export function ReceitasClient({
 
                     <div className="grid grid-cols-4 gap-3 mb-4">
                       {[
-                        ["CMV do prato", `${formatBRL(custoPorPorcao)}`, `${cmvPct.toFixed(1)}%`, false],
+                        ["CMV do prato", `${formatBRL(custoPorPorcao)}`, `${formatNumero(cmvPct, 1)}%`, false],
                         ["Preço atual", `${formatBRL((p.precoVenda ?? 0))}`, null, false],
-                        [`Preço sugerido (margem ${(margemAlvo * 100).toFixed(0)}%)`, `${formatBRL(precoSugerido)}`, null, false],
-                        ["Margem no preço atual", `${margemPct.toFixed(1)}%`, null, abaixoDoAlvo],
+                        [`Preço sugerido (margem ${formatNumero((margemAlvo * 100), 0)}%)`, `${formatBRL(precoSugerido)}`, null, false],
+                        ["Margem no preço atual", `${formatNumero(margemPct, 1)}%`, null, abaixoDoAlvo],
                       ].map(([label, value, extra, alerta], idx) => (
                         <div key={idx} className="rounded-lg p-3" style={{ background: "var(--bg)" }}>
                           <div className="text-[11px]" style={{ color: "var(--sub)" }}>{label}</div>

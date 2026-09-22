@@ -15,7 +15,7 @@ import type { Fornecedor } from "@/lib/dominio/fornecedor";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirFornecedor } from "./actions";
 import { abrirAgenteIaComFoco } from "@/components/ia/BotaoAgenteIa";
-import { formatBRL } from "@/components/charts/format";
+import { formatBRL, formatQtd } from "@/components/charts/format";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -296,7 +296,7 @@ export function EstoqueClient({
                   <div className="flex items-center gap-3">
                     <span style={{ color: "var(--tinta-faint)" }}>{formatarData(m.criadoEm)}</span>
                     <span style={{ ...nums, color: cor, fontWeight: 800 }}>
-                      {m.tipo === "entrada" ? "+" : "-"}{Math.abs(m.quantidade)}{m.unidadeMedida}
+                      {m.tipo === "entrada" ? "+" : "-"}{formatQtd(Math.abs(m.quantidade))}{m.unidadeMedida}
                     </span>
                     <span
                       className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full"
