@@ -25,16 +25,36 @@ what actually happened.
 
 ## Positioning
 
-- It covers the whole operation: predictability and control over everything,
-  not a single loose spreadsheet.
-- Real vs theoretical CMV: the gap between what the sheets predict and what
-  left stock.
-- Precise technical sheet: correction factor measured per batch, nested
-  sub-recipes, exact cost per portion.
-- The whole kitchen in one place: production (kanban), stock, turn checklists,
-  food safety and nutrition, integrated.
-- Simple for a small restaurant, for teams without a controller or a
-  nutritionist.
+Confirmado pelo usuário em 2026-09-22.
+
+**O "cérebro" de gestão e inteligência de custos, acima dos PDVs.** Não compete
+com PDV: todo PDV básico já baixa estoque por ficha simples. O Ficha Técnica é
+a camada especializada em gestão de custos avançada, engenharia de cardápio e
+inteligência de CMV, e consome os dados consolidados de fora. Entrega ao dono o
+que o caixa tradicional não mostra: **onde exatamente o lucro está vazando na
+cozinha.**
+
+- CMV teórico vs real e o gap entre eles.
+- Ficha técnica precisa (FC medido por lote, sub-receitas) e produção de
+  pré-preparo que os PDVs genéricos não cobrem.
+- A cozinha inteira num lugar só, simples pra restaurante pequeno.
+
+## Roadmap de produto (planejado, AINDA NÃO EXISTE no app)
+
+Não mostrar como funcionalidade pronta nem inventar números destes módulos.
+
+1. **Importação de XML de NF-e de compra:** entrada da nota do fornecedor,
+   atualiza o custo real dos insumos (que oscila toda semana) e recalcula o
+   CMV real.
+2. **Planejamento de produção por demanda:** quanto porcionar e quanto fazer de
+   base a partir da previsão de vendas.
+3. **Vendas em tempo real via iFood (Open Delivery / webhooks):** o pedido
+   baixa a ficha e calcula o CMV na hora, sem depender do PDV do balcão.
+4. **TOTVS (linha Chef), para redes e médio/grande porte:** parceria de
+   integração via API homologada para puxar vendas e devolver ajustes de
+   custo e estoque.
+
+Hoje o app importa vendas no fechamento de CMV (planilha), não em tempo real.
 
 ## Operating Context
 
@@ -58,6 +78,14 @@ what actually happened.
   integration exists.
 - Calculation engine in `src/lib/calculo` (pure functions, with tests): FC,
   unit conversion, CMV, pricing, production capacity, CMV close, nutrition.
+
+## Brand Commitments
+
+- **Padrão premium de SaaS, feito sem ironia** (escolha do usuário em
+  2026-09-22). A régua de acabamento: Stripe (painel), Linear e Toast/Square.
+  Ou seja, o refinamento e os números impecáveis do Stripe, a densidade e o modo
+  escuro do Linear e os alvos grandes de tablet dos sistemas de restaurante.
+- É uma ferramenta premium: o visual pesa na venda do SaaS pro dono do restaurante.
 
 ## Evidence on Hand
 

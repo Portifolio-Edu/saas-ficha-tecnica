@@ -35,7 +35,8 @@ export function Kpi({
           )}
         </div>
         <div
-          className="text-[32px] font-bold mt-2 leading-none tracking-tight"
+          // SISTEMA premium: 28px peso 600 (antes 32px bold), como os números do painel Stripe.
+          className="text-[28px] font-semibold mt-2 leading-none tracking-tight"
           style={{
             ...nums,
             color: alerta ? "var(--danger)" : "var(--text)",
@@ -50,8 +51,9 @@ export function Kpi({
             <span
               className="inline-flex items-center font-semibold px-1.5 py-0.5 rounded text-[11px]"
               style={{
-                backgroundColor: trend.isPositive ? "var(--accent-soft)" : "var(--danger-soft)",
-                color: trend.isPositive ? "var(--accent)" : "var(--danger)",
+                // SISTEMA premium: alta em verde (antes tinta sobre cinza, sem cor de "bom").
+                backgroundColor: trend.isPositive ? "color-mix(in srgb, var(--sucesso) 10%, transparent)" : "var(--danger-soft)",
+                color: trend.isPositive ? "var(--sucesso)" : "var(--danger)",
               }}
             >
               {trend.isPositive ? "↑" : "↓"} {trend.value}

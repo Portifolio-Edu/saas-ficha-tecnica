@@ -1,12 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 
-// Self-hosted pelo next/font: sem requisição ao Google no carregamento e sem
-// troca de fonte visível. Corpo e números usam a mesma face (tnum no CSS).
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--fonte-jakarta",
-  weight: ["400", "500", "600", "700", "800"],
+// SISTEMA premium (2026-09-22): Hanken Grotesk, grotesca neutra no tom do painel
+// Stripe, com algarismos tabulares por padrão (todos os dígitos têm a mesma
+// largura, então colunas de número alinham sozinhas) e espaço normal.
+// Testadas e descartadas: Mona Sans (o zero tabular vira um retângulo estreito
+// em peso alto), Schibsted (vírgula solta nos números), Onest e Host (largas
+// demais pra tabela densa). Antes: Plus Jakarta Sans (--fonte-jakarta), que o
+// Impeccable lista entre as fontes-padrão de app gerado por IA.
+const hanken = Hanken_Grotesk({
+  variable: "--fonte-app",
   subsets: ["latin"],
   display: "swap",
 });
@@ -15,8 +19,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAFAFA" },
-    { media: "(prefers-color-scheme: dark)", color: "#0A0A0B" }, // SISTEMA: mesmo --fundo do tema escuro
+    { media: "(prefers-color-scheme: light)", color: "#F6F6F7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0B0C" }, // SISTEMA: mesmo --fundo do tema escuro
   ],
 };
 
@@ -42,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={jakarta.variable} suppressHydrationWarning>
+    <html lang="pt-BR" className={hanken.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

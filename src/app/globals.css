@@ -2,65 +2,89 @@
 @import "tw-animate-css";
 
 :root {
+  /* ==========================================================================
+     SISTEMA PREMIUM (2026-09-22) -- direção "padrão premium de SaaS", régua
+     Stripe (painel) + Linear + Toast/Square (ver PRODUCT.md e DESIGN.md).
+     Troca a paleta ardósia/Jakarta pesada por neutros calmos, bordas de 1px,
+     cantos menores e Hanken Grotesk. Versão anterior destes tokens: commit 81a706a
+     (`git show 81a706a:src/app/globals.css`). Reverter tudo:
+     git revert do commit "sistema(premium)".
+     ========================================================================== */
   color-scheme: light;
-  /* --fonte-jakarta vem do next/font no layout. Número usa a mesma face com
-     algarismos tabulares (tnum), em vez de uma segunda família só pra isso. */
-  --font-sans: var(--fonte-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: var(--fonte-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* --fonte-app vem do next/font no layout (Hanken Grotesk, dígitos tabulares nativos). */
+  --font-sans: var(--fonte-app), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--fonte-app), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-plex-sans: var(--font-sans);
   --font-plex-mono: var(--font-mono);
-  
-  /* Apple Ceramic Light Palette - Alta Legibilidade Operacional */
-  --fundo: #F8FAFC;
+
+  /* Superfícies: névoa no fundo, papel nos cards. Antes: ardósia fria
+     (#F8FAFC / #F1F5F9 / #E2E8F0). */
+  --fundo: #F6F6F7;
   --panel: #FFFFFF;
-  --panel-elevated: #F1F5F9;
-  --panel-hover: #E2E8F0;
-  --tinta: #0F172A;
-  --tinta-sub: #334155;
-  --tinta-faint: #64748B;
-  
-  /* Brand Signals */
-  --sinal: #E11D48;
-  --sinal-glow: rgba(225, 29, 72, 0.25);
-  --sucesso: #059669;
-  --sucesso-glow: rgba(5, 150, 105, 0.25);
-  --aviso: #D97706;
-  
-  /* Borders & Dividers */
-  --linha: rgba(15, 23, 42, 0.12);
-  --linha-forte: rgba(15, 23, 42, 0.22);
+  --panel-elevated: #F3F3F5;
+  --panel-hover: #ECECEF;
+  /* Tinta quase-preta neutra. Antes: #0F172A / #334155 / #64748B (azulados). */
+  --tinta: #16171A;
+  --tinta-sub: #4A4D55;
+  --tinta-faint: #6B6F78;
+
+  /* Status: tons do padrão Stripe/Untitled, legíveis como texto em fundo claro. */
+  --sinal: #D92D20;
+  --sinal-glow: rgba(217, 45, 32, 0.2);
+  --sucesso: #067647;
+  --sucesso-glow: rgba(6, 118, 71, 0.2);
+  --aviso: #B54708;
+
+  /* Único acento da marca: violeta-índigo, só para foco, seleção e item ativo.
+     Não usar em botão primário (que é tinta) nem pra decorar. */
+  --marca: #5B4FE0;
+  --marca-suave: rgba(91, 79, 224, 0.10);
+
+  /* Linhas: hairline de 1px faz o papel que antes era da sombra. */
+  --linha: rgba(22, 23, 26, 0.09);
+  --linha-forte: rgba(22, 23, 26, 0.16);
   --linha-rim: rgba(255, 255, 255, 0.9);
-  
+
   --bg: var(--fundo);
   --border: var(--linha);
   --border-strong: var(--linha-forte);
   --text: var(--tinta);
   --sub: var(--tinta-sub);
   --faint: var(--tinta-faint);
-  --accent: #0F172A;
-  --accent-hover: #1E293B;
-  --accent-soft: rgba(15, 23, 42, 0.05);
+  --accent: #16171A;
+  --accent-hover: #2A2C31;
+  --accent-soft: rgba(22, 23, 26, 0.05);
   --accent-contrast: #FFFFFF;
   --text-contrast: #FFFFFF;
   --danger: var(--sinal);
-  --danger-soft: rgba(225, 29, 72, 0.10);
+  --danger-soft: rgba(217, 45, 32, 0.08);
 
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 20px;
+  /* Cantos menores e consistentes. Antes: 8 / 14 / 20px. */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05);
-  --shadow-elevated: 0 12px 36px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
-  --shadow-glow: 0 0 24px -2px rgba(225, 29, 72, 0.35);
-  --card-rim: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  /* Profundidade quase plana: borda + sombra de 1–2px. Antes as sombras eram
+     largas (20–36px de blur). */
+  --shadow-sm: 0 1px 2px rgba(16, 17, 20, 0.05);
+  --shadow-card: 0 1px 2px rgba(16, 17, 20, 0.04);
+  --shadow-elevated: 0 1px 2px rgba(16, 17, 20, 0.04), 0 8px 24px -8px rgba(16, 17, 20, 0.10);
+  --shadow-glow: none;
+  --card-rim: none;
 
-  /* SISTEMA (2026-09-22): cores das etapas do fluxo de produção como token.
-     Antes eram hex fixos dentro de ProducoesClient.tsx, iguais nos dois temas
-     (o texto azul-escuro #1D4ED8 ficava ilegível no tema escuro). Toda tela que
-     mostrar etapa usa estes -- ver DESIGN.md, "The Stage Color Rule".
-     Reverter: git revert do commit "sistema(tokens)" (ver docs/POLIMENTO.md). */
+  /* SISTEMA premium: aliases que componentes compartilhados já usavam mas que
+     nunca tinham sido definidos -- Card (--shadow, --card-border) e Badge
+     (--status-*) saíam sem borda e sem cor. */
+  --shadow: var(--shadow-card);
+  --shadow-lift: var(--shadow-elevated);
+  --card-border: 1px solid var(--linha);
+  --status-producao: var(--etapa-producao-texto);
+  --status-producao-soft: color-mix(in srgb, var(--etapa-producao) 12%, transparent);
+  --status-estoque: var(--etapa-estoque-texto);
+  --status-estoque-soft: color-mix(in srgb, var(--etapa-estoque) 12%, transparent);
+
+  /* Cores das etapas de produção (ver DESIGN.md, "The Stage Color Rule"). */
   --etapa-estoque: #2563EB;
   --etapa-estoque-texto: #1D4ED8;
   --etapa-producao: #D97706;
@@ -70,37 +94,36 @@
   --etapa-perda: #DC2626;
   --etapa-perda-texto: #B91C1C;
 
-  /* SISTEMA: alvo mínimo de toque pro tablet na bancada (PRODUCT.md). */
+  /* Alvo mínimo de toque pro tablet na bancada (PRODUCT.md). */
   --alvo-toque: 44px;
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  
-  /* SISTEMA (2026-09-22): escuro de verdade -- grafite neutro, sem azul.
-     Antes (azul-marinho): --fundo #090D16, --panel #111726,
-     --panel-elevated #192236, --panel-hover #222E47, --tinta #F8FAFC,
-     --tinta-sub #CBD5E1, --tinta-faint #94A3B8. Pra voltar, troque estes
-     valores (e os #0A0A0B abaixo) pelos antigos. */
-  --fundo: #0A0A0B;
-  --panel: #141415;
-  --panel-elevated: #1C1C1E;
-  --panel-hover: #26262A;
-  --tinta: #F4F4F5;
-  --tinta-sub: #D4D4D8;
-  --tinta-faint: #A1A1AA;
 
-  /* Brand Signals */
-  --sinal: #FF3B30;
-  --sinal-glow: rgba(255, 59, 48, 0.35);
-  --sucesso: #10B981;
-  --sucesso-glow: rgba(16, 185, 129, 0.35);
-  --aviso: #FBBF24;
+  /* Escuro no padrão Linear: grafite neutro em 3 camadas, bordas brancas a 8%.
+     Antes (commit 81a706a): --fundo #0A0A0B, --panel #141415,
+     --panel-elevated #1C1C1E, --tinta #F4F4F5. */
+  --fundo: #0B0B0C;
+  --panel: #131315;
+  --panel-elevated: #1A1A1D;
+  --panel-hover: #222226;
+  --tinta: #EDEDEF;
+  --tinta-sub: #B4B4BC;
+  --tinta-faint: #8C8C95;
 
-  /* Borders & Dividers */
-  --linha: rgba(255, 255, 255, 0.10);
-  --linha-forte: rgba(255, 255, 255, 0.18);
-  --linha-rim: rgba(255, 255, 255, 0.15);
+  --sinal: #F97066;
+  --sinal-glow: rgba(249, 112, 102, 0.25);
+  --sucesso: #47CD89;
+  --sucesso-glow: rgba(71, 205, 137, 0.25);
+  --aviso: #FDB022;
+
+  --marca: #8F87FF;
+  --marca-suave: rgba(143, 135, 255, 0.14);
+
+  --linha: rgba(255, 255, 255, 0.08);
+  --linha-forte: rgba(255, 255, 255, 0.14);
+  --linha-rim: rgba(255, 255, 255, 0.06);
 
   --bg: var(--fundo);
   --border: var(--linha);
@@ -108,26 +131,20 @@
   --text: var(--tinta);
   --sub: var(--tinta-sub);
   --faint: var(--tinta-faint);
-  --accent: #F4F4F5;
+  --accent: #EDEDEF;
   --accent-hover: #FFFFFF;
-  --accent-soft: rgba(255, 255, 255, 0.08);
-  --accent-contrast: #0A0A0B;
-  --text-contrast: #0A0A0B;
+  --accent-soft: rgba(255, 255, 255, 0.06);
+  --accent-contrast: #0B0B0C;
+  --text-contrast: #0B0B0C;
   --danger: var(--sinal);
-  --danger-soft: rgba(255, 59, 48, 0.15);
+  --danger-soft: rgba(249, 112, 102, 0.12);
 
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 20px;
-  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --shadow-glow: none;
+  --card-rim: none;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 8px 30px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.09);
-  --shadow-elevated: 0 16px 44px -6px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  --shadow-glow: 0 0 28px -2px rgba(255, 59, 48, 0.4);
-  --card-rim: inset 0 1px 0 rgba(255, 255, 255, 0.10);
-
-  /* SISTEMA: etapas no tema escuro -- tons mais claros pra manter contraste. */
   --etapa-estoque: #60A5FA;
   --etapa-estoque-texto: #93C5FD;
   --etapa-producao: #F59E0B;
@@ -136,6 +153,15 @@
   --etapa-produzido-texto: #6EE7B7;
   --etapa-perda: #F87171;
   --etapa-perda-texto: #FCA5A5;
+}
+
+/* SISTEMA premium: escala de peso mais calma, aplicada em todas as telas de uma
+   vez. As classes font-black (900) e font-extrabold (800) eram usadas em ~90
+   lugares e davam o ar de "painel-template gritando". Agora font-black = 700 e
+   font-extrabold = 600. Pra voltar ao peso antigo, apague este bloco. */
+@theme {
+  --font-weight-black: 700;
+  --font-weight-extrabold: 600;
 }
 
 /* Correção global de contraste para botões escuros */
@@ -171,17 +197,17 @@
     background: var(--fundo);
     color: var(--tinta);
     font-family: var(--font-sans);
-    font-size: 15px;
+    /* SISTEMA premium: 14px (padrão Stripe/Linear); antes 15px. Telas de operação
+       definem tamanhos maiores onde o chef lê de longe. O word-spacing extra da
+       Jakarta saiu: o espaço da Hanken já é normal (0,26em). */
+    font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "tnum";
-    /* O espaço da Jakarta é estreito (0,17em) e boa parte da UI usa tracking
-       negativo: sem isso "Em estoque" lê como "Emestoque". */
-    word-spacing: 0.06em;
   }
   h1, h2, h3 {
     text-wrap: pretty;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
     font-weight: 600;
   }
   button, a, input, select, textarea {
@@ -197,13 +223,14 @@
   button:not(:disabled):active {
     transform: scale(0.98);
   }
+  /* SISTEMA premium: anel de foco no acento da marca (antes na tinta). */
   :focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent);
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--marca);
   }
   /* SISTEMA: seleção visível. Antes: var(--accent-soft) (5% de opacidade, quase invisível). */
   ::selection {
-    background: color-mix(in srgb, var(--etapa-estoque) 28%, transparent);
+    background: color-mix(in srgb, var(--marca) 24%, transparent);
     color: var(--text);
   }
 
