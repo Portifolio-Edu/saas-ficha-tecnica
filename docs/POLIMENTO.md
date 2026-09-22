@@ -65,3 +65,49 @@ selo "Motor operacional ativo".
 - Rodapé do menu: o nome do restaurante vai em até 2 linhas (antes cortava
   "Cantina Bella ..."). "SISTEMA OPERACIONAL ATIVO", que quebrava em 3 linhas,
   virou "Modo demonstração".
+
+---
+
+## 3. Sistema visual — commit `b9f1cef`
+
+**Arquivos:** `PRODUCT.md` (novo), `DESIGN.md` (novo), `src/app/globals.css`,
+`src/app/layout.tsx`. Vale para todas as telas.
+
+- `PRODUCT.md` registra quem usa (chef no tablet da bancada) e o diferencial.
+  `DESIGN.md` registra o sistema ("A Bancada Calibrada"): cores com significado,
+  escala de tipo, toque de 44px e regras como "The Stage Color Rule".
+- **Tema escuro em grafite neutro**, sem azul-marinho. Valores antigos no
+  comentário `SISTEMA` do `globals.css`; pra voltar, troque os valores de
+  `[data-theme="dark"]` pelos antigos.
+- **Tokens de etapa** `--etapa-estoque|producao|produzido|perda` (e `-texto`),
+  com variantes mais claras no escuro. Antes eram hex fixos na tela de Produções.
+- `--alvo-toque: 44px` e seleção de texto visível.
+
+## 4. Shell, 2ª passada — commit `adc4047`
+
+**Arquivos:** `src/components/ficha/DemoShell.tsx`, `src/components/ia/BotaoAgenteIa.tsx`.
+
+- Saiu o botão flutuante do Agente IA. Ele repetia o da barra superior, cobria
+  a coluna Perdas e, como os dois escutam o mesmo evento, abrir o agente por um
+  botão de tela abria **dois** modais. Pra voltar: recolocar
+  `<BotaoAgenteIa variante="flutuante" />` antes do `<ToastContainer />`.
+- Botões de tema e do agente com 44px de altura.
+
+## 5. Produções — commit `94a84c0`
+
+**Arquivo:** `src/app/producoes/ProducoesClient.tsx`. As correções de baixa de
+estoque do commit `e5e84b8` continuam iguais; só a apresentação mudou.
+
+- O quadro cabe na altura da tela a partir de 1024px e cada coluna rola por
+  dentro. Antes, "Em estoque" esticava a página pra ~2.700px e "Perdas" sumia.
+- Cores das etapas vêm dos tokens. No escuro, o texto da etapa ficou legível
+  (antes azul-escuro sobre fundo escuro).
+- "Registrar produção" subiu pro cabeçalho do quadro (antes ficava abaixo dele).
+- Todos os alvos de toque da tela com 44px ou mais: antes 17 a 23 ficavam
+  abaixo de 40px no tablet; agora nenhum.
+- Card de capacidade: o número de lotes virou o destaque; "Gargalo" virou
+  "Falta primeiro".
+- "Registrar Descarte / Perda" em vermelho em todo card produzido virou
+  "Registrar perda" neutro com ícone: o vermelho fica só pra perda que
+  aconteceu. Em produção, a perda virou botão de ícone.
+- Plural certo ("15 porções"), validade em dd/mm, modal de perda com 44px.
