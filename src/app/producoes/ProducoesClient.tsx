@@ -1,5 +1,8 @@
 "use client";
 
+// SISTEMA premium (2026-09-22): botões de etapa tingidos, colunas com canto 12px e
+// topo de 3px, título no padrão das outras telas. Versão anterior:
+// `git show 4f29ec6:src/app/producoes/ProducoesClient.tsx`.
 // POLIMENTO producoes (2026-09-22) -- elevação da tela com o Impeccable, pensada
 // pro chef no tablet da bancada (PRODUCT.md). Cada mudança marcada com
 // "POLIMENTO producoes" diz como era antes. Versão anterior: commit e5e84b8
@@ -469,13 +472,13 @@ export function ProducoesClient({
             subtítulo mais curto. */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5">
           <div>
-            <h2 className="text-[20px] font-black tracking-tight text-[var(--tinta)]">Quadro de produção</h2>
-            <p className="text-[14px] font-semibold text-[var(--tinta-sub)] mt-0.5">
+            <h2 className="text-[22px] font-semibold tracking-tight text-[var(--tinta)]">Quadro de produção</h2>
+            <p className="text-[14px] text-[var(--tinta-sub)] mt-1">
               Arraste o lote entre as etapas ou use os botões do card.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap lg:flex-nowrap items-end gap-3 shrink-0">
             <label className="flex flex-col gap-1">
               <span className="text-[12px] font-bold text-[var(--tinta-sub)]">Turno</span>
               <select
@@ -570,11 +573,11 @@ export function ProducoesClient({
               <section
                 key={col.id}
                 aria-label={`${col.titulo}: ${contagem}`}
-                className="rounded-2xl flex flex-col transition-colors duration-200 min-w-0 lg:max-h-[calc(100dvh-230px)] lg:min-h-[520px]"
+                className="rounded-xl flex flex-col transition-colors duration-200 min-w-0 lg:max-h-[calc(100dvh-230px)] lg:min-h-[520px]"
                 style={{
                   backgroundColor: emHoverValido ? estilo.fundoBadge : estilo.fundoColuna,
                   border: `1px solid ${emHoverInvalido ? "var(--sinal)" : estilo.borda}`,
-                  borderTop: `4px solid ${emHoverInvalido ? "var(--sinal)" : estilo.cor}`,
+                  borderTop: `3px solid ${emHoverInvalido ? "var(--sinal)" : estilo.cor}`,
                   boxShadow: emHoverValido || emHoverInvalido ? `0 0 0 2px ${emHoverInvalido ? "var(--sinal)" : estilo.cor} inset` : "none",
                 }}
                 onDragOver={(e) => {
@@ -660,8 +663,9 @@ export function ProducoesClient({
                           <button
                             onClick={() => iniciarProducao(d)}
                             className="mt-3 w-full flex items-center justify-center gap-1.5 px-2 text-[14px] font-extrabold min-h-[var(--alvo-toque)] rounded-xl transition-opacity hover:opacity-90"
-                            // Fundo na variante -texto da etapa: branco sobre #2563EB/#059669 dá <4.5:1 em 14px.
-                            style={{ backgroundColor: estilo.corTexto, color: "var(--panel)" }}
+                            // SISTEMA premium: botão tingido da etapa (fundo 12%, texto -texto, borda 30%).
+                            // Antes era preenchido, e no escuro virava um pastel chapado destoando do resto.
+                            style={{ backgroundColor: tint(estilo.cor, 12), color: estilo.corTexto, border: `1px solid ${tint(estilo.cor, 30)}` }}
                           >
                             {/* Ícone só a partir de 1280px: na coluna do tablet deitado ele empurrava o texto pra 2 linhas. */}
                             <Play size={15} strokeWidth={2.6} className="hidden xl:block" />
@@ -729,7 +733,8 @@ export function ProducoesClient({
                             <button
                               onClick={() => concluirProducao(pr.id)}
                               className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[14px] font-extrabold min-h-[var(--alvo-toque)] rounded-xl transition-opacity hover:opacity-90"
-                              style={{ backgroundColor: "var(--etapa-produzido-texto)", color: "var(--panel)" }}
+                              // SISTEMA premium: tingido como os demais botões de etapa (antes preenchido).
+                              style={{ backgroundColor: tint("var(--etapa-produzido)", 12), color: "var(--etapa-produzido-texto)", border: `1px solid ${tint("var(--etapa-produzido)", 30)}` }}
                             >
                               <Check size={16} strokeWidth={2.8} />
                               Concluir
@@ -772,7 +777,7 @@ export function ProducoesClient({
           em --faint). O botão "Registrar produção" saiu daqui e foi pro cabeçalho do quadro. */}
       <div>
         <h2 className="text-[18px] font-black tracking-tight text-[var(--tinta)]">Capacidade por prato</h2>
-        <p className="text-[14px] font-semibold mt-0.5 mb-3 text-[var(--tinta-sub)]">
+        <p className="text-[14px] mt-1 mb-3 text-[var(--tinta-sub)]">
           Quantas porções ainda dá pra fazer com o estoque de hoje, e o que acaba primeiro.
         </p>
 
