@@ -4,7 +4,7 @@ import { NOME_RESTAURANTE, insumos, todasReceitas, processamentos, producoes, fe
 
 export default function Page() {
   return (
-    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Visão Geral">
+    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Visão geral">
       <VisaoGeralClient
         margemAlvoCliente={margemAlvoCliente}
         insumos={insumos}

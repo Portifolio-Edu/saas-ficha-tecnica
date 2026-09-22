@@ -13,7 +13,7 @@ export default async function ProteinasPage() {
   const proteinas = insumos.filter((i) => i.categoria === "proteina");
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Manipulação de Proteínas">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Manipulação de proteínas">
       <ProteinasClient proteinas={proteinas} processamentos={processamentos} />
     </AppShell>
   );

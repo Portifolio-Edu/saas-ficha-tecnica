@@ -12,6 +12,9 @@
 //    ícone só (antes um seletor CLARO/ESCURO grande). O app logado ganhou o botão
 //    de tema, que antes só existia na demo.
 //  - Alvos de toque: itens do menu e botões da barra com 40–44px.
+//  - O `tituloPagina` de cada page.tsx (app e /preview) usa o mesmo texto do item
+//    do menu, em caixa de frase. Antes: "Visão Geral", "Receitas & Fichas",
+//    "Checklists de Turno" etc. (commit "polimento(sistema): títulos iguais ao menu").
 // Reverter só a casca: git revert do commit "polimento(shell-premium)"; os
 // arquivos AppShell.tsx e DemoShell.tsx voltam a ter o layout próprio.
 

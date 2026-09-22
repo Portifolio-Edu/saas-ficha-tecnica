@@ -4,7 +4,7 @@ import { NOME_RESTAURANTE, proteinas, processamentos } from "../fixtures";
 
 export default function Page() {
   return (
-    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Manipulação de Proteínas">
+    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Manipulação de proteínas">
       <ProteinasClient proteinas={proteinas} processamentos={processamentos} />
     </DemoShell>
   );

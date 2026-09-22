@@ -4,7 +4,7 @@ import { NOME_RESTAURANTE, locais, registrosTemperatura, insumos } from "../fixt
 
 export default function Page() {
   return (
-    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Segurança Alimentar">
+    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Segurança alimentar">
       <SegurancaClient locais={locais} registros={registrosTemperatura} insumos={insumos} />
     </DemoShell>
   );

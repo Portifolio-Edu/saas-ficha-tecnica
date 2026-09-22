@@ -12,7 +12,7 @@ export default async function ChecklistsPage() {
   const [checklists, turnos] = await Promise.all([listarChecklists(), garantirTurnosPadrao(cliente.id)]);
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Checklists de Turno">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Checklists de turno">
       <ChecklistsClient checklists={checklists} turnos={turnos} />
     </AppShell>
   );

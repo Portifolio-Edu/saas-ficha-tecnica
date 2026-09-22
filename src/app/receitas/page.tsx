@@ -15,7 +15,7 @@ export default async function ReceitasPage() {
   const preparos = todasReceitas.filter((r) => r.tipo === "preparo_base");
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Receitas & Fichas">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Receitas e fichas">
       <ReceitasClient receitas={receitas} insumos={insumos} preparos={preparos} margemAlvoCliente={cliente.margemAlvo} processamentos={processamentos} nomeRestaurante={cliente.nomeRestaurante} />
     </AppShell>
   );

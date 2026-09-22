@@ -23,7 +23,7 @@ export default async function NutricionalPage() {
   const preparos = todasReceitas.filter((r) => r.tipo === "preparo_base");
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Ficha Nutricional">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Ficha nutricional">
       <NutricionalClient
         pratos={pratos}
         preparos={preparos}

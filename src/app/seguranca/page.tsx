@@ -12,7 +12,7 @@ export default async function SegurancaPage() {
   const [locais, registros, insumos] = await Promise.all([listarLocaisArmazenamento(), listarRegistrosTemperatura(), listarInsumos()]);
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Segurança Alimentar">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Segurança alimentar">
       <SegurancaClient locais={locais} registros={registros} insumos={insumos} />
     </AppShell>
   );

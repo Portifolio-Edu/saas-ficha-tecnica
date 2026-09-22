@@ -21,7 +21,7 @@ export default async function VisaoGeralPage() {
   ]);
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Visão Geral">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Visão geral">
       <VisaoGeralClient
         margemAlvoCliente={cliente.margemAlvo}
         insumos={insumos}
