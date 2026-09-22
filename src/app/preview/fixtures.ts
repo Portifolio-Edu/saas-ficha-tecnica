@@ -423,6 +423,8 @@ export const movimentacoes: Movimentacao[] = [
   { id: "mov-8", insumoId: "i-caixa-pizza", nomeInsumo: "Caixa de Pizza 35cm", unidadeMedida: "un", tipo: "saida_venda", quantidade: 45, origem: "Vendas do turno — Jantar 13/09", criadoEm: "2026-09-13T23:30:00.000Z" },
   { id: "mov-9", insumoId: "i-alho", nomeInsumo: "Alho Descascado", unidadeMedida: "kg", tipo: "entrada", quantidade: 1, origem: "Compra — Distribuidora Verde Horta", criadoEm: "2026-09-15T09:30:00.000Z" },
   { id: "mov-10", insumoId: "i-patinho", nomeInsumo: "Carne Bovina Patinho", unidadeMedida: "kg", tipo: "saida_venda", quantidade: 2.7, origem: "Vendas do turno — Almoço 15/09", criadoEm: "2026-09-15T15:30:00.000Z" },
+  { id: "mov-11", insumoId: "i-frango", nomeInsumo: "Peito de Frango", unidadeMedida: "kg", tipo: "saida_producao", quantidade: 3.36, origem: "Produção — lote FP-0914-1 (Frango à Parmegiana)", criadoEm: "2026-09-14T11:30:00.000Z" },
+  { id: "mov-12", insumoId: "i-tomate", nomeInsumo: "Tomate Italiano", unidadeMedida: "kg", tipo: "saida_producao", quantidade: 1.8, origem: "Produção — lote FP-0914-1 (Frango à Parmegiana)", criadoEm: "2026-09-14T11:30:00.000Z" },
 ];
 
 export const fornecedores: Fornecedor[] = [

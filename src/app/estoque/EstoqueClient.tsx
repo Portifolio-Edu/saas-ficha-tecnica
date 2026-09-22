@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { Camera, Mic } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
-import { Badge } from "@/components/ficha/Badge";
 import { inputStyle, nums } from "@/components/ficha/tema";
 import { NovoEstoqueForm } from "@/components/estoque/NovoEstoqueForm";
 import { EditarEstoqueForm } from "@/components/estoque/EditarEstoqueForm";
@@ -13,6 +14,7 @@ import type { EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
 import type { Fornecedor } from "@/lib/dominio/fornecedor";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirFornecedor } from "./actions";
+import { abrirAgenteIaComFoco } from "@/components/ia/BotaoAgenteIa";
 import { formatBRL } from "@/components/charts/format";
 
 function formatarData(iso: string): string {
@@ -31,6 +33,56 @@ export function EstoqueClient({
   movimentacoes: Movimentacao[];
   fornecedores: Fornecedor[];
 }) {
+  const pathname = usePathname();
+  const emModoDemo = pathname?.startsWith("/preview");
+
+  // Estado local só alimenta a demo (/preview, sem banco). Fora dela as listas
+  // vêm das props, que o servidor atualiza quando a server action revalida a rota.
+  const [estoqueDemo, setListaEstoque] = useState<EstoqueLinha[]>(estoque);
+  const [movimentacoesDemo, setListaMovimentacoes] = useState<Movimentacao[]>(movimentacoes);
+  const listaEstoque = emModoDemo ? estoqueDemo : estoque;
+  const listaMovimentacoes = emModoDemo ? movimentacoesDemo : movimentacoes;
+
+  useEffect(() => {
+    if (!emModoDemo) return;
+
+    const carregarDadosDemo = () => {
+      try {
+        const salvoMov = localStorage.getItem("demo_movimentacoes");
+        if (salvoMov) {
+          const parsed = JSON.parse(salvoMov);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setListaMovimentacoes(parsed);
+          }
+        } else {
+          localStorage.setItem("demo_movimentacoes", JSON.stringify(movimentacoes));
+        }
+
+        const salvoEst = localStorage.getItem("demo_estoque");
+        if (salvoEst) {
+          const parsed = JSON.parse(salvoEst);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setListaEstoque(parsed);
+          }
+        } else {
+          localStorage.setItem("demo_estoque", JSON.stringify(estoque));
+        }
+      } catch {}
+    };
+
+    carregarDadosDemo();
+
+    // Sincroniza em tempo real caso uma produção ou agente IA lance dados
+    const escutarStorage = (e: Event) => {
+      const se = e as StorageEvent;
+      if (!se.key || se.key === "demo_movimentacoes" || se.key === "demo_estoque") {
+        carregarDadosDemo();
+      }
+    };
+    window.addEventListener("storage", escutarStorage);
+    return () => window.removeEventListener("storage", escutarStorage);
+  }, [emModoDemo, estoque, movimentacoes]);
+
   const [buscaInsumo, setBuscaInsumo] = useState("");
   const [showNovoEstoque, setShowNovoEstoque] = useState(false);
   const [editandoInsumoId, setEditandoInsumoId] = useState<string | null>(null);
@@ -39,10 +91,10 @@ export function EstoqueClient({
   const [fornecedorEditando, setFornecedorEditando] = useState<Fornecedor | null>(null);
   const { mostrarErro } = useToast();
 
-  const insumosRastreados = new Set(estoque.map((e) => e.insumoId));
+  const insumosRastreados = new Set(listaEstoque.map((e) => e.insumoId));
   const insumosDisponiveis = insumos.filter((i) => !insumosRastreados.has(i.id));
 
-  const estoqueFiltrado = estoque.filter((e) => !buscaInsumo.trim() || e.nome.toLowerCase().includes(buscaInsumo.trim().toLowerCase()));
+  const estoqueFiltrado = listaEstoque.filter((e) => !buscaInsumo.trim() || e.nome.toLowerCase().includes(buscaInsumo.trim().toLowerCase()));
 
   const excluirFornecedorComConfirmacao = async (fornecedor: Fornecedor) => {
     if (!window.confirm(`Excluir "${fornecedor.empresa}"? Isso não pode ser desfeito.`)) return;
@@ -55,13 +107,31 @@ export function EstoqueClient({
       <div>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-[14px] font-semibold">Saldo em armazenamento</h2>
-          <button
-            onClick={() => setShowNovoEstoque(!showNovoEstoque)}
-            className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovoEstoque ? "var(--bg)" : "var(--accent)", color: showNovoEstoque ? "var(--text)" : "#fff", border: `1px solid ${showNovoEstoque ? "var(--border-strong)" : "var(--accent)"}` }}
-          >
-            {showNovoEstoque ? "Fechar" : "+ Rastrear insumo"}
-          </button>
+          <div className="flex items-center gap-2">
+            {emModoDemo && (
+            <button
+              onClick={() => abrirAgenteIaComFoco()}
+              type="button"
+              className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all"
+              style={{
+                background: "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15))",
+                color: "var(--sucesso)",
+                border: "1px solid rgba(16, 185, 129, 0.35)",
+              }}
+              title="Ler foto de nota fiscal ou rótulo de fornecedor com IA"
+            >
+              <Camera size={14} />
+              <span>Ler Nota / Rótulo via IA</span>
+            </button>
+            )}
+            <button
+              onClick={() => setShowNovoEstoque(!showNovoEstoque)}
+              className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+              style={{ background: showNovoEstoque ? "var(--bg)" : "var(--accent)", color: showNovoEstoque ? "var(--text)" : "#fff", border: `1px solid ${showNovoEstoque ? "var(--border-strong)" : "var(--accent)"}` }}
+            >
+              {showNovoEstoque ? "Fechar" : "+ Rastrear insumo"}
+            </button>
+          </div>
         </div>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Só aparece quem tem movimentação lançada. Insumo sem rastreio não vira zero, fica de fora do cálculo.</p>
 
@@ -103,10 +173,10 @@ export function EstoqueClient({
                       <td className="py-2.5 px-5 font-medium">{e.nome}</td>
                       <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === e.categoria)?.label ?? e.categoria}</td>
                       <td className="py-2.5 px-3 text-right font-semibold" style={{ ...nums, color: abaixo ? "var(--danger)" : "var(--text)" }}>
-                        {e.saldoAtual}{e.unidadeMedida}{abaixo && " · repor"}
+                        {e.saldoAtual.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}{e.unidadeMedida}{abaixo && " · repor"}
                       </td>
-                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{e.estoqueMinimo}{e.unidadeMedida}</td>
-                      <td className="py-2.5 px-5 text-right" style={nums}>{formatBRL((e.saldoAtual * e.precoUnitario))}</td>
+                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{e.estoqueMinimo.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}{e.unidadeMedida}</td>
+                      <td className="py-2.5 px-5 text-right" style={nums}>{formatBRL(e.saldoAtual * e.precoUnitario)}</td>
                     </tr>
                     {editandoEsteAqui && (
                       <EditarEstoqueForm linha={e} onCancel={() => setEditandoInsumoId(null)} onSaved={() => setEditandoInsumoId(null)} />
@@ -129,42 +199,140 @@ export function EstoqueClient({
       <div>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-[14px] font-semibold">Entradas e saídas</h2>
-          <button
-            onClick={() => setShowNovaMovimentacao(!showNovaMovimentacao)}
-            className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovaMovimentacao ? "var(--bg)" : "var(--accent)", color: showNovaMovimentacao ? "var(--text)" : "#fff", border: `1px solid ${showNovaMovimentacao ? "var(--border-strong)" : "var(--accent)"}` }}
-          >
-            {showNovaMovimentacao ? "Fechar" : "+ Registrar movimentação"}
-          </button>
+          <div className="flex items-center gap-2">
+            {emModoDemo && (
+            <button
+              onClick={() => abrirAgenteIaComFoco()}
+              type="button"
+              className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all"
+              style={{
+                background: "linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.15))",
+                color: "#F59E0B",
+                border: "1px solid rgba(245, 158, 11, 0.35)",
+              }}
+              title="Lançar movimentação por comando de voz ou WhatsApp"
+            >
+              <Mic size={14} />
+              <span>Lançar por Áudio / WhatsApp</span>
+            </button>
+            )}
+            <button
+              onClick={() => setShowNovaMovimentacao(!showNovaMovimentacao)}
+              className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+              style={{ background: showNovaMovimentacao ? "var(--bg)" : "var(--accent)", color: showNovaMovimentacao ? "var(--text)" : "#fff", border: `1px solid ${showNovaMovimentacao ? "var(--border-strong)" : "var(--accent)"}` }}
+            >
+              {showNovaMovimentacao ? "Fechar" : "+ Registrar movimentação"}
+            </button>
+          </div>
         </div>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Compra entra, venda e perda saem. Ajuste manual serve pra corrigir contagem ou registrar desperdício.</p>
 
         {showNovaMovimentacao && (
           <Card className="mb-3">
-            <NovaMovimentacaoForm estoque={estoque} onCancel={() => setShowNovaMovimentacao(false)} onSaved={() => setShowNovaMovimentacao(false)} />
+            <NovaMovimentacaoForm
+              estoque={listaEstoque}
+              onCancel={() => setShowNovaMovimentacao(false)}
+              onSaved={() => setShowNovaMovimentacao(false)}
+              onSalvarDemo={
+                emModoDemo
+                  ? (dados) => {
+                      const agora = new Date();
+                      const insumoAlvo = insumos.find((i) => i.id === dados.insumoId);
+                      const novaMov: Movimentacao = {
+                        id: `demo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        insumoId: dados.insumoId,
+                        nomeInsumo: insumoAlvo?.nome ?? "Insumo",
+                        unidadeMedida: insumoAlvo?.unidadeMedida ?? "kg",
+                        tipo: dados.tipo,
+                        quantidade: dados.quantidade,
+                        origem: dados.origem,
+                        criadoEm: agora.toISOString(),
+                      };
+                      const atualizadas = [novaMov, ...listaMovimentacoes];
+                      setListaMovimentacoes(atualizadas);
+                      try {
+                        localStorage.setItem("demo_movimentacoes", JSON.stringify(atualizadas));
+                      } catch {}
+
+                      // Atualizar saldo do estoque
+                      const delta = dados.tipo === "entrada" ? dados.quantidade : -dados.quantidade;
+                      const novoEstoque = listaEstoque.map((e) =>
+                        e.insumoId === dados.insumoId
+                          ? { ...e, saldoAtual: Math.max(0, Number((e.saldoAtual + delta).toFixed(3))) }
+                          : e
+                      );
+                      setListaEstoque(novoEstoque);
+                      try {
+                        localStorage.setItem("demo_estoque", JSON.stringify(novoEstoque));
+                      } catch {}
+                      setShowNovaMovimentacao(false);
+                    }
+                  : undefined
+              }
+            />
           </Card>
         )}
 
         <Card>
           <div className="px-5 py-1">
-            {movimentacoes.map((m, idx) => {
-              const label = { entrada: "Entrada", saida_venda: "Saída (venda)", ajuste: "Ajuste" }[m.tipo];
-              const cor = m.tipo === "entrada" ? "var(--text)" : m.tipo === "ajuste" ? "var(--danger)" : "var(--sub)";
+            {listaMovimentacoes.map((m, idx) => {
+              const isSaidaProducao = m.tipo === "saida_producao" || (!!m.origem && m.origem.toLowerCase().includes("produção"));
+              const label = isSaidaProducao
+                ? "Saída (produção)"
+                : { entrada: "Entrada", saida_venda: "Saída (venda)", ajuste: "Ajuste", saida_producao: "Saída (produção)" }[m.tipo] || "Saída";
+              const cor = m.tipo === "entrada"
+                ? "var(--sucesso)"
+                : isSaidaProducao
+                ? "#F59E0B"
+                : m.tipo === "ajuste"
+                ? "var(--danger)"
+                : "var(--sub)";
               return (
                 <div key={m.id} className="flex items-center justify-between text-[12.5px] py-2.5" style={{ borderTop: idx ? `1px solid ${"var(--border)"}` : "none" }}>
                   <div>
-                    <span className="font-medium">{m.nomeInsumo}</span>
-                    {m.origem && <span style={{ color: "var(--faint)" }}> · {m.origem}</span>}
+                    <span className="font-bold text-[var(--tinta)]">{m.nomeInsumo}</span>
+                    {m.origem && <span className="text-[var(--tinta-sub)] text-[12px]"> · {m.origem}</span>}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span style={{ color: "var(--faint)" }}>{formatarData(m.criadoEm)}</span>
-                    <span style={{ ...nums, color: cor }}>{m.tipo === "entrada" ? "+" : "-"}{m.quantidade}{m.unidadeMedida}</span>
-                    <Badge acao={m.tipo === "ajuste"}>{label}</Badge>
+                    <span style={{ color: "var(--tinta-faint)" }}>{formatarData(m.criadoEm)}</span>
+                    <span style={{ ...nums, color: cor, fontWeight: 800 }}>
+                      {m.tipo === "entrada" ? "+" : "-"}{Math.abs(m.quantidade)}{m.unidadeMedida}
+                    </span>
+                    <span
+                      className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: isSaidaProducao
+                          ? "rgba(245, 158, 11, 0.15)"
+                          : m.tipo === "ajuste"
+                          ? "rgba(220, 38, 38, 0.12)"
+                          : m.tipo === "entrada"
+                          ? "rgba(16, 185, 129, 0.12)"
+                          : "rgba(100, 116, 139, 0.12)",
+                        color: isSaidaProducao
+                          ? "#F59E0B"
+                          : m.tipo === "ajuste"
+                          ? "var(--danger)"
+                          : m.tipo === "entrada"
+                          ? "var(--sucesso)"
+                          : "var(--tinta-sub)",
+                        border: `1px solid ${
+                          isSaidaProducao
+                            ? "rgba(245, 158, 11, 0.35)"
+                            : m.tipo === "ajuste"
+                            ? "rgba(220, 38, 38, 0.3)"
+                            : m.tipo === "entrada"
+                            ? "rgba(16, 185, 129, 0.3)"
+                            : "var(--linha)"
+                        }`,
+                      }}
+                    >
+                      {label}
+                    </span>
                   </div>
                 </div>
               );
             })}
-            {movimentacoes.length === 0 && (
+            {listaMovimentacoes.length === 0 && (
               <div className="py-6 text-center text-[12.5px]" style={{ color: "var(--faint)" }}>
                 Nenhuma movimentação registrada ainda.
               </div>

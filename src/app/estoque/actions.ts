@@ -42,7 +42,12 @@ export async function acaoPararDeRastrear(insumoId: string): Promise<Resultado> 
   }
 }
 
-export async function acaoRegistrarMovimentacao(insumoId: string, tipo: "entrada" | "ajuste", quantidade: number, origem: string): Promise<Resultado> {
+export async function acaoRegistrarMovimentacao(
+  insumoId: string,
+  tipo: "entrada" | "ajuste" | "saida_producao",
+  quantidade: number,
+  origem: string
+): Promise<Resultado> {
   try {
     await registrarMovimentacao(insumoId, tipo, quantidade, origem);
     revalidatePath("/estoque");

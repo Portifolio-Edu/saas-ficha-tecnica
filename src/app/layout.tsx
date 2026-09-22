@@ -1,37 +1,24 @@
-import type { Metadata } from "next";
-import { Public_Sans, IBM_Plex_Mono, Fraunces, Big_Shoulders_Stencil } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-// Corpo: Public Sans -- legível em tabela densa, sem ser a Geist/Inter padrão
-// de app gerado. Números: IBM Plex Mono, tabular. Título de página: Fraunces
-// itálico, só no h1 do shell.
-const fonteCorpo = Public_Sans({
-  variable: "--fonte-corpo",
-  weight: ["400", "500", "600", "700"],
+// Self-hosted pelo next/font: sem requisição ao Google no carregamento e sem
+// troca de fonte visível. Corpo e números usam a mesma face (tnum no CSS).
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--fonte-jakarta",
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
+  display: "swap",
 });
 
-const fonteNumero = IBM_Plex_Mono({
-  variable: "--fonte-numero",
-  weight: ["400", "500", "600"],
-  subsets: ["latin"],
-});
-
-const fonteTitulo = Fraunces({
-  variable: "--fonte-titulo",
-  weight: ["500", "600"],
-  style: ["normal", "italic"],
-  subsets: ["latin"],
-});
-
-// Face de identidade -- só pra wordmark, estado vazio e ficha de produção
-// (nunca pro corpo do app). Estêncil industrial: registro de placa de
-// câmara fria / caixa de estoque seco, não de cardápio bonito.
-const bigShouldersStencil = Big_Shoulders_Stencil({
-  variable: "--font-display",
-  weight: ["800"],
-  subsets: ["latin"],
-});
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAFAFA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0D0D0F" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: "Ficha Técnica",
@@ -55,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className={jakarta.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -63,9 +50,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body
-        className={`${fonteCorpo.variable} ${fonteNumero.variable} ${fonteTitulo.variable} ${bigShouldersStencil.variable} antialiased`}
-      >
+      <body className="antialiased">
         <a href="#conteudo" className="pular-para-conteudo">Pular para o conteúdo</a>
         {children}
       </body>

@@ -84,7 +84,7 @@ export default function DirecaoC() {
         }
         [data-direcao="c"] .c-selo-veredito { font-family: ${mono.style.fontFamily}; font-weight: 700; font-size: 26px; letter-spacing: 0.03em; color: var(--selo-cor); text-align: center; line-height: 1.15; }
         [data-direcao="c"] .c-selo-numero { font-family: ${mono.style.fontFamily}; font-weight: 700; font-size: 15px; color: var(--selo-cor); margin-top: 6px; opacity: 0.85; }
-        [data-direcao="c"] .c-selo-grande.c-bate { animation: c-selo-bate 220ms cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+        [data-direcao="c"] .c-selo-grande.c-bate { animation: c-selo-bate 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
         @keyframes c-selo-bate { 0% { transform: rotate(-7deg) scale(1.1); } 60% { transform: rotate(-7deg) scale(0.97); } 100% { transform: rotate(-7deg) scale(1); } }
         [data-direcao="c"] .c-nota { font-style: italic; font-size: 11.5px; color: var(--sub); transform: rotate(-2deg); margin-top: 10px; text-align: center; max-width: 200px; }
 
@@ -96,7 +96,7 @@ export default function DirecaoC() {
 
         [data-direcao="c"] .c-carimbo { position: relative; display: inline-block; }
         [data-direcao="c"] .c-carimbo::after { content: attr(data-carbono); position: absolute; inset: 0; color: var(--accent); opacity: 0; }
-        [data-direcao="c"] .c-carimbo { animation: c-bate 180ms cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+        [data-direcao="c"] .c-carimbo { animation: c-bate 180ms cubic-bezier(0.16, 1, 0.3, 1) both; }
         [data-direcao="c"] .c-carimbo::after { animation: c-eco 260ms ease-out both; }
         @keyframes c-bate { 0% { transform: scale(1.14) rotate(-1.2deg); } 60% { transform: scale(0.98) rotate(0.3deg); } 100% { transform: scale(1) rotate(0); } }
         @keyframes c-eco { 0% { opacity: 0.5; transform: translate(1.5px, 1.5px); } 100% { opacity: 0; transform: translate(3px, 3px); } }

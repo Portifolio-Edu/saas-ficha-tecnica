@@ -209,7 +209,7 @@ export default function DirecaoA() {
           position: absolute; top: 50%; width: 12px; height: 12px; margin-top: -6px; margin-left: -6px; border-radius: 50%;
           background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--tinta) 82%, white 30%), var(--tinta) 70%);
           box-shadow: 0 1px 3px var(--sombra-funda), 0 0 0 3px var(--painel), inset 0 1px 0 var(--realce);
-          transition: left 850ms cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: left 850ms cubic-bezier(0.16, 1, 0.3, 1);
         }
         [data-direcao="a"] .a-regua-ponteiro.a-sinal { background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--sinal) 75%, white 35%), var(--sinal) 70%); }
 

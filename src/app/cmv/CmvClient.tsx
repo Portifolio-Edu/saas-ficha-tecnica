@@ -225,7 +225,7 @@ export function CmvClient({
           />
           {erroImportacao && <div className="text-[11.5px] mt-2" style={{ color: "var(--danger)" }}>{erroImportacao}</div>}
           <div className="flex items-center gap-2 mt-3">
-            <button onClick={importarVendas} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff" }}>
+            <button onClick={importarVendas} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)" }}>
               Importar vendas
             </button>
             {vendasImportadas && (
@@ -265,11 +265,10 @@ export function CmvClient({
         </div>
 
         <div className="grid grid-cols-4 gap-3 mb-3">
-          <Kpi flat label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
-          <Kpi flat label="CMV teórico (fichas)" value={`${cmvTeoricoPct.toFixed(1)}%`} sub={formatBRLEixo(custoTeoricoPeriodo)} />
-          <Kpi flat label="CMV real (estoque)" value={`${cmvRealPct.toFixed(1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={formatBRLEixo(consumoReal)} />
+          <Kpi label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
+          <Kpi label="CMV teórico (fichas)" value={`${cmvTeoricoPct.toFixed(1)}%`} sub={formatBRLEixo(custoTeoricoPeriodo)} />
+          <Kpi label="CMV real (estoque)" value={`${cmvRealPct.toFixed(1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={formatBRLEixo(consumoReal)} />
           <Kpi
-            flat
             label="Gap não explicado"
             value={`${gapPct > 0 ? "+" : ""}${gapPct.toFixed(1)} p.p.`}
             alerta={gapPct > GAP_ALERTA_PP}
@@ -315,7 +314,7 @@ export function CmvClient({
             onClick={salvarFechamento}
             disabled={salvando || !resultado || periodoFim < periodoInicio}
             className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
-            style={{ background: "var(--accent)", color: "#fff", opacity: salvando || !resultado || periodoFim < periodoInicio ? 0.6 : 1 }}
+            style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando || !resultado || periodoFim < periodoInicio ? 0.6 : 1 }}
           >
             {salvando ? "Salvando..." : "Salvar fechamento do período"}
           </button>

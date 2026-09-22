@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
+import { supabaseConfigurado } from "@/lib/supabase/config";
 
 export interface ClienteAtual {
   id: string;
@@ -23,6 +24,10 @@ interface MetadadosCadastro {
  * cadastro nunca chegaram a ser salvos.
  */
 export async function getClienteAtual(): Promise<ClienteAtual | null> {
+  if (!supabaseConfigurado()) {
+    return null;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

@@ -107,7 +107,12 @@ export async function listarMovimentacoes(limite = 30): Promise<Movimentacao[]> 
  * histórico (saldo já correto), o que é preferível a saldo e histórico
  * dessincronizados.
  */
-export async function registrarMovimentacao(insumoId: string, tipo: "entrada" | "ajuste", quantidade: number, origem: string): Promise<void> {
+export async function registrarMovimentacao(
+  insumoId: string,
+  tipo: "entrada" | "ajuste" | "saida_producao",
+  quantidade: number,
+  origem: string
+): Promise<void> {
   const supabase = await createClient();
 
   const delta = tipo === "entrada" ? quantidade : -quantidade;
@@ -115,6 +120,7 @@ export async function registrarMovimentacao(insumoId: string, tipo: "entrada" | 
   const { error: erroRpc } = await supabase.rpc("ajustar_saldo_estoque", { p_insumo_id: insumoId, p_delta: delta });
   if (erroRpc) throw new Error(mensagemErro(erroRpc));
 
+  // saida_producao depende da migration 20260922190000_movimentacao_saida_producao.
   const { error: erroInsert } = await supabase.from("movimentacoes_estoque").insert({ insumo_id: insumoId, tipo, quantidade, origem });
   if (erroInsert) throw new Error(mensagemErro(erroInsert));
 }

@@ -8,7 +8,7 @@ export interface EstoqueLinha {
   estoqueMinimo: number;
 }
 
-export type TipoMovimentacao = "entrada" | "saida_venda" | "ajuste";
+export type TipoMovimentacao = "entrada" | "saida_venda" | "ajuste" | "saida_producao";
 
 export interface Movimentacao {
   id: string;

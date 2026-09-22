@@ -3,65 +3,130 @@
 
 :root {
   color-scheme: light;
-  /* Bancada: pedra/kraft de bancada, não cream editorial. */
-  --bg: #EDE7DA;
-  --panel: #F8F4EA;
-  --border: #DED4BE;
-  --border-strong: #CBBEA0;
-  /* Giz/Fuligem: tinta quase-preta, não cinza-frio de sistema. */
-  --text: #221A12;
-  --sub: #6F6252;
-  /* #A89A83 media 2.5:1 no painel -- falha AA de texto (4.5:1). Escurecido
-     só o suficiente pra passar (auditoria avoid-ai-design, WCAG). */
-  --faint: #6E6556;
-  --accent: #2F5233;
-  --accent-soft: #E4E9DF;
-  --danger: #9A2E1F;
-  --danger-soft: #F5E4DA;
-  --status-estoque: #1F5C8B;
-  --status-estoque-soft: #DFE9EF;
-  --status-producao: #8A5A00;
-  --status-producao-soft: #F2E5C9;
-  /* Torrado: marrom de crosta torrada -- única cor de marca/identidade,
-     nunca reaproveitada em botão de ação (isso continua --accent). */
-  --marca: #5C3620;
-  --marca-soft: #E7DACB;
-  /* Brasa: gradiente da brasa acesa -- laranja de fogo vivo esfriando pro
-     marrom Torrado. Reservado pra wordmark e pontos de identidade, nunca
-     em botão ou dado; é onde a marca gasta a ousadia de propósito. */
-  --brasa: linear-gradient(120deg, #E85A1C 0%, #C4451C 38%, var(--marca) 100%);
-  --brasa-glow: rgba(232, 90, 28, 0.18);
-  --shadow: 0 1px 2px rgba(34, 26, 18, 0.05), 0 8px 24px rgba(34, 26, 18, 0.08);
-  --shadow-lift: 0 2px 4px rgba(34, 26, 18, 0.06), 0 16px 40px rgba(34, 26, 18, 0.12);
+  /* --fonte-jakarta vem do next/font no layout. Número usa a mesma face com
+     algarismos tabulares (tnum), em vez de uma segunda família só pra isso. */
+  --font-sans: var(--fonte-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--fonte-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-plex-sans: var(--font-sans);
+  --font-plex-mono: var(--font-mono);
+  
+  /* Apple Ceramic Light Palette - Alta Legibilidade Operacional */
+  --fundo: #F8FAFC;
+  --panel: #FFFFFF;
+  --panel-elevated: #F1F5F9;
+  --panel-hover: #E2E8F0;
+  --tinta: #0F172A;
+  --tinta-sub: #334155;
+  --tinta-faint: #64748B;
+  
+  /* Brand Signals */
+  --sinal: #E11D48;
+  --sinal-glow: rgba(225, 29, 72, 0.25);
+  --sucesso: #059669;
+  --sucesso-glow: rgba(5, 150, 105, 0.25);
+  --aviso: #D97706;
+  
+  /* Borders & Dividers */
+  --linha: rgba(15, 23, 42, 0.12);
+  --linha-forte: rgba(15, 23, 42, 0.22);
+  --linha-rim: rgba(255, 255, 255, 0.9);
+  
+  --bg: var(--fundo);
+  --border: var(--linha);
+  --border-strong: var(--linha-forte);
+  --text: var(--tinta);
+  --sub: var(--tinta-sub);
+  --faint: var(--tinta-faint);
+  --accent: #0F172A;
+  --accent-hover: #1E293B;
+  --accent-soft: rgba(15, 23, 42, 0.05);
+  --accent-contrast: #FFFFFF;
+  --text-contrast: #FFFFFF;
+  --danger: var(--sinal);
+  --danger-soft: rgba(225, 29, 72, 0.10);
+
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-elevated: 0 12px 36px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+  --shadow-glow: 0 0 24px -2px rgba(225, 29, 72, 0.35);
+  --card-rim: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  /* Carvão/Fuligem: preto quente de chapa/ferro fundido, não preto de tela. */
-  --bg: #17130F;
-  --panel: #221B15;
-  --border: #332920;
-  --border-strong: #453629;
-  --text: #F3ECDF;
-  --sub: #B3A691;
-  /* #7A6E5C media 3.4:1 -- falha AA. Clareado o mínimo pra passar 4.5:1. */
-  --faint: #8F8576;
-  --accent: #6FA976;
-  --accent-soft: #24301F;
-  /* #E2685A media 4.39:1 sobre --danger-soft (banner/toast de erro) --
-     abaixo do piso AA de 4.5:1. Clareado o mínimo pra passar. */
-  --danger: #E36E60;
-  --danger-soft: #3A241C;
-  --status-estoque: #5B9BD5;
-  --status-estoque-soft: #1D2A22;
-  --status-producao: #D9A93A;
-  --status-producao-soft: #34281A;
-  --marca: #B8825A;
-  --marca-soft: #3A2D20;
-  --brasa: linear-gradient(120deg, #F2874A 0%, #E0642E 38%, var(--marca) 100%);
-  --brasa-glow: rgba(242, 135, 74, 0.22);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.5);
-  --shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.55);
+  
+  /* Apple Pro / Obsidian Dark Palette - Alta Legibilidade Operacional */
+  --fundo: #090D16;
+  --panel: #111726;
+  --panel-elevated: #192236;
+  --panel-hover: #222E47;
+  --tinta: #F8FAFC;
+  --tinta-sub: #CBD5E1;
+  --tinta-faint: #94A3B8;
+
+  /* Brand Signals */
+  --sinal: #FF3B30;
+  --sinal-glow: rgba(255, 59, 48, 0.35);
+  --sucesso: #10B981;
+  --sucesso-glow: rgba(16, 185, 129, 0.35);
+  --aviso: #FBBF24;
+
+  /* Borders & Dividers */
+  --linha: rgba(255, 255, 255, 0.10);
+  --linha-forte: rgba(255, 255, 255, 0.18);
+  --linha-rim: rgba(255, 255, 255, 0.15);
+
+  --bg: var(--fundo);
+  --border: var(--linha);
+  --border-strong: var(--linha-forte);
+  --text: var(--tinta);
+  --sub: var(--tinta-sub);
+  --faint: var(--tinta-faint);
+  --accent: #F8FAFC;
+  --accent-hover: #FFFFFF;
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --accent-contrast: #090D16;
+  --text-contrast: #090D16;
+  --danger: var(--sinal);
+  --danger-soft: rgba(255, 59, 48, 0.15);
+
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 8px 30px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --shadow-elevated: 0 16px 44px -6px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --shadow-glow: 0 0 28px -2px rgba(255, 59, 48, 0.4);
+  --card-rim: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* Correção global de contraste para botões escuros */
+[data-theme="dark"] button[style*="background: var(--accent)"],
+[data-theme="dark"] button[style*="background:var(--accent)"],
+[data-theme="dark"] button[style*="background-color: var(--accent)"],
+[data-theme="dark"] button[style*="background: var(--text)"],
+[data-theme="dark"] button[style*="background:var(--text)"],
+[data-theme="dark"] button[style*="background-color: var(--text)"],
+[data-theme="dark"] a[style*="background: var(--accent)"],
+[data-theme="dark"] a[style*="background:var(--accent)"],
+[data-theme="dark"] a[style*="background: var(--text)"],
+[data-theme="dark"] a[style*="background:var(--text)"] {
+  color: #090D16 !important;
+}
+
+[data-theme="dark"] button[style*="background: var(--accent)"] svg,
+[data-theme="dark"] button[style*="background:var(--accent)"] svg,
+[data-theme="dark"] a[style*="background: var(--accent)"] svg,
+[data-theme="dark"] a[style*="background:var(--accent)"] svg {
+  color: #090D16 !important;
+  stroke: #090D16 !important;
 }
 
 @layer base {
@@ -72,40 +137,97 @@
     scroll-behavior: smooth;
   }
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--fonte-corpo), ui-sans-serif, system-ui, sans-serif;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum";
+    /* O espaço da Jakarta é estreito (0,17em) e boa parte da UI usa tracking
+       negativo: sem isso "Em estoque" lê como "Emestoque". */
+    word-spacing: 0.06em;
   }
   h1, h2, h3 {
     text-wrap: pretty;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
+    font-weight: 600;
   }
   button, a, input, select, textarea {
-    transition: background-color 160ms cubic-bezier(0.4, 0, 0.2, 1), border-color 160ms cubic-bezier(0.4, 0, 0.2, 1), color 160ms cubic-bezier(0.4, 0, 0.2, 1), opacity 160ms cubic-bezier(0.4, 0, 0.2, 1), filter 160ms cubic-bezier(0.4, 0, 0.2, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                transform 120ms ease;
   }
   button:not(:disabled) {
     cursor: pointer;
   }
-  button:not(:disabled):hover, a:hover {
-    filter: brightness(0.96);
-  }
   button:not(:disabled):active {
-    transform: scale(0.97);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      transition-duration: 0.01ms !important;
-      animation-duration: 0.01ms !important;
-    }
+    transform: scale(0.98);
   }
   :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent);
   }
   ::selection {
     background: var(--accent-soft);
     color: var(--text);
   }
+
+  /* Scrollbar customizada moderna */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--sub);
+  }
+
+  /* Tabelas com micro-interações */
+  table tbody tr {
+    transition: background-color 150ms ease;
+  }
+  table tbody tr:hover {
+    background-color: var(--accent-soft);
+  }
+}
+
+/* Animações utilitárias */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--border) 25%, var(--panel) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite ease-in-out;
 }
 
 .pular-para-conteudo {
@@ -125,38 +247,22 @@
   left: 0;
 }
 
-/* Wordmark, título de estado vazio, cabeçalho da ficha de produção -- só
-   esses três lugares, nunca corpo de texto ou dado. */
-.fonte-marca {
-  font-family: var(--font-display), "Arial Narrow", sans-serif;
+/* Tipografia e Instrumentos de Precisão (Direção Rams/Braun/Adidas) */
+.font-mono-num {
+  font-family: var(--font-plex-mono) !important;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Texto em gradiente de brasa -- só a wordmark e o número-herói de KPI usam
-   isso; em qualquer outro lugar cor carrega significado, não decoração. */
-.texto-brasa {
-  background: var(--brasa);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.ease-needle {
+  transition: all 500ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Grão sutil de papel kraft -- reservado pra sidebar e pro cartão de ficha
-   de produção (os dois lugares "de identidade"), nunca em tabela densa. */
-.textura-craft {
-  position: relative;
-  isolation: isolate;
+.ease-pointer {
+  transition: left 520ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease, color 180ms ease;
 }
-.textura-craft::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-.textura-craft > * {
-  position: relative;
-  z-index: 1;
+
+.photo-instrument {
+  filter: saturate(0.85) contrast(1.02);
+  border: 1px solid var(--linha);
+  box-shadow: none;
 }

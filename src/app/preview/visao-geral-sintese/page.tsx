@@ -192,7 +192,7 @@ export default function VisaoGeralSintese() {
         .g-kanban-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-top: 3px solid var(--kb-cor); }
         .g-kanban-rotulo { font-size: 12.5px; font-weight: 600; color: var(--g-texto); }
         .g-kanban-contagem { font-family: ${fraunces.style.fontFamily}; font-weight: 600; font-size: 15px; color: var(--kb-cor); }
-        .g-kanban-card { margin: 0 10px 10px; padding: 10px 12px; border-radius: 10px; background: var(--g-painel); border-left: 3px solid var(--kb-cor); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        .g-kanban-card { margin: 0 10px 10px; padding: 10px 12px; border-radius: 10px; background: var(--g-painel); border: 1px solid color-mix(in srgb, var(--kb-cor) 30%, var(--g-painel-borda)); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
         .g-kanban-card-nome { font-size: 12.5px; font-weight: 600; color: var(--g-texto); }
         .g-kanban-card-sub { font-size: 10.5px; color: var(--g-faint); margin-top: 2px; font-family: ${hanken.style.fontFamily}; }
         .g-kanban-vazio { margin: 0 10px 10px; padding: 10px 12px; font-size: 11.5px; color: var(--g-faint); }

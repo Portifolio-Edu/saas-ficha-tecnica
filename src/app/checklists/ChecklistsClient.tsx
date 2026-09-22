@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { inputStyle, nums } from "@/components/ficha/tema";
@@ -11,6 +12,14 @@ import type { Turno } from "@/lib/dominio/producao";
 import { acaoCriarChecklist, acaoExcluirChecklist, acaoCriarItem, acaoRemoverItem, acaoAlternarItem } from "./actions";
 
 export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist[]; turnos: Turno[] }) {
+  const pathname = usePathname();
+  const emModoDemo = pathname?.startsWith("/preview");
+  // Estado local só existe na demo (/preview), que não tem banco. Fora dela a
+  // lista vem das props: a server action revalida a rota e o servidor manda a
+  // versão gravada -- um useState inicializado das props ficaria congelado.
+  const [listaDemo, setListaChecklists] = useState<Checklist[]>(checklists);
+  const listaChecklists = emModoDemo ? listaDemo : checklists;
+
   const [turnoId, setTurnoId] = useState<string | null>(turnos[0]?.id ?? null);
   const [chefeTurno, setChefeTurno] = useState("");
   const [showNovoChecklist, setShowNovoChecklist] = useState(false);
@@ -25,6 +34,18 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
   const criarChecklist = async () => {
     if (!novoNome.trim()) return;
     setErroNovo(null);
+    if (emModoDemo) {
+      const novo: Checklist = {
+        id: `demo-${Date.now()}`,
+        nome: novoNome.trim(),
+        momento: novoMomento,
+        itens: [],
+      };
+      setListaChecklists((prev) => [novo, ...prev]);
+      setNovoNome("");
+      setShowNovoChecklist(false);
+      return;
+    }
     const resultado = await acaoCriarChecklist({ nome: novoNome.trim(), momento: novoMomento });
     if (!resultado.ok) {
       setErroNovo(resultado.erro);
@@ -36,12 +57,39 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
 
   const excluirChecklistComConfirmacao = async (ch: Checklist) => {
     if (!window.confirm(`Excluir o checklist "${ch.nome}"? Isso também apaga os itens e o histórico de execuções.`)) return;
+    if (emModoDemo) {
+      setListaChecklists((prev) => prev.filter((c) => c.id !== ch.id));
+      return;
+    }
     const resultado = await acaoExcluirChecklist(ch.id);
     if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
   const addItem = async (checklistId: string, ordem: number) => {
     if (!novoItemTexto.trim()) return;
+    if (emModoDemo) {
+      setListaChecklists((prev) =>
+        prev.map((ch) =>
+          ch.id === checklistId
+            ? {
+                ...ch,
+                itens: [
+                  ...ch.itens,
+                  {
+                    id: `demo-item-${Date.now()}`,
+                    checklistId,
+                    texto: novoItemTexto.trim(),
+                    ordem,
+                    concluidoHoje: false,
+                  },
+                ],
+              }
+            : ch
+        )
+      );
+      setNovoItemTexto("");
+      return;
+    }
     const resultado = await acaoCriarItem(checklistId, novoItemTexto.trim(), ordem);
     if (!resultado.ok) {
       setErroAcao(resultado.erro);
@@ -50,7 +98,33 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
     setNovoItemTexto("");
   };
 
+  const removerItem = async (itemId: string) => {
+    if (emModoDemo) {
+      setListaChecklists((prev) => prev.map((ch) => ({ ...ch, itens: ch.itens.filter((it) => it.id !== itemId) })));
+      return;
+    }
+    const resultado = await acaoRemoverItem(itemId);
+    if (!resultado.ok) setErroAcao(resultado.erro);
+  };
+
   const toggleItem = async (itemId: string, concluidoHoje: boolean) => {
+    if (emModoDemo) {
+      setListaChecklists((prev) =>
+        prev.map((ch) => ({
+          ...ch,
+          itens: ch.itens.map((it) =>
+            it.id === itemId
+              ? {
+                  ...it,
+                  concluidoHoje: !concluidoHoje,
+                }
+              : it
+          ),
+        }))
+      );
+      setErroAcao(null);
+      return;
+    }
     const resultado = await acaoAlternarItem(itemId, concluidoHoje, turnoId, chefeTurno.trim() || null, chefeTurno.trim() || null);
     if (!resultado.ok) setErroAcao(resultado.erro);
   };
@@ -106,7 +180,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
                 {erroNovo}
               </div>
             )}
-            <button onClick={criarChecklist} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff" }}>
+            <button onClick={criarChecklist} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)" }}>
               Criar checklist
             </button>
           </div>
@@ -114,7 +188,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        {checklists.map((ch) => {
+        {listaChecklists.map((ch) => {
           const marcados = ch.itens.filter((i) => i.concluidoHoje).length;
           const total = ch.itens.length;
           const completo = total > 0 && marcados === total;
@@ -144,7 +218,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
                     {editando ? (
                       <>
                         <span className="text-[12px] flex-1" style={{ color: "var(--sub)" }}>{item.texto}</span>
-                        <button onClick={() => acaoRemoverItem(item.id).then((r) => !r.ok && setErroAcao(r.erro))} style={{ color: "var(--danger)" }}>
+                        <button onClick={() => removerItem(item.id)} style={{ color: "var(--danger)" }}>
                           <X size={13} />
                         </button>
                       </>
@@ -173,7 +247,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
                     className="text-[12px] px-2.5 py-1.5 rounded-md flex-1"
                     style={inputStyle}
                   />
-                  <button onClick={() => addItem(ch.id, ch.itens.length)} className="text-[12px] font-medium px-3 py-1.5 rounded-md" style={{ background: "var(--accent)", color: "#fff" }}>
+                  <button onClick={() => addItem(ch.id, ch.itens.length)} className="text-[12px] font-medium px-3 py-1.5 rounded-md" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)" }}>
                     +
                   </button>
                   <button onClick={() => excluirChecklistComConfirmacao(ch)} className="text-[12px] font-medium px-3 py-1.5 rounded-md" style={{ color: "var(--danger)", border: `1px solid ${"var(--border-strong)"}` }}>
@@ -184,7 +258,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
             </Card>
           );
         })}
-        {checklists.length === 0 && !showNovoChecklist && (
+        {listaChecklists.length === 0 && !showNovoChecklist && (
           <div className="col-span-2 text-[12.5px] py-6 text-center" style={{ color: "var(--faint)" }}>
             Nenhum checklist cadastrado ainda.
           </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { Download, Sparkles } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { inputStyle, nums } from "@/components/ficha/tema";
@@ -9,6 +10,7 @@ import { useToast } from "@/components/ficha/Toast";
 import { InsumoNutricaoForm } from "@/components/nutricional/InsumoNutricaoForm";
 import { RotulagemForm } from "@/components/nutricional/RotulagemForm";
 import { LABEL_CAMPO } from "@/components/nutricional/labels";
+import { abrirAgenteIaComFoco } from "@/components/ia/BotaoAgenteIa";
 import type { LinhaRotuloPdf } from "@/lib/pdf/RotuloNutricionalPdf";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
@@ -64,6 +66,39 @@ export function NutricionalClient({
   overrides: NutricionalOverride[];
   rotulagens: Rotulagem[];
 }) {
+  // Valores salvos em localStorage só valem na demo (/preview, sem banco). Fora
+  // dela a lista vem das props -- senão um navegador que abriu a demo antes
+  // misturaria valores de exemplo no rótulo real.
+  const emModoDemo = usePathname()?.startsWith("/preview") ?? false;
+  const [valoresDemo, setListaValoresInsumos] = useState<ValoresNutricionaisInsumo[]>(valoresInsumos);
+  const listaValoresInsumos = emModoDemo ? valoresDemo : valoresInsumos;
+
+  useEffect(() => {
+    if (!emModoDemo) return;
+    const carregarDemo = () => {
+      try {
+        const salvo = localStorage.getItem("demo_valores_nutricionais");
+        if (salvo) {
+          const parsed = JSON.parse(salvo);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setListaValoresInsumos((prev) => {
+              const mapa = new Map(prev.map((v) => [v.insumoId, v]));
+              for (const p of parsed) {
+                mapa.set(p.insumoId, p);
+              }
+              return Array.from(mapa.values());
+            });
+          }
+        }
+      } catch {}
+    };
+
+    carregarDemo();
+    const escutar = () => carregarDemo();
+    window.addEventListener("storage", escutar);
+    return () => window.removeEventListener("storage", escutar);
+  }, [emModoDemo]);
+
   const [pratoSelecionadoId, setPratoSelecionadoId] = useState(pratos[0]?.id ?? "");
   const [editandoOverride, setEditandoOverride] = useState(false);
   const [rascunhoOverride, setRascunhoOverride] = useState<Record<CampoNutricional, string>>({} as Record<CampoNutricional, string>);
@@ -74,7 +109,7 @@ export function NutricionalClient({
 
   const insumoPorId = useMemo(() => new Map(insumos.map((i) => [i.id, i])), [insumos]);
   const receitaPorId = useMemo(() => new Map([...pratos, ...preparos].map((r) => [r.id, r])), [pratos, preparos]);
-  const nutriPorInsumoId = useMemo(() => new Map(valoresInsumos.map((v) => [v.insumoId, v])), [valoresInsumos]);
+  const nutriPorInsumoId = useMemo(() => new Map(listaValoresInsumos.map((v) => [v.insumoId, v])), [listaValoresInsumos]);
   const overridePorReceitaId = useMemo(() => new Map(overrides.map((o) => [o.receitaId, o])), [overrides]);
   const rotulagemPorReceitaId = useMemo(() => new Map(rotulagens.map((r) => [r.receitaId, r])), [rotulagens]);
 
@@ -164,7 +199,7 @@ export function NutricionalClient({
               setRotulagemAberta(false);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: pratoSelecionadoId === p.id ? "var(--text)" : "var(--panel)", color: pratoSelecionadoId === p.id ? "#fff" : "var(--text)", border: `1px solid ${pratoSelecionadoId === p.id ? "var(--text)" : "var(--border-strong)"}` }}
+            style={{ background: pratoSelecionadoId === p.id ? "var(--text)" : "var(--panel)", color: pratoSelecionadoId === p.id ? "var(--accent-contrast, #fff)" : "var(--text)", border: `1px solid ${pratoSelecionadoId === p.id ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {p.nomePrato}
           </button>
@@ -189,20 +224,84 @@ export function NutricionalClient({
       )}
 
       {insumosSemDados.length > 0 && (
-        <div className="mb-4">
-          <div className="text-[12px] mb-2" style={{ color: "var(--sub)" }}>
-            {insumosSemDados.length} insumo{insumosSemDados.length > 1 ? "s" : ""} usado{insumosSemDados.length > 1 ? "s" : ""} nesta ficha ainda sem dado nutricional cadastrado:
+        <div className="mb-5">
+          <div className="text-[12.5px] font-bold mb-2.5 flex items-center gap-2" style={{ color: "var(--danger)" }}>
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+            <span>
+              {insumosSemDados.length} insumo{insumosSemDados.length > 1 ? "s" : ""} nesta receita ainda sem tabela nutricional cadastrada:
+            </span>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {insumosSemDados.map((insumo) =>
               insumoEditandoId === insumo.id ? (
-                <InsumoNutricaoForm key={insumo.id} insumo={insumo} dados={nutriPorInsumoId.get(insumo.id)} onCancel={() => setInsumoEditandoId(null)} onSaved={() => setInsumoEditandoId(null)} />
+                <InsumoNutricaoForm
+                  key={insumo.id}
+                  insumo={insumo}
+                  dados={nutriPorInsumoId.get(insumo.id)}
+                  onCancel={() => setInsumoEditandoId(null)}
+                  onSaved={() => {
+                    setInsumoEditandoId(null);
+                    if (!emModoDemo) return;
+                    // Demo: relê o que o formulário gravou no localStorage
+                    try {
+                      const salvo = localStorage.getItem("demo_valores_nutricionais");
+                      if (salvo) {
+                        const parsed = JSON.parse(salvo);
+                        if (Array.isArray(parsed)) {
+                          setListaValoresInsumos((prev) => {
+                            const mapa = new Map(prev.map((v) => [v.insumoId, v]));
+                            for (const p of parsed) mapa.set(p.insumoId, p);
+                            return Array.from(mapa.values());
+                          });
+                        }
+                      }
+                    } catch {}
+                  }}
+                />
               ) : (
-                <div key={insumo.id} className="flex items-center justify-between px-3.5 py-2 rounded-lg text-[12.5px]" style={{ background: "var(--danger-soft)" }}>
-                  <span style={{ color: "var(--danger)" }}>{insumo.nome}</span>
-                  <button onClick={() => setInsumoEditandoId(insumo.id)} className="font-medium" style={{ color: "var(--danger)" }}>
-                    cadastrar valores
-                  </button>
+                <div
+                  key={insumo.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl border shadow-sm transition-all"
+                  style={{
+                    backgroundColor: "var(--danger-soft)",
+                    borderColor: "rgba(220, 38, 38, 0.25)",
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                    <span className="font-extrabold text-[13.5px] text-[var(--tinta)]">
+                      {insumo.nome}
+                    </span>
+                    <span className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
+                      · Bloqueia cálculo exato do rótulo
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {emModoDemo && (
+                    <button
+                      onClick={() => abrirAgenteIaComFoco(insumo.id, insumo.nome)}
+                      className="px-3.5 py-1.5 rounded-lg text-[12px] font-extrabold flex items-center gap-1.5 text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        background: "linear-gradient(135deg, #7C3AED 0%, #2563EB 100%)",
+                      }}
+                    >
+                      <Sparkles size={14} className="text-amber-300" />
+                      <span>📷 Ler Rótulo com IA</span>
+                    </button>
+                    )}
+
+                    <button
+                      onClick={() => setInsumoEditandoId(insumo.id)}
+                      className="px-3 py-1.5 rounded-lg text-[12px] font-bold border transition-all hover:bg-black/5 dark:hover:bg-white/5"
+                      style={{
+                        borderColor: "rgba(220, 38, 38, 0.4)",
+                        color: "var(--danger)",
+                      }}
+                    >
+                      Digitar Manualmente
+                    </button>
+                  </div>
                 </div>
               ),
             )}
@@ -221,7 +320,7 @@ export function NutricionalClient({
             setEditandoOverride(true);
           }}
           className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-          style={{ background: editandoOverride ? "var(--bg)" : "var(--accent)", color: editandoOverride ? "var(--text)" : "#fff", border: `1px solid ${editandoOverride ? "var(--border-strong)" : "var(--accent)"}` }}
+          style={{ background: editandoOverride ? "var(--bg)" : "var(--accent)", color: editandoOverride ? "var(--text)" : "var(--accent-contrast, #fff)", border: `1px solid ${editandoOverride ? "var(--border-strong)" : "var(--accent)"}` }}
         >
           {editandoOverride ? "Cancelar edição" : "Editar valores"}
         </button>
@@ -259,7 +358,7 @@ export function NutricionalClient({
               setEditandoOverride(false);
             }}
             className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
-            style={{ background: "var(--accent)", color: "#fff" }}
+            style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)" }}
           >
             Salvar valores do laudo
           </button>
@@ -314,7 +413,7 @@ export function NutricionalClient({
         onClick={gerarPdfRotulo}
         disabled={gerandoRotulo}
         className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg mt-3"
-        style={{ background: "var(--accent)", color: "#fff", opacity: gerandoRotulo ? 0.6 : 1 }}
+        style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: gerandoRotulo ? 0.6 : 1 }}
       >
         <Download size={13} /> {gerandoRotulo ? "Gerando..." : "PDF · Rótulo Nutricional"}
       </button>

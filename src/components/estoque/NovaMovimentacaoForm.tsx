@@ -8,9 +8,19 @@ import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
 import type { EstoqueLinha, TipoMovimentacao } from "@/lib/dominio/estoque";
 import { acaoRegistrarMovimentacao } from "@/app/estoque/actions";
 
-export function NovaMovimentacaoForm({ estoque, onCancel, onSaved }: { estoque: EstoqueLinha[]; onCancel: () => void; onSaved: () => void }) {
+export function NovaMovimentacaoForm({
+  estoque,
+  onCancel,
+  onSaved,
+  onSalvarDemo,
+}: {
+  estoque: EstoqueLinha[];
+  onCancel: () => void;
+  onSaved: () => void;
+  onSalvarDemo?: (dados: { insumoId: string; tipo: TipoMovimentacao; quantidade: number; origem: string }) => void;
+}) {
   const [insumoId, setInsumoId] = useState(estoque[0]?.insumoId ?? "");
-  const [tipo, setTipo] = useState<Extract<TipoMovimentacao, "entrada" | "ajuste">>("entrada");
+  const [tipo, setTipo] = useState<Extract<TipoMovimentacao, "entrada" | "ajuste" | "saida_producao">>("entrada");
   const [quantidade, setQuantidade] = useState("");
   const [origem, setOrigem] = useState("");
   const { salvando, erro, executar } = useAcaoFormulario(onSaved);
@@ -28,18 +38,31 @@ export function NovaMovimentacaoForm({ estoque, onCancel, onSaved }: { estoque: 
 
   const salvar = () => {
     if (!insumoId || !quantidade || !origem.trim()) return;
-    executar(() => acaoRegistrarMovimentacao(insumoId, tipo, parseFloat(quantidade), origem.trim()));
+    const qtdNum = parseFloat(quantidade);
+    if (isNaN(qtdNum) || qtdNum <= 0) return;
+
+    if (onSalvarDemo) {
+      onSalvarDemo({ insumoId, tipo, quantidade: qtdNum, origem: origem.trim() });
+      onSaved();
+      return;
+    }
+
+    executar(() => acaoRegistrarMovimentacao(insumoId, tipo, qtdNum, origem.trim()));
   };
 
   return (
     <div className="px-5 py-4">
       <div className="flex gap-2 mb-2">
-        {([["entrada", "Entrada"], ["ajuste", "Ajuste"]] as const).map(([id, label]) => (
+        {([["entrada", "Entrada"], ["ajuste", "Ajuste"], ["saida_producao", "Saída (produção)"]] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTipo(id)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: tipo === id ? "var(--text)" : "var(--panel)", color: tipo === id ? "#fff" : "var(--text)", border: `1px solid ${tipo === id ? "var(--text)" : "var(--border-strong)"}` }}
+            style={{
+              background: tipo === id ? (id === "saida_producao" ? "#D97706" : "var(--text)") : "var(--panel)",
+              color: tipo === id ? "var(--text-contrast, #fff)" : "var(--text)",
+              border: `1px solid ${tipo === id ? (id === "saida_producao" ? "#D97706" : "var(--text)") : "var(--border-strong)"}`,
+            }}
           >
             {label}
           </button>
@@ -52,14 +75,17 @@ export function NovaMovimentacaoForm({ estoque, onCancel, onSaved }: { estoque: 
           ))}
         </select>
         <Input placeholder={`Quantidade (${unidade})`} type="number" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Origem (ex: compra fornecedor)" value={origem} onChange={(e) => setOrigem(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input placeholder={tipo === "saida_producao" ? "Origem (ex: Produção — bancada pizza)" : "Origem (ex: compra fornecedor)"} value={origem} onChange={(e) => setOrigem(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
       </div>
       {tipo === "ajuste" && (
         <p className="text-[11.5px] mb-3" style={{ color: "var(--faint)" }}>Ajuste subtrai do saldo atual — serve pra registrar perda ou corrigir contagem pra baixo.</p>
       )}
+      {tipo === "saida_producao" && (
+        <p className="text-[11.5px] mb-3" style={{ color: "#F59E0B" }}>Saída para produção subtrai do estoque e registra a destinação de insumos para a cozinha.</p>
+      )}
       <ErroBanner erro={erro} />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Registrar movimentação"}
         </button>
         <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>

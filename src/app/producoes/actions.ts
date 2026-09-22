@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { getClienteAtual } from "@/lib/dados/cliente";
 import { criarProducaoComLoteAutomatico, criarProducao, atualizarStatusProducao } from "@/lib/dados/producoes";
+import { listarInsumos } from "@/lib/dados/insumos";
+import { listarReceitas } from "@/lib/dados/receitas";
+import { listarProcessamentos } from "@/lib/dados/processamentos";
+import { registrarMovimentacao } from "@/lib/dados/estoque";
+import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
 import type { ProducaoInput, StatusProducao, TipoItemProducao } from "@/lib/dominio/producao";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
@@ -25,6 +30,39 @@ function gerarLote(nome: string, sequencia: number): string {
   return `${sigla}-${dd}${mm}-${seq}`;
 }
 
+/**
+ * Baixa do estoque o que o lote consome (peso bruto, sub-receitas na proporção
+ * usada). Só mexe em insumo com estoque rastreado -- os outros não têm saldo
+ * pra abater. Devolve os insumos cuja baixa falhou, pra a ação avisar em vez
+ * de fingir sucesso: a produção já foi gravada, e o gerente precisa saber que
+ * o saldo ficou desatualizado.
+ */
+async function baixarEstoqueDaProducao(receitaId: string, quantidade: number, lote: string): Promise<string[]> {
+  const [insumos, receitas, processamentos] = await Promise.all([listarInsumos(), listarReceitas(), listarProcessamentos()]);
+  const receitaPorId = new Map(receitas.map((r) => [r.id, r]));
+  const insumoPorId = new Map(insumos.map((i) => [i.id, i]));
+  const receita = receitaPorId.get(receitaId);
+  if (!receita) return [];
+
+  const consumos = consumoDeInsumosDaProducao(receita, quantidade, receitaPorId, insumoPorId, processamentos)
+    .filter((c) => insumoPorId.get(c.insumoId)?.estoque);
+
+  const falhas: string[] = [];
+  for (const c of consumos) {
+    try {
+      await registrarMovimentacao(c.insumoId, "saida_producao", c.quantidade, `Produção — lote ${lote} (${receita.nomePrato})`);
+    } catch (e) {
+      falhas.push(`${c.nome}: ${e instanceof Error ? e.message : "erro desconhecido"}`);
+    }
+  }
+  return falhas;
+}
+
+function resultadoComBaixa(falhas: string[]): Resultado {
+  if (falhas.length === 0) return { ok: true };
+  return { ok: false, erro: `Produção registrada, mas a baixa de estoque falhou em ${falhas.length} insumo(s): ${falhas.join("; ")}` };
+}
+
 /** "Iniciar produção" a partir de um card de capacidade do quadro (clique ou
  * drag da coluna "Em estoque"): gera o lote sozinho, mesma lógica do mockup. */
 export async function acaoIniciarProducao(
@@ -38,18 +76,25 @@ export async function acaoIniciarProducao(
   const cliente = await getClienteAtual();
   if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
   try {
-    await criarProducaoComLoteAutomatico(cliente.id, receitaId, (sequencia): ProducaoInput => ({
-      lote: gerarLote(nomeReceita, sequencia),
-      tipo,
-      receitaId,
-      quantidade: rendimento,
-      responsavel: "A definir",
-      turnoId,
-      chefeTurno,
-      validade: null,
-    }));
+    let loteCriado = "";
+    await criarProducaoComLoteAutomatico(cliente.id, receitaId, (sequencia): ProducaoInput => {
+      loteCriado = gerarLote(nomeReceita, sequencia);
+      return {
+        lote: loteCriado,
+        tipo,
+        receitaId,
+        quantidade: rendimento,
+        responsavel: "A definir",
+        turnoId,
+        chefeTurno,
+        validade: null,
+      };
+    });
+
+    const falhas = await baixarEstoqueDaProducao(receitaId, rendimento, loteCriado);
     revalidatePath("/producoes");
-    return { ok: true };
+    revalidatePath("/estoque");
+    return resultadoComBaixa(falhas);
   } catch (e) {
     return paraResultado(e);
   }
@@ -60,8 +105,10 @@ export async function acaoRegistrarProducao(input: ProducaoInput): Promise<Resul
   if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
   try {
     await criarProducao(cliente.id, input);
+    const falhas = await baixarEstoqueDaProducao(input.receitaId, input.quantidade, input.lote);
     revalidatePath("/producoes");
-    return { ok: true };
+    revalidatePath("/estoque");
+    return resultadoComBaixa(falhas);
   } catch (e) {
     return paraResultado(e);
   }
