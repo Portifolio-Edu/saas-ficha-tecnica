@@ -524,7 +524,13 @@ export const registrosTemperatura: RegistroTemperatura[] = [
 // Fechamentos de CMV.
 // =========================================================================
 
-export const fechamentos: FechamentoCmv[] = [
+// POLIMENTO relatorios (2026-09-22): a demo passa a entregar os fechamentos na
+// mesma ordem do banco (listarFechamentos: periodo_fim decrescente, o mais
+// recente primeiro). Antes vinham em ordem crescente e fechamentos[0] (Visão
+// Geral, pendências de Relatórios) pegava agosto em vez de setembro.
+// Pra voltar: trocar `fechamentosEmOrdemCronologica.slice().reverse()` por
+// `fechamentosEmOrdemCronologica`.
+const fechamentosEmOrdemCronologica: FechamentoCmv[] = [
   {
     id: "fech-1",
     periodoInicio: "2026-08-01",
@@ -562,5 +568,7 @@ export const fechamentos: FechamentoCmv[] = [
     ],
   },
 ];
+
+export const fechamentos: FechamentoCmv[] = fechamentosEmOrdemCronologica.slice().reverse();
 
 export const margemAlvoCliente = 0.65;
