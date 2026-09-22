@@ -55,7 +55,7 @@ selo "Motor operacional ativo".
 
 ---
 
-## 2. Shell da demo (cabeçalho e menu) — commit `polimento(shell)`
+## 2. Shell da demo (cabeçalho e menu) — commit `3f0b207`
 
 **Arquivo:** `src/components/ficha/DemoShell.tsx` (vale para todas as telas de `/preview`).
 
