@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ficha/Card";
-import { inputStyle, nums, shadow } from "@/components/ficha/tema";
+import { nums, shadow } from "@/components/ficha/tema";
 import { NovaProducaoForm } from "@/components/producoes/NovaProducaoForm";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
@@ -135,15 +135,56 @@ export function ProducoesClient({
     { id: "perda", titulo: "Perdas", desc: "lote descartado" },
   ];
 
-  // Identidade de cor por etapa do fluxo: estoque=azul, em produção=amarelo,
-  // produzido=verde (--accent), perda=vermelho (--danger). Reaproveitada no
-  // cabeçalho da coluna, na borda dos cards e nos botões de ação -- o botão
-  // sempre herda a cor do destino pra onde ele move o lote.
-  const coresStatus: Record<ColunaId, { cor: string; fundo: string }> = {
-    estoque: { cor: "var(--status-estoque)", fundo: "var(--status-estoque-soft)" },
-    em_producao: { cor: "var(--status-producao)", fundo: "var(--status-producao-soft)" },
-    produzido: { cor: "var(--accent)", fundo: "var(--accent-soft)" },
-    perda: { cor: "var(--danger)", fundo: "var(--danger-soft)" },
+  // Identidade de cor marcante por etapa do fluxo:
+  // estoque=Azul Safira, em produção=Âmbar/Laranja, produzido=Verde Esmeralda, perda=Vermelho Carmim
+  const estilosColunas: Record<
+    ColunaId,
+    {
+      cor: string;
+      corTexto: string;
+      fundoColuna: string;
+      fundoBadge: string;
+      borda: string;
+      bordaTopo: string;
+      ponto: string;
+    }
+  > = {
+    estoque: {
+      cor: "#2563EB",
+      corTexto: "#1D4ED8",
+      fundoColuna: "rgba(37, 99, 235, 0.04)",
+      fundoBadge: "rgba(37, 99, 235, 0.12)",
+      borda: "rgba(37, 99, 235, 0.22)",
+      bordaTopo: "#2563EB",
+      ponto: "#2563EB",
+    },
+    em_producao: {
+      cor: "#D97706",
+      corTexto: "#B45309",
+      fundoColuna: "rgba(217, 119, 6, 0.04)",
+      fundoBadge: "rgba(217, 119, 6, 0.12)",
+      borda: "rgba(217, 119, 6, 0.22)",
+      bordaTopo: "#D97706",
+      ponto: "#D97706",
+    },
+    produzido: {
+      cor: "#059669",
+      corTexto: "#047857",
+      fundoColuna: "rgba(5, 150, 105, 0.04)",
+      fundoBadge: "rgba(5, 150, 105, 0.12)",
+      borda: "rgba(5, 150, 105, 0.22)",
+      bordaTopo: "#059669",
+      ponto: "#059669",
+    },
+    perda: {
+      cor: "#DC2626",
+      corTexto: "#B91C1C",
+      fundoColuna: "rgba(220, 38, 38, 0.04)",
+      fundoBadge: "rgba(220, 38, 38, 0.12)",
+      borda: "rgba(220, 38, 38, 0.22)",
+      bordaTopo: "#DC2626",
+      ponto: "#DC2626",
+    },
   };
 
   const executarAcao = async (promessa: Promise<{ ok: boolean; erro?: string }>) => {
@@ -172,49 +213,69 @@ export function ProducoesClient({
   };
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-6xl space-y-7 select-none font-sans">
       {erroAcao && (
-        <div className="text-[12.5px] rounded-lg px-3.5 py-2 flex items-center justify-between" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
-          {erroAcao}
-          <button onClick={() => setErroAcao(null)} className="font-medium ml-3">
+        <div className="text-[13px] font-bold rounded-xl px-4 py-3 flex items-center justify-between border shadow-sm" style={{ background: "var(--danger-soft)", color: "var(--danger)", borderColor: "rgba(220, 38, 38, 0.3)" }}>
+          <span>{erroAcao}</span>
+          <button onClick={() => setErroAcao(null)} className="font-extrabold uppercase text-[11px] ml-3 px-2 py-1 rounded bg-[var(--panel)] border border-[var(--linha)]">
             fechar
           </button>
         </div>
       )}
 
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Quadro de produção</h2>
-          <div className="flex items-center gap-2">
-            <span className="text-[11.5px]" style={{ color: "var(--faint)" }}>Turno</span>
-            <select value={turnoId ?? ""} onChange={(e) => setTurnoId(e.target.value || null)} className="text-[12px] px-2 py-1 rounded-md" style={inputStyle}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+          <div>
+            <h2 className="text-[18px] md:text-[20px] font-black tracking-tight text-[var(--tinta)]">
+              Quadro de Produção da Cozinha
+            </h2>
+            <p className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-0.5">
+              Acompanhamento do fluxo operacional da bancada por lotes e estações.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 p-2 rounded-xl border bg-[var(--panel)] shadow-sm" style={{ borderColor: "var(--linha)" }}>
+            <span className="text-[12px] font-bold text-[var(--tinta-sub)] uppercase">Turno:</span>
+            <select
+              value={turnoId ?? ""}
+              onChange={(e) => setTurnoId(e.target.value || null)}
+              className="text-[13px] font-bold px-2.5 py-1.5 rounded-lg border bg-[var(--panel-elevated)]"
+              style={{ borderColor: "var(--linha-forte)", color: "var(--tinta)" }}
+            >
               {turnos.map((t) => (
                 <option key={t.id} value={t.id}>{t.nome}{t.horario ? ` (${t.horario})` : ""}</option>
               ))}
             </select>
-            <span className="text-[11.5px]" style={{ color: "var(--faint)" }}>chefe</span>
-            <input value={chefeTurno} onChange={(e) => setChefeTurno(e.target.value)} placeholder="nome" className="text-[12px] px-2 py-1 rounded-md w-24" style={inputStyle} />
+            <span className="text-[12px] font-bold text-[var(--tinta-sub)] uppercase">Chefe:</span>
+            <input
+              value={chefeTurno}
+              onChange={(e) => setChefeTurno(e.target.value)}
+              placeholder="Nome"
+              className="text-[13px] font-bold px-2.5 py-1.5 rounded-lg border bg-[var(--panel-elevated)] w-28"
+              style={{ borderColor: "var(--linha-forte)", color: "var(--tinta)" }}
+            />
           </div>
         </div>
-        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>A cozinha move o lote de coluna conforme trabalha. Cada card carrega o número do lote, então dá pra rastrear depois o que saiu de onde.</p>
-        <div className="grid grid-cols-4 gap-3">
+
+        {/* Grid do Kanban com Cores Distintas por Coluna */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
           {colunas.map((col) => {
             const cardsProducao = producoes.filter((p) => p.status === col.id);
             const podeSoltarAqui = !!loteArrastando && transicaoValida(loteArrastando.colunaOrigem, col.id);
             const emHoverValido = colunaAlvo === col.id && podeSoltarAqui;
             const emHoverInvalido = colunaAlvo === col.id && !!loteArrastando && !podeSoltarAqui;
             const contagem = col.id === "estoque" ? disponivelProduzir.length : cardsProducao.length;
-            const cor = coresStatus[col.id];
+            const estilo = estilosColunas[col.id];
 
             return (
               <div
                 key={col.id}
-                className="rounded-xl p-3 transition-colors"
+                className="rounded-2xl p-4 flex flex-col transition-all duration-200"
                 style={{
-                  background: emHoverValido ? cor.fundo : "var(--panel)",
-                  border: "1px solid var(--border)",
-                  borderTop: `3px solid ${emHoverInvalido ? "var(--danger)" : cor.cor}`,
-                  boxShadow: emHoverValido || emHoverInvalido ? `0 0 0 2px ${emHoverInvalido ? "var(--danger)" : cor.cor} inset` : shadow,
+                  backgroundColor: emHoverValido ? estilo.fundoBadge : estilo.fundoColuna,
+                  border: `1px solid ${emHoverInvalido ? "var(--danger)" : estilo.borda}`,
+                  borderTop: `4px solid ${emHoverInvalido ? "var(--danger)" : estilo.bordaTopo}`,
+                  boxShadow: emHoverValido || emHoverInvalido ? `0 0 0 2px ${emHoverInvalido ? "var(--danger)" : estilo.cor} inset` : "0 4px 16px -2px rgba(0, 0, 0, 0.03)",
                 }}
                 onDragOver={(e) => {
                   if (!loteArrastando) return;
@@ -229,18 +290,26 @@ export function ProducoesClient({
                   setColunaAlvo(null);
                 }}
               >
-                <div className="flex items-baseline justify-between mb-0.5">
-                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: "var(--text)" }}>
-                    <span className="inline-block rounded-full shrink-0" style={{ width: 7, height: 7, background: cor.cor }} />
+                {/* Header da Coluna */}
+                <div className="flex items-center justify-between pb-2 mb-1 border-b" style={{ borderColor: estilo.borda }}>
+                  <span className="flex items-center gap-2 text-[14px] font-black tracking-tight" style={{ color: estilo.corTexto }}>
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: estilo.ponto }} />
                     {col.titulo}
                   </span>
-                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full" style={{ ...nums, background: cor.fundo, color: cor.cor }}>{contagem}</span>
+                  <span
+                    className="text-[12px] font-black px-2.5 py-0.5 rounded-full shadow-sm"
+                    style={{ backgroundColor: estilo.fundoBadge, color: estilo.corTexto }}
+                  >
+                    {contagem}
+                  </span>
                 </div>
-                <div className="text-[10.5px] mb-2.5" style={{ color: "var(--faint)" }}>{col.desc}</div>
-                <div className="space-y-2">
+                <div className="text-[11.5px] font-semibold mb-3 text-[var(--tinta-sub)]">{col.desc}</div>
+
+                {/* Área de Cards */}
+                <div className="space-y-3 flex-1 overflow-y-auto">
                   {contagem === 0 && (
-                    <div className="text-[11px] py-2" style={{ color: podeSoltarAqui ? cor.cor : "var(--faint)" }}>
-                      {podeSoltarAqui ? "Solte aqui" : "Nada aqui."}
+                    <div className="text-[12px] font-bold py-6 text-center rounded-xl border border-dashed" style={{ borderColor: estilo.borda, color: estilo.corTexto }}>
+                      {podeSoltarAqui ? "Solte o lote aqui" : "Nenhum item nesta etapa"}
                     </div>
                   )}
 
@@ -257,18 +326,37 @@ export function ProducoesClient({
                           setLoteArrastando(null);
                           setColunaAlvo(null);
                         }}
-                        className="rounded-lg p-2.5 ftv-panel cursor-grab active:cursor-grabbing"
-                        style={{ border: "1px solid var(--border)", borderLeft: `3px solid ${cor.cor}`, opacity: loteArrastando?.item === d ? 0.4 : 1 }}
+                        className="rounded-xl p-3.5 bg-[var(--panel)] cursor-grab active:cursor-grabbing transition-all hover:shadow-md border shadow-sm"
+                        style={{
+                          borderColor: "var(--linha)",
+                          borderLeft: `4px solid ${estilo.cor}`,
+                          opacity: loteArrastando?.item === d ? 0.4 : 1,
+                        }}
                       >
-                        <div className="text-[12px] font-medium leading-tight">{d.nome}</div>
-                        <div className="text-[10.5px] mt-1" style={{ color: "var(--sub)" }}>{d.rendimentoLabel}</div>
-                        <div className="text-[10.5px] mt-1.5 flex items-baseline gap-1">
-                          <span className="font-semibold" style={{ ...nums, color: d.lotes <= 2 ? "var(--danger)" : "var(--text)", fontSize: 13 }}>{d.lotes}</span>
-                          <span style={{ color: "var(--sub)" }}>lote{d.lotes > 1 ? "s" : ""} possível{d.lotes > 1 ? "eis" : ""}</span>
+                        <div className="text-[14px] font-bold text-[var(--tinta)] leading-snug">{d.nome}</div>
+                        <div className="text-[12px] font-semibold text-[var(--tinta-sub)] mt-1">{d.rendimentoLabel}</div>
+                        <div className="text-[12px] font-extrabold mt-2 flex items-baseline gap-1.5">
+                          <span
+                            className="px-2 py-0.5 rounded text-[13px] font-black"
+                            style={{
+                              backgroundColor: d.lotes <= 2 ? "rgba(220, 38, 38, 0.12)" : "rgba(37, 99, 235, 0.12)",
+                              color: d.lotes <= 2 ? "var(--danger)" : estilo.corTexto,
+                            }}
+                          >
+                            {d.lotes} {d.lotes > 1 ? "lotes possíveis" : "lote possível"}
+                          </span>
                         </div>
-                        {d.gargalo && <div className="text-[10px] mt-1" style={{ color: "var(--faint)" }}>limite: {d.gargalo}</div>}
-                        <button onClick={() => iniciarProducao(d)} className="mt-2 w-full text-[11px] font-semibold py-1.5 rounded-md" style={{ background: "var(--status-producao-soft)", color: "var(--status-producao)" }}>
-                          Iniciar produção
+                        {d.gargalo && (
+                          <div className="text-[11px] font-bold mt-1.5 text-[var(--tinta-sub)]">
+                            Gargalo: <strong className="text-[var(--tinta)]">{d.gargalo}</strong>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => iniciarProducao(d)}
+                          className="mt-3 w-full text-[12px] font-black py-2 rounded-xl text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer"
+                          style={{ backgroundColor: estilo.cor }}
+                        >
+                          Iniciar Produção
                         </button>
                       </div>
                     ))}
@@ -286,27 +374,46 @@ export function ProducoesClient({
                           setLoteArrastando(null);
                           setColunaAlvo(null);
                         }}
-                        className={col.id !== "perda" ? "rounded-lg p-2.5 ftv-panel cursor-grab active:cursor-grabbing" : "rounded-lg p-2.5 ftv-panel"}
-                        style={{ border: "1px solid var(--border)", borderLeft: `3px solid ${cor.cor}`, opacity: loteArrastando?.item === pr ? 0.4 : 1 }}
+                        className={`rounded-xl p-3.5 bg-[var(--panel)] transition-all hover:shadow-md border shadow-sm ${
+                          col.id !== "perda" ? "cursor-grab active:cursor-grabbing" : ""
+                        }`}
+                        style={{
+                          borderColor: "var(--linha)",
+                          borderLeft: `4px solid ${estilo.cor}`,
+                          opacity: loteArrastando?.item === pr ? 0.4 : 1,
+                        }}
                       >
-                        <div className="text-[10.5px] font-semibold" style={{ ...nums, color: "var(--sub)" }}>{pr.lote}</div>
-                        <div className="text-[12px] font-medium leading-tight mt-0.5">{pr.nomeReceita}</div>
-                        <div className="text-[10.5px] mt-1" style={{ ...nums, color: "var(--sub)" }}>{pr.quantidade} {pr.unidadeRendimento} · {pr.responsavel}</div>
-                        <div className="text-[10px] mt-1 inline-block px-1.5 py-0.5 rounded" style={{ background: "var(--bg)", color: "var(--sub)" }}>
+                        <div className="text-[11px] font-black uppercase tracking-wider text-[var(--tinta-sub)]">{pr.lote}</div>
+                        <div className="text-[14px] font-bold text-[var(--tinta)] leading-snug mt-0.5">{pr.nomeReceita}</div>
+                        <div className="text-[12px] font-semibold text-[var(--tinta-sub)] mt-1.5">
+                          {pr.quantidade} {pr.unidadeRendimento} · <strong className="text-[var(--tinta)]">{pr.responsavel}</strong>
+                        </div>
+                        <div className="text-[11px] font-bold mt-1.5 inline-block px-2 py-0.5 rounded-md bg-[var(--panel-elevated)] border border-[var(--linha)] text-[var(--tinta-sub)]">
                           {pr.nomeTurno ?? "—"} · chefe {pr.chefeTurno ?? "—"}
                         </div>
-                        {pr.validade && <div className="text-[10px] mt-0.5" style={{ color: "var(--faint)" }}>validade {pr.validade}</div>}
-                        {pr.motivoPerda && <div className="text-[10.5px] mt-1.5" style={{ color: "var(--danger)" }}>{pr.motivoPerda}</div>}
+                        {pr.validade && (
+                          <div className="text-[11px] font-semibold mt-1 text-[var(--tinta-sub)]">
+                            Validade: {pr.validade}
+                          </div>
+                        )}
+                        {pr.motivoPerda && (
+                          <div className="text-[12px] font-extrabold mt-2 p-2 rounded-lg bg-rose-100/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-700 dark:text-rose-300">
+                            Motivo: {pr.motivoPerda}
+                          </div>
+                        )}
 
                         {col.id === "em_producao" && (
-                          <div className="flex gap-1.5 mt-2">
-                            <button onClick={() => executarAcao(acaoAtualizarStatusProducao(pr.id, "produzido"))} className="flex-1 text-[11px] font-semibold py-1.5 rounded-md" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => executarAcao(acaoAtualizarStatusProducao(pr.id, "produzido"))}
+                              className="flex-1 text-[12px] font-black py-2 rounded-xl text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer"
+                              style={{ backgroundColor: "#059669" }}
+                            >
                               Concluir
                             </button>
                             <button
                               onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
-                              className="text-[11px] font-semibold py-1.5 px-2.5 rounded-md"
-                              style={{ background: "var(--danger-soft)", color: "var(--danger)" }}
+                              className="text-[12px] font-black py-2 px-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer"
                             >
                               Perda
                             </button>
@@ -316,10 +423,9 @@ export function ProducoesClient({
                         {col.id === "produzido" && (
                           <button
                             onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
-                            className="mt-2 w-full text-[11px] font-semibold py-1.5 rounded-md"
-                            style={{ background: "var(--danger-soft)", color: "var(--danger)" }}
+                            className="mt-3 w-full text-[12px] font-black py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer"
                           >
-                            Registrar perda
+                            Registrar Descarte / Perda
                           </button>
                         )}
                       </div>

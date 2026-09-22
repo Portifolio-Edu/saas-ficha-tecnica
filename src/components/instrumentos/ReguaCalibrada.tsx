@@ -71,82 +71,81 @@ export function ReguaCalibrada({
 
   return (
     <div className={`flex flex-col select-none font-sans group ${className}`} role="group" aria-labelledby={`${id}-lbl`}>
-      {/* Top Header: Rótulo & Badges com Alta Legibilidade */}
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2 min-w-0">
-          {codigo && (
-            <span
-              className="text-[12px] font-bold px-2 py-0.5 rounded-md tracking-wider uppercase shrink-0"
-              style={{
-                backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.15)" : "var(--panel-elevated)",
-                color: sobRisco ? "var(--sinal)" : "var(--tinta-sub)",
-                border: `1px solid ${sobRisco ? "rgba(255, 59, 48, 0.35)" : "var(--linha-forte)"}`,
-              }}
-            >
-              {codigo}
-            </span>
-          )}
+      {/* Linha 1: Badges de Topo (Código à esquerda, Status à direita - Sem sobreposição!) */}
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        {codigo ? (
           <span
-            id={`${id}-lbl`}
-            className="text-[14px] md:text-[15px] font-bold tracking-tight text-[var(--tinta)] truncate"
-          >
-            {rotulo}
-          </span>
-        </div>
-
-        {/* Dynamic Status Pill - Grande e Legível */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] md:text-[12px] font-extrabold tracking-wide uppercase shadow-sm"
+            className="text-[11px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0"
             style={{
-              backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.15)" : "rgba(16, 185, 129, 0.15)",
-              color: sobRisco ? "var(--sinal)" : "var(--sucesso)",
-              border: `1px solid ${sobRisco ? "rgba(255, 59, 48, 0.4)" : "rgba(16, 185, 129, 0.4)"}`,
+              backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.12)" : "var(--panel-elevated)",
+              color: sobRisco ? "var(--sinal)" : "var(--tinta-sub)",
+              border: `1px solid ${sobRisco ? "rgba(255, 59, 48, 0.3)" : "var(--linha-forte)"}`,
             }}
           >
-            <span
-              className="w-2 h-2 rounded-full"
-              style={{
-                backgroundColor: sobRisco ? "var(--sinal)" : "var(--sucesso)",
-                boxShadow: sobRisco ? "0 0 8px var(--sinal)" : "0 0 8px var(--sucesso)",
-              }}
-            />
-            {sobRisco ? "EM RISCO" : "CALIBRADO"}
+            {codigo}
           </span>
-        </div>
+        ) : <span />}
+
+        <span
+          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide uppercase shadow-sm shrink-0"
+          style={{
+            backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.12)" : "rgba(16, 185, 129, 0.12)",
+            color: sobRisco ? "var(--sinal)" : "var(--sucesso)",
+            border: `1px solid ${sobRisco ? "rgba(255, 59, 48, 0.35)" : "rgba(16, 185, 129, 0.35)"}`,
+          }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full shrink-0"
+            style={{
+              backgroundColor: sobRisco ? "var(--sinal)" : "var(--sucesso)",
+              boxShadow: sobRisco ? "0 0 6px var(--sinal)" : "0 0 6px var(--sucesso)",
+            }}
+          />
+          {sobRisco ? "EM RISCO" : "CALIBRADO"}
+        </span>
       </div>
 
-      {/* Primary Value Display & Target Comparison - Números Grandes e Claros */}
-      <div className="flex items-baseline justify-between gap-3 mb-4">
-        <div className="flex items-baseline gap-2.5">
+      {/* Linha 2: Nome da Métrica (Linha inteira dedicada, clara e sem colisão) */}
+      <h4
+        id={`${id}-lbl`}
+        className="text-[14px] font-bold text-[var(--tinta)] truncate mb-2"
+        title={rotulo}
+      >
+        {rotulo}
+      </h4>
+
+      {/* Linha 3: Valor Principal & Delta em Linha Dedicada (Nunca quebra em 3 linhas!) */}
+      <div className="flex items-baseline justify-between gap-2 mb-2">
+        <div className="flex items-baseline gap-2 min-w-0">
           <span
-            className="text-[32px] md:text-[36px] font-black tracking-tight leading-none"
+            className="text-[25px] font-black tracking-tight leading-none whitespace-nowrap shrink-0"
             style={{ color: sobRisco ? "var(--sinal)" : "var(--tinta)" }}
           >
             {valorFormatado}
           </span>
           <span
-            className="text-[13px] md:text-[14px] font-bold"
+            className="text-[11px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0"
             style={{
-              color: sobRisco ? "var(--sinal)" : "var(--tinta-sub)",
+              backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.1)" : "rgba(16, 185, 129, 0.1)",
+              color: sobRisco ? "var(--sinal)" : "var(--sucesso)",
             }}
           >
-            ({deltaFormatado} vs meta)
+            {deltaFormatado} vs meta
           </span>
         </div>
 
-        <div className="text-right">
-          <span className="text-[12px] md:text-[13px] font-medium text-[var(--tinta-sub)]">
-            Alvo: <strong className="text-[13px] md:text-[14px] font-extrabold text-[var(--tinta)]">{metaFormatada}</strong>
+        <div className="text-right shrink-0">
+          <span className="text-[11px] font-bold text-[var(--tinta-sub)] whitespace-nowrap">
+            Alvo: <strong className="text-[var(--tinta)]">{metaFormatada}</strong>
           </span>
         </div>
       </div>
 
-      {/* Modern Precision Capsule Track - Barra Mais Espessa e Visível à Distância */}
+      {/* Linha 4: Dispositivo Gráfico Central (Trilho Cápsula com Margem de Segurança) */}
       <div className="relative pt-1 pb-1">
-        {/* The Track Container (14px de altura para alta visibilidade) */}
+        {/* The Track Container */}
         <div
-          className="w-full h-3.5 rounded-full relative overflow-visible shadow-inner"
+          className="w-full h-3 rounded-full relative overflow-visible shadow-inner"
           style={{
             backgroundColor: "var(--panel-elevated)",
             border: "1px solid var(--linha-forte)",
@@ -173,25 +172,25 @@ export function ReguaCalibrada({
               background: sobRisco
                 ? "linear-gradient(90deg, rgba(255, 59, 48, 0.7) 0%, #FF3B30 100%)"
                 : "linear-gradient(90deg, #64748B 0%, var(--tinta) 100%)",
-              boxShadow: sobRisco ? "0 0 12px rgba(255, 59, 48, 0.5)" : "none",
+              boxShadow: sobRisco ? "0 0 10px rgba(255, 59, 48, 0.4)" : "none",
             }}
           />
 
           {/* Calibrated Target Needle (Pino Fixo) */}
           <div
-            className="absolute top-[-5px] -translate-x-1/2 flex flex-col items-center pointer-events-none z-10"
+            className="absolute top-[-4px] -translate-x-1/2 flex flex-col items-center pointer-events-none z-10"
             style={{ left: `${pctMeta}%` }}
             title={`Alvo Calibrado: ${metaFormatada}`}
           >
             <div
-              className="w-2 h-2 rounded-full border shadow-sm"
+              className="w-1.5 h-1.5 rounded-full border shadow-sm"
               style={{
                 backgroundColor: "var(--tinta-sub)",
                 borderColor: "var(--panel)",
               }}
             />
             <div
-              className="w-[2px] h-5"
+              className="w-[1.5px] h-4"
               style={{
                 backgroundColor: "var(--tinta-sub)",
               }}
@@ -204,28 +203,28 @@ export function ReguaCalibrada({
             style={{ left: `${pctValor}%` }}
           >
             <div
-              className="w-5 h-5 rounded-full border-2 flex items-center justify-center shadow-lg"
+              className="w-4 h-4 rounded-full border-2 flex items-center justify-center shadow-md"
               style={{
                 backgroundColor: sobRisco ? "var(--sinal)" : "var(--tinta)",
                 borderColor: "var(--panel)",
                 boxShadow: sobRisco
-                  ? "0 0 12px var(--sinal), 0 2px 5px rgba(0,0,0,0.4)"
-                  : "0 0 8px rgba(0,0,0,0.25), 0 2px 5px rgba(0,0,0,0.3)",
+                  ? "0 0 10px var(--sinal), 0 2px 4px rgba(0,0,0,0.3)"
+                  : "0 0 6px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.25)",
               }}
             >
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--panel)]" />
+              <div className="w-1 h-1 rounded-full bg-[var(--panel)]" />
             </div>
           </div>
         </div>
 
-        {/* Clean Numerical Scale - Números de 11px em Negrito Legíveis */}
-        <div className="relative w-full h-5 mt-2">
+        {/* Linha 5: Escala Numérica com Números Claros */}
+        <div className="relative w-full h-4 mt-2">
           {ticks.map((t) => {
             const pct = ((t - min) / (max - min)) * 100;
             return (
               <span
                 key={t}
-                className="absolute text-[11px] md:text-[12px] font-bold -translate-x-1/2 text-[var(--tinta-sub)]"
+                className="absolute text-[11px] font-bold -translate-x-1/2 text-[var(--tinta-sub)]"
                 style={{ left: `${pct}%` }}
               >
                 {t}
@@ -236,24 +235,24 @@ export function ReguaCalibrada({
         </div>
       </div>
 
-      {/* Footer Info - Texto Claro de 12px */}
+      {/* Linha 6: Rodapé Informativo */}
       <div
-        className="flex items-center justify-between pt-2.5 mt-1 text-[12px] font-medium"
+        className="flex items-center justify-between pt-2 mt-1 text-[11px] font-medium"
         style={{ borderTop: "1px solid var(--linha)", color: "var(--tinta-sub)" }}
       >
         <span className="flex items-center gap-1.5 font-semibold">
           <span
-            className="w-2 h-2 rounded-full inline-block"
+            className="w-1.5 h-1.5 rounded-full inline-block"
             style={{ backgroundColor: sobRisco ? "var(--sinal)" : "var(--sucesso)" }}
           />
           <span>TOLERÂNCIA: ±{unidade === "%" ? "2.5%" : "0.0"}</span>
         </span>
 
         <span
-          className="font-bold uppercase tracking-wide"
+          className="font-bold uppercase tracking-wider"
           style={{ color: sobRisco ? "var(--sinal)" : "var(--tinta-sub)" }}
         >
-          {sobRisco ? "ATENÇÃO OPERACIONAL" : "PARÂMETRO SEGURO"}
+          {sobRisco ? "DESVIO DE ALVO" : "CALIBRAÇÃO OK"}
         </span>
       </div>
     </div>

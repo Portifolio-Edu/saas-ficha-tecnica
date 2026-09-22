@@ -261,7 +261,7 @@ export function DemoShell({
         <header
           className="h-16 shrink-0 flex items-center justify-between px-5 md:px-8 sticky top-0 z-20 backdrop-blur-xl border-b shadow-sm"
           style={{
-            backgroundColor: "rgba(var(--panel-rgb, 14, 19, 30), 0.90)",
+            backgroundColor: "var(--panel)",
             borderColor: "var(--linha)",
           }}
         >
