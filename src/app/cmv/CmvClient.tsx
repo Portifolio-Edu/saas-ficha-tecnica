@@ -131,6 +131,8 @@ export function CmvClient({
   const numEstoqueInicial = parseFloat(estoqueInicial) || 0;
   const numCompras = parseFloat(compras) || 0;
   const numEstoqueFinal = parseFloat(estoqueFinal) || 0;
+  // SISTEMA premium: nada preenchido na base do cálculo real = ainda não há CMV real.
+  const semBaseReal = numEstoqueInicial === 0 && numCompras === 0 && numEstoqueFinal === 0;
 
   const resultado =
     faturamentoPeriodo > 0
@@ -267,12 +269,15 @@ export function CmvClient({
         <div className="grid grid-cols-4 gap-3 mb-3">
           <Kpi label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
           <Kpi label="CMV teórico (fichas)" value={`${formatNumero(cmvTeoricoPct, 1)}%`} sub={formatBRLEixo(custoTeoricoPeriodo)} />
-          <Kpi label="CMV real (estoque)" value={`${formatNumero(cmvRealPct, 1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={formatBRLEixo(consumoReal)} />
+          {/* SISTEMA premium: sem base de estoque preenchida, CMV real e gap mostram "—"
+              em vez de "0,0%" e "-21,8 p.p." (número inventado; PRODUCT.md, princípio 2).
+              Reverter: trocar `semBaseReal ? ... :` pelos valores de antes (git revert do commit). */}
+          <Kpi label="CMV real (estoque)" value={semBaseReal ? "—" : `${formatNumero(cmvRealPct, 1)}%`} alerta={!semBaseReal && gapPct > GAP_ALERTA_PP} sub={semBaseReal ? "preencha a base do cálculo" : formatBRLEixo(consumoReal)} />
           <Kpi
             label="Gap não explicado"
-            value={`${gapPct > 0 ? "+" : ""}${formatNumero(gapPct, 1)} p.p.`}
-            alerta={gapPct > GAP_ALERTA_PP}
-            sub={`R$ ${Math.abs(gapReais).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} ${gapReais > 0 ? "a mais que o previsto" : "abaixo do previsto"}`}
+            value={semBaseReal ? "—" : `${gapPct > 0 ? "+" : ""}${formatNumero(gapPct, 1)} p.p.`}
+            alerta={!semBaseReal && gapPct > GAP_ALERTA_PP}
+            sub={semBaseReal ? "aparece com o estoque contado" : `R$ ${Math.abs(gapReais).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} ${gapReais > 0 ? "a mais que o previsto" : "abaixo do previsto"}`}
           />
         </div>
 

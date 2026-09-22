@@ -229,7 +229,7 @@ export function RelatoriosClient({
 
   return (
     <div className="max-w-5xl space-y-6">
-      <p className="text-[12.5px]" style={{ color: "var(--sub)" }}>Consolidado do que já está cadastrado nas outras telas -- ninguém digita nada duas vezes aqui.</p>
+      <p className="text-[12.5px]" style={{ color: "var(--sub)" }}>Consolidado do que já está cadastrado nas outras telas: ninguém digita nada duas vezes aqui.</p>{/* SISTEMA premium: antes " -- " no lugar da pontuação */}
 
       <div>
         <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-3">Onde o dinheiro está vazando</h2>
@@ -357,7 +357,7 @@ export function RelatoriosClient({
 
       <div>
         <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Pendências que precisam de decisão</h2>
-        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>{alertas.length} item{alertas.length !== 1 ? "s" : ""} aberto{alertas.length !== 1 ? "s" : ""} agora.</p>
+        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>{alertas.length} {alertas.length !== 1 ? "itens abertos" : "item aberto"} agora.</p>{/* SISTEMA premium: antes "6 items" (plural em inglês) */}
         <Card>
           <div className="px-5 py-1">
             {alertas.map((a, i) => (
