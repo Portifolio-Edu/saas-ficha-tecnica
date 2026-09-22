@@ -39,19 +39,18 @@ export function BotaoAgenteIa({
       <>
         <button
           onClick={() => setAberto(true)}
-          // POLIMENTO shell: 44px de altura pro toque no tablet (antes py-1.5, ~30px).
-          className={`flex items-center gap-2 px-3.5 min-h-[var(--alvo-toque)] rounded-full border text-[12.5px] font-extrabold transition-all shadow-sm active:scale-[0.98] ${className}`}
-          style={{
-            background: "linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(124, 58, 237, 0.15) 100%)",
-            borderColor: "rgba(124, 58, 237, 0.35)",
-            color: "var(--tinta)",
-          }}
+          // SISTEMA premium: botão neutro da barra (borda 1px, 40px), no mesmo idioma do
+          // botão de tema. Antes: pílula com degradê azul-violeta e ponto verde pulsando
+          // (que sugeria "online" num agente que é só demonstração).
+          className={`flex items-center gap-2 px-3 min-h-10 rounded-lg border text-[13px] font-medium transition-colors hover:bg-[var(--panel-hover)] ${className}`}
+          style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}
           title="Demonstração do agente de IA (imagens, áudios e WhatsApp)"
         >
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <Bot size={15} className="text-purple-600 dark:text-purple-400" />
-          <span className="hidden sm:inline">Agente IA · demo</span>
-          <span className="sm:hidden">IA</span>
+          <Bot size={16} style={{ color: "var(--marca)" }} />
+          <span className="hidden sm:inline">Agente IA</span>
+          <span className="text-[11px] font-medium px-1.5 py-px rounded border" style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}>
+            demo
+          </span>
         </button>
 
         <AgenteIaModal
