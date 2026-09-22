@@ -24,6 +24,7 @@ export default function Page() {
         locais={locais}
         registrosTemperatura={registrosTemperatura}
         margemAlvoCliente={margemAlvoCliente}
+        nomeRestaurante={NOME_RESTAURANTE}
       />
     </DemoShell>
   );

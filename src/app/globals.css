@@ -340,3 +340,10 @@ thead th {
   font-weight: 500;
   color: var(--tinta-faint);
 }
+
+/* POLIMENTO relatorios (2026-09-22): no papel/PDF o fundo é branco e os painéis
+   sem sombra. Pra desfazer, apagar este bloco. */
+@media print {
+  html, body, body > div, main { background: #fff !important; }
+  section, .rounded-xl { box-shadow: none !important; }
+}

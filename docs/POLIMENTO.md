@@ -156,3 +156,42 @@ fonte embutida do react-pdf.
 **Verificação:** `tsc`, `eslint`, 51 testes e `next build` passando; detector
 do impeccable sem nenhum anti-padrão nas telas; nenhum alvo de toque abaixo de
 40px no tablet (Visão Geral, Produções, Checklists, Estoque).
+
+---
+
+## 7. Relatórios — "o que decidir agora" + relatório por fechamento
+
+Pedido: "focar na página de relatórios, ela é importantíssima". Escolha do
+usuário: **os dois** (topo ao vivo + relatório por fechamento com PDF).
+
+**Arquivos:** `src/app/relatorios/RelatoriosClient.tsx` (reescrito; versão
+anterior: `git show 96326ef:src/app/relatorios/RelatoriosClient.tsx`),
+`relatorios/page.tsx` e `preview/relatorios/page.tsx` (passam o nome do
+restaurante pro cabeçalho do PDF), `ShellPremium.tsx` (menu e barra somem na
+impressão), `globals.css` (bloco `@media print`), `preview/fixtures.ts`
+(ordem dos fechamentos).
+
+**Números que estavam errados:**
+- "Total identificado" contava o lote perdido duas vezes (ele já está dentro da
+  quebra de estoque). Agora a quebra de cada fechamento é aberta em previsto
+  pelas fichas + perda registrada + sem explicação.
+- Na demo, `fechamentos[0]` era agosto (fixture em ordem crescente; o banco
+  entrega do mais novo pro mais antigo). Isso afetava Relatórios e a Visão
+  Geral da demo. Agora a fixture segue a ordem do banco e Relatórios ordena por
+  conta própria.
+- Linha de meta do gráfico de margem usava a meta do primeiro prato pra todos.
+- "Quebra acumulada" misturava períodos e deixava gap negativo apagar positivo.
+- **Novo aviso:** quando parte do faturamento vem de itens sem ficha (bebidas,
+  sobremesas), o relatório diz quanto (R$ 10.488 na demo, 27%): esse consumo
+  infla o "sem explicação".
+
+**Como ficou:** em cima, pendências de hoje ordenadas por urgência
+(temperatura, depois o que tem R$, depois estoque e rendimento), cada uma
+levando à tela onde se resolve. Embaixo, abas por fechamento: faixa de 4
+métricas, barra "para onde foi o dinheiro do estoque" (cores validadas pra
+daltonismo, valores escritos na legenda), pratos do período com quanto faltou
+pra meta, lotes perdidos e tabela por responsável no período. O botão
+"Imprimir ou salvar PDF" imprime só o relatório, sempre no tema claro.
+
+**Reverter:** `git revert` do commit `polimento(relatorios)`; a correção da
+fixture é um commit separado (`fix(demo)`).

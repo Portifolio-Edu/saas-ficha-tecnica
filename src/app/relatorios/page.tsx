@@ -34,6 +34,7 @@ export default async function RelatoriosPage() {
         locais={locais}
         registrosTemperatura={registrosTemperatura}
         margemAlvoCliente={cliente.margemAlvo}
+        nomeRestaurante={cliente.nomeRestaurante}
       />
     </AppShell>
   );

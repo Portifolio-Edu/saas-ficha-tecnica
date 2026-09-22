@@ -15,6 +15,8 @@
 //  - O `tituloPagina` de cada page.tsx (app e /preview) usa o mesmo texto do item
 //    do menu, em caixa de frase. Antes: "Visão Geral", "Receitas & Fichas",
 //    "Checklists de Turno" etc. (commit "polimento(sistema): títulos iguais ao menu").
+//  - POLIMENTO relatorios: menu, barra superior e margem somem na impressão
+//    (classes print:hidden / print:p-0), pro PDF do relatório sair só com o conteúdo.
 // Reverter só a casca: git revert do commit "polimento(shell-premium)"; os
 // arquivos AppShell.tsx e DemoShell.tsx voltam a ter o layout próprio.
 
@@ -190,7 +192,7 @@ export function ShellPremium({
 
   return (
     <div className="w-full min-h-screen flex" style={{ background: "var(--fundo)", color: "var(--tinta)" }}>
-      <aside className="hidden md:flex w-60 shrink-0 flex-col sticky top-0 h-screen border-r" style={{ backgroundColor: "var(--panel)", borderColor: "var(--linha)" }}>
+      <aside className="hidden md:flex print:hidden w-60 shrink-0 flex-col sticky top-0 h-screen border-r" style={{ backgroundColor: "var(--panel)", borderColor: "var(--linha)" }}>
         {menu}
       </aside>
 
@@ -207,7 +209,7 @@ export function ShellPremium({
 
       <main id="conteudo" className="flex-1 flex flex-col min-w-0">
         <header
-          className="h-14 shrink-0 flex items-center justify-between gap-3 px-4 md:px-8 sticky top-0 z-20 border-b"
+          className="h-14 shrink-0 flex items-center justify-between gap-3 px-4 md:px-8 sticky top-0 z-20 border-b print:hidden"
           style={{ backgroundColor: "color-mix(in srgb, var(--fundo) 88%, transparent)", borderColor: "var(--linha)", backdropFilter: "blur(8px)" }}
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -234,7 +236,7 @@ export function ShellPremium({
             </button>
           </div>
         </header>
-        <div className="p-4 md:p-8 flex-1 animate-fade-in">{children}</div>
+        <div className="p-4 md:p-8 print:p-0 flex-1 animate-fade-in">{children}</div>
       </main>
       <ToastContainer />
     </div>
