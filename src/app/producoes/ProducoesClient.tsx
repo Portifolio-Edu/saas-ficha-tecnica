@@ -9,7 +9,10 @@ import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Producao, StatusProducao, Turno, TipoItemProducao } from "@/lib/dominio/producao";
 import type { Processamento } from "@/lib/dominio/processamento";
+import type { Movimentacao, EstoqueLinha } from "@/lib/dominio/estoque";
 import { calcularCapacidadeProducao, linhasCapacidadeDaReceita, type SaldoEstoque } from "@/lib/calculo/capacidadeProducao";
+import { pesoBrutoDaLinha } from "@/lib/dados/adaptadores";
+import { movimentacoes as fixturesMovimentacoes } from "@/app/preview/fixtures";
 import { acaoIniciarProducao, acaoAtualizarStatusProducao } from "./actions";
 
 type ColunaId = "estoque" | "em_producao" | "produzido" | "perda";
@@ -21,6 +24,67 @@ interface CardEstoque {
   rendimentoLabel: string;
   lotes: number;
   gargalo: string | null;
+}
+
+interface ConsumoInsumo {
+  insumoId: string;
+  nome: string;
+  unidadeMedida: string;
+  quantidade: number;
+}
+
+function obterConsumosReceita(
+  receita: Receita,
+  fator: number,
+  receitasMap: Map<string, Receita>,
+  insumosMap: Map<string, Insumo>,
+  procs: Processamento[]
+): ConsumoInsumo[] {
+  const consumos: ConsumoInsumo[] = [];
+
+  for (const linha of receita.ficha) {
+    if (linha.insumoId) {
+      const insumo = insumosMap.get(linha.insumoId);
+      if (!insumo) continue;
+      let qtdBase = 0;
+      try {
+        const bruto = pesoBrutoDaLinha(linha, insumosMap, procs);
+        if (bruto !== null && !isNaN(bruto) && bruto > 0) {
+          qtdBase = bruto;
+        } else {
+          qtdBase = linha.pesoLiquido;
+        }
+      } catch {
+        qtdBase = linha.pesoLiquido;
+      }
+      consumos.push({
+        insumoId: insumo.id,
+        nome: insumo.nome,
+        unidadeMedida: insumo.unidadeMedida,
+        quantidade: Number((qtdBase * fator).toFixed(3)),
+      });
+    } else if (linha.subReceitaId) {
+      const sub = receitasMap.get(linha.subReceitaId);
+      if (sub) {
+        const proporcao = (linha.pesoLiquido / (sub.rendimento || 1)) * fator;
+        const subConsumos = obterConsumosReceita(sub, proporcao, receitasMap, insumosMap, procs);
+        consumos.push(...subConsumos);
+      }
+    }
+  }
+
+  // Agrupar insumos repetidos
+  const agrupado = new Map<string, ConsumoInsumo>();
+  for (const c of consumos) {
+    const ex = agrupado.get(c.insumoId);
+    if (ex) {
+      ex.quantidade = Number((ex.quantidade + c.quantidade).toFixed(3));
+    } else {
+      agrupado.set(c.insumoId, { ...c });
+    }
+  }
+
+  return Array.from(agrupado.values());
 }
 
 function transicaoValida(origem: ColunaId, destino: ColunaId): boolean {
@@ -51,18 +115,54 @@ export function ProducoesClient({
 
   const [listaProducoes, setListaProducoes] = useState<Producao[]>(producoes);
 
+  const [saldosMap, setSaldosMap] = useState<Map<string, number>>(() => {
+    const mapa = new Map<string, number>();
+    for (const i of insumos) {
+      if (i.estoque) mapa.set(i.id, i.estoque.saldoAtual);
+    }
+    return mapa;
+  });
+
   // Carregar dados salvos em preview para persistência imediata
   useEffect(() => {
     if (!emModoDemo) return;
-    try {
-      const salvo = localStorage.getItem("demo_producoes");
-      if (salvo) {
-        const parsed = JSON.parse(salvo);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setListaProducoes(parsed);
+
+    const carregarDemo = () => {
+      try {
+        const salvo = localStorage.getItem("demo_producoes");
+        if (salvo) {
+          const parsed = JSON.parse(salvo);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setListaProducoes(parsed);
+          }
         }
+        const salvoEst = localStorage.getItem("demo_estoque");
+        if (salvoEst) {
+          const parsedEst = JSON.parse(salvoEst);
+          if (Array.isArray(parsedEst) && parsedEst.length > 0) {
+            setSaldosMap((prev) => {
+              const novo = new Map(prev);
+              for (const item of parsedEst) {
+                if (item.insumoId && typeof item.saldoAtual === "number") {
+                  novo.set(item.insumoId, item.saldoAtual);
+                }
+              }
+              return novo;
+            });
+          }
+        }
+      } catch {}
+    };
+
+    carregarDemo();
+
+    const escutarStorage = (e: StorageEvent) => {
+      if (e.key === "demo_producoes" || e.key === "demo_estoque") {
+        carregarDemo();
       }
-    } catch {}
+    };
+    window.addEventListener("storage", escutarStorage);
+    return () => window.removeEventListener("storage", escutarStorage);
   }, [emModoDemo]);
 
   const atualizarProducoes = (novas: Producao[] | ((prev: Producao[]) => Producao[])) => {
@@ -91,11 +191,11 @@ export function ProducoesClient({
   const insumoPorId = useMemo(() => new Map(insumos.map((i) => [i.id, i])), [insumos]);
   const saldosPorInsumoId = useMemo(() => {
     const mapa = new Map<string, SaldoEstoque>();
-    for (const i of insumos) {
-      if (i.estoque) mapa.set(i.id, { insumoId: i.id, saldoAtual: i.estoque.saldoAtual });
+    for (const [id, saldo] of saldosMap.entries()) {
+      mapa.set(id, { insumoId: id, saldoAtual: saldo });
     }
     return mapa;
-  }, [insumos]);
+  }, [saldosMap]);
 
   const capacidadePratos = useMemo(
     () =>
@@ -262,6 +362,97 @@ export function ProducoesClient({
       };
 
       atualizarProducoes((prev) => [nova, ...prev]);
+
+      // REGISTRAR SAÍDA DO ESTOQUE PARA PRODUÇÃO
+      if (receitaObj) {
+        const consumos = obterConsumosReceita(
+          receitaObj,
+          1,
+          receitaPorId,
+          insumoPorId,
+          processamentos
+        );
+
+        if (consumos.length > 0) {
+          // 1. Criar e salvar movimentações de saída para produção
+          try {
+            let movsAtuais: Movimentacao[] = [];
+            const salvoMov = localStorage.getItem("demo_movimentacoes");
+            if (salvoMov) {
+              const parsed = JSON.parse(salvoMov);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                movsAtuais = parsed;
+              }
+            }
+            if (movsAtuais.length === 0) {
+              movsAtuais = [...fixturesMovimentacoes];
+            }
+
+            const novasMovs: Movimentacao[] = consumos.map((c, idx) => ({
+              id: `demo-mov-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+              insumoId: c.insumoId,
+              nomeInsumo: c.nome,
+              unidadeMedida: c.unidadeMedida,
+              tipo: "saida_producao",
+              quantidade: c.quantidade,
+              origem: `Produção — lote ${novoLote} (${item.nome})`,
+              criadoEm: agora.toISOString(),
+            }));
+
+            const todasMovs = [...novasMovs, ...movsAtuais];
+            localStorage.setItem("demo_movimentacoes", JSON.stringify(todasMovs));
+          } catch {}
+
+          // 2. Abater saldo no armazenamento (demo_estoque)
+          try {
+            let estoqueAtual: EstoqueLinha[] = [];
+            const salvoEst = localStorage.getItem("demo_estoque");
+            if (salvoEst) {
+              const parsedEst = JSON.parse(salvoEst);
+              if (Array.isArray(parsedEst) && parsedEst.length > 0) {
+                estoqueAtual = parsedEst;
+              }
+            }
+            if (estoqueAtual.length === 0) {
+              estoqueAtual = insumos.map((i) => ({
+                insumoId: i.id,
+                nome: i.nome,
+                categoria: i.categoria,
+                unidadeMedida: i.unidadeMedida,
+                precoUnitario: i.precoUnitario,
+                saldoAtual: i.estoque?.saldoAtual ?? 0,
+                estoqueMinimo: i.estoque?.estoqueMinimo ?? 0,
+                atualizadoEm: agora.toISOString(),
+              }));
+            }
+
+            const consumoMap = new Map(consumos.map((c) => [c.insumoId, c.quantidade]));
+
+            const novoEstoque = estoqueAtual.map((linha) => {
+              const gasto = consumoMap.get(linha.insumoId);
+              if (!gasto) return linha;
+              return {
+                ...linha,
+                saldoAtual: Math.max(0, Number((linha.saldoAtual - gasto).toFixed(3))),
+                atualizadoEm: agora.toISOString(),
+              };
+            });
+
+            localStorage.setItem("demo_estoque", JSON.stringify(novoEstoque));
+          } catch {}
+
+          // 3. Atualizar saldos locais em ProducoesClient para recalcular capacidade em tempo real
+          setSaldosMap((prev) => {
+            const novo = new Map(prev);
+            for (const c of consumos) {
+              const atual = novo.get(c.insumoId) ?? 0;
+              novo.set(c.insumoId, Math.max(0, Number((atual - c.quantidade).toFixed(3))));
+            }
+            return novo;
+          });
+        }
+      }
+
       setErroAcao(null);
       return;
     }

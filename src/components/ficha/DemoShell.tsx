@@ -9,6 +9,7 @@ import {
   Menu, X, ArrowLeft, Sun, Moon,
 } from "lucide-react";
 import { ToastContainer } from "./Toast";
+import { BotaoAgenteIa } from "@/components/ia/BotaoAgenteIa";
 
 interface NavItem {
   id: string;
@@ -278,42 +279,48 @@ export function DemoShell({
             </h1>
           </div>
 
-          {/* Calibração de Modo Claro / Escuro (Segmented Control Grande) */}
-          <div
-            className="flex items-center p-1 rounded-full border gap-1.5 shadow-sm"
-            style={{
-              backgroundColor: "var(--panel-elevated)",
-              borderColor: "var(--linha-forte)",
-            }}
-          >
-            <button
-              onClick={() => alternarTema("light")}
-              className={`px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
-                tema === "light"
-                  ? "bg-[var(--tinta)] text-[var(--panel)] shadow-sm"
-                  : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
-              }`}
-              title="Modo Claro"
+          <div className="flex items-center gap-3">
+            {/* Botão de Atalho do Agente IA no Cabeçalho */}
+            <BotaoAgenteIa variante="cabecalho" />
+
+            {/* Calibração de Modo Claro / Escuro (Segmented Control Grande) */}
+            <div
+              className="flex items-center p-1 rounded-full border gap-1.5 shadow-sm"
+              style={{
+                backgroundColor: "var(--panel-elevated)",
+                borderColor: "var(--linha-forte)",
+              }}
             >
-              <Sun size={14} strokeWidth={2} />
-              <span>CLARO</span>
-            </button>
-            <button
-              onClick={() => alternarTema("dark")}
-              className={`px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
-                tema === "dark"
-                  ? "bg-[var(--tinta)] text-[var(--fundo)] shadow-sm"
-                  : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
-              }`}
-              title="Modo Escuro"
-            >
-              <Moon size={14} strokeWidth={2} />
-              <span>ESCURO</span>
-            </button>
+              <button
+                onClick={() => alternarTema("light")}
+                className={`px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
+                  tema === "light"
+                    ? "bg-[var(--tinta)] text-[var(--panel)] shadow-sm"
+                    : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
+                }`}
+                title="Modo Claro"
+              >
+                <Sun size={14} strokeWidth={2} />
+                <span>CLARO</span>
+              </button>
+              <button
+                onClick={() => alternarTema("dark")}
+                className={`px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
+                  tema === "dark"
+                    ? "bg-[var(--tinta)] text-[var(--fundo)] shadow-sm"
+                    : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
+                }`}
+                title="Modo Escuro"
+              >
+                <Moon size={14} strokeWidth={2} />
+                <span>ESCURO</span>
+              </button>
+            </div>
           </div>
         </header>
         <div className="p-5 md:p-8 flex-1 animate-fade-in">{children}</div>
       </main>
+      <BotaoAgenteIa variante="flutuante" />
       <ToastContainer />
     </div>
   );

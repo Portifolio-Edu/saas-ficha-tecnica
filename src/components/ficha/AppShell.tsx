@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ToastContainer } from "./Toast";
+import { BotaoAgenteIa } from "@/components/ia/BotaoAgenteIa";
 
 interface NavItem {
   id: string;
@@ -255,9 +256,11 @@ export function AppShell({
               {tituloPagina}
             </h1>
           </div>
+          <BotaoAgenteIa variante="cabecalho" />
         </header>
         <div className="p-4 md:p-8 flex-1 animate-fade-in">{children}</div>
       </main>
+      <BotaoAgenteIa variante="flutuante" />
       <ToastContainer />
     </div>
   );

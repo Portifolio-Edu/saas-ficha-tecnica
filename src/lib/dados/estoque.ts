@@ -107,7 +107,12 @@ export async function listarMovimentacoes(limite = 30): Promise<Movimentacao[]> 
  * histórico (saldo já correto), o que é preferível a saldo e histórico
  * dessincronizados.
  */
-export async function registrarMovimentacao(insumoId: string, tipo: "entrada" | "ajuste", quantidade: number, origem: string): Promise<void> {
+export async function registrarMovimentacao(
+  insumoId: string,
+  tipo: "entrada" | "ajuste" | "saida_producao",
+  quantidade: number,
+  origem: string
+): Promise<void> {
   const supabase = await createClient();
 
   const delta = tipo === "entrada" ? quantidade : -quantidade;
@@ -115,6 +120,13 @@ export async function registrarMovimentacao(insumoId: string, tipo: "entrada" | 
   const { error: erroRpc } = await supabase.rpc("ajustar_saldo_estoque", { p_insumo_id: insumoId, p_delta: delta });
   if (erroRpc) throw new Error(mensagemErro(erroRpc));
 
-  const { error: erroInsert } = await supabase.from("movimentacoes_estoque").insert({ insumo_id: insumoId, tipo, quantidade, origem });
+  // No banco a constraint check aceita ('entrada', 'saida_venda', 'ajuste').
+  // Se for saida_producao, grava como ajuste com origem explicitando Produção.
+  const tipoDb = tipo === "saida_producao" ? "ajuste" : tipo;
+  const origemDb = tipo === "saida_producao" && !origem.toLowerCase().includes("produção")
+    ? `Produção — ${origem}`
+    : origem;
+
+  const { error: erroInsert } = await supabase.from("movimentacoes_estoque").insert({ insumo_id: insumoId, tipo: tipoDb, quantidade, origem: origemDb });
   if (erroInsert) throw new Error(mensagemErro(erroInsert));
 }
