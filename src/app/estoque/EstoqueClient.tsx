@@ -1,5 +1,9 @@
 "use client";
 
+// SISTEMA premium (2026-09-22): botões do agente (demo) neutros, selos de movimentação em
+// retângulo com cores de token, títulos de seção 16px, linhas de 14px. Versão anterior:
+// `git show 4f29ec6:src/app/estoque/EstoqueClient.tsx`.
+
 import { Fragment, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Camera, Mic } from "lucide-react";
@@ -106,22 +110,19 @@ export function EstoqueClient({
     <div className="max-w-5xl space-y-6">
       <div>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Saldo em armazenamento</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Saldo em armazenamento</h2>
           <div className="flex items-center gap-2">
             {emModoDemo && (
             <button
               onClick={() => abrirAgenteIaComFoco()}
               type="button"
-              className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all"
-              style={{
-                background: "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15))",
-                color: "var(--sucesso)",
-                border: "1px solid rgba(16, 185, 129, 0.35)",
-              }}
+              className="flex items-center gap-2 text-[13px] font-medium px-3 min-h-10 rounded-lg border transition-colors hover:bg-[var(--panel-hover)]"
+              // SISTEMA premium: botão neutro do agente (demo), igual ao da barra. Antes: degradê colorido.
+              style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}
               title="Ler foto de nota fiscal ou rótulo de fornecedor com IA"
             >
-              <Camera size={14} />
-              <span>Ler Nota / Rótulo via IA</span>
+              <Camera size={15} style={{ color: "var(--marca)" }} />
+              <span>Ler nota ou rótulo com IA</span>
             </button>
             )}
             <button
@@ -198,22 +199,19 @@ export function EstoqueClient({
 
       <div>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Entradas e saídas</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Entradas e saídas</h2>
           <div className="flex items-center gap-2">
             {emModoDemo && (
             <button
               onClick={() => abrirAgenteIaComFoco()}
               type="button"
-              className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all"
-              style={{
-                background: "linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.15))",
-                color: "#F59E0B",
-                border: "1px solid rgba(245, 158, 11, 0.35)",
-              }}
+              className="flex items-center gap-2 text-[13px] font-medium px-3 min-h-10 rounded-lg border transition-colors hover:bg-[var(--panel-hover)]"
+              // SISTEMA premium: botão neutro do agente (demo), igual ao da barra. Antes: degradê colorido.
+              style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}
               title="Lançar movimentação por comando de voz ou WhatsApp"
             >
-              <Mic size={14} />
-              <span>Lançar por Áudio / WhatsApp</span>
+              <Mic size={15} style={{ color: "var(--marca)" }} />
+              <span>Lançar por áudio</span>
             </button>
             )}
             <button
@@ -283,48 +281,26 @@ export function EstoqueClient({
               const cor = m.tipo === "entrada"
                 ? "var(--sucesso)"
                 : isSaidaProducao
-                ? "#F59E0B"
+                ? "var(--etapa-producao-texto)"
                 : m.tipo === "ajuste"
                 ? "var(--danger)"
                 : "var(--sub)";
               return (
-                <div key={m.id} className="flex items-center justify-between text-[12.5px] py-2.5" style={{ borderTop: idx ? `1px solid ${"var(--border)"}` : "none" }}>
+                <div key={m.id} className="flex items-center justify-between gap-3 text-[14px] py-3" style={{ borderTop: idx ? `1px solid ${"var(--border)"}` : "none" }}>
                   <div>
-                    <span className="font-bold text-[var(--tinta)]">{m.nomeInsumo}</span>
-                    {m.origem && <span className="text-[var(--tinta-sub)] text-[12px]"> · {m.origem}</span>}
+                    <span className="font-medium text-[var(--tinta)]">{m.nomeInsumo}</span>
+                    {m.origem && <span className="text-[var(--tinta-sub)] text-[13px]"> · {m.origem}</span>}
                   </div>
                   <div className="flex items-center gap-3">
                     <span style={{ color: "var(--tinta-faint)" }}>{formatarData(m.criadoEm)}</span>
-                    <span style={{ ...nums, color: cor, fontWeight: 800 }}>
+                    <span className="whitespace-nowrap" style={{ ...nums, color: cor, fontWeight: 600 }}>
                       {m.tipo === "entrada" ? "+" : "-"}{formatQtd(Math.abs(m.quantidade))}{m.unidadeMedida}
                     </span>
+                    {/* SISTEMA premium: selo em retângulo, cor do tipo via tokens (saída de produção usa a
+                        cor da etapa "em produção"). Antes: pílula com rgba fixos e #F59E0B solto. */}
                     <span
-                      className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: isSaidaProducao
-                          ? "rgba(245, 158, 11, 0.15)"
-                          : m.tipo === "ajuste"
-                          ? "rgba(220, 38, 38, 0.12)"
-                          : m.tipo === "entrada"
-                          ? "rgba(16, 185, 129, 0.12)"
-                          : "rgba(100, 116, 139, 0.12)",
-                        color: isSaidaProducao
-                          ? "#F59E0B"
-                          : m.tipo === "ajuste"
-                          ? "var(--danger)"
-                          : m.tipo === "entrada"
-                          ? "var(--sucesso)"
-                          : "var(--tinta-sub)",
-                        border: `1px solid ${
-                          isSaidaProducao
-                            ? "rgba(245, 158, 11, 0.35)"
-                            : m.tipo === "ajuste"
-                            ? "rgba(220, 38, 38, 0.3)"
-                            : m.tipo === "entrada"
-                            ? "rgba(16, 185, 129, 0.3)"
-                            : "var(--linha)"
-                        }`,
-                      }}
+                      className="text-[12px] font-medium px-2 py-0.5 rounded-md whitespace-nowrap"
+                      style={{ backgroundColor: `color-mix(in srgb, ${cor} 11%, transparent)`, color: cor }}
                     >
                       {label}
                     </span>
@@ -343,7 +319,7 @@ export function EstoqueClient({
 
       <div>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Fornecedores</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Fornecedores</h2>
           <button
             onClick={() => {
               setFornecedorEditando(null);
