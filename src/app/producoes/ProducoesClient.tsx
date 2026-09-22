@@ -702,7 +702,7 @@ export function ProducoesClient({
                           opacity: loteArrastando?.item === pr ? 0.4 : 1,
                         }}
                       >
-                        <div className="text-[12px] font-black uppercase tracking-wider text-[var(--tinta-sub)] flex items-center gap-1.5">
+                        <div className="text-[12px] font-medium text-[var(--tinta-sub)] flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: estilo.cor }} aria-hidden />
                           {pr.lote}
                         </div>

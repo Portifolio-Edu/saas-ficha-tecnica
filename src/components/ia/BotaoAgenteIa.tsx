@@ -112,7 +112,7 @@ export function BotaoAgenteIa({
               <span className="text-[12.5px] font-black tracking-tight leading-none">
                 Agente IA Cozinha
               </span>
-              <span className="text-[9px] font-black uppercase px-1 py-0.2 rounded bg-white/15 text-white border border-white/30">
+              <span className="text-[9px] font-black px-1 py-0.2 rounded bg-white/15 text-white border border-white/30">
                 Demo
               </span>
             </div>

@@ -451,7 +451,7 @@ export function AgenteIaModal({
                 <h3 className="text-[15px] font-black tracking-tight text-[var(--tinta)]">
                   Agente IA de Cozinha &amp; Estoque
                 </h3>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30 uppercase tracking-wider">
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
                   Demonstração
                 </span>
               </div>
@@ -526,7 +526,7 @@ export function AgenteIaModal({
               <div className="inline-block p-4 rounded-xl bg-white shadow-md border mb-4">
                 <div className="w-44 h-44 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 text-slate-700">
                   <QrCode size={110} strokeWidth={1.5} className="text-slate-800" />
-                  <span className="text-[10px] font-extrabold uppercase mt-2 text-slate-500 tracking-wider">
+                  <span className="text-[10px] font-extrabold mt-2 text-slate-500">
                     Escanear com WhatsApp
                   </span>
                 </div>
@@ -594,11 +594,11 @@ export function AgenteIaModal({
                   }`}
                 >
                   <div className="flex items-center gap-1.5 mb-1 px-1">
-                    <span className="text-[10.5px] font-extrabold uppercase text-[var(--tinta-faint)]">
+                    <span className="text-[10.5px] font-extrabold text-[var(--tinta-faint)]">
                       {msg.remetente === "usuario" ? "Você" : "Agente IA"}
                     </span>
                     {msg.origem === "whatsapp" && (
-                      <span className="text-[9.5px] font-black px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase">
+                      <span className="text-[9.5px] font-black px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                         via WhatsApp
                       </span>
                     )}
@@ -679,7 +679,7 @@ export function AgenteIaModal({
                             </span>
                           </div>
                           <span
-                            className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase"
+                            className="text-[10px] font-black px-2 py-0.5 rounded-full"
                             style={{
                               backgroundColor: msg.acaoProposta.executada
                                 ? "rgba(16, 185, 129, 0.15)"
@@ -762,7 +762,7 @@ export function AgenteIaModal({
 
             {/* Barra de Ações Rápidas (Chips de Exemplo) */}
             <div className="px-4 py-2 border-t flex items-center gap-2 overflow-x-auto" style={{ borderColor: "var(--linha)", backgroundColor: "var(--panel)" }}>
-              <span className="text-[11px] font-bold text-[var(--tinta-faint)] shrink-0 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[var(--tinta-faint)] shrink-0">
                 Exemplos:
               </span>
               <button

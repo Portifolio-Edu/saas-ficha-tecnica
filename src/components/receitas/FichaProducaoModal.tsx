@@ -84,7 +84,7 @@ export function FichaProducaoModal({
             )}
 
             <div className="mb-5">
-              <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--sub)" }}>
+              <h4 className="text-[13px] font-semibold mb-2" style={{ color: "var(--sub)" }}>
                 Ingredientes
               </h4>
               {receita.ficha.length === 0 ? (
@@ -106,7 +106,7 @@ export function FichaProducaoModal({
             </div>
 
             <div>
-              <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--sub)" }}>
+              <h4 className="text-[13px] font-semibold mb-2" style={{ color: "var(--sub)" }}>
                 Passo a passo
               </h4>
               {etapasOrdenadas.length === 0 ? (

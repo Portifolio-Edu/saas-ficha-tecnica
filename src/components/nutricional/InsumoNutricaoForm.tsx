@@ -116,7 +116,7 @@ export function InsumoNutricaoForm({
           <span className="text-[12px] font-bold text-[var(--tinta)]">
             Preenchimento automático por imagem ou áudio
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: "var(--panel)", color: "var(--tinta-sub)", border: "1px solid var(--linha)" }}>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--panel)", color: "var(--tinta-sub)", border: "1px solid var(--linha)" }}>
             Demonstração
           </span>
         </div>
