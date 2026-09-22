@@ -244,40 +244,38 @@ export function ReceitasClient({
                       ))}
                     </div>
 
-                    <div className="mb-3">
+                    {/* SISTEMA premium: ações numa barra só, botões de 40px com o mesmo idioma
+                        (primário = ficha de produção; PDFs e editar secundários; excluir afastado à
+                        direita). Antes: três linhas de botões de tamanhos diferentes e o "PDF · Ficha de
+                        Custos" com o ícone empilhado sobre o texto. */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
                       <button
                         onClick={() => setFichaProducao(p)}
-                        className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
-                        style={{ border: `1px solid ${"var(--border-strong)"}` }}
+                        className="flex items-center gap-2 text-[13px] font-medium px-3.5 min-h-10 rounded-lg"
+                        style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}
                       >
-                        <ClipboardList size={13} /> Ver ficha de produção
+                        <ClipboardList size={15} /> Ver ficha de produção
                       </button>
-                    </div>
-
-                    <div className="flex gap-2 mb-3">
                       <button
                         onClick={() => gerarPdfCustos(p)}
                         disabled={gerandoPdf === `${p.id}-custos`}
-                        className="text-[11px] font-medium px-2.5 py-1 rounded"
-                        style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: gerandoPdf === `${p.id}-custos` ? 0.6 : 1 }}
+                        className="flex items-center gap-2 text-[13px] font-medium px-3.5 min-h-10 rounded-lg border hover:bg-[var(--panel-hover)]"
+                        style={{ borderColor: "var(--linha-forte)", opacity: gerandoPdf === `${p.id}-custos` ? 0.6 : 1 }}
                       >
-                        <Download size={13} /> {gerandoPdf === `${p.id}-custos` ? "Gerando..." : "PDF · Ficha de Custos"}
+                        <Download size={15} /> {gerandoPdf === `${p.id}-custos` ? "Gerando..." : "PDF de custos"}
                       </button>
                       <button
                         onClick={() => gerarPdfOperacional(p)}
                         disabled={gerandoPdf === `${p.id}-operacional`}
-                        className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg"
-                        style={{ border: `1px solid ${"var(--border-strong)"}`, opacity: gerandoPdf === `${p.id}-operacional` ? 0.6 : 1 }}
+                        className="flex items-center gap-2 text-[13px] font-medium px-3.5 min-h-10 rounded-lg border hover:bg-[var(--panel-hover)]"
+                        style={{ borderColor: "var(--linha-forte)", opacity: gerandoPdf === `${p.id}-operacional` ? 0.6 : 1 }}
                       >
-                        <Download size={13} /> {gerandoPdf === `${p.id}-operacional` ? "Gerando..." : "PDF · Ficha Operacional"}
+                        <Download size={15} /> {gerandoPdf === `${p.id}-operacional` ? "Gerando..." : "PDF operacional"}
                       </button>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditando(p)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
+                      <button onClick={() => setEditando(p)} className="text-[13px] font-medium px-3.5 min-h-10 rounded-lg border hover:bg-[var(--panel-hover)]" style={{ borderColor: "var(--linha-forte)" }}>
                         Editar
                       </button>
-                      <button onClick={() => excluirComConfirmacao(p)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ color: "var(--danger)", border: `1px solid ${"var(--border-strong)"}` }}>
+                      <button onClick={() => excluirComConfirmacao(p)} className="sm:ml-auto text-[13px] font-medium px-3.5 min-h-10 rounded-lg hover:bg-[var(--danger-soft)]" style={{ color: "var(--danger)" }}>
                         Excluir
                       </button>
                     </div>
