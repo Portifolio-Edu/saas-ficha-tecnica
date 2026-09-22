@@ -187,7 +187,7 @@ export function NutricionalClient({
 
   return (
     <div className="max-w-5xl">
-      <h2 className="text-[14px] font-semibold mb-1">Ficha nutricional por porção</h2>
+      <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Ficha nutricional por porção</h2>
       <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Calculado a partir do peso bruto de cada insumo na receita, mesma lógica do CMV. Aproximação de cálculo, não laudo laboratorial.</p>
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {pratos.map((p) => (
@@ -262,18 +262,19 @@ export function NutricionalClient({
               ) : (
                 <div
                   key={insumo.id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl border shadow-sm transition-all"
+                  // SISTEMA premium: linha de pendência com borda do token de risco (antes rgba fixo + shadow).
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-lg border"
                   style={{
                     backgroundColor: "var(--danger-soft)",
-                    borderColor: "rgba(220, 38, 38, 0.25)",
+                    borderColor: "color-mix(in srgb, var(--sinal) 25%, transparent)",
                   }}
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                    <span className="font-extrabold text-[13.5px] text-[var(--tinta)]">
+                    <span className="w-2 h-2 rounded-full" style={{ background: "var(--sinal)" }} />
+                    <span className="font-medium text-[14px] text-[var(--tinta)]">
                       {insumo.nome}
                     </span>
-                    <span className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
+                    <span className="text-[13px]" style={{ color: "var(--danger)" }}>
                       · Bloqueia cálculo exato do rótulo
                     </span>
                   </div>
@@ -282,25 +283,24 @@ export function NutricionalClient({
                     {emModoDemo && (
                     <button
                       onClick={() => abrirAgenteIaComFoco(insumo.id, insumo.nome)}
-                      className="px-3.5 py-1.5 rounded-lg text-[12px] font-extrabold flex items-center gap-1.5 text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-                      style={{
-                        background: "linear-gradient(135deg, #7C3AED 0%, #2563EB 100%)",
-                      }}
+                      // SISTEMA premium: botão neutro do agente (demo). Antes: degradê roxo-azul e emoji 📷.
+                      className="px-3 min-h-10 rounded-lg text-[13px] font-medium flex items-center gap-2 border hover:bg-[var(--panel-hover)]"
+                      style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}
                     >
-                      <Sparkles size={14} className="text-amber-300" />
-                      <span>📷 Ler Rótulo com IA</span>
+                      <Sparkles size={15} style={{ color: "var(--marca)" }} />
+                      <span>Ler rótulo com IA</span>
                     </button>
                     )}
 
                     <button
                       onClick={() => setInsumoEditandoId(insumo.id)}
-                      className="px-3 py-1.5 rounded-lg text-[12px] font-bold border transition-all hover:bg-black/5 dark:hover:bg-white/5"
+                      className="px-3 min-h-10 rounded-lg text-[13px] font-medium border transition-colors hover:bg-[var(--panel-hover)]"
                       style={{
-                        borderColor: "rgba(220, 38, 38, 0.4)",
+                        borderColor: "color-mix(in srgb, var(--sinal) 40%, transparent)",
                         color: "var(--danger)",
                       }}
                     >
-                      Digitar Manualmente
+                      Digitar valores
                     </button>
                   </div>
                 </div>

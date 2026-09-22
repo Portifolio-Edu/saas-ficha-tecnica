@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Camera, Sparkles, Check, Mic } from "lucide-react";
 import { nums } from "@/components/ficha/tema";
+// SISTEMA premium (2026-09-22): barra do agente (demo) no acento --marca e botões neutros;
+// antes roxo fixo (purple-600) e emoji. Versão anterior: `git show 4f29ec6:src/components/nutricional/InsumoNutricaoForm.tsx`.
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
 import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
@@ -108,9 +110,9 @@ export function InsumoNutricaoForm({
       {emModoDemo && (
       <>
       {/* Barra de Inteligência Artificial para Leitura de Rótulo -- simulada, só na demo */}
-      <div className="p-2.5 rounded-lg mb-3 flex flex-wrap items-center justify-between gap-2 border" style={{ backgroundColor: "rgba(124, 58, 237, 0.08)", borderColor: "rgba(124, 58, 237, 0.25)" }}>
+      <div className="p-2.5 rounded-lg mb-3 flex flex-wrap items-center justify-between gap-2 border" style={{ backgroundColor: "var(--marca-suave)", borderColor: "color-mix(in srgb, var(--marca) 25%, transparent)" }}>
         <div className="flex items-center gap-2">
-          <Sparkles size={16} className="text-purple-500 shrink-0" />
+          <Sparkles size={16} className="shrink-0" style={{ color: "var(--marca)" }} />
           <span className="text-[12px] font-bold text-[var(--tinta)]">
             Preenchimento automático por imagem ou áudio
           </span>
@@ -131,19 +133,19 @@ export function InsumoNutricaoForm({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={lendoIa}
-            className="px-2.5 py-1 rounded-md text-[11.5px] font-bold flex items-center gap-1.5 bg-purple-600 text-white hover:bg-purple-700 shadow-sm transition-all"
+            className="px-3 min-h-9 rounded-md text-[13px] font-medium flex items-center gap-1.5 border bg-[var(--panel)] border-[var(--linha)] text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
           >
             <Camera size={13} />
-            <span>{lendoIa ? "Lendo rótulo..." : "📷 Foto do Rótulo"}</span>
+            <span>{lendoIa ? "Lendo rótulo..." : "Foto do rótulo"}</span>
           </button>
 
           <button
             type="button"
             onClick={() => abrirAgenteIaComFoco(insumo.id, insumo.nome)}
-            className="px-2.5 py-1 rounded-md text-[11.5px] font-bold flex items-center gap-1.5 border border-purple-500/40 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-all"
+            className="px-3 min-h-9 rounded-md text-[13px] font-medium flex items-center gap-1.5 border bg-[var(--panel)] border-[var(--linha)] text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
           >
             <Mic size={13} />
-            <span>Abrir Agente IA</span>
+            <span>Abrir agente IA</span>
           </button>
         </div>
       </div>
