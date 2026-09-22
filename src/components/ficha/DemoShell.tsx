@@ -205,12 +205,15 @@ export function DemoShell({
             {iniciais}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] md:text-[14px] font-black text-[var(--tinta)] truncate">
+            {/* POLIMENTO shell: nome em até 2 linhas (antes cortava "Cantina Bella ...") e
+                selo "Modo demonstração" numa linha. Antes: "SISTEMA OPERACIONAL ATIVO", que
+                quebrava em 3 linhas e afirmava um status que a demo não tem. */}
+            <div className="text-[13px] md:text-[14px] font-black text-[var(--tinta)] leading-tight line-clamp-2">
               {nomeRestaurante}
             </div>
-            <div className="text-[11px] font-extrabold text-[var(--sucesso)] flex items-center gap-1.5 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--sucesso)]" />
-              SISTEMA OPERACIONAL ATIVO
+            <div className="text-[11px] font-extrabold text-[var(--tinta-sub)] flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--aviso)] shrink-0" />
+              Modo demonstração
             </div>
           </div>
         </div>
@@ -266,7 +269,12 @@ export function DemoShell({
             borderColor: "var(--linha)",
           }}
         >
-          <div className="flex items-center gap-3.5">
+          {/* POLIMENTO shell (2026-09-22): no celular o título quebrava em duas linhas
+              ("Visão / Geral") e o seletor de tema passava da tela ("ESCURO" cortado).
+              Agora: título numa linha só (trunca se precisar), botões de tema só com
+              ícone abaixo de 640px. Antes: gap-3.5 e rótulos CLARO/ESCURO sempre visíveis.
+              Reverter: git revert do commit "polimento(shell)" (ver docs/POLIMENTO.md). */}
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setMobileAberto(true)}
               className="md:hidden p-2 rounded-xl text-[var(--tinta-sub)] hover:bg-[var(--panel-elevated)] border border-[var(--linha)]"
@@ -274,12 +282,12 @@ export function DemoShell({
             >
               <Menu size={20} strokeWidth={2} />
             </button>
-            <h1 className="text-[18px] md:text-[20px] font-black tracking-tight text-[var(--tinta)]">
+            <h1 className="text-[18px] md:text-[20px] font-black tracking-tight text-[var(--tinta)] truncate">
               {tituloPagina}
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Botão de Atalho do Agente IA no Cabeçalho */}
             <BotaoAgenteIa variante="cabecalho" />
 
@@ -293,27 +301,31 @@ export function DemoShell({
             >
               <button
                 onClick={() => alternarTema("light")}
-                className={`px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
+                className={`px-2.5 sm:px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
                   tema === "light"
                     ? "bg-[var(--tinta)] text-[var(--panel)] shadow-sm"
                     : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
                 }`}
                 title="Modo Claro"
+                aria-label="Modo claro"
+                aria-pressed={tema === "light"}
               >
                 <Sun size={14} strokeWidth={2} />
-                <span>CLARO</span>
+                <span className="hidden sm:inline">CLARO</span>
               </button>
               <button
                 onClick={() => alternarTema("dark")}
-                className={`px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
+                className={`px-2.5 sm:px-3.5 py-1.5 rounded-full text-[12px] md:text-[13px] font-extrabold flex items-center gap-2 transition-all ${
                   tema === "dark"
                     ? "bg-[var(--tinta)] text-[var(--fundo)] shadow-sm"
                     : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
                 }`}
                 title="Modo Escuro"
+                aria-label="Modo escuro"
+                aria-pressed={tema === "dark"}
               >
                 <Moon size={14} strokeWidth={2} />
-                <span>ESCURO</span>
+                <span className="hidden sm:inline">ESCURO</span>
               </button>
             </div>
           </div>

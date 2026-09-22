@@ -18,7 +18,7 @@ Se algo quebrar numa tela, olhe primeiro os arquivos listados na seção dela.
 
 ---
 
-## 1. Visão Geral — `polimento(visao-geral)`
+## 1. Visão Geral — commit `331d6a3`
 
 **Arquivos:** `src/app/visao-geral/VisaoGeralClient.tsx`,
 `src/components/instrumentos/ReguaCalibrada.tsx`,
@@ -52,3 +52,16 @@ usados nesta tela).
 **Não mexido de propósito (decisão sua):** títulos "Centro de Inteligência &
 Calibração Operacional", "Engenharia de Cardápio & Performance Unitária" e o
 selo "Motor operacional ativo".
+
+---
+
+## 2. Shell da demo (cabeçalho e menu) — commit `polimento(shell)`
+
+**Arquivo:** `src/components/ficha/DemoShell.tsx` (vale para todas as telas de `/preview`).
+
+- No celular, o título quebrava ("Visão / Geral") e o seletor de tema passava
+  da tela ("ESCURO" cortado). Agora o título fica numa linha e, abaixo de 640px,
+  os botões de tema mostram só o ícone (com `aria-label` e `aria-pressed`).
+- Rodapé do menu: o nome do restaurante vai em até 2 linhas (antes cortava
+  "Cantina Bella ..."). "SISTEMA OPERACIONAL ATIVO", que quebrava em 3 linhas,
+  virou "Modo demonstração".
