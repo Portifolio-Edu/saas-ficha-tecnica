@@ -55,19 +55,40 @@
   --shadow-elevated: 0 12px 36px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
   --shadow-glow: 0 0 24px -2px rgba(225, 29, 72, 0.35);
   --card-rim: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  /* SISTEMA (2026-09-22): cores das etapas do fluxo de produção como token.
+     Antes eram hex fixos dentro de ProducoesClient.tsx, iguais nos dois temas
+     (o texto azul-escuro #1D4ED8 ficava ilegível no tema escuro). Toda tela que
+     mostrar etapa usa estes -- ver DESIGN.md, "The Stage Color Rule".
+     Reverter: git revert do commit "sistema(tokens)" (ver docs/POLIMENTO.md). */
+  --etapa-estoque: #2563EB;
+  --etapa-estoque-texto: #1D4ED8;
+  --etapa-producao: #D97706;
+  --etapa-producao-texto: #B45309;
+  --etapa-produzido: #059669;
+  --etapa-produzido-texto: #047857;
+  --etapa-perda: #DC2626;
+  --etapa-perda-texto: #B91C1C;
+
+  /* SISTEMA: alvo mínimo de toque pro tablet na bancada (PRODUCT.md). */
+  --alvo-toque: 44px;
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
   
-  /* Apple Pro / Obsidian Dark Palette - Alta Legibilidade Operacional */
-  --fundo: #090D16;
-  --panel: #111726;
-  --panel-elevated: #192236;
-  --panel-hover: #222E47;
-  --tinta: #F8FAFC;
-  --tinta-sub: #CBD5E1;
-  --tinta-faint: #94A3B8;
+  /* SISTEMA (2026-09-22): escuro de verdade -- grafite neutro, sem azul.
+     Antes (azul-marinho): --fundo #090D16, --panel #111726,
+     --panel-elevated #192236, --panel-hover #222E47, --tinta #F8FAFC,
+     --tinta-sub #CBD5E1, --tinta-faint #94A3B8. Pra voltar, troque estes
+     valores (e os #0A0A0B abaixo) pelos antigos. */
+  --fundo: #0A0A0B;
+  --panel: #141415;
+  --panel-elevated: #1C1C1E;
+  --panel-hover: #26262A;
+  --tinta: #F4F4F5;
+  --tinta-sub: #D4D4D8;
+  --tinta-faint: #A1A1AA;
 
   /* Brand Signals */
   --sinal: #FF3B30;
@@ -87,11 +108,11 @@
   --text: var(--tinta);
   --sub: var(--tinta-sub);
   --faint: var(--tinta-faint);
-  --accent: #F8FAFC;
+  --accent: #F4F4F5;
   --accent-hover: #FFFFFF;
   --accent-soft: rgba(255, 255, 255, 0.08);
-  --accent-contrast: #090D16;
-  --text-contrast: #090D16;
+  --accent-contrast: #0A0A0B;
+  --text-contrast: #0A0A0B;
   --danger: var(--sinal);
   --danger-soft: rgba(255, 59, 48, 0.15);
 
@@ -105,6 +126,16 @@
   --shadow-elevated: 0 16px 44px -6px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   --shadow-glow: 0 0 28px -2px rgba(255, 59, 48, 0.4);
   --card-rim: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+
+  /* SISTEMA: etapas no tema escuro -- tons mais claros pra manter contraste. */
+  --etapa-estoque: #60A5FA;
+  --etapa-estoque-texto: #93C5FD;
+  --etapa-producao: #F59E0B;
+  --etapa-producao-texto: #FCD34D;
+  --etapa-produzido: #34D399;
+  --etapa-produzido-texto: #6EE7B7;
+  --etapa-perda: #F87171;
+  --etapa-perda-texto: #FCA5A5;
 }
 
 /* Correção global de contraste para botões escuros */
@@ -118,15 +149,15 @@
 [data-theme="dark"] a[style*="background:var(--accent)"],
 [data-theme="dark"] a[style*="background: var(--text)"],
 [data-theme="dark"] a[style*="background:var(--text)"] {
-  color: #090D16 !important;
+  color: var(--accent-contrast) !important;
 }
 
 [data-theme="dark"] button[style*="background: var(--accent)"] svg,
 [data-theme="dark"] button[style*="background:var(--accent)"] svg,
 [data-theme="dark"] a[style*="background: var(--accent)"] svg,
 [data-theme="dark"] a[style*="background:var(--accent)"] svg {
-  color: #090D16 !important;
-  stroke: #090D16 !important;
+  color: var(--accent-contrast) !important;
+  stroke: var(--accent-contrast) !important;
 }
 
 @layer base {
@@ -170,8 +201,9 @@
     outline: none;
     box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent);
   }
+  /* SISTEMA: seleção visível. Antes: var(--accent-soft) (5% de opacidade, quase invisível). */
   ::selection {
-    background: var(--accent-soft);
+    background: color-mix(in srgb, var(--etapa-estoque) 28%, transparent);
     color: var(--text);
   }
 
