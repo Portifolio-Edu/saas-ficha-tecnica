@@ -63,7 +63,7 @@ export function NovaProducaoForm({
             key={id}
             onClick={() => trocarTipo(id)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: tipo === id ? "var(--text)" : "var(--panel)", color: tipo === id ? "#fff" : "var(--text)", border: `1px solid ${tipo === id ? "var(--text)" : "var(--border-strong)"}` }}
+            style={{ background: tipo === id ? "var(--text)" : "var(--panel)", color: tipo === id ? "var(--text-contrast, #fff)" : "var(--text)", border: `1px solid ${tipo === id ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {label}
           </button>
@@ -84,7 +84,7 @@ export function NovaProducaoForm({
       </div>
       <ErroBanner erro={erro} />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Salvar produção"}
         </button>
         <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>

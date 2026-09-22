@@ -54,7 +54,7 @@ export function RotulagemForm({ rotulagem, onSaved }: { rotulagem?: Rotulagem; o
         ))}
       </div>
       <ErroBanner erro={erro} />
-      <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+      <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando ? 0.6 : 1 }}>
         {salvando ? "Salvando..." : "Salvar dados de rotulagem"}
       </button>
     </div>

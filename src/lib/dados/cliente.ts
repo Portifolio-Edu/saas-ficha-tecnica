@@ -23,6 +23,10 @@ interface MetadadosCadastro {
  * cadastro nunca chegaram a ser salvos.
  */
 export async function getClienteAtual(): Promise<ClienteAtual | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

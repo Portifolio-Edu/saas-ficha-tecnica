@@ -164,7 +164,7 @@ export function NutricionalClient({
               setRotulagemAberta(false);
             }}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: pratoSelecionadoId === p.id ? "var(--text)" : "var(--panel)", color: pratoSelecionadoId === p.id ? "#fff" : "var(--text)", border: `1px solid ${pratoSelecionadoId === p.id ? "var(--text)" : "var(--border-strong)"}` }}
+            style={{ background: pratoSelecionadoId === p.id ? "var(--text)" : "var(--panel)", color: pratoSelecionadoId === p.id ? "var(--accent-contrast, #fff)" : "var(--text)", border: `1px solid ${pratoSelecionadoId === p.id ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {p.nomePrato}
           </button>
@@ -221,7 +221,7 @@ export function NutricionalClient({
             setEditandoOverride(true);
           }}
           className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-          style={{ background: editandoOverride ? "var(--bg)" : "var(--accent)", color: editandoOverride ? "var(--text)" : "#fff", border: `1px solid ${editandoOverride ? "var(--border-strong)" : "var(--accent)"}` }}
+          style={{ background: editandoOverride ? "var(--bg)" : "var(--accent)", color: editandoOverride ? "var(--text)" : "var(--accent-contrast, #fff)", border: `1px solid ${editandoOverride ? "var(--border-strong)" : "var(--accent)"}` }}
         >
           {editandoOverride ? "Cancelar edição" : "Editar valores"}
         </button>
@@ -259,7 +259,7 @@ export function NutricionalClient({
               setEditandoOverride(false);
             }}
             className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
-            style={{ background: "var(--accent)", color: "#fff" }}
+            style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)" }}
           >
             Salvar valores do laudo
           </button>
@@ -314,7 +314,7 @@ export function NutricionalClient({
         onClick={gerarPdfRotulo}
         disabled={gerandoRotulo}
         className="flex items-center gap-1.5 text-[12.5px] font-medium px-3.5 py-2 rounded-lg mt-3"
-        style={{ background: "var(--accent)", color: "#fff", opacity: gerandoRotulo ? 0.6 : 1 }}
+        style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: gerandoRotulo ? 0.6 : 1 }}
       >
         <Download size={13} /> {gerandoRotulo ? "Gerando..." : "PDF · Rótulo Nutricional"}
       </button>

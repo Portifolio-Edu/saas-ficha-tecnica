@@ -48,7 +48,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
             key={i.id}
             onClick={() => setProteinaSelecionada(i.id)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: i.id === insumo.id ? "var(--text)" : "var(--panel)", color: i.id === insumo.id ? "#fff" : "var(--text)", border: `1px solid ${i.id === insumo.id ? "var(--text)" : "var(--border-strong)"}` }}
+            style={{ background: i.id === insumo.id ? "var(--text)" : "var(--panel)", color: i.id === insumo.id ? "var(--text-contrast, #fff)" : "var(--text)", border: `1px solid ${i.id === insumo.id ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {i.nome}
           </button>
@@ -56,7 +56,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
         <button
           onClick={() => setShowNovoProcessamento(!showNovoProcessamento)}
           className="ml-auto text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-          style={{ background: showNovoProcessamento ? "var(--bg)" : "var(--accent)", color: showNovoProcessamento ? "var(--text)" : "#fff", border: `1px solid ${showNovoProcessamento ? "var(--border-strong)" : "var(--accent)"}` }}
+          style={{ background: showNovoProcessamento ? "var(--bg)" : "var(--accent)", color: showNovoProcessamento ? "var(--text)" : "var(--accent-contrast, #fff)", border: `1px solid ${showNovoProcessamento ? "var(--border-strong)" : "var(--accent)"}` }}
         >
           {showNovoProcessamento ? "Fechar" : "+ Registrar lote"}
         </button>

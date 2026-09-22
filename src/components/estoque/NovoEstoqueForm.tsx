@@ -43,7 +43,7 @@ export function NovoEstoqueForm({ insumosDisponiveis, onCancel, onSaved }: { ins
       </div>
       <ErroBanner erro={erro} />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Adicionar ao estoque"}
         </button>
         <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>

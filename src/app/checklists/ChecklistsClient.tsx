@@ -106,7 +106,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
                 {erroNovo}
               </div>
             )}
-            <button onClick={criarChecklist} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "#fff" }}>
+            <button onClick={criarChecklist} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)" }}>
               Criar checklist
             </button>
           </div>
@@ -173,7 +173,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
                     className="text-[12px] px-2.5 py-1.5 rounded-md flex-1"
                     style={inputStyle}
                   />
-                  <button onClick={() => addItem(ch.id, ch.itens.length)} className="text-[12px] font-medium px-3 py-1.5 rounded-md" style={{ background: "var(--accent)", color: "#fff" }}>
+                  <button onClick={() => addItem(ch.id, ch.itens.length)} className="text-[12px] font-medium px-3 py-1.5 rounded-md" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)" }}>
                     +
                   </button>
                   <button onClick={() => excluirChecklistComConfirmacao(ch)} className="text-[12px] font-medium px-3 py-1.5 rounded-md" style={{ color: "var(--danger)", border: `1px solid ${"var(--border-strong)"}` }}>
