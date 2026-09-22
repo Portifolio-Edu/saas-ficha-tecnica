@@ -49,7 +49,7 @@ export default function ConceptTelemetria() {
 
         @keyframes tele-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
         @keyframes tele-varre { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-        @keyframes tele-tick { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+        @keyframes tele-tick { 0% { text-shadow: 0 0 0 transparent; } 100% { text-shadow: 0 0 16px currentColor; } }
 
         [data-tele] .t-topo { border-bottom: 1px solid var(--linha-forte); padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; }
         [data-tele] .t-topo::after { content: ""; position: absolute; bottom: -1px; left: 0; width: 40%; height: 1px; background: linear-gradient(90deg, transparent, var(--ciano), transparent); animation: tele-varre 3.5s linear infinite; }

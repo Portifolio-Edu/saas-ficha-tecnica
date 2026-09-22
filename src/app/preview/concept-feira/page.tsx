@@ -87,7 +87,7 @@ export default function ConceptFeira() {
         /* Banca de feira -- toldo escalopado no topo do painel, não retângulo puro. */
         [data-feira] .f-banca {
           background: var(--branco); position: relative; border-radius: 4px 4px 18px 18px;
-          box-shadow: 0 6px 0 rgba(42,33,24,0.08);
+          box-shadow: 6px 6px 0 rgba(42,33,24,0.08);
           border: 3px solid var(--tinta);
         }
         [data-feira] .f-toldo {
