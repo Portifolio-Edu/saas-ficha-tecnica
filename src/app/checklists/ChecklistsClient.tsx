@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { inputStyle, nums } from "@/components/ficha/tema";
@@ -11,6 +12,10 @@ import type { Turno } from "@/lib/dominio/producao";
 import { acaoCriarChecklist, acaoExcluirChecklist, acaoCriarItem, acaoRemoverItem, acaoAlternarItem } from "./actions";
 
 export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist[]; turnos: Turno[] }) {
+  const pathname = usePathname();
+  const emModoDemo = pathname?.startsWith("/preview");
+  const [listaChecklists, setListaChecklists] = useState<Checklist[]>(checklists);
+
   const [turnoId, setTurnoId] = useState<string | null>(turnos[0]?.id ?? null);
   const [chefeTurno, setChefeTurno] = useState("");
   const [showNovoChecklist, setShowNovoChecklist] = useState(false);
@@ -25,6 +30,18 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
   const criarChecklist = async () => {
     if (!novoNome.trim()) return;
     setErroNovo(null);
+    if (emModoDemo) {
+      const novo: Checklist = {
+        id: `demo-${Date.now()}`,
+        nome: novoNome.trim(),
+        momento: novoMomento,
+        itens: [],
+      };
+      setListaChecklists((prev) => [novo, ...prev]);
+      setNovoNome("");
+      setShowNovoChecklist(false);
+      return;
+    }
     const resultado = await acaoCriarChecklist({ nome: novoNome.trim(), momento: novoMomento });
     if (!resultado.ok) {
       setErroNovo(resultado.erro);
@@ -36,12 +53,39 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
 
   const excluirChecklistComConfirmacao = async (ch: Checklist) => {
     if (!window.confirm(`Excluir o checklist "${ch.nome}"? Isso também apaga os itens e o histórico de execuções.`)) return;
+    if (emModoDemo) {
+      setListaChecklists((prev) => prev.filter((c) => c.id !== ch.id));
+      return;
+    }
     const resultado = await acaoExcluirChecklist(ch.id);
     if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
   const addItem = async (checklistId: string, ordem: number) => {
     if (!novoItemTexto.trim()) return;
+    if (emModoDemo) {
+      setListaChecklists((prev) =>
+        prev.map((ch) =>
+          ch.id === checklistId
+            ? {
+                ...ch,
+                itens: [
+                  ...ch.itens,
+                  {
+                    id: `demo-item-${Date.now()}`,
+                    texto: novoItemTexto.trim(),
+                    ordem,
+                    concluidoHoje: false,
+                    execucoes: [],
+                  },
+                ],
+              }
+            : ch
+        )
+      );
+      setNovoItemTexto("");
+      return;
+    }
     const resultado = await acaoCriarItem(checklistId, novoItemTexto.trim(), ordem);
     if (!resultado.ok) {
       setErroAcao(resultado.erro);
@@ -51,6 +95,36 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
   };
 
   const toggleItem = async (itemId: string, concluidoHoje: boolean) => {
+    if (emModoDemo) {
+      setListaChecklists((prev) =>
+        prev.map((ch) => ({
+          ...ch,
+          itens: ch.itens.map((it) =>
+            it.id === itemId
+              ? {
+                  ...it,
+                  concluidoHoje: !concluidoHoje,
+                  execucoes: concluidoHoje
+                    ? []
+                    : [
+                        {
+                          id: `exec-${Date.now()}`,
+                          itemId,
+                          data: new Date().toISOString().slice(0, 10),
+                          turnoId,
+                          responsavel: chefeTurno.trim() || "Cozinha",
+                          chefeTurno: chefeTurno.trim() || null,
+                          criadoEm: new Date().toISOString(),
+                        },
+                      ],
+                }
+              : it
+          ),
+        }))
+      );
+      setErroAcao(null);
+      return;
+    }
     const resultado = await acaoAlternarItem(itemId, concluidoHoje, turnoId, chefeTurno.trim() || null, chefeTurno.trim() || null);
     if (!resultado.ok) setErroAcao(resultado.erro);
   };
@@ -114,7 +188,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        {checklists.map((ch) => {
+        {listaChecklists.map((ch) => {
           const marcados = ch.itens.filter((i) => i.concluidoHoje).length;
           const total = ch.itens.length;
           const completo = total > 0 && marcados === total;

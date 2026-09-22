@@ -16,6 +16,7 @@ export function NovaProducaoForm({
   chefeTurno,
   onSave,
   onCancel,
+  onSalvarDemo,
 }: {
   preparos: Receita[];
   pratos: Receita[];
@@ -23,6 +24,7 @@ export function NovaProducaoForm({
   chefeTurno: string;
   onSave: () => void;
   onCancel: () => void;
+  onSalvarDemo?: (input: ProducaoInput) => void;
 }) {
   const [tipo, setTipo] = useState<TipoItemProducao>("preparo");
   const [receitaId, setReceitaId] = useState(preparos[0]?.id ?? "");
@@ -52,6 +54,10 @@ export function NovaProducaoForm({
       chefeTurno: chefeTurno.trim() || null,
       validade: validade.trim() || null,
     };
+    if (onSalvarDemo) {
+      onSalvarDemo(input);
+      return;
+    }
     executar(() => acaoRegistrarProducao(input));
   };
 

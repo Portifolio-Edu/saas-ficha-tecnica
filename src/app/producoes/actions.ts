@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { getClienteAtual } from "@/lib/dados/cliente";
 import { criarProducaoComLoteAutomatico, criarProducao, atualizarStatusProducao } from "@/lib/dados/producoes";
 import type { ProducaoInput, StatusProducao, TipoItemProducao } from "@/lib/dominio/producao";
@@ -9,6 +10,16 @@ export type Resultado = { ok: true } | { ok: false; erro: string };
 
 function paraResultado(e: unknown): Resultado {
   return { ok: false, erro: e instanceof Error ? e.message : "Erro desconhecido." };
+}
+
+async function isRequisicaoPreview(): Promise<boolean> {
+  try {
+    const h = await headers();
+    const referer = h.get("referer") || "";
+    return referer.includes("/preview");
+  } catch {
+    return false;
+  }
 }
 
 function gerarLote(nome: string, sequencia: number): string {
@@ -36,7 +47,10 @@ export async function acaoIniciarProducao(
   chefeTurno: string | null,
 ): Promise<Resultado> {
   const cliente = await getClienteAtual();
-  if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  if (!cliente) {
+    if (await isRequisicaoPreview()) return { ok: true };
+    return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  }
   try {
     await criarProducaoComLoteAutomatico(cliente.id, receitaId, (sequencia): ProducaoInput => ({
       lote: gerarLote(nomeReceita, sequencia),
@@ -57,7 +71,10 @@ export async function acaoIniciarProducao(
 
 export async function acaoRegistrarProducao(input: ProducaoInput): Promise<Resultado> {
   const cliente = await getClienteAtual();
-  if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  if (!cliente) {
+    if (await isRequisicaoPreview()) return { ok: true };
+    return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  }
   try {
     await criarProducao(cliente.id, input);
     revalidatePath("/producoes");
@@ -68,6 +85,9 @@ export async function acaoRegistrarProducao(input: ProducaoInput): Promise<Resul
 }
 
 export async function acaoAtualizarStatusProducao(id: string, status: StatusProducao, motivoPerda: string | null = null): Promise<Resultado> {
+  if (id.startsWith("demo-") || (await isRequisicaoPreview())) {
+    return { ok: true };
+  }
   try {
     await atualizarStatusProducao(id, status, motivoPerda);
     revalidatePath("/producoes");

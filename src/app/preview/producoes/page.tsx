@@ -5,7 +5,7 @@ import { NOME_RESTAURANTE, insumos, todasReceitas, producoes, turnos, processame
 export default function Page() {
   return (
     <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Produções">
-      <ProducoesClient insumos={insumos} receitas={todasReceitas} producoes={producoes} turnos={turnos} processamentos={processamentos} />
+      <ProducoesClient isDemo={true} insumos={insumos} receitas={todasReceitas} producoes={producoes} turnos={turnos} processamentos={processamentos} />
     </DemoShell>
   );
 }

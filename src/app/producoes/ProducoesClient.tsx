@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Card } from "@/components/ficha/Card";
 import { nums, shadow } from "@/components/ficha/tema";
 import { NovaProducaoForm } from "@/components/producoes/NovaProducaoForm";
@@ -36,21 +37,51 @@ export function ProducoesClient({
   producoes,
   turnos,
   processamentos,
+  isDemo,
 }: {
   insumos: Insumo[];
   receitas: Receita[];
   producoes: Producao[];
   turnos: Turno[];
   processamentos: Processamento[];
+  isDemo?: boolean;
 }) {
+  const pathname = usePathname();
+  const emModoDemo = isDemo || pathname?.startsWith("/preview");
+
+  const [listaProducoes, setListaProducoes] = useState<Producao[]>(producoes);
+
+  // Carregar dados salvos em preview para persistência imediata
+  useEffect(() => {
+    if (!emModoDemo) return;
+    try {
+      const salvo = localStorage.getItem("demo_producoes");
+      if (salvo) {
+        const parsed = JSON.parse(salvo);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setListaProducoes(parsed);
+        }
+      }
+    } catch {}
+  }, [emModoDemo]);
+
+  const atualizarProducoes = (novas: Producao[] | ((prev: Producao[]) => Producao[])) => {
+    setListaProducoes((prev) => {
+      const atualizado = typeof novas === "function" ? novas(prev) : novas;
+      if (emModoDemo) {
+        try {
+          localStorage.setItem("demo_producoes", JSON.stringify(atualizado));
+        } catch {}
+      }
+      return atualizado;
+    });
+  };
+
   const [turnoId, setTurnoId] = useState<string | null>(turnos[0]?.id ?? null);
   const [chefeTurno, setChefeTurno] = useState("");
   const [showNovaProducao, setShowNovaProducao] = useState(false);
   const [loteArrastando, setLoteArrastando] = useState<{ colunaOrigem: ColunaId; item: CardEstoque | Producao } | null>(null);
   const [colunaAlvo, setColunaAlvo] = useState<ColunaId | null>(null);
-  // Modal em vez de window.prompt: o mesmo motivo do quadro de produção do
-  // mockup -- diálogo nativo pode ser bloqueado dependendo de onde a página
-  // roda, então o motivo da perda é sempre pedido num modal próprio.
   const [modalPerda, setModalPerda] = useState<{ loteId: string; motivo: string } | null>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
 
@@ -192,7 +223,49 @@ export function ProducoesClient({
     if (!resultado.ok) setErroAcao(resultado.erro ?? "Erro desconhecido.");
   };
 
+  const gerarCodigoLote = (nome: string, seq: number) => {
+    const agora = new Date();
+    const dd = String(agora.getDate()).padStart(2, "0");
+    const mm = String(agora.getMonth() + 1).padStart(2, "0");
+    const sigla = nome
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+    return `${sigla}-${dd}${mm}-${String(seq).padStart(2, "0")}`;
+  };
+
   const iniciarProducao = (item: CardEstoque) => {
+    if (emModoDemo) {
+      const agora = new Date();
+      const receitaObj = receitaPorId.get(item.receitaId);
+      const turnoObj = turnos.find((t) => t.id === turnoId);
+      const novoLote = gerarCodigoLote(item.nome, listaProducoes.length + 1);
+
+      const nova: Producao = {
+        id: `demo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        lote: novoLote,
+        tipo: item.tipo,
+        receitaId: item.receitaId,
+        quantidade: receitaObj?.rendimento ?? 1,
+        responsavel: chefeTurno.trim() || "Cozinheiro Operacional",
+        turnoId,
+        chefeTurno: chefeTurno.trim() || null,
+        validade: "7 dias",
+        status: "em_producao",
+        motivoPerda: null,
+        criadoEm: agora.toISOString(),
+        nomeReceita: item.nome,
+        unidadeRendimento: receitaObj?.unidadeRendimento ?? "un",
+        nomeTurno: turnoObj?.nome ?? "Manhã",
+      };
+
+      atualizarProducoes((prev) => [nova, ...prev]);
+      setErroAcao(null);
+      return;
+    }
+
     void executarAcao(
       acaoIniciarProducao(item.receitaId, item.tipo, item.nome, receitaPorId.get(item.receitaId)?.rendimento ?? 1, turnoId, chefeTurno.trim() || null),
     );
@@ -208,8 +281,44 @@ export function ProducoesClient({
     } else if (destino === "perda") {
       setModalPerda({ loteId: (item as Producao).id, motivo: "" });
     } else {
+      if (emModoDemo) {
+        atualizarProducoes((prev) =>
+          prev.map((p) => (p.id === (item as Producao).id ? { ...p, status: destino as StatusProducao } : p))
+        );
+        setErroAcao(null);
+        return;
+      }
       void executarAcao(acaoAtualizarStatusProducao((item as Producao).id, destino as StatusProducao));
     }
+  };
+
+  const concluirProducao = (id: string) => {
+    if (emModoDemo) {
+      atualizarProducoes((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status: "produzido" } : p))
+      );
+      setErroAcao(null);
+      return;
+    }
+    void executarAcao(acaoAtualizarStatusProducao(id, "produzido"));
+  };
+
+  const confirmarPerda = () => {
+    if (!modalPerda || !modalPerda.motivo.trim()) return;
+    if (emModoDemo) {
+      atualizarProducoes((prev) =>
+        prev.map((p) =>
+          p.id === modalPerda.loteId
+            ? { ...p, status: "perda", motivoPerda: modalPerda.motivo.trim() }
+            : p
+        )
+      );
+      setModalPerda(null);
+      setErroAcao(null);
+      return;
+    }
+    void executarAcao(acaoAtualizarStatusProducao(modalPerda.loteId, "perda", modalPerda.motivo.trim()));
+    setModalPerda(null);
   };
 
   return (
@@ -260,7 +369,7 @@ export function ProducoesClient({
         {/* Grid do Kanban com Cores Distintas por Coluna */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
           {colunas.map((col) => {
-            const cardsProducao = producoes.filter((p) => p.status === col.id);
+            const cardsProducao = listaProducoes.filter((p) => p.status === col.id);
             const podeSoltarAqui = !!loteArrastando && transicaoValida(loteArrastando.colunaOrigem, col.id);
             const emHoverValido = colunaAlvo === col.id && podeSoltarAqui;
             const emHoverInvalido = colunaAlvo === col.id && !!loteArrastando && !podeSoltarAqui;
@@ -405,7 +514,7 @@ export function ProducoesClient({
                         {col.id === "em_producao" && (
                           <div className="flex gap-2 mt-3">
                             <button
-                              onClick={() => executarAcao(acaoAtualizarStatusProducao(pr.id, "produzido"))}
+                              onClick={() => concluirProducao(pr.id)}
                               className="flex-1 text-[12px] font-black py-2 rounded-xl text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer"
                               style={{ backgroundColor: "#059669" }}
                             >
@@ -459,6 +568,30 @@ export function ProducoesClient({
               chefeTurno={chefeTurno}
               onSave={() => setShowNovaProducao(false)}
               onCancel={() => setShowNovaProducao(false)}
+              onSalvarDemo={emModoDemo ? (novaProdInput) => {
+                const agora = new Date();
+                const receitaObj = receitas.find((r) => r.id === novaProdInput.receitaId);
+                const turnoObj = turnos.find((t) => t.id === novaProdInput.turnoId);
+                const nova: Producao = {
+                  id: `demo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                  lote: novaProdInput.lote,
+                  tipo: novaProdInput.tipo,
+                  receitaId: novaProdInput.receitaId,
+                  quantidade: novaProdInput.quantidade,
+                  responsavel: novaProdInput.responsavel,
+                  turnoId: novaProdInput.turnoId,
+                  chefeTurno: novaProdInput.chefeTurno,
+                  validade: novaProdInput.validade,
+                  status: "em_producao",
+                  motivoPerda: null,
+                  criadoEm: agora.toISOString(),
+                  nomeReceita: receitaObj?.nomePrato ?? "Item Produzido",
+                  unidadeRendimento: receitaObj?.unidadeRendimento ?? "un",
+                  nomeTurno: turnoObj?.nome ?? "Manhã",
+                };
+                atualizarProducoes((prev) => [nova, ...prev]);
+                setShowNovaProducao(false);
+              } : undefined}
             />
           </Card>
         )}
@@ -521,11 +654,7 @@ export function ProducoesClient({
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  if (!modalPerda.motivo.trim()) return;
-                  void executarAcao(acaoAtualizarStatusProducao(modalPerda.loteId, "perda", modalPerda.motivo.trim()));
-                  setModalPerda(null);
-                }}
+                onClick={confirmarPerda}
                 disabled={!modalPerda.motivo.trim()}
                 className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
                 style={{ background: "var(--danger)", color: "#fff", opacity: modalPerda.motivo.trim() ? 1 : 0.5 }}

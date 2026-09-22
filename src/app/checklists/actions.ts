@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { getClienteAtual } from "@/lib/dados/cliente";
 import {
   criarChecklist,
@@ -18,9 +19,22 @@ function paraResultado(e: unknown): Resultado {
   return { ok: false, erro: e instanceof Error ? e.message : "Erro desconhecido." };
 }
 
+async function isRequisicaoPreview(): Promise<boolean> {
+  try {
+    const h = await headers();
+    const referer = h.get("referer") || "";
+    return referer.includes("/preview");
+  } catch {
+    return false;
+  }
+}
+
 export async function acaoCriarChecklist(input: ChecklistInput): Promise<Resultado> {
   const cliente = await getClienteAtual();
-  if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  if (!cliente) {
+    if (await isRequisicaoPreview()) return { ok: true };
+    return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  }
   try {
     await criarChecklist(cliente.id, input);
     revalidatePath("/checklists");
@@ -67,6 +81,9 @@ export async function acaoAlternarItem(
   chefeTurno: string | null,
   responsavel: string | null,
 ): Promise<Resultado> {
+  if (itemId.startsWith("demo-") || (await isRequisicaoPreview())) {
+    return { ok: true };
+  }
   try {
     if (concluidoAtualmente) await desmarcarItemConcluido(itemId);
     else await marcarItemConcluido(itemId, turnoId, chefeTurno, responsavel);

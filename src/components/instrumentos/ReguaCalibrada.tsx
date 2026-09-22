@@ -108,37 +108,37 @@ export function ReguaCalibrada({
       {/* Linha 2: Nome da Métrica (Linha inteira dedicada, clara e sem colisão) */}
       <h4
         id={`${id}-lbl`}
-        className="text-[14px] font-bold text-[var(--tinta)] truncate mb-2"
+        className="text-[13px] font-bold text-[var(--tinta)] truncate mb-1"
         title={rotulo}
       >
         {rotulo}
       </h4>
 
-      {/* Linha 3: Valor Principal & Delta em Linha Dedicada (Nunca quebra em 3 linhas!) */}
-      <div className="flex items-baseline justify-between gap-2 mb-2">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span
-            className="text-[25px] font-black tracking-tight leading-none whitespace-nowrap shrink-0"
-            style={{ color: sobRisco ? "var(--sinal)" : "var(--tinta)" }}
-          >
-            {valorFormatado}
-          </span>
-          <span
-            className="text-[11px] font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0"
-            style={{
-              backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.1)" : "rgba(16, 185, 129, 0.1)",
-              color: sobRisco ? "var(--sinal)" : "var(--sucesso)",
-            }}
-          >
-            {deltaFormatado} vs meta
-          </span>
-        </div>
+      {/* Linha 3: Valor Principal Gigante e Limpo (Totalmente isolado, NUNCA sobrepõe!) */}
+      <div className="my-1">
+        <span
+          className="text-[28px] font-black tracking-tight leading-none whitespace-nowrap"
+          style={{ color: sobRisco ? "var(--sinal)" : "var(--tinta)" }}
+        >
+          {valorFormatado}
+        </span>
+      </div>
 
-        <div className="text-right shrink-0">
-          <span className="text-[11px] font-bold text-[var(--tinta-sub)] whitespace-nowrap">
-            Alvo: <strong className="text-[var(--tinta)]">{metaFormatada}</strong>
-          </span>
-        </div>
+      {/* Linha 4: Comparação de Alvo & Delta com Espaçamento Garantido (Zero Sobreposição) */}
+      <div className="flex items-center justify-between gap-1 text-[11px] mb-2.5">
+        <span className="text-[var(--tinta-sub)] font-medium whitespace-nowrap">
+          Alvo: <strong className="font-bold text-[var(--tinta)]">{metaFormatada}</strong>
+        </span>
+
+        <span
+          className="font-extrabold px-1.5 py-0.5 rounded whitespace-nowrap"
+          style={{
+            backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.12)" : "rgba(16, 185, 129, 0.12)",
+            color: sobRisco ? "var(--sinal)" : "var(--sucesso)",
+          }}
+        >
+          {deltaFormatado} vs meta
+        </span>
       </div>
 
       {/* Linha 4: Dispositivo Gráfico Central (Trilho Cápsula com Margem de Segurança) */}
@@ -235,22 +235,22 @@ export function ReguaCalibrada({
         </div>
       </div>
 
-      {/* Linha 6: Rodapé Informativo */}
+      {/* Linha 6: Rodapé Informativo Compacto (Zero Quebra de Linhas) */}
       <div
-        className="flex items-center justify-between pt-2 mt-1 text-[11px] font-medium"
+        className="flex items-center justify-between pt-2 mt-1 text-[11px]"
         style={{ borderTop: "1px solid var(--linha)", color: "var(--tinta-sub)" }}
       >
-        <span className="flex items-center gap-1.5 font-semibold">
+        <span className="flex items-center gap-1.5 font-medium whitespace-nowrap text-[10.5px]">
           <span
-            className="w-1.5 h-1.5 rounded-full inline-block"
+            className="w-1.5 h-1.5 rounded-full inline-block shrink-0"
             style={{ backgroundColor: sobRisco ? "var(--sinal)" : "var(--sucesso)" }}
           />
-          <span>TOLERÂNCIA: ±{unidade === "%" ? "2.5%" : "0.0"}</span>
+          <span>Tol: ±{unidade === "%" ? "2.5%" : "0.0"}</span>
         </span>
 
         <span
-          className="font-bold uppercase tracking-wider"
-          style={{ color: sobRisco ? "var(--sinal)" : "var(--tinta-sub)" }}
+          className="font-extrabold uppercase tracking-wide whitespace-nowrap text-[10px]"
+          style={{ color: sobRisco ? "var(--sinal)" : "var(--sucesso)" }}
         >
           {sobRisco ? "DESVIO DE ALVO" : "CALIBRAÇÃO OK"}
         </span>
