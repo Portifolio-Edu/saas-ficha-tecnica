@@ -18,16 +18,16 @@ export function CadastroForm() {
       {/* Brand Header */}
       <div className="flex flex-col items-center mb-6 text-center">
         <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md mb-3"
+          className="w-11 h-11 rounded-lg flex items-center justify-center mb-3"
           style={{
-            background: "var(--gradient-accent)",
-            color: "#FFFFFF",
+            background: "var(--tinta)", // SISTEMA premium: antes var(--gradient-accent), que nunca existiu (botão e logo ficavam invisíveis)
+            color: "var(--panel)",
           }}
         >
           <ChefHat size={26} />
         </div>
         <h2 className="text-[20px] font-bold tracking-tight text-[var(--text)]">Ficha Técnica</h2>
-        <p className="text-[13px] text-[var(--sub)] mt-0.5">SaaS Gastronômico & Gestão de CMV</p>
+        <p className="text-[13px] text-[var(--sub)] mt-0.5">Custo, produção e CMV da sua cozinha</p>{/* SISTEMA premium: antes "SaaS Gastronômico & Gestão de CMV" */}
       </div>
 
       <Card className="p-7 w-full shadow-lg border">
@@ -149,12 +149,12 @@ export function CadastroForm() {
               disabled={pendente}
               className="w-full text-[13.5px] font-semibold px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all duration-150 flex items-center justify-center gap-2"
               style={{
-                background: "var(--gradient-accent)",
-                color: "#FFFFFF",
+                background: "var(--tinta)", // SISTEMA premium: antes var(--gradient-accent), que nunca existiu (botão e logo ficavam invisíveis)
+                color: "var(--panel)",
                 opacity: pendente ? 0.7 : 1,
               }}
             >
-              {pendente ? "Criando conta..." : "Criar Conta Gratuita"}
+              {pendente ? "Criando conta..." : "Criar conta gratuita" /* SISTEMA premium: antes "Criar Conta Gratuita" */}
               {!pendente && <ArrowRight size={15} />}
             </button>
           </form>
