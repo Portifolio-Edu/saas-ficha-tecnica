@@ -111,3 +111,48 @@ estoque do commit `e5e84b8` continuam iguais; só a apresentação mudou.
   "Registrar perda" neutro com ícone: o vermelho fica só pra perda que
   aconteceu. Em produção, a perda virou botão de ícone.
 - Plural certo ("15 porções"), validade em dd/mm, modal de perda com 44px.
+
+---
+
+## 6. Direção premium (padrão Stripe / Linear / Toast) — todas as telas
+
+Pedido: "elevar o design mais ainda... ferramenta premium". Direção escolhida:
+**padrão premium de SaaS**, em todas as telas, com a régua de Stripe (painel),
+Linear e Toast/Square. O sistema está descrito no `DESIGN.md` (reescrito) e o
+posicionamento no `PRODUCT.md`.
+
+**Voltar tudo pro visual anterior (padrão "Bancada Calibrada"):** `git revert`
+dos commits abaixo, do mais novo pro mais antigo. Pra voltar só uma tela, reverta
+só o commit dela. Os comentários no código começam com `SISTEMA premium` ou
+`POLIMENTO <tela>`: `grep -rn "SISTEMA premium" src`.
+
+| Commit | O que mudou | Onde olhar se quebrar |
+|---|---|---|
+| `950f86d` | Tokens novos (névoa, papel, tinta, acento `--marca`), fonte Hanken Grotesk, bordas de 1px, pesos até 700, escuro grafite | `globals.css`, `layout.tsx`, `Card/Badge/Kpi/Input/EmptyState` |
+| `32e3e97` | Casca única `ShellPremium` pro app e pra demo (menu Linear, barra de 56px, tema num botão) | `components/ficha/ShellPremium.tsx`, `AppShell.tsx`, `DemoShell.tsx` |
+| `957962f` | Visão Geral: faixa de 4 métricas, bloco "Onde a margem está vazando" com R$ deixado na mesa, tabela calma | `visao-geral/VisaoGeralClient.tsx`, `MostradorNivel.tsx` |
+| `4f29ec6` | Vírgula decimal em todas as telas (`formatNumero`, `formatQtd`) | `components/charts/format.ts` |
+| `62d579c` | Cabeçalho de tabela em caixa normal (regra global) | `globals.css` (bloco `thead`) |
+| `c51b7d5` | Checklists: linha de 48px, caixa de 24px | `checklists/ChecklistsClient.tsx` |
+| `951c3a8` | Produções: botões de etapa tingidos (não cheios), cabeçalho numa linha | `producoes/ProducoesClient.tsx` |
+| `1f13708` | Estoque: botões neutros, selos com tokens | `estoque/EstoqueClient.tsx` |
+| `9b97d26` | Nutricional: sem degradê, agente demo neutro | `nutricional/*`, `InsumoNutricaoForm.tsx` |
+| `0e6374c` | Proteínas: linha do FC cadastrado sempre visível no gráfico | `proteinas/ProteinasClient.tsx` |
+| `119b219` | Segurança: temperatura com vírgula, local sem faixa | `seguranca/SegurancaClient.tsx` |
+| `7e2fb4f` | Receitas: uma barra de ações só | `receitas/ReceitasClient.tsx` |
+| `238fb4e` | Títulos de seção em 16px | várias telas |
+| `29358b3` | Nenhum alvo de toque abaixo de 40px em Estoque e Visão Geral | `EstoqueClient.tsx`, `VisaoGeralClient.tsx` |
+| `8a5c17f` | **Bug:** botão e logo do login/cadastro invisíveis (`--gradient-accent` nunca existiu) | `login/LoginForm.tsx`, `cadastro/CadastroForm.tsx` |
+| `fe84bf1` | Caixa alta que sobrou (ficha de produção, agente demo, lote) | arquivos citados no commit |
+| `8722f6d` | Tamanhos e cores fora da escala do `DESIGN.md` (detector do impeccable) | comentário no topo de cada arquivo |
+| `e0710bd` | Título da barra igual ao item do menu | `page.tsx` de cada tela |
+| `35b9e80` | **Bug:** CMV mostrava "0,0%" e gap "-21,8 p.p." sem estoque contado; agora "—" | `cmv/CmvClient.tsx` |
+
+**Ficou de fora de propósito:** o modal do agente IA (só demo) ainda tem dois
+degradês antigos; `ReguaCalibrada.tsx` e `components/direcoes/*` não são mais
+usados por nenhuma tela (dá pra apagar depois). PDFs seguem em Helvetica, a
+fonte embutida do react-pdf.
+
+**Verificação:** `tsc`, `eslint`, 51 testes e `next build` passando; detector
+do impeccable sem nenhum anti-padrão nas telas; nenhum alvo de toque abaixo de
+40px no tablet (Visão Geral, Produções, Checklists, Estoque).

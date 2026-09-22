@@ -1,243 +1,290 @@
 ---
 name: Ficha Técnica
-description: Controle de cozinha — fichas, produção, estoque e CMV — legível na bancada.
+description: Inteligência de custos e controle de cozinha, com o acabamento de uma ferramenta premium.
 colors:
-  tinta: "#0F172A"
-  tinta-sub: "#334155"
-  tinta-faint: "#64748B"
-  fundo: "#F8FAFC"
-  panel: "#FFFFFF"
-  panel-elevated: "#F1F5F9"
-  panel-hover: "#E2E8F0"
-  sinal: "#E11D48"
-  sucesso: "#059669"
-  aviso: "#D97706"
+  tinta: "#16171A"
+  tinta-sub: "#4A4D55"
+  tinta-faint: "#6B6F78"
+  nevoa: "#F6F6F7"
+  papel: "#FFFFFF"
+  papel-elevado: "#F3F3F5"
+  papel-hover: "#ECECEF"
+  marca: "#5B4FE0"
+  sinal: "#D92D20"
+  sucesso: "#067647"
+  aviso: "#B54708"
   etapa-estoque: "#2563EB"
   etapa-producao: "#D97706"
   etapa-produzido: "#059669"
   etapa-perda: "#DC2626"
-  grafite-fundo: "#0A0A0B"
-  grafite-panel: "#141415"
-  grafite-elevated: "#1C1C1E"
-  grafite-tinta: "#F4F4F5"
+  grafite-fundo: "#0B0B0C"
+  grafite-panel: "#131315"
+  grafite-elevado: "#1A1A1D"
+  giz: "#EDEDEF"
+  marca-escuro: "#8F87FF"
   veu-modal: "rgba(0,0,0,0.5)"
 typography:
-  numero-destaque:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
-    fontSize: "28px"
-    fontWeight: 900
-    lineHeight: 1
-    letterSpacing: "-0.02em"
-    fontFeature: "tnum"
-  numero-card:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
-    fontSize: "24px"
-    fontWeight: 900
-    lineHeight: 1
-    fontFeature: "tnum"
-  titulo-tela:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
-    fontSize: "20px"
-    fontWeight: 900
-    lineHeight: 1.2
-    letterSpacing: "-0.02em"
-  titulo-secao:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
-    fontSize: "18px"
-    fontWeight: 900
+  titulo-pagina:
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
+    fontSize: "22px"
+    fontWeight: 600
     lineHeight: 1.25
-  titulo-card:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
-    fontSize: "16px"
-    fontWeight: 900
-    lineHeight: 1.3
-  corpo:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
-    fontSize: "15px"
-    fontWeight: 500
-    lineHeight: 1.5
-    fontFeature: "tnum"
-  controle:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
-    fontSize: "14px"
+    letterSpacing: "-0.015em"
+  numero-destaque:
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
+    fontSize: "28px"
+    fontWeight: 600
+    lineHeight: 1
+    letterSpacing: "-0.015em"
+  numero-card:
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
+    fontSize: "24px"
     fontWeight: 700
+    lineHeight: 1
+  titulo-secao:
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
+    fontSize: "16px"
+    fontWeight: 600
     lineHeight: 1.3
+  titulo-barra:
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 600
+  corpo-operacao:
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.5
+  corpo:
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.5
   detalhe:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
     fontSize: "13px"
-    fontWeight: 600
-    lineHeight: 1.4
+    fontWeight: 400
+    lineHeight: 1.45
   meta:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
     fontSize: "12px"
-    fontWeight: 600
+    fontWeight: 500
     lineHeight: 1.4
   rotulo:
-    fontFamily: "Plus Jakarta Sans, system-ui, sans-serif"
+    fontFamily: "Hanken Grotesk, system-ui, sans-serif"
     fontSize: "11px"
-    fontWeight: 700
-    letterSpacing: "0.04em"
+    fontWeight: 500
 rounded:
-  sm: "8px"
-  md: "14px"
-  lg: "20px"
+  sm: "6px"
+  md: "8px"
+  lg: "12px"
   pill: "9999px"
 spacing:
   toque: "44px"
+  toque-desktop: "40px"
   card: "20px"
-  secao: "32px"
+  secao: "24px"
 components:
   botao-primario:
     backgroundColor: "{colors.tinta}"
-    textColor: "{colors.panel}"
+    textColor: "{colors.papel}"
     rounded: "{rounded.md}"
     height: "44px"
     padding: "0 16px"
+  botao-secundario:
+    backgroundColor: "{colors.papel}"
+    textColor: "{colors.tinta}"
+    rounded: "{rounded.md}"
+    height: "40px"
+    padding: "0 14px"
   card:
-    backgroundColor: "{colors.panel}"
+    backgroundColor: "{colors.papel}"
     rounded: "{rounded.lg}"
     padding: "20px"
-  chip-status:
-    rounded: "{rounded.pill}"
-    padding: "4px 12px"
+  selo-status:
+    rounded: "{rounded.sm}"
+    padding: "2px 8px"
+  item-menu:
+    textColor: "{colors.tinta-sub}"
+    rounded: "{rounded.md}"
+    height: "40px"
 ---
 
 # Design System: Ficha Técnica
 
 ## Overview
 
-**Creative North Star: "A Bancada Calibrada"**
+**Creative North Star: "A ferramenta cara que some na tarefa"**
 
-É a tela que o chef lê de pé, com a mão ocupada, no meio do serviço. Cada
-superfície funciona como instrumento de medição de cozinha: ardósia e branco
-neutros, e cor só quando significa alguma coisa (etapa, risco, ok). O número
-que importa é o maior elemento do card. O resto é rótulo e contexto.
+É o padrão premium de SaaS, feito sem ironia e escolhido pelo dono do produto.
+A régua de acabamento vem de três produtos: o painel do Stripe (números
+impecáveis, cor usada com precisão), o Linear (densidade na medida certa e um
+escuro de verdade) e os sistemas de restaurante Toast/Square (alvos grandes pra
+quem opera no tablet). O resultado é calmo e preciso. A cor só aparece quando
+significa alguma coisa, e o dado mais importante da tela é sempre o maior.
 
-A identidade veio do trabalho no Antigravity: hub agrupado, réguas calibradas,
-kanban colorido por etapa e o vermelho de risco. Este documento registra essa
-identidade e a sobe de nível para o tablet na bancada, sem trocar de mundo.
+A identidade anterior (ardósia, Jakarta em peso 900, caixa alta, pílulas
+coloridas, réguas grossas em cards separados) foi substituída. Continuam o hub
+agrupado, as cores das etapas de produção e todas as funções.
 
 **Key Characteristics:**
-- Número grande e tabular primeiro; rótulo pequeno em caixa alta depois.
-- Cor com significado fixo (etapa, risco, ok), nunca decorativa.
-- Toque confortável: nada clicável abaixo de 44px na operação.
-- Tema claro em ardósia; tema escuro em grafite neutro (escuro de verdade, sem azul).
+- Neutros calmos (névoa, papel e tinta quase-preta); escuro em grafite neutro no padrão Linear.
+- Bordas de 1px fazem o trabalho da sombra; cantos de 6, 8 e 12px.
+- Hanken Grotesk em 400–600, com dígitos tabulares nativos.
+- Um único acento de marca (violeta-índigo), só pra foco, seleção e item ativo.
+- Telas de operação no tamanho Toast: alvos de 44px e texto de 15px.
 
 ## Colors
 
-Neutros frios no claro, grafite neutro no escuro. Três cores de estado e
-quatro de etapa, cada uma com um único significado.
+Neutros sem matiz, um acento de marca raro, três cores de estado e quatro de
+etapa, cada uma com um único significado.
 
 ### Primary
-- **Tinta Ardósia** (#0F172A): texto principal, botão primário e preenchimento
-  das réguas. No escuro vira Giz (#F4F4F5).
+- **Tinta** (#16171A; no escuro, Giz #EDEDEF): texto principal, botão
+  primário e trilho de progresso. É a "cor" da marca na maior parte da tela.
+
+### Secondary
+- **Marca violeta-índigo** (#5B4FE0; no escuro, #8F87FF): anel de foco,
+  seleção de texto, ícone do item ativo no menu, controle deslizante. Nunca em
+  botão, nunca decorando.
 
 ### Neutral
-- **Papel** (#FFFFFF) e **Mesa** (#F8FAFC): cards e fundo da tela no tema claro.
-- **Bancada Elevada** (#F1F5F9): trilhos, controles segmentados, cabeçalho de tabela.
-- **Grafite** (#0A0A0B / #141415 / #1C1C1E): fundo, card e superfície elevada no escuro.
-- **Véu de modal** (preto a 50%): fundo atrás de diálogo, igual nos dois temas.
+- **Névoa** (#F6F6F7): fundo da tela. **Papel** (#FFFFFF): cards, menu, tabelas.
+- **Papel elevado** (#F3F3F5) e **hover** (#ECECEF): trilhos, controles segmentados, linha em foco.
+- **Grafite** (#0B0B0C / #131315 / #1A1A1D): as três camadas do tema escuro.
+- **Linha** (tinta a 9%; no escuro, branco a 8%): toda borda e divisória.
 
 ### Estado
-- **Sinal** (#E11D48): risco, perda, abaixo do alvo. No escuro, #FF3B30.
-- **Sucesso** (#059669): no alvo, ok. No escuro, #10B981.
-- **Aviso** (#D97706): atenção, demonstração.
+- **Sinal** (#D92D20): risco, perda, abaixo do alvo, valor que vaza.
+- **Sucesso** (#067647): no alvo, concluído, checklist completo.
+- **Aviso** (#B54708): demonstração, atenção.
 
-### Etapas de produção (tokens `--etapa-*`, com variante `-texto`)
+### Etapas de produção (`--etapa-*`, com variante `-texto`)
 - **Em estoque** (#2563EB), **Em produção** (#D97706), **Produzido** (#059669),
-  **Perda** (#DC2626). No escuro ficam mais claras (#60A5FA, #F59E0B, #34D399, #F87171).
+  **Perda** (#DC2626). No escuro ficam mais claras.
 
 ### Named Rules
-**The Stage Color Rule.** Etapa se pinta só com `--etapa-*`: a mesma cor para
-a mesma etapa em qualquer tela (kanban, Visão Geral, estoque). Hex solto de
-etapa em componente é bug.
+**The One Accent Rule.** O violeta só marca onde o usuário está (foco, seleção,
+item ativo). Se aparecer em mais de 3 lugares numa tela, algum está errado.
 
-**The Meaning-Only Rule.** Vermelho só aparece para risco ou perda, verde só
-para ok. Nenhuma das duas decora.
+**The Stage Color Rule.** Etapa se pinta só com `--etapa-*`, igual em qualquer
+tela. Botão de etapa é tingido (fundo a 12%, texto `-texto`, borda a 30%), nunca
+preenchido.
+
+**The Meaning-Only Rule.** Vermelho é risco ou perda, verde é ok. Nenhum dos
+dois decora, e selo "PRO" vermelho não existe.
 
 ## Typography
 
-**Família única:** Plus Jakarta Sans (next/font, self-hosted), com algarismos
-tabulares (`tnum`) no app inteiro e `word-spacing: 0.06em`, porque o espaço da
-Jakarta é estreito.
+**Família:** Hanken Grotesk (next/font, self-hosted, variável). Os dígitos
+são tabulares por padrão, então colunas de número alinham sem truque.
+Testadas e descartadas: Mona Sans (zero tabular estreito em peso alto),
+Schibsted (vírgula solta), Onest e Host (largas pra tabela densa) e Plus
+Jakarta Sans (fonte-padrão de app gerado).
 
-**Character:** geométrica e firme; peso 900 nos números e títulos, 500–700 no resto.
+**Character:** grotesca neutra no tom do Stripe. Firmeza vem do tamanho e do
+contraste, não do peso.
 
 ### Hierarchy
-Escala fixa em px, sem meio-pixel (12,5 / 13,5 são deriva):
+Escala fixa em px, sem meio-pixel:
 
-- **Número de destaque** (900, 28px, lh 1): o valor que decide (CMV, margem, perda).
-- **Número de card** (900, 24px): o número de um card de operação (lotes possíveis).
-- **Título da tela** (900, 20px): barra superior e título de página.
-- **Título de seção** (900, 18px): cabeçalho de seção.
-- **Título de card** (900, 16px): nome do prato ou lote, título de coluna.
-- **Corpo** (500, 15px, lh 1.5): texto corrido.
-- **Controle** (700, 14px): botões, campos, células de tabela.
-- **Detalhe** (600, 13px): linha secundária de card.
-- **Meta** (600, 12px): turno, validade, contexto.
-- **Rótulo** (700, 11px, caixa alta, +0.04em): nome de coluna, legenda de valor.
+- **Título da página** (600, 22px, -0.015em): "Resumo do mês", "Quadro de produção".
+- **Número de destaque** (600, 28px): métricas da faixa, temperatura atual.
+- **Número de card** (700, 24px): lotes possíveis no kanban.
+- **Título de seção** (600, 16px): cabeçalho de card ou seção.
+- **Título da barra** (600, 15px): nome da tela na barra superior.
+- **Corpo de operação** (400, 15px): itens de checklist, textos do tablet.
+- **Corpo** (400, 14px): padrão do app, células de tabela.
+- **Detalhe** (400, 13px): descrição de seção, linha secundária.
+- **Meta** (500, 12px): cabeçalho de tabela, selos, legendas.
 
 ### Named Rules
-**The Distance Rule.** Na operação (produção, checklist, estoque), o dado que o
-chef precisa ler de longe tem no mínimo 16px e peso ≥700. Rótulo de 11px nunca
-carrega informação que não esteja também no número ou na cor.
+**The Quiet Weight Rule.** Nada acima de 700. As classes `font-black` e
+`font-extrabold` foram remapeadas (700/600) em `@theme` no `globals.css`.
+
+**The Sentence Case Rule.** Rótulo, cabeçalho de tabela, selo e grupo do menu
+em caixa normal. Caixa alta não aparece na interface.
+
+**Exceções de impressão (fora da escala de propósito).** Os PDFs em
+`src/lib/pdf/` usam Helvetica, a fonte embutida do react-pdf (sem baixar
+arquivo de fonte). O rótulo nutricional "para varejo" em Nutricional imita a
+tabela impressa da ANVISA: preto sobre branco, letra miúda, com cores e
+tamanhos fixos. Nenhum dos dois é tela de operação.
 
 ## Layout
 
-Shell com menu lateral fixo (256px) agrupado em Operação, Qualidade & controle
-e Gestão, mais barra superior com o título da tela. Conteúdo em até 1280px,
-seções separadas por 32px e cards com padding de 20–24px. Abaixo de 768px o
-menu vira gaveta; tabelas viram lista empilhada com rótulo por item.
+Casca única (`ShellPremium`) pro app e pra demo: menu de 240px com grupos
+Operação, Qualidade e controle e Gestão, e barra superior de 56px translúcida.
+O conteúdo vai até 1280px, com seções a 24px e cards com padding de 20px. Cada
+página abre com um cabeçalho próprio (título de 22px + uma linha de contexto +
+controles à direita, alinhados pela base) em vez de card-herói. Abaixo de 768px
+o menu vira gaveta.
 
-**The Aligned Columns Rule.** Tabela de dados usa um grid único compartilhado
-pelo cabeçalho e pelas linhas, para os números alinharem de uma linha à outra.
+**The Aligned Columns Rule.** Tabelas usam um grid único para o cabeçalho e as
+linhas, e a última coluna tem largura fixa.
+
+**The Strip Rule.** Métricas irmãs ficam numa faixa só, dividida por linhas
+finas, e não em cards separados.
 
 ## Elevation & Depth
 
-Profundidade suave e ambiente: cards com `--shadow-card` e o bloco principal
-da tela com `--shadow-elevated`. Nada de halo colorido. Borda colorida só
-quando o estado pede, sempre com 1px.
+Quase plano. Cards levam borda de 1px e `--shadow-card` (1px). Só o que flutua
+(menus, modais) usa `--shadow-elevated`. Não existe halo colorido nem brilho.
 
 ## Shapes
 
-Cantos generosos e consistentes: 8px em controles pequenos, 14px em botões e
-campos, 20px em cards, pílula em chips de status e contadores.
+Cantos de 6px em selos e controles pequenos, 8px em botões, campos e itens de
+menu, 12px em cards, colunas do kanban e painéis. Pílula só em pontos e na
+barra de progresso.
 
 ## Components
 
 ### Buttons
-- **Primário:** fundo Tinta, texto Papel, 44px de altura na operação, cantos de 14px.
-- **Secundário:** fundo Bancada Elevada, borda `--linha-forte`, texto Tinta.
-- **Foco:** anel duplo (`0 0 0 2px panel, 0 0 0 4px accent`), já global.
+- **Primário:** tinta com texto papel, 8px de canto, 44px na operação e 40px no resto.
+- **Secundário:** papel, borda `--linha-forte`, texto tinta; hover em `--panel-hover`.
+- **Destrutivo:** só texto em sinal, fundo `--danger-soft` no hover.
+- **Foco:** anel duplo no acento de marca, global.
 
-### Chips de status
-- Pílula com fundo da cor a 12–14%, borda a 35–40% e ponto sólido; texto
-  11–12px, 800, caixa alta, sem quebra de linha.
+### Selos de status
+- Retângulo de 6px, texto de 12px peso 500, fundo da cor a 10–12%, sem borda.
+  Exemplos: "No alvo", "Abaixo do alvo", "Entrada", "Saída (produção)".
 
-### Cards
-- Papel, 20px de canto, 1px `--linha`, `--shadow-card`. Card em risco troca
-  só a borda para Sinal a 40%.
+### Cards / painéis
+- Papel, 12px de canto, 1px de linha, sombra de 1px. Um card em risco muda só o
+  número (sinal), nunca a borda inteira.
 
-### Kanban de produção (componente assinatura)
-- Coluna com topo de 4px na cor da etapa, fundo da cor a 4–6% e contador em
-  pílula. Card de lote com borda de 1px da etapa a 30%, ponto da etapa antes
-  do código do lote e ação primária de 44px.
+### Navegação
+- Item de 40px: ícone de 17px em tinta-faint e rótulo 14px em tinta-sub. O item
+  ativo usa fundo papel-elevado, rótulo tinta peso 500 e ícone na marca.
 
-### Régua calibrada (componente assinatura)
-- Trilho de 12px, faixa aceitável tingida, pino do alvo e cursor do valor.
-  Delta sempre em p.p. ou R$, com vírgula.
+### Faixa de métricas (assinatura)
+- Um painel dividido em 4 colunas por linha fina: rótulo 13px, número 28px/600
+  (sinal quando em risco) e linha de contexto 12px com ponto de estado.
+
+### Bloco "Onde a margem está vazando" (assinatura)
+- Total em sinal no canto do cabeçalho ("deixados na mesa") e linhas ordenadas
+  por R$: nome, explicação em uma frase e valor à direita.
+
+### Kanban de produção
+- Coluna com topo de 3px da etapa, fundo da etapa a 5% e rolagem interna. Card
+  de papel com borda da etapa a 30% e botões de etapa tingidos com 44px.
+
+### Checklist de operação
+- Linha de 48px, caixa de 24px e texto de 15px; marcado vira verde sucesso com
+  o texto riscado em tinta-faint. Progresso em trilho de 6px.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** usar `formatBRL` e `toLocaleString("pt-BR")` em todo número.
-- **Do** usar `--etapa-*` para qualquer referência a etapa de produção.
-- **Do** manter todo alvo de toque da operação com ≥44px (`--alvo-toque`).
-- **Do** marcar mudanças de polimento com `POLIMENTO <tela>` e registrar em `docs/POLIMENTO.md`.
+- **Do** formatar todo número em pt-BR com `formatBRL`, `formatNumero` ou `formatQtd` (`components/charts/format.ts`).
+- **Do** manter os alvos de toque da operação (Produções, Checklists, Estoque) com 44px ou mais.
+- **Do** usar `ShellPremium` pra qualquer tela nova, no app e na demo.
+- **Do** marcar mudanças com `SISTEMA premium` ou `POLIMENTO <tela>` e registrar em `docs/POLIMENTO.md`.
 
 ### Don't:
-- **Don't** usar faixa lateral colorida acima de 1px (side-tab) em card, lista ou alerta.
-- **Don't** usar halo colorido, brilho (glow) ou ponto pulsando sem estado novo.
-- **Don't** usar azul-marinho no tema escuro: o escuro é grafite neutro.
-- **Don't** usar chips de código ("CAL · 01", "EST · 01") ou eyebrow acima de título.
-- **Don't** mostrar agente IA ou dado simulado fora de `/preview` sem o selo de demonstração.
+- **Don't** usar caixa alta em rótulo, selo, cabeçalho ou menu.
+- **Don't** usar degradê, halo colorido, brilho ou ponto pulsando.
+- **Don't** preencher botão com cor de etapa ou de estado; use a versão tingida.
+- **Don't** criar card-herói com título de marketing ("Centro de Inteligência...").
+- **Don't** usar azul-marinho no escuro: o escuro é grafite neutro.
+- **Don't** mostrar o agente IA ou dado simulado fora de `/preview` sem o selo "demo".

@@ -35,3 +35,17 @@ com os pratos abaixo do alvo ordenados pelo R$ perdido; depois a tabela completa
 FORM: canon (saída padrão escolhida pelo usuário), à altura de Stripe/Linear/Toast; seed 51421195 (roll degradado, sem rede).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## Finish review (2026-09-22)
+
+VERDICT: ship. The render matches the contract. The first viewport shows the
+lean header with the margin target, the 4-cell metric strip and "Onde a margem
+está vazando" (R$ 272,13 deixados na mesa) above the full table. The own-world
+holds with content removed: neutral paper/graphite, 1px borders, a single
+`--marca` accent on active/focus, tinted (never filled) stage buttons. Dark
+mode is neutral graphite, not navy.
+Detector: 0 anti-patterns in shipped screens; the remaining off-scale values
+live in unused components (`direcoes/*`, `ReguaCalibrada`), in the demo-only
+agent modal and in the print exceptions documented in DESIGN.md.
+DESIGN.md rewritten for this direction. Rasters: none shipped (icons only, lucide).
+Reference capture: `.impeccable/review/desktop.png` (local, ignored by git).
