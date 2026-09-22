@@ -1,5 +1,7 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): temperatura de 30px bold para 28px semibold (numero-destaque). Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
 import { useState } from "react";
 import { formatQtd } from "@/components/charts/format";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
@@ -82,7 +84,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
                 ) : (
                   <>
                     <div className="text-[13px]" style={{ color: "var(--sub)" }}>{local.nome}</div>
-                    <div className="text-[30px] font-bold mt-1.5 leading-none" style={{ ...nums, color: foraDaFaixa ? "var(--danger)" : "var(--text)", letterSpacing: "-0.02em" }}>
+                    <div className="text-[28px] font-semibold mt-1.5 leading-none" style={{ ...nums, color: foraDaFaixa ? "var(--danger)" : "var(--text)", letterSpacing: "-0.02em" }}>
                       {ultima ? `${formatQtd(ultima.temperaturaC)}°C` : "—"}
                     </div>
                     <div className="text-[12px] mt-2" style={{ color: "var(--faint)" }}>

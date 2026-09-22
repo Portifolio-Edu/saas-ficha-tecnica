@@ -1,5 +1,7 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): cabeçalho da tabela de lotes saiu de 10px caixa alta para 12px normal. Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
 import { Fragment, useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
@@ -151,7 +153,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
             </div>
             <table className="w-full text-[12px]">
               <thead>
-                <tr style={{ color: "var(--faint)" }} className="text-left text-[10px] uppercase tracking-wide">
+                <tr style={{ color: "var(--faint)" }} className="text-left text-[12px]">
                   <th className="py-2.5 px-5 font-medium">Data</th>
                   <th className="py-2.5 px-2 font-medium">Responsável</th>
                   <th className="py-2.5 px-2 font-medium">Fornecedor</th>

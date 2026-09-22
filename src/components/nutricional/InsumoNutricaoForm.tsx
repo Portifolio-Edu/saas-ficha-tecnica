@@ -1,5 +1,7 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): selo 10px bold virou 11px semibold (rotulo). Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
 import { useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Camera, Sparkles, Check, Mic } from "lucide-react";
@@ -116,7 +118,7 @@ export function InsumoNutricaoForm({
           <span className="text-[12px] font-bold text-[var(--tinta)]">
             Preenchimento automático por imagem ou áudio
           </span>
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--panel)", color: "var(--tinta-sub)", border: "1px solid var(--linha)" }}>
+          <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded" style={{ background: "var(--panel)", color: "var(--tinta-sub)", border: "1px solid var(--linha)" }}>
             Demonstração
           </span>
         </div>

@@ -1,5 +1,7 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): nome 20px bold virou 22px semibold; título do cartão 17px bold virou 16px semibold. Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
 import { useActionState } from "react";
 import Link from "next/link";
 import { entrar, type EstadoAuth } from "@/lib/auth/actions";
@@ -26,12 +28,12 @@ export function LoginForm() {
         >
           <ChefHat size={26} />
         </div>
-        <h2 className="text-[20px] font-bold tracking-tight text-[var(--text)]">Ficha Técnica</h2>
+        <h2 className="text-[22px] font-semibold tracking-tight text-[var(--text)]">Ficha Técnica</h2>
         <p className="text-[13px] text-[var(--sub)] mt-0.5">Custo, produção e CMV da sua cozinha</p>{/* SISTEMA premium: antes "SaaS Gastronômico & Gestão de CMV" */}
       </div>
 
       <Card className="p-7 w-full shadow-lg border">
-        <h1 className="text-[17px] font-bold mb-1 tracking-tight text-[var(--text)]">Acessar conta</h1>
+        <h1 className="text-[16px] font-semibold mb-1 tracking-tight text-[var(--text)]">Acessar conta</h1>
         <p className="text-[13px] mb-5 text-[var(--sub)]">
           Entre com seus dados para acessar o painel do seu restaurante.
         </p>

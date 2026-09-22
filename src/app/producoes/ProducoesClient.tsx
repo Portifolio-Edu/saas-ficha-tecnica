@@ -1,5 +1,7 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): "Capacidade por prato" e título do modal de perda de 18px black para 16px semibold. Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
 // SISTEMA premium (2026-09-22): botões de etapa tingidos, colunas com canto 12px e
 // topo de 3px, título no padrão das outras telas. Versão anterior:
 // `git show 4f29ec6:src/app/producoes/ProducoesClient.tsx`.
@@ -776,7 +778,7 @@ export function ProducoesClient({
           POLIMENTO producoes: texto 14px (antes 12.5px) e cabeçalhos legíveis (antes 10.5px
           em --faint). O botão "Registrar produção" saiu daqui e foi pro cabeçalho do quadro. */}
       <div>
-        <h2 className="text-[18px] font-black tracking-tight text-[var(--tinta)]">Capacidade por prato</h2>
+        <h2 className="text-[16px] font-semibold tracking-tight text-[var(--tinta)]">Capacidade por prato</h2>
         <p className="text-[14px] mt-1 mb-3 text-[var(--tinta-sub)]">
           Quantas porções ainda dá pra fazer com o estoque de hoje, e o que acaba primeiro.
         </p>
@@ -834,7 +836,7 @@ export function ProducoesClient({
             style={{ background: "var(--panel)", boxShadow: shadow, border: "1px solid var(--linha)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 id="titulo-modal-perda" className="text-[18px] font-black mb-1">Registrar perda</h3>
+            <h3 id="titulo-modal-perda" className="text-[16px] font-semibold mb-1">Registrar perda</h3>
             <p className="text-[14px] mb-3 text-[var(--tinta-sub)]">O que aconteceu com esse lote? O motivo fica registrado pra investigar depois.</p>
             <textarea
               autoFocus
