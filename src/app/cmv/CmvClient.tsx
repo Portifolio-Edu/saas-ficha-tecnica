@@ -208,7 +208,7 @@ export function CmvClient({
   return (
     <div className="max-w-5xl space-y-6">
       <div>
-        <h2 className="text-[14px] font-semibold mb-1">Importar vendas do período</h2>
+        <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Importar vendas do período</h2>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>
           Cole o relatório de vendas do iFood ou do seu PDV, um prato por linha, no formato <span style={nums}>nome do prato, quantidade</span>. Enquanto não importar, o sistema usa o número de vendas/mês cadastrado manualmente em cada receita.
         </p>
@@ -248,7 +248,7 @@ export function CmvClient({
       </div>
 
       <div>
-        <h2 className="text-[14px] font-semibold mb-1">CMV teórico contra CMV real</h2>
+        <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">CMV teórico contra CMV real</h2>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>
           Teórico é o que as fichas dizem que devia ter sido gasto pra essas vendas. Real é o padrão do setor: estoque inicial + compras − estoque final, dividido pelo faturamento. A diferença é o que saiu da cozinha sem virar prato vendido. Um gap de 1 a 3 pontos é ruído normal de operação; acima disso vale investigar.
         </p>
@@ -329,7 +329,7 @@ export function CmvClient({
       </div>
 
       <div>
-        <h2 className="text-[14px] font-semibold mb-1">CMV por prato</h2>
+        <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">CMV por prato</h2>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Ordenado por faturamento. O que vende muito com margem baixa costuma pesar mais que o que vende pouco com margem ruim. Clique num prato pra ver de onde vem o custo dele.</p>
         <Card>
           <table className="w-full text-[12.5px]">
@@ -417,7 +417,7 @@ export function CmvClient({
       </div>
 
       <div>
-        <h2 className="text-[14px] font-semibold mb-1">Histórico de fechamentos</h2>
+        <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Histórico de fechamentos</h2>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>
           CMV real de um período fechado nunca muda (vem do estoque contado na época). O teórico aqui é recalculado com a ficha técnica atual, então pode se afastar um pouco do teórico do dia do fechamento se preço de insumo ou ficha mudaram desde então.
         </p>

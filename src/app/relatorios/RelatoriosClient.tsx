@@ -232,7 +232,7 @@ export function RelatoriosClient({
       <p className="text-[12.5px]" style={{ color: "var(--sub)" }}>Consolidado do que já está cadastrado nas outras telas -- ninguém digita nada duas vezes aqui.</p>
 
       <div>
-        <h2 className="text-[14px] font-semibold mb-3">Onde o dinheiro está vazando</h2>
+        <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-3">Onde o dinheiro está vazando</h2>
         <div className="grid grid-cols-3 gap-3">
           <Kpi label="Quebra de estoque acumulada" value={formatBRLEixo(quebraEstoqueTotal)} alerta={quebraEstoqueTotal > 0} sub="soma do gap real × teórico nos fechamentos de CMV" />
           <Kpi label="Lotes perdidos na produção" value={formatBRLEixo(custoPerdasProducao)} alerta={custoPerdasProducao > 0} sub={`${perdasProducao.length} lote${perdasProducao.length !== 1 ? "s" : ""} descartado${perdasProducao.length !== 1 ? "s" : ""}`} />
@@ -320,7 +320,7 @@ export function RelatoriosClient({
       </div>
 
       <div>
-        <h2 className="text-[14px] font-semibold mb-1">Desempenho por responsável</h2>
+        <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Desempenho por responsável</h2>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Cruzamento do que cada pessoa registrou nas outras telas. Serve pra treinar quem precisa, não pra punir: descarte alto pode ser técnica de corte, mas também pode ser matéria-prima ruim do fornecedor.</p>
         <Card>
           <table className="w-full text-[12.5px]">
@@ -356,7 +356,7 @@ export function RelatoriosClient({
       </div>
 
       <div>
-        <h2 className="text-[14px] font-semibold mb-1">Pendências que precisam de decisão</h2>
+        <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Pendências que precisam de decisão</h2>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>{alertas.length} item{alertas.length !== 1 ? "s" : ""} aberto{alertas.length !== 1 ? "s" : ""} agora.</p>
         <Card>
           <div className="px-5 py-1">
