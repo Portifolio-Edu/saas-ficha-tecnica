@@ -127,7 +127,7 @@ export function EstoqueClient({
             )}
             <button
               onClick={() => setShowNovoEstoque(!showNovoEstoque)}
-              className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+              className="text-[13px] font-medium px-3.5 min-h-10 rounded-lg"
               style={{ background: showNovoEstoque ? "var(--bg)" : "var(--accent)", color: showNovoEstoque ? "var(--text)" : "#fff", border: `1px solid ${showNovoEstoque ? "var(--border-strong)" : "var(--accent)"}` }}
             >
               {showNovoEstoque ? "Fechar" : "+ Rastrear insumo"}
@@ -146,7 +146,7 @@ export function EstoqueClient({
           placeholder="Buscar insumo pelo nome..."
           value={buscaInsumo}
           onChange={(e) => setBuscaInsumo(e.target.value)}
-          className="text-[12.5px] px-3 py-2 rounded-lg mb-3 w-full max-w-xs"
+          className="text-[14px] px-3 min-h-[var(--alvo-toque)] rounded-lg mb-3 w-full max-w-xs"
           style={inputStyle}
         />
 
@@ -216,7 +216,7 @@ export function EstoqueClient({
             )}
             <button
               onClick={() => setShowNovaMovimentacao(!showNovaMovimentacao)}
-              className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+              className="text-[13px] font-medium px-3.5 min-h-10 rounded-lg"
               style={{ background: showNovaMovimentacao ? "var(--bg)" : "var(--accent)", color: showNovaMovimentacao ? "var(--text)" : "#fff", border: `1px solid ${showNovaMovimentacao ? "var(--border-strong)" : "var(--accent)"}` }}
             >
               {showNovaMovimentacao ? "Fechar" : "+ Registrar movimentação"}
@@ -325,7 +325,7 @@ export function EstoqueClient({
               setFornecedorEditando(null);
               setShowNovoFornecedor(!showNovoFornecedor);
             }}
-            className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+            className="text-[13px] font-medium px-3.5 min-h-10 rounded-lg"
             style={{ background: showNovoFornecedor ? "var(--bg)" : "var(--accent)", color: showNovoFornecedor ? "var(--text)" : "#fff", border: `1px solid ${showNovoFornecedor ? "var(--border-strong)" : "var(--accent)"}` }}
           >
             {showNovoFornecedor ? "Fechar" : "+ Novo fornecedor"}
@@ -360,13 +360,14 @@ export function EstoqueClient({
                           setShowNovoFornecedor(false);
                           setFornecedorEditando(editandoEsteAqui ? null : f);
                         }}
-                        className="text-[11.5px] font-medium"
+                        // SISTEMA premium: ações com 40px de alvo (antes texto de 11,5px sem área de toque).
+                        className="text-[13px] font-medium px-3 min-h-10 rounded-lg hover:bg-[var(--panel-hover)]"
                         style={{ color: "var(--text)" }}
                       >
-                        editar
+                        Editar
                       </button>
-                      <button onClick={() => excluirFornecedorComConfirmacao(f)} className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
-                        excluir
+                      <button onClick={() => excluirFornecedorComConfirmacao(f)} className="text-[13px] font-medium px-3 min-h-10 rounded-lg hover:bg-[var(--danger-soft)]" style={{ color: "var(--danger)" }}>
+                        Excluir
                       </button>
                     </div>
                   </div>

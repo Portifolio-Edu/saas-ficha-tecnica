@@ -230,12 +230,12 @@ export function VisaoGeralClient({
             step="1"
             value={alvoManualPct}
             onChange={(e) => setAlvoManualPct(Number(e.target.value))}
-            className="w-28 cursor-pointer"
+            className="w-28 h-10 cursor-pointer"
             style={{ accentColor: "var(--marca)" }}
           />
           <button
             onClick={() => setAlvoManualPct(Math.round(margemAlvoCliente * 100))}
-            className="w-8 h-8 flex items-center justify-center rounded-md text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
+            className="w-10 h-10 -mr-2 flex items-center justify-center rounded-md text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
             title="Voltar à meta cadastrada"
             aria-label="Voltar à meta cadastrada"
           >
@@ -335,7 +335,7 @@ export function VisaoGeralClient({
                 role="tab"
                 aria-selected={b.ativo}
                 onClick={b.onClick}
-                className="px-3 min-h-9 rounded-md text-[13px] font-medium transition-colors"
+                className="px-3 min-h-10 rounded-md text-[13px] font-medium transition-colors"
                 style={{
                   background: b.ativo ? "var(--panel)" : "transparent",
                   color: b.ativo ? "var(--tinta)" : "var(--tinta-sub)",
@@ -487,7 +487,7 @@ export function VisaoGeralClient({
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-[16px] font-semibold text-[var(--tinta)]">Carga das estações</h3>
-          <Link href={`${basePath}/producoes`} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--tinta-sub)] hover:text-[var(--tinta)]">
+          <Link href={`${basePath}/producoes`} className="inline-flex items-center gap-1.5 min-h-10 text-[13px] font-medium text-[var(--tinta-sub)] hover:text-[var(--tinta)]">
             Abrir quadro de produção <ArrowRight size={14} />
           </Link>
         </div>
