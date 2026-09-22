@@ -73,10 +73,10 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
                   ...ch.itens,
                   {
                     id: `demo-item-${Date.now()}`,
+                    checklistId,
                     texto: novoItemTexto.trim(),
                     ordem,
                     concluidoHoje: false,
-                    execucoes: [],
                   },
                 ],
               }
@@ -104,19 +104,6 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
               ? {
                   ...it,
                   concluidoHoje: !concluidoHoje,
-                  execucoes: concluidoHoje
-                    ? []
-                    : [
-                        {
-                          id: `exec-${Date.now()}`,
-                          itemId,
-                          data: new Date().toISOString().slice(0, 10),
-                          turnoId,
-                          responsavel: chefeTurno.trim() || "Cozinha",
-                          chefeTurno: chefeTurno.trim() || null,
-                          criadoEm: new Date().toISOString(),
-                        },
-                      ],
                 }
               : it
           ),
