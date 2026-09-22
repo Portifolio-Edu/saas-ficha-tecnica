@@ -17,6 +17,7 @@ import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
 import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirInsumo, acaoExcluirPreparo } from "./actions";
+import { formatBRL } from "@/components/charts/format";
 
 export function InsumosClient({
   insumos,
@@ -94,10 +95,10 @@ export function InsumosClient({
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === i.categoria)?.label ?? i.categoria}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.unidadeMedida}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.tamanhoEmbalagem} {i.unidadeMedida}</td>
-                    <td className="py-2.5 px-3 text-right" style={nums}>R$ {i.precoEmbalagem.toFixed(2)}</td>
-                    <td className="py-2.5 px-3 text-right" style={nums}>R$ {i.precoUnitario.toFixed(2)}</td>
+                    <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL(i.precoEmbalagem)}</td>
+                    <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL(i.precoUnitario)}</td>
                     <td className="py-2.5 px-3 text-right" style={{ ...nums, color: i.fatorCorrecao > 1 ? "var(--danger)" : "var(--faint)" }}>{i.fatorCorrecao.toFixed(2)}</td>
-                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: abaixoMinimo ? "var(--danger)" : "var(--text)" }}>
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap" style={{ ...nums, color: abaixoMinimo ? "var(--danger)" : "var(--text)" }}>
                       {i.estoque ? `${i.estoque.saldoAtual}${i.unidadeMedida}${abaixoMinimo ? " · abaixo do mín." : ""}` : <span style={{ color: "var(--faint)" }}>não rastreado</span>}
                     </td>
                     <td className="py-2.5 px-5 text-right whitespace-nowrap">
@@ -175,7 +176,7 @@ export function InsumosClient({
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-[12px]" style={{ ...nums, color: "var(--sub)" }}>
-                      rende {prep.rendimento}{prep.unidadeRendimento} · R$ {custoUnitario.toFixed(2)}/{prep.unidadeRendimento}
+                      rende {prep.rendimento}{prep.unidadeRendimento} · {formatBRL(custoUnitario)}/{prep.unidadeRendimento}
                     </div>
                     <button
                       onClick={() => {
@@ -208,7 +209,7 @@ export function InsumosClient({
                           <span>
                             {insumo.nome} <span style={{ color: "var(--faint)" }}>· {f.pesoLiquido}{f.unidade} · FC {fc.toFixed(2)}</span>
                           </span>
-                          <span style={nums}>R$ {custo.toFixed(2)}</span>
+                          <span style={nums}>{formatBRL(custo)}</span>
                         </div>
                       );
                     })}

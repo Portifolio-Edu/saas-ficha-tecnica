@@ -13,7 +13,7 @@ export const CHART_MARGIN_HORIZONTAL_BARS = { top: 12, right: 40, bottom: 8, lef
 export const chartGridProps = { stroke: "var(--border)", horizontal: true, vertical: false } as const;
 export const chartGridPropsHorizontalBars = { stroke: "var(--border)", horizontal: false, vertical: true } as const;
 
-export const axisTickStyle = { fontSize: 11, fill: "var(--faint)", fontFamily: "var(--font-geist-mono)", fontVariantNumeric: "tabular-nums" } as const;
+export const axisTickStyle = { fontSize: 11, fill: "var(--faint)", fontFamily: "var(--fonte-numero)", fontVariantNumeric: "tabular-nums" } as const;
 export const axisLineStyle = { stroke: "var(--border)" } as const;
 
 export const CHART_ANIMATION_DURATION = 700;

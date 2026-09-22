@@ -61,8 +61,8 @@ export default function ConceptFeira() {
           --sub: #6B5F4C;
           background: var(--creme); color: var(--tinta); min-height: 100vh;
         }
-        [data-feira] .f-sans { font-family: var(--font-geist-sans), ui-sans-serif, sans-serif; }
-        [data-feira] .f-mono { font-family: var(--font-geist-mono), ui-monospace, monospace; }
+        [data-feira] .f-sans { font-family: var(--fonte-corpo), ui-sans-serif, sans-serif; }
+        [data-feira] .f-mono { font-family: var(--fonte-numero), ui-monospace, monospace; }
 
         /* Azulejo português -- textura real de identidade, não decoração vaga. */
         [data-feira] .f-azulejo {
@@ -115,13 +115,13 @@ export default function ConceptFeira() {
         [data-feira] .f-placa-valor { font-weight: 800; font-size: 26px; margin-top: 2px; }
         [data-feira] .f-placa-valor.f-alerta { color: var(--tomate); }
 
-        [data-feira] .f-tabela { width: 100%; font-family: var(--font-geist-sans), sans-serif; font-size: 13px; }
+        [data-feira] .f-tabela { width: 100%; font-family: var(--fonte-corpo), sans-serif; font-size: 13px; }
         [data-feira] .f-tabela th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--sub); font-weight: 700; padding: 6px 10px; }
         [data-feira] .f-tabela td { padding: 9px 10px; border-top: 2px dashed #E4D9BF; }
 
         [data-feira] .f-banca-mini { background: var(--branco); border: 3px solid var(--tinta); border-radius: 16px; overflow: hidden; }
         [data-feira] .f-banca-mini-head { padding: 8px 12px; font-weight: 700; font-size: 12.5px; display: flex; justify-content: space-between; align-items: center; }
-        [data-feira] .f-item { margin: 8px; padding: 8px 10px; border-radius: 10px; font-family: var(--font-geist-sans), sans-serif; font-size: 11.5px; }
+        [data-feira] .f-item { margin: 8px; padding: 8px 10px; border-radius: 10px; font-family: var(--fonte-corpo), sans-serif; font-size: 11.5px; }
 
         [data-feira] .f-selo-pequeno { transform: rotate(-4deg); display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1.5px solid currentColor; }
       `}</style>

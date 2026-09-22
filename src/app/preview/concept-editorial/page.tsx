@@ -26,8 +26,8 @@ export default function ConceptEditorial() {
           --vinho: #6B2028; --oliva: #4C5B34; --mostarda: #A6791E;
           background: var(--papel); color: var(--tinta); min-height: 100vh;
         }
-        [data-editorial] .e-sans { font-family: var(--font-geist-sans), ui-sans-serif, sans-serif; }
-        [data-editorial] .e-mono { font-family: var(--font-geist-mono), ui-monospace, monospace; }
+        [data-editorial] .e-sans { font-family: var(--fonte-corpo), ui-sans-serif, sans-serif; }
+        [data-editorial] .e-mono { font-family: var(--fonte-numero), ui-monospace, monospace; }
 
         [data-editorial] .e-masthead { border-bottom: 4px solid var(--tinta); padding: 18px 48px 14px; display: flex; align-items: baseline; justify-content: space-between; }
         [data-editorial] .e-titulo-revista { font-size: 30px; font-weight: 600; font-style: italic; letter-spacing: -0.01em; }
@@ -64,23 +64,23 @@ export default function ConceptEditorial() {
         [data-editorial] .e-dropcap::first-letter { font-size: 52px; float: left; line-height: 0.8; padding-right: 6px; padding-top: 4px; color: var(--vinho); font-weight: 600; }
 
         [data-editorial] .e-sidebar { border-left: 3px double var(--tinta); padding-left: 22px; }
-        [data-editorial] .e-sidebar-titulo { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 10px; font-family: var(--font-geist-sans), sans-serif; }
+        [data-editorial] .e-sidebar-titulo { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 10px; font-family: var(--fonte-corpo), sans-serif; }
         [data-editorial] .e-nota { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--linha); font-size: 12.5px; }
         [data-editorial] .e-nota:last-child { border-bottom: none; }
-        [data-editorial] .e-nota-valor { font-family: var(--font-geist-mono), monospace; font-weight: 600; }
+        [data-editorial] .e-nota-valor { font-family: var(--fonte-numero), monospace; font-weight: 600; }
 
         [data-editorial] .e-errata { margin-top: 24px; }
-        [data-editorial] .e-errata-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sub); font-family: var(--font-geist-sans), sans-serif; margin-bottom: 8px; }
-        [data-editorial] .e-errata-item { font-family: var(--font-geist-mono), monospace; font-size: 11.5px; padding: 7px 0; border-top: 1px dotted var(--linha); }
+        [data-editorial] .e-errata-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sub); font-family: var(--fonte-corpo), sans-serif; margin-bottom: 8px; }
+        [data-editorial] .e-errata-item { font-family: var(--fonte-numero), monospace; font-size: 11.5px; padding: 7px 0; border-top: 1px dotted var(--linha); }
         [data-editorial] .e-errata-item b { color: var(--vinho); font-weight: 700; }
 
         [data-editorial] .e-producao { margin-top: 40px; padding: 0 48px 50px; }
         [data-editorial] .e-producao-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; border-top: 1.5px solid var(--tinta); border-bottom: 1.5px solid var(--tinta); }
         [data-editorial] .e-producao-col { padding: 14px 18px; border-right: 1px solid var(--linha); }
         [data-editorial] .e-producao-col:last-child { border-right: none; }
-        [data-editorial] .e-producao-col-titulo { font-family: var(--font-geist-sans), sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); margin-bottom: 8px; }
+        [data-editorial] .e-producao-col-titulo { font-family: var(--fonte-corpo), sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); margin-bottom: 8px; }
         [data-editorial] .e-producao-item { font-size: 13px; padding: 5px 0; }
-        [data-editorial] .e-producao-item i { color: var(--sub); font-size: 11px; display: block; font-family: var(--font-geist-mono), monospace; font-style: normal; }
+        [data-editorial] .e-producao-item i { color: var(--sub); font-size: 11px; display: block; font-family: var(--fonte-numero), monospace; font-style: normal; }
       `}</style>
 
       <header className="e-masthead">

@@ -3,11 +3,12 @@
 // casas decimais, sinal de porcentagem).
 
 export function formatBRLEixo(valor: number): string {
-  return `R$ ${valor.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+  return `R$\u00A0${valor.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
 }
 
 export function formatBRL(valor: number): string {
-  return `R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  // Espaço não-quebrável: "R$" nunca fica numa linha e o número na outra.
+  return `R$\u00A0${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function formatPercentEixo(valor: number): string {

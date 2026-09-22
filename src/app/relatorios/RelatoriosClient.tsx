@@ -8,7 +8,7 @@ import { Kpi } from "@/components/ficha/Kpi";
 import { nums } from "@/components/ficha/tema";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
-import { formatBRLEixo, formatPercent, formatPercentEixo } from "@/components/charts/format";
+import { formatBRL, formatBRLEixo, formatPercent, formatPercentEixo } from "@/components/charts/format";
 import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, CHART_MARGIN_HORIZONTAL_BARS, axisLineStyle, axisTickStyle, chartGridProps, chartGridPropsHorizontalBars } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
@@ -132,7 +132,7 @@ export function RelatoriosClient({
         lista.push({
           tipo: "Margem",
           texto: `${receita.nomePrato} com margem de ${margemPct.toFixed(1)}%, abaixo do alvo de ${margemAlvo.toFixed(0)}%`,
-          acao: `Preço sugerido: R$ ${precoSugerido.toFixed(2)} (hoje R$ ${(receita.precoVenda ?? 0).toFixed(2)})`,
+          acao: `Preço sugerido: ${formatBRL(precoSugerido)} (hoje ${formatBRL((receita.precoVenda ?? 0))})`,
         });
       }
     }
@@ -234,9 +234,9 @@ export function RelatoriosClient({
       <div>
         <h2 className="text-[14px] font-semibold mb-3">Onde o dinheiro está vazando</h2>
         <div className="grid grid-cols-3 gap-3">
-          <Kpi label="Quebra de estoque acumulada" value={`R$ ${quebraEstoqueTotal.toFixed(0)}`} alerta={quebraEstoqueTotal > 0} sub="soma do gap real × teórico nos fechamentos de CMV" />
-          <Kpi label="Lotes perdidos na produção" value={`R$ ${custoPerdasProducao.toFixed(0)}`} alerta={custoPerdasProducao > 0} sub={`${perdasProducao.length} lote${perdasProducao.length !== 1 ? "s" : ""} descartado${perdasProducao.length !== 1 ? "s" : ""}`} />
-          <Kpi label="Total identificado" value={`R$ ${(quebraEstoqueTotal + custoPerdasProducao).toFixed(0)}`} alerta={quebraEstoqueTotal + custoPerdasProducao > 0} sub="por período, em perdas evitáveis" />
+          <Kpi label="Quebra de estoque acumulada" value={formatBRLEixo(quebraEstoqueTotal)} alerta={quebraEstoqueTotal > 0} sub="soma do gap real × teórico nos fechamentos de CMV" />
+          <Kpi label="Lotes perdidos na produção" value={formatBRLEixo(custoPerdasProducao)} alerta={custoPerdasProducao > 0} sub={`${perdasProducao.length} lote${perdasProducao.length !== 1 ? "s" : ""} descartado${perdasProducao.length !== 1 ? "s" : ""}`} />
+          <Kpi label="Total identificado" value={formatBRLEixo((quebraEstoqueTotal + custoPerdasProducao))} alerta={quebraEstoqueTotal + custoPerdasProducao > 0} sub="por período, em perdas evitáveis" />
         </div>
       </div>
 

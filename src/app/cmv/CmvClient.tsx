@@ -10,7 +10,7 @@ import { inputStyle, nums } from "@/components/ficha/tema";
 import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
 import { Donut, type FatiaDonut } from "@/components/charts/Donut";
-import { formatPercent, formatPercentEixo } from "@/components/charts/format";
+import { formatBRL, formatBRLEixo, formatPercent, formatPercentEixo } from "@/components/charts/format";
 import { CATEGORICAL_PALETTE, CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, CHART_MIN_HEIGHT, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
@@ -266,8 +266,8 @@ export function CmvClient({
 
         <div className="grid grid-cols-4 gap-3 mb-3">
           <Kpi flat label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
-          <Kpi flat label="CMV teórico (fichas)" value={`${cmvTeoricoPct.toFixed(1)}%`} sub={`R$ ${custoTeoricoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
-          <Kpi flat label="CMV real (estoque)" value={`${cmvRealPct.toFixed(1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={`R$ ${consumoReal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
+          <Kpi flat label="CMV teórico (fichas)" value={`${cmvTeoricoPct.toFixed(1)}%`} sub={formatBRLEixo(custoTeoricoPeriodo)} />
+          <Kpi flat label="CMV real (estoque)" value={`${cmvRealPct.toFixed(1)}%`} alerta={gapPct > GAP_ALERTA_PP} sub={formatBRLEixo(consumoReal)} />
           <Kpi
             flat
             label="Gap não explicado"
@@ -365,8 +365,8 @@ export function CmvClient({
                         )}
                       </td>
                       <td className="py-2.5 px-3 text-right" style={nums}>{l.qtdVendida}</td>
-                      <td className="py-2.5 px-3 text-right" style={nums}>R$ {(l.receita.precoVenda ?? 0).toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoPorPorcao.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL((l.receita.precoVenda ?? 0))}</td>
+                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatBRL(l.custoPorPorcao)}</td>
                       <td className="py-2.5 px-3 text-right" style={nums}>R$ {l.faturamentoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
                       <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoTeoricoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
                       <td className="py-2.5 px-5 text-right font-medium" style={nums}>R$ {l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>

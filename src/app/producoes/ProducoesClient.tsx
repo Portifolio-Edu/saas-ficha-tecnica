@@ -258,7 +258,7 @@ export function ProducoesClient({
                           setColunaAlvo(null);
                         }}
                         className="rounded-lg p-2.5 ftv-panel cursor-grab active:cursor-grabbing"
-                        style={{ border: "1px solid var(--border)", borderLeft: `3px solid ${cor.cor}`, opacity: loteArrastando?.item === d ? 0.4 : 1 }}
+                        style={{ background: "var(--panel)", border: `1px solid color-mix(in srgb, ${cor.cor} 28%, var(--border))`, opacity: loteArrastando?.item === d ? 0.4 : 1 }}
                       >
                         <div className="text-[12px] font-medium leading-tight">{d.nome}</div>
                         <div className="text-[10.5px] mt-1" style={{ color: "var(--sub)" }}>{d.rendimentoLabel}</div>
@@ -287,9 +287,9 @@ export function ProducoesClient({
                           setColunaAlvo(null);
                         }}
                         className={col.id !== "perda" ? "rounded-lg p-2.5 ftv-panel cursor-grab active:cursor-grabbing" : "rounded-lg p-2.5 ftv-panel"}
-                        style={{ border: "1px solid var(--border)", borderLeft: `3px solid ${cor.cor}`, opacity: loteArrastando?.item === pr ? 0.4 : 1 }}
+                        style={{ background: "var(--panel)", border: `1px solid color-mix(in srgb, ${cor.cor} 28%, var(--border))`, opacity: loteArrastando?.item === pr ? 0.4 : 1 }}
                       >
-                        <div className="text-[10.5px] font-semibold" style={{ ...nums, color: "var(--sub)" }}>{pr.lote}</div>
+                        <div className="flex items-center gap-1.5 text-[10.5px] font-semibold" style={{ ...nums, color: "var(--sub)" }}><span aria-hidden className="rounded-full shrink-0" style={{ width: 6, height: 6, background: cor.cor }} />{pr.lote}</div>
                         <div className="text-[12px] font-medium leading-tight mt-0.5">{pr.nomeReceita}</div>
                         <div className="text-[10.5px] mt-1" style={{ ...nums, color: "var(--sub)" }}>{pr.quantidade} {pr.unidadeRendimento} · {pr.responsavel}</div>
                         <div className="text-[10px] mt-1 inline-block px-1.5 py-0.5 rounded" style={{ background: "var(--bg)", color: "var(--sub)" }}>

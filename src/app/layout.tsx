@@ -1,14 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Big_Shoulders_Stencil } from "next/font/google";
+import { Public_Sans, IBM_Plex_Mono, Fraunces, Big_Shoulders_Stencil } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Corpo: Public Sans -- legível em tabela densa, sem ser a Geist/Inter padrão
+// de app gerado. Números: IBM Plex Mono, tabular. Título de página: Fraunces
+// itálico, só no h1 do shell.
+const fonteCorpo = Public_Sans({
+  variable: "--fonte-corpo",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fonteNumero = IBM_Plex_Mono({
+  variable: "--fonte-numero",
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+});
+
+const fonteTitulo = Fraunces({
+  variable: "--fonte-titulo",
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
   subsets: ["latin"],
 });
 
@@ -52,7 +64,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${bigShouldersStencil.variable} antialiased`}
+        className={`${fonteCorpo.variable} ${fonteNumero.variable} ${fonteTitulo.variable} ${bigShouldersStencil.variable} antialiased`}
       >
         <a href="#conteudo" className="pular-para-conteudo">Pular para o conteúdo</a>
         {children}

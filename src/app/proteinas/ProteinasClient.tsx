@@ -11,6 +11,7 @@ import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
 import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Processamento } from "@/lib/dominio/processamento";
+import { formatBRL } from "@/components/charts/format";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -165,7 +166,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                         <td className="py-2 px-2 font-medium">{l.responsavel}</td>
                         <td className="py-2 px-2" style={{ color: "var(--sub)" }}>{l.fornecedor ?? "—"}</td>
                         <td className="py-2 px-2 text-right" style={nums}>{l.pesoBrutoRecebido.toFixed(2)}kg</td>
-                        <td className="py-2 px-2 text-right" style={nums}>R$ {l.valorPagoKg.toFixed(2)}</td>
+                        <td className="py-2 px-2 text-right" style={nums}>{formatBRL(l.valorPagoKg)}</td>
                         <td className="py-2 px-2 text-right" style={nums}>{l.pesoLiquidoResultante.toFixed(2)}kg</td>
                         <td className="py-2 px-2 text-right" style={{ ...nums, color: "var(--sub)" }}>{l.pesoAparasReaproveitaveis.toFixed(2)}kg</td>
                         <td className="py-2 px-2 text-right" style={{ ...nums, color: descarteAlto ? "var(--danger)" : "var(--text)" }}>{l.pesoDescartePuro.toFixed(2)}kg</td>

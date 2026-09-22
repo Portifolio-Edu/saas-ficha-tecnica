@@ -49,14 +49,14 @@ export default function DirecaoB() {
           --bg: #E7EDF0; --panel: #FFFFFF; --border: #CBD9DE; --border-strong: #A6BDC4;
           --text: #10242C; --sub: #45606B; --faint: #5B747F;
           --accent: #0E7BA8; --accent-soft: #DCEEF5; --danger: #B03D28; --danger-soft: #F5E0D8;
-          --font-geist-mono: ${barlow.style.fontFamily}; --font-geist-sans: ${barlow.style.fontFamily};
+          --fonte-numero: ${barlow.style.fontFamily}; --fonte-corpo: ${barlow.style.fontFamily};
           --shadow: 0 1px 2px rgba(16,36,44,.06), 0 8px 22px rgba(16,36,44,.08);
         }
         [data-direcao="b"][data-theme="dark"] {
           --bg: #0D171C; --panel: #142229; --border: #223640; --border-strong: #304A56;
           --text: #E7F1F4; --sub: #86A3AD; --faint: #6E8791;
           --accent: #35B4E6; --accent-soft: #16303C; --danger: #E6604A; --danger-soft: #3A2119;
-          --font-geist-mono: ${barlow.style.fontFamily}; --font-geist-sans: ${barlow.style.fontFamily};
+          --fonte-numero: ${barlow.style.fontFamily}; --fonte-corpo: ${barlow.style.fontFamily};
           --shadow: 0 1px 2px rgba(0,0,0,.45), 0 12px 30px rgba(0,0,0,.5);
         }
         [data-direcao="b"] { text-transform: none; }

@@ -13,6 +13,7 @@ import type { EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
 import type { Fornecedor } from "@/lib/dominio/fornecedor";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirFornecedor } from "./actions";
+import { formatBRL } from "@/components/charts/format";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -105,7 +106,7 @@ export function EstoqueClient({
                         {e.saldoAtual}{e.unidadeMedida}{abaixo && " · repor"}
                       </td>
                       <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{e.estoqueMinimo}{e.unidadeMedida}</td>
-                      <td className="py-2.5 px-5 text-right" style={nums}>R$ {(e.saldoAtual * e.precoUnitario).toFixed(2)}</td>
+                      <td className="py-2.5 px-5 text-right" style={nums}>{formatBRL((e.saldoAtual * e.precoUnitario))}</td>
                     </tr>
                     {editandoEsteAqui && (
                       <EditarEstoqueForm linha={e} onCancel={() => setEditandoInsumoId(null)} onSaved={() => setEditandoInsumoId(null)} />
