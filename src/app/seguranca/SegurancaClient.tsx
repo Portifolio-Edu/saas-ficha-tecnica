@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatQtd } from "@/components/charts/format";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
@@ -48,7 +49,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
     <div className="max-w-5xl space-y-6">
       <div>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Locais de armazenamento</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Locais de armazenamento</h2>
           <button
             onClick={() => {
               setLocalEditando(null);
@@ -82,10 +83,13 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
                   <>
                     <div className="text-[13px]" style={{ color: "var(--sub)" }}>{local.nome}</div>
                     <div className="text-[30px] font-bold mt-1.5 leading-none" style={{ ...nums, color: foraDaFaixa ? "var(--danger)" : "var(--text)", letterSpacing: "-0.02em" }}>
-                      {ultima ? `${ultima.temperaturaC}°C` : "—"}
+                      {ultima ? `${formatQtd(ultima.temperaturaC)}°C` : "—"}
                     </div>
                     <div className="text-[12px] mt-2" style={{ color: "var(--faint)" }}>
-                      faixa ideal: {local.temperaturaMinC ?? "—"}°C a {local.temperaturaMaxC ?? "—"}°C
+                      {/* SISTEMA premium: local sem faixa (estoque seco) dizia "faixa ideal: —°C a —°C". */}
+                      {local.temperaturaMinC == null && local.temperaturaMaxC == null
+                        ? "sem controle de temperatura"
+                        : `faixa ideal: ${local.temperaturaMinC != null ? formatQtd(local.temperaturaMinC) : "—"}°C a ${local.temperaturaMaxC != null ? formatQtd(local.temperaturaMaxC) : "—"}°C`}
                     </div>
                     {insumosDoLocal.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -124,7 +128,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
 
       <div>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Temperatura de armazenamento</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Temperatura de armazenamento</h2>
           <button
             onClick={() => setShowNovaTemperatura(!showNovaTemperatura)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
@@ -161,7 +165,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
         </div>
 
         <Card className="p-6 mb-5">
-          <h2 className="text-[14px] font-semibold mb-1">Oscilação de temperatura{localSelecionado ? ` — ${localSelecionado.nome}` : ""}</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Oscilação de temperatura{localSelecionado ? ` — ${localSelecionado.nome}` : ""}</h2>
           <p className="text-[12px] mb-4" style={{ color: "var(--sub)" }}>
             Linhas tracejadas marcam os limites cadastrados pro local. Ponto maior e vermelho é leitura fora da faixa.
           </p>
@@ -173,7 +177,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
             <LineChart data={leiturasLocal} margin={CHART_MARGIN}>
               <CartesianGrid {...chartGridProps} />
               <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
-              <YAxis tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} unit="°" />
+              <YAxis tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={44} tickFormatter={(v: number) => `${formatQtd(v)}°`} />
               {localSelecionado?.temperaturaMinC != null && (
                 <ReferenceLine y={localSelecionado.temperaturaMinC} stroke="var(--border-strong)" strokeDasharray="4 4" label={{ value: "mín.", position: "insideBottomRight", fontSize: 10, fill: "var(--sub)" }} />
               )}
@@ -189,7 +193,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
                     <ChartTooltipCard
                       titulo={`${p.dataLabel} · ${p.responsavel}`}
                       linhas={[
-                        { rotulo: "Temperatura", valor: `${p.temperaturaC}°C`, destaque: fora },
+                        { rotulo: "Temperatura", valor: `${formatQtd(p.temperaturaC)}°C`, destaque: fora },
                         ...(p.nomeInsumo ? [{ rotulo: "Motivo", valor: p.nomeInsumo }] : []),
                       ]}
                     />
@@ -239,7 +243,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{r.responsavel}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{r.nomeInsumo ?? "—"}</td>
                     <td className="py-2.5 px-5 text-right font-medium" style={{ ...nums, color: foraDaFaixa ? "var(--danger)" : "var(--text)" }}>
-                      {r.temperaturaC}°C{foraDaFaixa && " · fora da faixa"}
+                      {formatQtd(r.temperaturaC)}°C{foraDaFaixa && " · fora da faixa"}
                     </td>
                   </tr>
                 );
