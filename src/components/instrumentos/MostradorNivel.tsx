@@ -10,6 +10,9 @@
 //  4. Escala "100% (Capacidade Máxima)" virou "100%"; "Nível de carga" virou "Carga".
 //  5. Tints seguem o tema (color-mix) em vez de rgba fixo.
 //  6. Barra ganhou role="meter" pra leitor de tela ler "3 de 10".
+// SISTEMA premium (2026-09-22): cantos de 12px, selo em retângulo e caixa normal,
+// pesos 500–600, rótulo "Carga" sem caixa alta, sombra de 1px. Versão anterior:
+// `git show 32e3e97:src/components/instrumentos/MostradorNivel.tsx`.
 
 export interface MostradorNivelProps {
   rotulo: string;
@@ -37,18 +40,17 @@ export function MostradorNivel({
 
   return (
     <div
-      className="p-5 rounded-2xl border flex flex-col font-sans transition-all duration-200 hover:border-[var(--linha-forte)]"
+      className="p-5 rounded-xl border flex flex-col transition-colors duration-150"
       style={{ borderColor: "var(--linha)", backgroundColor: "var(--panel)", boxShadow: "var(--shadow-card)" }}
     >
       {/* Cabeçalho da estação */}
       <div className="flex items-center justify-between gap-3 pb-3.5 mb-3.5 border-b" style={{ borderColor: "var(--linha)" }}>
-        <span className="text-[15px] font-bold tracking-tight text-[var(--tinta)]">{rotulo}</span>
+        <span className="text-[14px] font-medium text-[var(--tinta)]">{rotulo}</span>
 
         <span
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wide whitespace-nowrap shrink-0"
-          style={{ backgroundColor: tint(corStatus, 14), color: corStatus, border: `1px solid ${tint(corStatus, 35)}` }}
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[12px] font-medium whitespace-nowrap shrink-0"
+          style={{ backgroundColor: tint(corStatus, 10), color: corStatus }}
         >
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: corStatus }} />
           {statusTexto}
         </span>
       </div>
@@ -56,14 +58,14 @@ export function MostradorNivel({
       {/* Visor de carga */}
       <div className="space-y-3">
         <div className="flex items-baseline justify-between gap-3 text-[13px]">
-          <span className="font-semibold uppercase tracking-wider text-[var(--tinta-sub)]">Carga</span>
-          <span className="text-[16px] font-black whitespace-nowrap" style={{ color: corAtiva }}>
+          <span className="text-[var(--tinta-sub)]">Carga</span>
+          <span className="text-[15px] font-semibold whitespace-nowrap" style={{ color: corAtiva }}>
             {totalLotes} / {capacidadeMax} lotes · {percentual}%
           </span>
         </div>
 
         <div
-          className="grid grid-cols-10 gap-2 h-4 p-1 rounded-xl bg-[var(--panel-elevated)] border border-[var(--linha-forte)]"
+          className="grid grid-cols-10 gap-1 h-2"
           role="meter"
           aria-valuemin={0}
           aria-valuemax={capacidadeMax}
@@ -75,18 +77,14 @@ export function MostradorNivel({
             return (
               <div
                 key={i}
-                className="h-full rounded-sm transition-all duration-300"
-                style={{
-                  backgroundColor: preenchido ? corAtiva : "transparent",
-                  opacity: preenchido ? 1 : 0.12,
-                  border: `1px solid ${preenchido ? corAtiva : "var(--linha)"}`,
-                }}
+                className="h-full rounded-[2px] transition-colors duration-300"
+                style={{ backgroundColor: preenchido ? corAtiva : "var(--panel-elevated)" }}
               />
             );
           })}
         </div>
 
-        <div className="flex justify-between text-[11px] font-semibold text-[var(--tinta-sub)] pt-0.5">
+        <div className="flex justify-between text-[12px] text-[var(--tinta-faint)]">
           <span>0%</span>
           <span>50%</span>
           <span>100%</span>
