@@ -1,7 +1,18 @@
 "use client";
 
+// POLIMENTO visao-geral (2026-09-22) -- passe do Impeccable (polish) nesta tela.
+// Cada mudança está marcada com "POLIMENTO visao-geral" e diz como era antes.
+// Versão anterior inteira: commit e5e84b8. Pra desfazer só esta tela:
+//   git revert <commit "Polimento visao-geral">   (desfaz a tela + réguas + estações)
+// ou, arquivo a arquivo:
+//   git checkout e5e84b8 -- src/app/visao-geral/VisaoGeralClient.tsx \
+//     src/components/instrumentos/ReguaCalibrada.tsx src/components/instrumentos/MostradorNivel.tsx
+// Registro geral dos polimentos: docs/POLIMENTO.md
+
 import { useMemo, useState } from "react";
-import { construirContexto } from "@/lib/dados/adaptadores";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { construirContexto, linhasCustoDetalhado } from "@/lib/dados/adaptadores";
 import { calcularCmvReceita, calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { ReguaCalibrada } from "@/components/instrumentos/ReguaCalibrada";
 import { MostradorNivel } from "@/components/instrumentos/MostradorNivel";
@@ -23,6 +34,30 @@ import {
   CheckCircle,
 } from "lucide-react";
 
+// POLIMENTO visao-geral: datas do fechamento em dd/mm/aaaa. Antes apareciam
+// cruas em ISO ("2026-08-01 até 2026-08-31").
+function dataBR(iso: string): string {
+  const [a, m, d] = iso.slice(0, 10).split("-");
+  return a && m && d ? `${d}/${m}/${a}` : iso;
+}
+
+// POLIMENTO visao-geral: diferença entre porcentagens em pontos percentuais,
+// com vírgula. Antes: `+${delta.toFixed(1)}%` ("+13.8%").
+function deltaPp(delta: number): string {
+  return `${delta >= 0 ? "+" : "−"}${Math.abs(delta).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
+}
+
+// POLIMENTO visao-geral: tints seguem o tema. Antes: rgba(255, 59, 48, …) e
+// rgba(16, 185, 129, …) fixos (o vermelho do tema escuro aparecia no claro).
+const tint = (cor: string, pct: number) => `color-mix(in srgb, ${cor} ${pct}%, transparent)`;
+
+// POLIMENTO visao-geral: colunas da tabela de pratos num grid único, pra os
+// valores ficarem alinhados de uma linha pra outra. Antes cada linha era um
+// flex com larguras próprias e as colunas "andavam".
+// A última coluna tem largura fixa (cabe "Abaixo do alvo" + botão): com "auto"
+// cada linha calculava a sua e as colunas voltavam a desalinhar.
+const GRID_PRATOS = "md:grid md:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(88px,0.6fr))_minmax(0,1.4fr)_196px] md:items-center";
+
 export function VisaoGeralClient({
   margemAlvoCliente,
   insumos,
@@ -42,6 +77,8 @@ export function VisaoGeralClient({
   const [alvoManualPct, setAlvoManualPct] = useState<number>(Math.round(margemAlvoCliente * 100));
   const [filtroApenasRisco, setFiltroApenasRisco] = useState(false);
   const [pratoSelecionadoId, setPratoSelecionadoId] = useState<string | null>(null);
+  // POLIMENTO visao-geral: pro link "Abrir quadro de produção" funcionar na demo e no app.
+  const basePath = usePathname()?.startsWith("/preview") ? "/preview" : "";
 
   const contexto = useMemo(() => construirContexto(insumos, receitas, processamentos), [insumos, receitas, processamentos]);
   const insumoDominioPorId = useMemo(() => new Map(insumos.map((i) => [i.id, i])), [insumos]);
@@ -118,8 +155,9 @@ export function VisaoGeralClient({
 
   const pratosExibidos = filtroApenasRisco ? pratosEmRisco : comPreco;
 
+  // POLIMENTO visao-geral: saiu "select-none" do container -- impedia copiar valores da tela.
   return (
-    <div className="max-w-7xl mx-auto space-y-8 select-none font-sans pb-12">
+    <div className="max-w-7xl mx-auto space-y-8 font-sans pb-12">
       {/* 1. Hero Command Strip (Apple Pro / Material 3 Surface com Alta Legibilidade) */}
       <div
         className="p-6 md:p-8 rounded-2xl border flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-all"
@@ -149,18 +187,20 @@ export function VisaoGeralClient({
               <span
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[12px] font-extrabold tracking-wide uppercase shadow-sm"
                 style={{
-                  backgroundColor: "rgba(16, 185, 129, 0.15)",
+                  // POLIMENTO visao-geral: tint do tema (antes rgba fixo) e ponto sem pulsar
+                  // (antes animate-pulse contínuo -- movimento sem informação nova).
+                  backgroundColor: tint("var(--sucesso)", 15),
                   color: "var(--sucesso)",
-                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  border: `1px solid ${tint("var(--sucesso)", 35)}`,
                 }}
               >
-                <span className="w-2 h-2 rounded-full bg-[var(--sucesso)] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[var(--sucesso)]" />
                 MOTOR OPERACIONAL ATIVO
               </span>
             </div>
             <p className="text-[14px] md:text-[15px] font-semibold text-[var(--tinta-sub)]">
               {fechamentoRecente
-                ? `Ciclo Vigente: ${fechamentoRecente.periodoInicio} até ${fechamentoRecente.periodoFim} · Faturamento: ${formatBRL(fechamentoRecente.faturamento)}`
+                ? `Ciclo vigente: ${dataBR(fechamentoRecente.periodoInicio)} a ${dataBR(fechamentoRecente.periodoFim)} · Faturamento: ${formatBRL(fechamentoRecente.faturamento)}`
                 : "Monitoramento em tempo real de fichas técnicas, CMV e lucratividade de cozinha"}
             </p>
           </div>
@@ -168,7 +208,9 @@ export function VisaoGeralClient({
 
         {/* Dynamic Margin Calibration Controller - Grande e Acessível */}
         <div
-          className="flex items-center gap-4 px-5 py-3 rounded-2xl border self-start lg:self-center shadow-sm"
+          // POLIMENTO visao-geral: controle mais compacto (gap-3, px-4, slider w-28) pro título
+          // do topo caber numa linha. Antes: gap-4 px-5 e slider w-32/w-36.
+          className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-2xl border self-stretch sm:self-start lg:self-center shadow-sm lg:shrink-0"
           style={{
             backgroundColor: "var(--panel-elevated)",
             borderColor: "var(--linha-forte)",
@@ -176,8 +218,9 @@ export function VisaoGeralClient({
         >
           <div className="flex items-center gap-2.5">
             <Sliders size={18} className="text-[var(--tinta-sub)]" />
-            <span className="text-[13px] font-extrabold text-[var(--tinta-sub)] uppercase tracking-wide">
-              Meta da Casa:
+            {/* POLIMENTO visao-geral: whitespace-nowrap -- antes "META DA / CASA:" quebrava em duas linhas. */}
+            <span className="text-[13px] font-extrabold text-[var(--tinta-sub)] uppercase tracking-wide whitespace-nowrap">
+              Meta da casa
             </span>
             <span className="text-[18px] md:text-[20px] font-black text-[var(--tinta)]">
               {alvoManualPct}%
@@ -191,7 +234,8 @@ export function VisaoGeralClient({
             step="1"
             value={alvoManualPct}
             onChange={(e) => setAlvoManualPct(Number(e.target.value))}
-            className="w-32 md:w-36 accent-[var(--tinta)] cursor-pointer h-2"
+            className="w-28 accent-[var(--tinta)] cursor-pointer h-2"
+            aria-label="Meta de margem da casa"
             title="Ajuste interativo da meta de margem para recalibrar os pratos"
           />
 
@@ -220,7 +264,6 @@ export function VisaoGeralClient({
         >
           <ReguaCalibrada
             rotulo="CMV Médio Operacional"
-            codigo="CAL · 01"
             valor={cmvMedio}
             meta={32}
             toleranciaMin={28}
@@ -244,7 +287,6 @@ export function VisaoGeralClient({
         >
           <ReguaCalibrada
             rotulo="Margem Real Média"
-            codigo="CAL · 02"
             valor={margemMedia}
             meta={alvoManualPct}
             toleranciaMin={alvoManualPct}
@@ -262,13 +304,14 @@ export function VisaoGeralClient({
           className="p-6 rounded-2xl border flex flex-col justify-between transition-all hover:border-[var(--linha-forte)] shadow-sm"
           style={{
             backgroundColor: "var(--panel)",
-            borderColor: totalAbaixoDoAlvo > 0 ? "rgba(255, 59, 48, 0.4)" : "var(--linha)",
-            boxShadow: totalAbaixoDoAlvo > 0 ? "var(--shadow-card), 0 0 24px -4px rgba(255, 59, 48, 0.2)" : "var(--shadow-card)",
+            // POLIMENTO visao-geral: só a borda sinaliza risco. Antes havia também um halo
+            // vermelho "0 0 24px -4px rgba(255, 59, 48, 0.2)" em volta do card.
+            borderColor: totalAbaixoDoAlvo > 0 ? tint("var(--sinal)", 40) : "var(--linha)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <ReguaCalibrada
             rotulo="Pratos Fora do Alvo"
-            codigo="CAL · 03"
             valor={totalAbaixoDoAlvo}
             meta={0}
             toleranciaMin={0}
@@ -277,10 +320,13 @@ export function VisaoGeralClient({
             max={comPreco.length || 6}
             unidade=" un"
             formatoValor={(v) => `${v} / ${comPreco.length}`}
-            formatoMeta={(m) => `${m} desvios`}
+            // POLIMENTO visao-geral: antes "0 desvios", "+1.0 un vs meta" e escala fixa
+            // [0, 2, 4, 6] mesmo quando o cardápio tinha outro número de pratos.
+            formatoMeta={(m) => (m === 0 ? "nenhum" : `${m} pratos`)}
+            formatoDelta={(d) => `${d > 0 ? "+" : ""}${d} ${Math.abs(d) === 1 ? "prato" : "pratos"}`}
             inverso={true}
             emRisco={totalAbaixoDoAlvo > 0}
-            ticks={[0, 2, 4, 6]}
+            ticks={[0, Math.round((comPreco.length || 6) / 2), comPreco.length || 6]}
           />
         </div>
 
@@ -289,13 +335,13 @@ export function VisaoGeralClient({
           className="p-6 rounded-2xl border flex flex-col justify-between transition-all hover:border-[var(--linha-forte)] shadow-sm"
           style={{
             backgroundColor: "var(--panel)",
-            borderColor: perdaTotalReais > 0 ? "rgba(255, 59, 48, 0.4)" : "var(--linha)",
-            boxShadow: perdaTotalReais > 0 ? "var(--shadow-card), 0 0 24px -4px rgba(255, 59, 48, 0.2)" : "var(--shadow-card)",
+            // POLIMENTO visao-geral: sem halo vermelho (ver card acima).
+            borderColor: perdaTotalReais > 0 ? tint("var(--sinal)", 40) : "var(--linha)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <ReguaCalibrada
             rotulo={`Perda Operacional (${nomeMes})`}
-            codigo="CAL · 04"
             valor={perdaTotalReais}
             meta={0}
             toleranciaMin={0}
@@ -305,6 +351,8 @@ export function VisaoGeralClient({
             unidade=""
             formatoValor={(v) => formatBRL(v)}
             formatoMeta={(m) => formatBRL(m)}
+            // POLIMENTO visao-geral: antes "+201.0 vs meta", sem R$.
+            formatoDelta={(d) => `${d > 0 ? "+" : "−"}${formatBRL(Math.abs(d))}`}
             inverso={true}
             emRisco={perdaTotalReais > 0}
             ticks={[0, 100, 250, 500]}
@@ -376,13 +424,28 @@ export function VisaoGeralClient({
                   : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
               }`}
             >
-              {totalAbaixoDoAlvo > 0 && <span className="w-2 h-2 rounded-full bg-current animate-pulse" />}
+              {/* POLIMENTO visao-geral: ponto sem pulsar (antes animate-pulse). */}
+              {totalAbaixoDoAlvo > 0 && <span className="w-2 h-2 rounded-full bg-current" />}
               Em Risco ({totalAbaixoDoAlvo})
             </button>
           </div>
         </div>
 
-        {/* Lista de Pratos com Réguas de Calibração Integradas */}
+        {/* POLIMENTO visao-geral: cabeçalho único de colunas no desktop. Antes cada linha
+            repetia "PREÇO VENDA", "CUSTO / PORÇÃO", "LUCRO BRUTO", "MARGEM REAL". */}
+        <div
+          className={`hidden px-6 py-2.5 gap-5 text-[11px] font-bold uppercase tracking-wide text-[var(--tinta-sub)] border-b ${GRID_PRATOS}`}
+          style={{ borderColor: "var(--linha)", backgroundColor: "var(--panel-elevated)" }}
+        >
+          <span>Prato</span>
+          <span className="text-right">Preço</span>
+          <span className="text-right whitespace-nowrap">Custo / porção</span>
+          <span className="text-right whitespace-nowrap">Lucro / porção</span>
+          <span>Margem real vs alvo</span>
+          <span className="sr-only">Status</span>
+        </div>
+
+        {/* Lista de pratos */}
         <div className="divide-y" style={{ borderColor: "var(--linha)" }}>
           {pratosExibidos.map((item) => {
             const ehSelecionado = pratoSelecionadoId === item.receita.id;
@@ -397,128 +460,111 @@ export function VisaoGeralClient({
                   backgroundColor: ehSelecionado ? "var(--accent-soft)" : "transparent",
                 }}
               >
-                {/* Linha Principal Interativa com Alta Legibilidade */}
+                {/* Linha do prato.
+                    POLIMENTO visao-geral: colunas no grid GRID_PRATOS (alinhadas entre linhas);
+                    rótulos por linha só no celular (no desktop há um cabeçalho único acima);
+                    saiu o avatar com as 2 primeiras letras ("PI" repetia nas duas pizzas);
+                    o nome não é mais cortado com "..."; "Lucro bruto" virou "Lucro / porção"
+                    (é preço menos custo da porção); delta em p.p. com vírgula; sem glow na barra.
+                    Antes: flex com md:w-1/4, md:w-1/3 etc. -- ver commit e5e84b8. */}
                 <div
-                  className="p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5 cursor-pointer hover:bg-[var(--panel-hover)] transition-colors"
+                  className={`p-5 md:px-6 md:py-4 flex flex-col gap-4 md:gap-5 cursor-pointer hover:bg-[var(--panel-hover)] transition-colors ${GRID_PRATOS}`}
                   onClick={() => setPratoSelecionadoId(ehSelecionado ? null : item.receita.id)}
                 >
-                  {/* Informações Básicas do Prato */}
-                  <div className="flex items-center gap-4 md:w-1/4 min-w-0">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border text-[15px] font-black shadow-sm"
-                      style={{
-                        backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.15)" : "var(--panel-elevated)",
-                        borderColor: sobRisco ? "rgba(255, 59, 48, 0.35)" : "var(--linha-forte)",
-                        color: sobRisco ? "var(--sinal)" : "var(--tinta)",
-                      }}
-                    >
-                      {item.receita.nomePrato.slice(0, 2).toUpperCase()}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[16px] md:text-[17px] font-black text-[var(--tinta)] truncate">
-                          {item.receita.nomePrato}
-                        </span>
-                      </div>
-                      <div className="text-[13px] font-bold text-[var(--tinta-sub)] flex items-center gap-2 mt-1">
-                        <span className="uppercase tracking-wide">{item.receita.categoria}</span>
-                        <span>·</span>
-                        <span>{item.qtdVendida} un vendidas</span>
-                      </div>
+                  {/* Prato */}
+                  <div className="min-w-0">
+                    <div className="text-[16px] font-black leading-snug text-[var(--tinta)]">{item.receita.nomePrato}</div>
+                    <div className="text-[12.5px] font-bold text-[var(--tinta-sub)] mt-0.5">
+                      <span className="uppercase tracking-wide">{item.receita.categoria}</span>
+                      <span className="mx-1.5">·</span>
+                      <span className="whitespace-nowrap">{item.qtdVendida} vendidas</span>
                     </div>
                   </div>
 
-                  {/* Preços e Custo - Grandes e Claros */}
-                  <div className="flex items-center justify-between md:justify-end gap-6 md:w-1/4">
-                    <div>
-                      <div className="text-[11px] md:text-[12px] uppercase font-bold text-[var(--tinta-sub)]">Preço Venda</div>
-                      <div className="text-[16px] md:text-[18px] font-black text-[var(--tinta)]">
-                        {formatBRL(item.precoVenda ?? 0)}
-                      </div>
+                  {/* Preço, custo e lucro por porção */}
+                  <div className="grid grid-cols-3 gap-4 md:contents">
+                    <div className="md:text-right">
+                      <div className="md:hidden text-[11px] uppercase font-bold text-[var(--tinta-sub)]">Preço</div>
+                      <div className="text-[16px] font-black text-[var(--tinta)] whitespace-nowrap">{formatBRL(item.precoVenda ?? 0)}</div>
                     </div>
-                    <div>
-                      <div className="text-[11px] md:text-[12px] uppercase font-bold text-[var(--tinta-sub)]">Custo / Porção</div>
-                      <div className="text-[15px] md:text-[16px] font-bold text-[var(--tinta-sub)]">
-                        {formatBRL(item.custoPorPorcao)}
-                      </div>
+                    <div className="md:text-right">
+                      <div className="md:hidden text-[11px] uppercase font-bold text-[var(--tinta-sub)]">Custo / porção</div>
+                      <div className="text-[15px] font-bold text-[var(--tinta-sub)] whitespace-nowrap">{formatBRL(item.custoPorPorcao)}</div>
                     </div>
-                    <div>
-                      <div className="text-[11px] md:text-[12px] uppercase font-bold text-[var(--tinta-sub)]">Lucro Bruto</div>
-                      <div className="text-[16px] md:text-[18px] font-black text-[var(--sucesso)]">
-                        {formatBRL(item.lucroBrutoPorcao)}
-                      </div>
+                    <div className="md:text-right">
+                      <div className="md:hidden text-[11px] uppercase font-bold text-[var(--tinta-sub)]">Lucro / porção</div>
+                      <div className="text-[16px] font-black text-[var(--sucesso)] whitespace-nowrap">{formatBRL(item.lucroBrutoPorcao)}</div>
                     </div>
                   </div>
 
-                  {/* Mini Régua Calibrada Visual - Espessa e com Números Maiores */}
-                  <div className="md:w-1/3 px-3">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] font-bold text-[var(--tinta-sub)] uppercase tracking-wide">
-                          Margem Real
+                  {/* Margem real vs alvo */}
+                  <div className="space-y-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="md:hidden text-[11px] font-bold text-[var(--tinta-sub)] uppercase">Margem real</span>
+                      <div className="flex items-center gap-2 md:ml-0 ml-auto">
+                        <span
+                          className="text-[17px] font-black whitespace-nowrap"
+                          style={{ color: sobRisco ? "var(--sinal)" : "var(--tinta)" }}
+                        >
+                          {formatPercent(item.margemPct)}
                         </span>
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className="text-[16px] md:text-[18px] font-black"
-                            style={{ color: sobRisco ? "var(--sinal)" : "var(--tinta)" }}
-                          >
-                            {formatPercent(item.margemPct)}
-                          </span>
-                          <span
-                            className="text-[12px] font-black px-2 py-0.5 rounded-full shadow-sm"
-                            style={{
-                              backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.15)" : "rgba(16, 185, 129, 0.15)",
-                              color: sobRisco ? "var(--sinal)" : "var(--sucesso)",
-                            }}
-                          >
-                            {delta >= 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Micro Capsule Track de 12px de Altura */}
-                      <div className="w-full h-3 rounded-full bg-[var(--panel-elevated)] relative overflow-visible border border-[var(--linha-forte)] shadow-inner">
-                        {/* Target Marker */}
-                        <div
-                          className="absolute top-[-3px] bottom-[-3px] w-[3px] bg-[var(--tinta-sub)] z-10 -translate-x-1/2 rounded-full"
-                          style={{ left: `${Math.min(100, Math.max(0, ((item.margemAlvoPct - 40) / 45) * 100))}%` }}
-                          title={`Meta: ${item.margemAlvoPct}%`}
-                        />
-                        {/* Progress */}
-                        <div
-                          className="h-full rounded-full transition-all duration-300"
+                        <span
+                          className="text-[11.5px] font-black px-2 py-0.5 rounded-full whitespace-nowrap"
                           style={{
-                            width: `${Math.min(100, Math.max(0, ((item.margemPct - 40) / 45) * 100))}%`,
-                            backgroundColor: sobRisco ? "var(--sinal)" : "var(--tinta)",
-                            boxShadow: sobRisco ? "0 0 10px var(--sinal)" : "none",
+                            backgroundColor: tint(sobRisco ? "var(--sinal)" : "var(--sucesso)", 14),
+                            color: sobRisco ? "var(--sinal)" : "var(--sucesso)",
                           }}
-                        />
+                          title={`Alvo: ${item.margemAlvoPct}%`}
+                        >
+                          {deltaPp(delta)}
+                        </span>
                       </div>
+                    </div>
+
+                    {/* Trilho: 40% a 85% de margem; o traço vertical é o alvo */}
+                    <div className="w-full h-3 rounded-full bg-[var(--panel-elevated)] relative overflow-visible border border-[var(--linha-forte)] shadow-inner">
+                      <div
+                        className="absolute top-[-3px] bottom-[-3px] w-[3px] bg-[var(--tinta-sub)] z-10 -translate-x-1/2 rounded-full"
+                        style={{ left: `${Math.min(100, Math.max(0, ((item.margemAlvoPct - 40) / 45) * 100))}%` }}
+                        title={`Alvo: ${item.margemAlvoPct}%`}
+                      />
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, ((item.margemPct - 40) / 45) * 100))}%`,
+                          backgroundColor: sobRisco ? "var(--sinal)" : "var(--tinta)",
+                        }}
+                      />
                     </div>
                   </div>
 
-                  {/* Expand / Status Pill Grande */}
-                  <div className="flex items-center justify-between md:justify-end gap-3.5 shrink-0">
+                  {/* Status + expandir */}
+                  <div className="flex items-center justify-between md:justify-end gap-3 shrink-0">
                     <span
-                      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12px] font-extrabold tracking-wide uppercase shadow-sm"
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11.5px] font-extrabold tracking-wide uppercase whitespace-nowrap"
                       style={{
-                        backgroundColor: sobRisco ? "rgba(255, 59, 48, 0.15)" : "rgba(16, 185, 129, 0.15)",
+                        backgroundColor: tint(sobRisco ? "var(--sinal)" : "var(--sucesso)", 14),
                         color: sobRisco ? "var(--sinal)" : "var(--sucesso)",
-                        border: `1px solid ${sobRisco ? "rgba(255, 59, 48, 0.4)" : "rgba(16, 185, 129, 0.4)"}`,
+                        border: `1px solid ${tint(sobRisco ? "var(--sinal)" : "var(--sucesso)", 40)}`,
                       }}
                     >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: sobRisco ? "var(--sinal)" : "var(--sucesso)" }}
-                      />
-                      {sobRisco ? "ABAIXO DA META" : "CALIBRADO"}
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: sobRisco ? "var(--sinal)" : "var(--sucesso)" }} />
+                      {/* POLIMENTO visao-geral: antes "CALIBRADO"; "No alvo" é o que o dono de restaurante fala. */}
+                      {sobRisco ? "Abaixo do alvo" : "No alvo"}
                     </span>
 
+                    {/* POLIMENTO visao-geral: o botão agora alterna sozinho e informa aria-expanded
+                        (antes dependia do clique na linha e não dizia se estava aberto). */}
                     <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPratoSelecionadoId(ehSelecionado ? null : item.receita.id);
+                      }}
                       className="p-2 rounded-xl text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-elevated)] transition-colors border"
                       style={{ borderColor: "var(--linha-forte)" }}
-                      aria-label="Expandir detalhes do prato"
+                      aria-expanded={ehSelecionado}
+                      aria-label={`${ehSelecionado ? "Fechar" : "Ver"} composição de ${item.receita.nomePrato}`}
                     >
                       {ehSelecionado ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                     </button>
@@ -533,11 +579,12 @@ export function VisaoGeralClient({
                   >
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                       <div>
-                        <h4 className="text-[16px] font-black uppercase tracking-wider text-[var(--tinta)]">
-                          Auditoria de Composição · {item.receita.nomePrato}
+                        {/* POLIMENTO visao-geral: título em caixa normal. Antes "AUDITORIA DE COMPOSIÇÃO · X" em caixa alta. */}
+                        <h4 className="text-[16px] font-black text-[var(--tinta)]">
+                          Composição de {item.receita.nomePrato}
                         </h4>
                         <p className="text-[14px] font-bold text-[var(--tinta-sub)] mt-1">
-                          Rendimento Total: {item.receita.rendimento} {item.receita.unidadeRendimento} · Custo Final Unitário: {formatBRL(item.custoPorPorcao)}
+                          Rende {item.receita.rendimento} {item.receita.unidadeRendimento} · Custo por porção: {formatBRL(item.custoPorPorcao)}
                         </p>
                       </div>
 
@@ -545,27 +592,29 @@ export function VisaoGeralClient({
                         <div
                           className="px-4 py-3 rounded-2xl border flex items-center gap-3 text-[13px] md:text-[14px] font-bold shadow-sm"
                           style={{
-                            backgroundColor: "rgba(255, 59, 48, 0.12)",
-                            borderColor: "rgba(255, 59, 48, 0.35)",
+                            backgroundColor: tint("var(--sinal)", 12),
+                            borderColor: tint("var(--sinal)", 35),
                             color: "var(--sinal)",
                           }}
                         >
                           <AlertTriangle size={18} />
                           <span>
-                            Recomendação Operacional: Ajustar preço de venda para {formatBRL(item.custoPorPorcao / (1 - item.margemAlvoPct / 100))} para alcançar a meta de {item.margemAlvoPct}%.
+                            {/* POLIMENTO visao-geral: texto mais direto. Antes "Recomendação Operacional: Ajustar preço de venda para X para alcançar a meta de Y%." */}
+                            Para chegar a {item.margemAlvoPct}% de margem, o preço precisa ser {formatBRL(item.custoPorPorcao / (1 - item.margemAlvoPct / 100))}.
                           </span>
                         </div>
                       ) : (
                         <div
                           className="px-4 py-3 rounded-2xl border flex items-center gap-3 text-[13px] md:text-[14px] font-bold shadow-sm"
                           style={{
-                            backgroundColor: "rgba(16, 185, 129, 0.12)",
-                            borderColor: "rgba(16, 185, 129, 0.35)",
+                            backgroundColor: tint("var(--sucesso)", 12),
+                            borderColor: tint("var(--sucesso)", 35),
                             color: "var(--sucesso)",
                           }}
                         >
                           <CheckCircle size={18} />
-                          <span>Margem saudável, calibrada e acima do patamar de segurança operacional da casa.</span>
+                          {/* POLIMENTO visao-geral: antes "Margem saudável, calibrada e acima do patamar de segurança operacional da casa." */}
+                          <span>Margem acima do alvo de {item.margemAlvoPct}%.</span>
                         </div>
                       )}
                     </div>
@@ -573,27 +622,24 @@ export function VisaoGeralClient({
                     {/* Ingredientes / Sub-receitas */}
                     <div className="rounded-2xl border bg-[var(--panel)] overflow-hidden shadow-sm" style={{ borderColor: "var(--linha-forte)" }}>
                       <div className="px-5 py-3 border-b text-[12px] uppercase font-black text-[var(--tinta-sub)] bg-[var(--panel-elevated)]" style={{ borderColor: "var(--linha)" }}>
-                        Composição de Insumos da Ficha Técnica
+                        Itens da ficha técnica
                       </div>
                       <div className="divide-y" style={{ borderColor: "var(--linha)" }}>
-                        {item.receita.ficha.map((linha, idx) => {
-                          const insumo = linha.insumoId ? insumoDominioPorId.get(linha.insumoId) : null;
-                          const subReceita = linha.subReceitaId ? receitaDominioPorId.get(linha.subReceitaId) : null;
-                          const nomeItem = insumo?.nome ?? subReceita?.nomePrato ?? "Item sem cadastro";
-                          const precoUnit = insumo?.precoUnitario ?? (subReceita ? calcularCustoPorPorcao(subReceita.id, contexto) : 0);
-                          const custoItem = linha.pesoLiquido * precoUnit;
-                          return (
-                            <div key={idx} className="px-5 py-3.5 flex items-center justify-between text-[14px]">
-                              <span className="font-bold text-[var(--tinta)]">
-                                {nomeItem}
+                        {/* POLIMENTO visao-geral: custo por item vem de linhasCustoDetalhado (o mesmo
+                            de Receitas & Fichas e do CMV), que aplica o fator de correção e a conversão
+                            de unidade. Antes: pesoLiquido × preço, sem FC -- a soma dos itens não batia
+                            com o custo da porção mostrado acima. Quantidade com vírgula (antes "0.3"). */}
+                        {linhasCustoDetalhado(item.receita, insumoDominioPorId, receitaDominioPorId, contexto.lotesProteina, contexto).map((linha) => (
+                          <div key={linha.id} className="px-5 py-3.5 flex items-center justify-between gap-4 text-[14px]">
+                            <span className="font-bold text-[var(--tinta)]">{linha.nome}</span>
+                            <div className="flex items-center gap-5 font-extrabold text-[var(--tinta-sub)]">
+                              <span className="whitespace-nowrap">
+                                {linha.pesoLiquido.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} {linha.unidade}
                               </span>
-                              <div className="flex items-center gap-5 font-extrabold text-[var(--tinta-sub)]">
-                                <span>{linha.pesoLiquido} {linha.unidade}</span>
-                                <span className="font-black text-[var(--tinta)]">{formatBRL(custoItem)}</span>
-                              </div>
+                              <span className="font-black text-[var(--tinta)] whitespace-nowrap">{formatBRL(linha.custo)}</span>
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -604,70 +650,96 @@ export function VisaoGeralClient({
         </div>
       </div>
 
-      {/* 4. Estações de Produção & Monitoramento de Bancada */}
+      {/* 4. Estações de produção */}
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Layers size={22} className="text-[var(--tinta-sub)]" />
             <h3 className="text-[18px] md:text-[20px] font-black tracking-tight text-[var(--tinta)]">
               Estações Operacionais & Carga de Bancada
             </h3>
           </div>
-          <span className="text-[13px] font-bold text-[var(--tinta-sub)] uppercase tracking-wider">
-            Kanban de Produção Ativa
-          </span>
+          {/* POLIMENTO visao-geral: virou link pro quadro de produção. Antes era um rótulo
+              solto "KANBAN DE PRODUÇÃO ATIVA", sem ação. */}
+          <Link
+            href={`${basePath}/producoes`}
+            className="text-[13px] font-bold text-[var(--tinta-sub)] hover:text-[var(--tinta)] underline underline-offset-4 decoration-[var(--linha-forte)]"
+          >
+            Abrir quadro de produção
+          </Link>
         </div>
 
+        {/* POLIMENTO visao-geral: saíram os códigos "EST · 01/02/03" e o "Estação" repetido
+            nos nomes (o título da seção já diz). Antes: "Estação Pré-Preparo" + "EST · 01". */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <MostradorNivel
-            rotulo="Estação Pré-Preparo"
-            estacaoNumero="EST · 01"
+            rotulo="Pré-preparo"
             totalLotes={producoes.filter((p) => p.tipo === "preparo" && p.status !== "perda").length}
             capacidadeMax={10}
-            statusTexto="CAPACIDADE NOMINAL"
+            statusTexto="Capacidade ok"
             emRisco={false}
           />
           <MostradorNivel
-            rotulo="Estação Pratos Finais"
-            estacaoNumero="EST · 02"
+            rotulo="Pratos finais"
             totalLotes={producoes.filter((p) => p.tipo === "prato" && p.status !== "perda").length}
             capacidadeMax={12}
-            statusTexto="FLUXO ESTÁVEL"
+            statusTexto="Fluxo estável"
             emRisco={false}
           />
           <MostradorNivel
-            rotulo="Estação Em Execução"
-            estacaoNumero="EST · 03"
+            rotulo="Em execução"
             totalLotes={producoes.filter((p) => p.status === "em_producao").length}
             capacidadeMax={8}
-            statusTexto={producoes.filter((p) => p.status === "em_producao").length > 6 ? "SOBRECARGA" : "NOMINAL"}
+            statusTexto={producoes.filter((p) => p.status === "em_producao").length > 6 ? "Sobrecarga" : "Normal"}
             emRisco={producoes.filter((p) => p.status === "em_producao").length > 6}
           />
         </div>
 
-        {/* Perdas Recentes em Tempo Real - Texto de 14px com Alto Contraste */}
+        {/* Perdas recentes.
+            POLIMENTO visao-geral: virou lista legível (prato, quantidade com a unidade certa,
+            motivo, custo, data). Antes: faixa vermelha com o título em caixa alta
+            "REGISTROS RECENTES DE DESCARTE / PERDA (1 EVENTOS):", no máximo 3 chips e
+            quantidade sempre em "un" mesmo pra porção/kg. Custo usa a mesma conta do KPI
+            "Perda operacional" (CMV do lote proporcional à quantidade). */}
         {perdasRecentes.length > 0 && (
           <div
-            className="p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 text-[13px] md:text-[14px] font-bold shadow-sm"
-            style={{
-              backgroundColor: "rgba(255, 59, 48, 0.08)",
-              borderColor: "rgba(255, 59, 48, 0.3)",
-            }}
+            className="rounded-2xl border overflow-hidden"
+            style={{ backgroundColor: "var(--panel)", borderColor: "var(--linha)", boxShadow: "var(--shadow-card)" }}
           >
-            <div className="flex items-center gap-2.5 text-[var(--sinal)] font-black">
-              <span className="w-2.5 h-2.5 rounded-full bg-[var(--sinal)] animate-pulse" />
-              <span>REGISTROS RECENTES DE DESCARTE / PERDA ({perdasRecentes.length} EVENTOS):</span>
+            <div className="px-5 py-3.5 flex items-center justify-between gap-3 border-b" style={{ borderColor: "var(--linha)" }}>
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle size={18} className="text-[var(--sinal)]" />
+                <h3 className="text-[16px] font-black text-[var(--tinta)]">Perdas recentes</h3>
+              </div>
+              <span className="text-[13px] font-bold text-[var(--tinta-sub)]">
+                {perdasRecentes.length} {perdasRecentes.length === 1 ? "registro" : "registros"}
+              </span>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-[var(--tinta-sub)]">
-              {perdasRecentes.slice(0, 3).map((p) => {
-                const rec = receitaDominioPorId.get(p.receitaId);
+            <ul className="divide-y" style={{ borderColor: "var(--linha)" }}>
+              {perdasRecentes.map((p) => {
+                const receitaCalc = contexto.receitaPorId.get(p.receitaId);
+                const custo =
+                  receitaCalc && receitaCalc.rendimento > 0
+                    ? calcularCmvReceita(p.receitaId, contexto) * (p.quantidade / receitaCalc.rendimento)
+                    : null;
                 return (
-                  <span key={p.id} className="px-3 py-1 rounded-xl bg-[var(--panel)] border border-[var(--linha-forte)] font-extrabold text-[var(--tinta)] shadow-sm">
-                    {rec?.nomePrato ?? "Receita"}: {p.quantidade} un ({p.motivoPerda || "Validade"})
-                  </span>
+                  <li
+                    key={p.id}
+                    className="px-5 py-3 grid grid-cols-[1fr_auto] md:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,2fr)_auto_auto] items-center gap-x-5 gap-y-1 text-[14px]"
+                  >
+                    <span className="font-black text-[var(--tinta)]">{receitaDominioPorId.get(p.receitaId)?.nomePrato ?? p.nomeReceita}</span>
+                    <span className="font-bold text-[var(--tinta)] whitespace-nowrap text-right md:text-left">
+                      {p.quantidade.toLocaleString("pt-BR")} {p.quantidade !== 1 && p.unidadeRendimento === "porção" ? "porções" : p.unidadeRendimento}
+                    </span>
+                    <span className="col-span-2 md:col-span-1 text-[13px] font-semibold text-[var(--tinta-sub)]">{p.motivoPerda || "Sem motivo registrado"}</span>
+                    <span className="font-black text-[var(--sinal)] whitespace-nowrap">{custo !== null ? formatBRL(custo) : "—"}</span>
+                    <span className="text-[12.5px] font-semibold text-[var(--tinta-sub)] whitespace-nowrap text-right">
+                      {new Date(p.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                    </span>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </div>
         )}
       </div>
