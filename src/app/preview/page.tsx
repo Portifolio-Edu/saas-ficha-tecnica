@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   Carrot, ClipboardList, LineChart, AlertTriangle,
-  CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator, ChefHat, Settings,
+  CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator, ChefHat, Settings, Plug,
 } from "lucide-react";
 import { NOME_RESTAURANTE } from "./fixtures";
 
@@ -17,6 +17,7 @@ const LINKS = [
   { href: "/preview/seguranca", label: "Segurança Alimentar", icon: Thermometer, descricao: "Temperaturas por local de armazenamento" },
   { href: "/preview/receitas", label: "Receitas & Fichas", icon: ClipboardList, descricao: "Fichas técnicas e precificação" },
   { href: "/preview/relatorios", label: "Relatórios", icon: AlertTriangle, descricao: "Indicadores e alertas consolidados" },
+  { href: "/preview/integracoes", label: "Integrações", icon: Plug, descricao: "PDVs, iFood e importação por XML fiscal ou planilha" },
   { href: "/preview/configuracoes", label: "Configurações", icon: Settings, descricao: "Tema claro, escuro ou sistema" },
 ];
 

@@ -227,3 +227,38 @@ demo) e a migration `supabase/migrations/20260923120000_checklist_fotos_pracas.s
 **Antes do deploy real:** aplicar a migration `20260923120000_checklist_fotos_pracas.sql`.
 **Reverter:** `git revert` do commit `polimento(checklists-pracas)` e, se a
 migration já foi aplicada, rodar o bloco "Reverter" do topo dela.
+
+---
+
+## 9. Integrações — PDVs, iFood e importação sem integração
+
+Pedido do usuário: uma parte pra integrar com os PDVs do mercado e com o iFood,
+e uma alternativa quando o PDV não libera integração ("a ferramenta entra pra
+agregar com o PDV"). Escolhas: simular conectado na demo; construir a
+importação de XML + planilha de verdade; listar Saipos, Consumer, Goomer, Anota
+AI, Colibri, TOTVS Chef, Stone, Cielo, PagSeguro, Linx Degust e Menew.
+
+**Arquivos novos:** `src/app/integracoes/` (tela), `src/app/preview/integracoes/`
+e `src/app/preview/integracoesDemo.ts` (dados simulados), `src/components/integracoes/ImportadorVendas.tsx`,
+`src/lib/integracoes/` (leitura do XML fiscal, da planilha, sugestão de ficha,
+catálogo) e 13 testes em `src/lib/integracoes/__tests__`.
+**Alterados:** `ShellPremium.tsx` e `preview/page.tsx` (item no menu),
+`cmv/CmvClient.tsx` (recebe as vendas importadas e o faturamento real; link pra
+Integrações).
+
+**Real:** XML de NFC-e (mod 65) e SAT, em lote. Notas canceladas (protocolo ou
+evento) e repetidas ficam de fora; NF-e mod 55 é ignorada (é nota de compra).
+Planilha CSV com colunas sugeridas pelo cabeçalho. Cada produto do PDV é ligado
+a uma ficha (sugestão pelo nome, tolerante a abreviação e erro de digitação) ou
+marcado "não tem ficha"; a escolha fica lembrada no navegador. "Levar pro
+fechamento de CMV" preenche período, vendas por prato e faturamento real
+(incluindo bebidas), que alimenta o aviso de cobertura em Relatórios.
+Nenhum arquivo sai do navegador.
+
+**Simulado (só /preview, com selo "demo"):** iFood e Saipos conectados, pedidos
+chegando, "Conectar" nos outros PDVs. No app, tudo "Em breve".
+
+**Ainda não:** .zip e .xlsx (pede pra descompactar / salvar como CSV); o
+mapeamento produto → ficha vai pro Supabase na fase de backend.
+
+**Reverter:** `git revert` do commit `feat(integracoes)`.

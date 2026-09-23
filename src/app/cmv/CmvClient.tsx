@@ -1,6 +1,8 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
@@ -20,6 +22,7 @@ import { construirContexto, linhasCustoDetalhado, paraProcessamentoCalc } from "
 import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { calcularFechamentoCmv } from "@/lib/calculo/fechamentoCmv";
 import { acaoCriarFechamento } from "./actions";
+import { CHAVE_VENDAS_IMPORTADAS, type VendasImportadas } from "@/components/integracoes/ImportadorVendas";
 
 const TOP_DONUT = 5;
 
@@ -71,6 +74,28 @@ export function CmvClient({
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
   const [pratoExpandido, setPratoExpandido] = useState<string | null>(null);
+  // INTEGRACOES (2026-09-23): vendas vindas de Integrações (XML fiscal ou planilha
+  // do PDV). Trazem o faturamento real, com bebida e o que mais não tem ficha, em
+  // vez de só preço × quantidade dos pratos. Reverter: apagar este estado, o
+  // useEffect abaixo e voltar faturamentoPeriodo a só a soma das linhas.
+  const [importacao, setImportacao] = useState<VendasImportadas | null>(null);
+  const basePath = usePathname()?.startsWith("/preview") ? "/preview" : "";
+
+  useEffect(() => {
+    let pacote: VendasImportadas | null = null;
+    try {
+      const bruto = sessionStorage.getItem(CHAVE_VENDAS_IMPORTADAS);
+      if (bruto) {
+        pacote = JSON.parse(bruto) as VendasImportadas;
+        sessionStorage.removeItem(CHAVE_VENDAS_IMPORTADAS);
+      }
+    } catch {}
+    if (!pacote) return;
+    setImportacao(pacote);
+    setVendasImportadas(new Map(pacote.vendas.map((v) => [v.receitaId, v.quantidade])));
+    if (pacote.inicio) setPeriodoInicio(pacote.inicio);
+    if (pacote.fim) setPeriodoFim(pacote.fim);
+  }, []);
 
   const contexto = useMemo(() => construirContexto(insumos, [...pratos, ...preparos], processamentos), [insumos, pratos, preparos, processamentos]);
   const pratoPorId = useMemo(() => new Map(pratos.map((p) => [p.id, p])), [pratos]);
@@ -125,7 +150,9 @@ export function CmvClient({
     [pratos, contexto, vendasImportadas],
   );
 
-  const faturamentoPeriodo = linhasCmv.reduce((s, l) => s + l.faturamentoPrato, 0);
+  const faturamentoDasFichas = linhasCmv.reduce((s, l) => s + l.faturamentoPrato, 0);
+  // Com importação de XML/planilha com valor, vale o faturamento real do período.
+  const faturamentoPeriodo = importacao && importacao.faturamento > 0 ? importacao.faturamento : faturamentoDasFichas;
   const custoTeoricoPeriodo = linhasCmv.reduce((s, l) => s + l.custoTeoricoPrato, 0);
 
   const numEstoqueInicial = parseFloat(estoqueInicial) || 0;
@@ -212,8 +239,33 @@ export function CmvClient({
       <div>
         <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Importar vendas do período</h2>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>
-          Cole o relatório de vendas do iFood ou do seu PDV, um prato por linha, no formato <span style={nums}>nome do prato, quantidade</span>. Enquanto não importar, o sistema usa o número de vendas/mês cadastrado manualmente em cada receita.
+          Cole o relatório de vendas do iFood ou do seu PDV, um prato por linha, no formato <span style={nums}>nome do prato, quantidade</span>. Enquanto não importar, o sistema usa o número de vendas/mês cadastrado manualmente em cada receita.{" "}
+          Tem o XML das notas de venda ou a planilha do PDV?{" "}
+          <Link href={`${basePath}/integracoes`} className="font-medium text-[var(--tinta)] underline underline-offset-2">
+            Importe em Integrações
+          </Link>
+          .
         </p>
+        {importacao && (
+          <div className="mb-3 rounded-lg px-4 py-3 text-[13px] flex flex-wrap items-center justify-between gap-3" style={{ background: "color-mix(in srgb, var(--sucesso) 8%, transparent)", color: "var(--tinta-sub)" }}>
+            <span>
+              <span className="font-medium text-[var(--tinta)]">Vendas importadas de {importacao.descricao}.</span>{" "}
+              {importacao.faturamento > 0
+                ? `Faturamento ${formatBRL(importacao.faturamento)}, dos quais ${formatBRL(importacao.faturamentoSemFicha)} em itens sem ficha.`
+                : "Planilha sem valor: o faturamento é o preço das fichas × quantidade."}
+            </span>
+            <button
+              onClick={() => {
+                setImportacao(null);
+                setVendasImportadas(null);
+              }}
+              className="text-[13px] font-medium min-h-10 px-3 rounded-md border"
+              style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}
+            >
+              Desfazer importação
+            </button>
+          </div>
+        )}
         <Card className="p-5">
           <textarea
             value={textoImportacao}
@@ -236,6 +288,7 @@ export function CmvClient({
                 <button
                   onClick={() => {
                     setVendasImportadas(null);
+                    setImportacao(null);
                     setErroImportacao("");
                   }}
                   className="text-[11.5px]"
@@ -411,9 +464,9 @@ export function CmvClient({
               {linhasCmv.length > 0 && (
                 <tr style={{ borderTop: `1.5px solid ${"var(--border-strong)"}` }}>
                   <td className="py-2.5 px-5 font-semibold" colSpan={4}>Total do período</td>
-                  <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                  <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {faturamentoDasFichas.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
                   <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {custoTeoricoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-5 text-right font-semibold" style={nums}>R$ {(faturamentoPeriodo - custoTeoricoPeriodo).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                  <td className="py-2.5 px-5 text-right font-semibold" style={nums}>R$ {(faturamentoDasFichas - custoTeoricoPeriodo).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
                 </tr>
               )}
             </tbody>

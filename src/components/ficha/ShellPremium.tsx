@@ -26,7 +26,7 @@ import { usePathname } from "next/navigation";
 import {
   ChefHat, Carrot, ClipboardList, LineChart, Settings, AlertTriangle,
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator,
-  Menu, X, Sun, Moon,
+  Menu, X, Sun, Moon, Plug,
 } from "lucide-react";
 import { ToastContainer } from "./Toast";
 
@@ -64,6 +64,8 @@ const GRUPOS: { titulo?: string; itens: NavItem[] }[] = [
     titulo: "Gestão",
     itens: [
       { id: "relatorios", label: "Relatórios", icon: AlertTriangle, rota: "/relatorios" },
+      // INTEGRACOES (2026-09-23): PDVs, iFood e importação por XML/planilha.
+      { id: "integracoes", label: "Integrações", icon: Plug, rota: "/integracoes" },
       { id: "config", label: "Configurações", icon: Settings, rota: "/configuracoes" },
     ],
   },

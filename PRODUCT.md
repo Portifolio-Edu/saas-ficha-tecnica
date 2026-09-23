@@ -54,7 +54,16 @@ Não mostrar como funcionalidade pronta nem inventar números destes módulos.
    integração via API homologada para puxar vendas e devolver ajustes de
    custo e estoque.
 
-Hoje o app importa vendas no fechamento de CMV (planilha), não em tempo real.
+Hoje o app importa vendas no fechamento de CMV (colar texto) e, desde
+2026-09-23, pela tela **Integrações**: XML das notas de venda (NFC-e/SAT) ou
+planilha CSV do PDV, com cada produto do PDV ligado a uma ficha. Isso é real e
+funciona com qualquer PDV, mesmo os que não liberam integração.
+
+**Integrações por API com PDV e iFood ainda não existem.** Escolha do usuário
+(2026-09-23): no app aparecem "Em breve"; na demo `/preview`, iFood e Saipos
+aparecem conectados, com pedidos chegando, **sempre com o selo "demo"** (mesma
+regra do agente IA). Lista de PDVs: Saipos, Consumer, Goomer, Anota AI,
+Colibri, TOTVS Chef, Stone, Cielo, PagSeguro, Linx Degust e Menew.
 
 **Ordem combinada com o usuário (2026-09-22):** primeiro alinhar todo o
 frontend na demo; depois o backend, com **Supabase** (dados, auth, storage) e
