@@ -345,14 +345,15 @@ export const producoes: Producao[] = [
   { id: "prod-8", lote: "LB-0915-1", tipo: "prato", receitaId: "pt-lasanha", nomeReceita: "Lasanha Bolonhesa", unidadeRendimento: "porção", quantidade: 18, responsavel: "Pedro Alves", turnoId: "turno-almoco", nomeTurno: "Almoço", chefeTurno: "Juliana Costa", validade: "2026-09-16", status: "produzido", motivoPerda: null, criadoEm: "2026-09-15T11:00:00.000Z" },
 ];
 
-function itemChecklist(id: string, checklistId: string, texto: string, ordem: number, concluidoHoje: boolean): ChecklistItem {
-  return { id, checklistId, texto, ordem, concluidoHoje };
+function itemChecklist(id: string, checklistId: string, texto: string, ordem: number, concluidoHoje: boolean, areaId: string | null = null): ChecklistItem {
+  return { id, checklistId, texto, ordem, concluidoHoje, areaId };
 }
 
 export const checklists: Checklist[] = [
   {
     id: "cl-abertura",
     fotos: [],
+    areas: [],
     nome: "Checklist de Abertura",
     momento: "abertura",
     itens: [
@@ -363,25 +364,31 @@ export const checklists: Checklist[] = [
       itemChecklist("cl-abertura-5", "cl-abertura", "Conferir estoque mínimo de embalagens", 5, false),
     ],
   },
-  // POLIMENTO checklists-pracas (2026-09-22): o antigo "Checklist de Praça" genérico
-  // virou três praças de verdade da Cantina (pizza, fogão, frios), cada uma com
-  // tudo o que precisa estar montado. Fotos começam vazias: a demo não tem foto
-  // real da cozinha, e foto inventada seria dado falso (PRODUCT.md). Quem testa
-  // adiciona as próprias fotos (ficam só na sessão).
+  // POLIMENTO checklists-pracas (2026-09-22) + pracas-areas (2026-09-23): três praças
+  // da Cantina, cada uma dividida nas áreas que ela tem (bancada, geladeira de
+  // apoio, forno, pista quente/fria), com o que precisa estar em cada área. Fotos
+  // começam vazias: a demo não tem foto real da cozinha, e foto inventada seria
+  // dado falso (PRODUCT.md). Quem testa adiciona as próprias (ficam na sessão).
   {
     id: "cl-praca",
     nome: "Praça de pizza",
     momento: "praca",
     fotos: [],
+    areas: [
+      { id: "ar-pizza-bancada", checklistId: "cl-praca", nome: "Bancada de montagem", ordem: 1 },
+      { id: "ar-pizza-geladeira", checklistId: "cl-praca", nome: "Geladeira de apoio", ordem: 2 },
+      { id: "ar-pizza-forno", checklistId: "cl-praca", nome: "Forno", ordem: 3 },
+    ],
     itens: [
-      itemChecklist("cl-praca-1", "cl-praca", "Discos de massa abertos na geladeira de apoio (30 un)", 1, true),
-      itemChecklist("cl-praca-2", "cl-praca", "Molho de tomate em 2 cubas 1/6", 2, true),
-      itemChecklist("cl-praca-3", "cl-praca", "Mussarela ralada em 2 cubas 1/3", 3, true),
-      itemChecklist("cl-praca-4", "cl-praca", "Calabresa fatiada em 1 cuba 1/6", 4, false),
-      itemChecklist("cl-praca-5", "cl-praca", "Manjericão lavado, seco e coberto com pano úmido", 5, false),
-      itemChecklist("cl-praca-6", "cl-praca", "Azeite, orégano e sal na bancada, à direita", 6, true),
-      itemChecklist("cl-praca-7", "cl-praca", "Pá, cortador e boleadores limpos no suporte", 7, true),
-      itemChecklist("cl-praca-8", "cl-praca", "Forno a 380 °C conferido no termômetro", 8, false),
+      itemChecklist("cl-praca-2", "cl-praca", "Molho de tomate em 2 cubas 1/6", 1, true, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-3", "cl-praca", "Mussarela ralada em 2 cubas 1/3", 2, true, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-4", "cl-praca", "Calabresa fatiada em 1 cuba 1/6", 3, false, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-5", "cl-praca", "Manjericão lavado, seco e coberto com pano úmido", 4, false, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-6", "cl-praca", "Azeite, orégano e sal à direita da bancada", 5, true, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-1", "cl-praca", "Discos de massa abertos (30 un), em caixas tampadas", 6, true, "ar-pizza-geladeira"),
+      itemChecklist("cl-praca-9", "cl-praca", "Reposição de mussarela (1 cuba 1/3) na prateleira de cima", 7, false, "ar-pizza-geladeira"),
+      itemChecklist("cl-praca-8", "cl-praca", "Forno a 380 °C conferido no termômetro", 8, false, "ar-pizza-forno"),
+      itemChecklist("cl-praca-7", "cl-praca", "Pá, cortador e boleadores limpos no suporte", 9, true, "ar-pizza-forno"),
     ],
   },
   {
@@ -389,13 +396,19 @@ export const checklists: Checklist[] = [
     nome: "Praça quente (fogão)",
     momento: "praca",
     fotos: [],
+    areas: [
+      { id: "ar-fogao-pista", checklistId: "cl-praca-fogao", nome: "Pista quente", ordem: 1 },
+      { id: "ar-fogao-geladeira", checklistId: "cl-praca-fogao", nome: "Geladeira de apoio", ordem: 2 },
+      { id: "ar-fogao-bancada", checklistId: "cl-praca-fogao", nome: "Bancada de finalização", ordem: 3 },
+    ],
     itens: [
-      itemChecklist("cl-praca-fogao-1", "cl-praca-fogao", "Caldo de legumes aquecido na boca de trás", 1, true),
-      itemChecklist("cl-praca-fogao-2", "cl-praca-fogao", "Arroz arbóreo pré-cozido porcionado (10 porções)", 2, true),
-      itemChecklist("cl-praca-fogao-3", "cl-praca-fogao", "Camarão porcionado na geladeira de apoio, etiquetado", 3, false),
-      itemChecklist("cl-praca-fogao-4", "cl-praca-fogao", "Molho branco em banho-maria", 4, false),
-      itemChecklist("cl-praca-fogao-5", "cl-praca-fogao", "Parmesão ralado em 1 cuba 1/9", 5, true),
-      itemChecklist("cl-praca-fogao-6", "cl-praca-fogao", "Frigideiras, conchas e pinças nos ganchos", 6, true),
+      itemChecklist("cl-praca-fogao-1", "cl-praca-fogao", "Caldo de legumes aquecido na boca de trás", 1, true, "ar-fogao-pista"),
+      itemChecklist("cl-praca-fogao-4", "cl-praca-fogao", "Molho branco em banho-maria", 2, false, "ar-fogao-pista"),
+      itemChecklist("cl-praca-fogao-6", "cl-praca-fogao", "Frigideiras, conchas e pinças nos ganchos", 3, true, "ar-fogao-pista"),
+      itemChecklist("cl-praca-fogao-2", "cl-praca-fogao", "Arroz arbóreo pré-cozido porcionado (10 porções)", 4, true, "ar-fogao-geladeira"),
+      itemChecklist("cl-praca-fogao-3", "cl-praca-fogao", "Camarão porcionado e etiquetado", 5, false, "ar-fogao-geladeira"),
+      itemChecklist("cl-praca-fogao-5", "cl-praca-fogao", "Parmesão ralado em 1 cuba 1/9", 6, true, "ar-fogao-bancada"),
+      itemChecklist("cl-praca-fogao-7", "cl-praca-fogao", "Pratos fundos aquecidos na estufa", 7, false, "ar-fogao-bancada"),
     ],
   },
   {
@@ -403,17 +416,22 @@ export const checklists: Checklist[] = [
     nome: "Garde manger (frios)",
     momento: "praca",
     fotos: [],
+    areas: [
+      { id: "ar-frios-pista", checklistId: "cl-praca-frios", nome: "Pista fria", ordem: 1 },
+      { id: "ar-frios-geladeira", checklistId: "cl-praca-frios", nome: "Geladeira de apoio", ordem: 2 },
+    ],
     itens: [
-      itemChecklist("cl-praca-frios-1", "cl-praca-frios", "Tomate em rodelas em 1 cuba 1/6", 1, false),
-      itemChecklist("cl-praca-frios-2", "cl-praca-frios", "Mussarela de búfala porcionada (60 g)", 2, false),
-      itemChecklist("cl-praca-frios-3", "cl-praca-frios", "Folhas lavadas, secas e em caixa com papel", 3, false),
-      itemChecklist("cl-praca-frios-4", "cl-praca-frios", "Pesto no pote identificado com data", 4, false),
-      itemChecklist("cl-praca-frios-5", "cl-praca-frios", "Pratos de salada gelados na prateleira de baixo", 5, false),
+      itemChecklist("cl-praca-frios-1", "cl-praca-frios", "Tomate em rodelas em 1 cuba 1/6", 1, false, "ar-frios-pista"),
+      itemChecklist("cl-praca-frios-2", "cl-praca-frios", "Mussarela de búfala porcionada (60 g)", 2, false, "ar-frios-pista"),
+      itemChecklist("cl-praca-frios-4", "cl-praca-frios", "Pesto no pote identificado com data", 3, false, "ar-frios-pista"),
+      itemChecklist("cl-praca-frios-3", "cl-praca-frios", "Folhas lavadas, secas e em caixa com papel", 4, false, "ar-frios-geladeira"),
+      itemChecklist("cl-praca-frios-5", "cl-praca-frios", "Pratos de salada gelados na prateleira de baixo", 5, false, "ar-frios-geladeira"),
     ],
   },
   {
     id: "cl-processo",
     fotos: [],
+    areas: [],
     nome: "Checklist de Processo — Manipulação de Proteínas",
     momento: "processo",
     itens: [
@@ -426,6 +444,7 @@ export const checklists: Checklist[] = [
   {
     id: "cl-fechamento",
     fotos: [],
+    areas: [],
     nome: "Checklist de Fechamento",
     momento: "fechamento",
     itens: [

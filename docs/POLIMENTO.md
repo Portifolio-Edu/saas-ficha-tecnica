@@ -262,3 +262,33 @@ chegando, "Conectar" nos outros PDVs. No app, tudo "Em breve".
 mapeamento produto → ficha vai pro Supabase na fase de backend.
 
 **Reverter:** `git revert` do commit `feat(integracoes)`.
+
+---
+
+## 10. Praças por área, com fotos e lista em cada área
+
+Pedido do usuário: uma praça tem várias partes (pista fria, bancada de
+montagem, geladeira, pista quente...), e cada uma precisa do registro visual e
+da lista. O cliente cria quantas praças quiser, com o nome que quiser.
+
+**Arquivos:** `src/components/checklists/PracasView.tsx` (reescrito; versão sem
+áreas: `git show 80452ce:src/components/checklists/PracasView.tsx`),
+`ChecklistsClient.tsx` (handlers de área e renomear; título acompanha a aba),
+`actions.ts` e `lib/dados/checklists.ts` (renomear praça, criar/renomear/apagar
+área), `lib/dominio/checklist.ts` (`ChecklistArea`, `areaId` em item e foto),
+`preview/fixtures.ts` (as 3 praças da demo divididas em áreas) e a migration
+`supabase/migrations/20260923140000_pracas_areas.sql`.
+
+- Cada área tem quantas fotos precisar (com detalhe opcional, ex.: "vista de
+  cima") e a própria lista marcável no turno. A ampliação navega pelas fotos
+  daquela área.
+- Área criada com nome livre ou com um toque nas sugestões (Pista fria, Pista
+  quente, Bancada de montagem, Geladeira de apoio, Forno, Estoque do dia).
+- Praça e área podem ser renomeadas no modo "Editar praça". Apagar uma área
+  apaga os itens e as fotos dela (com confirmação dizendo quantos).
+- Item ou foto sem área (de antes desta mudança) aparece num bloco "Geral".
+
+**Antes do deploy real:** aplicar `20260923140000_pracas_areas.sql`, depois da
+`20260923120000_checklist_fotos_pracas.sql`.
+**Reverter:** `git revert` do commit `polimento(pracas-areas)` e o bloco
+"Reverter" do topo da migration, se já aplicada.

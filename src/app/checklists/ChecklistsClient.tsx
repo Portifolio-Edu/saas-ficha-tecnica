@@ -30,6 +30,10 @@ import {
   acaoAlternarItem,
   acaoAdicionarFotoPraca,
   acaoRemoverFotoPraca,
+  acaoRenomearChecklist,
+  acaoCriarArea,
+  acaoRenomearArea,
+  acaoRemoverArea,
 } from "./actions";
 
 const MOMENTOS_DE_TURNO = MOMENTOS.filter((m) => m.id !== "praca");
@@ -58,7 +62,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
   // Cria no estado da demo ou no banco. Devolve true se deu certo.
   const gravarChecklist = async (nome: string, momento: MomentoChecklist): Promise<boolean> => {
     if (emModoDemo) {
-      const novo: Checklist = { id: `demo-${Date.now()}`, nome, momento, itens: [], fotos: [] };
+      const novo: Checklist = { id: `demo-${Date.now()}`, nome, momento, itens: [], fotos: [], areas: [] };
       setListaChecklists((prev) => [novo, ...prev]);
       return true;
     }
@@ -90,7 +94,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
     if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
-  const addItem = async (checklistId: string, ordem: number, textoInformado?: string): Promise<boolean> => {
+  const addItem = async (checklistId: string, ordem: number, textoInformado?: string, areaId: string | null = null): Promise<boolean> => {
     const texto = (textoInformado ?? novoItemTexto).trim();
     if (!texto) return false;
     if (emModoDemo) {
@@ -107,6 +111,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
                     texto,
                     ordem,
                     concluidoHoje: false,
+                    areaId,
                   },
                 ],
               }
@@ -116,7 +121,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
       if (textoInformado === undefined) setNovoItemTexto("");
       return true;
     }
-    const resultado = await acaoCriarItem(checklistId, texto, ordem);
+    const resultado = await acaoCriarItem(checklistId, texto, ordem, areaId);
     if (!resultado.ok) {
       setErroAcao(resultado.erro);
       return false;
@@ -127,11 +132,11 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
 
   // Fotos de referência das praças. Na demo a foto fica só nesta sessão
   // (URL local do navegador); no app sobe pro bucket pracas-fotos.
-  const adicionarFoto = async (checklistId: string, arquivo: File, legenda: string | null, ordem: number) => {
+  const adicionarFoto = async (checklistId: string, arquivo: File, legenda: string | null, ordem: number, areaId: string | null) => {
     if (emModoDemo) {
       const url = URL.createObjectURL(arquivo);
       setListaChecklists((prev) =>
-        prev.map((ch) => (ch.id === checklistId ? { ...ch, fotos: [...ch.fotos, { id: `demo-foto-${Date.now()}`, checklistId, url, legenda, ordem }] } : ch)),
+        prev.map((ch) => (ch.id === checklistId ? { ...ch, fotos: [...ch.fotos, { id: `demo-foto-${Date.now()}`, checklistId, url, legenda, ordem, areaId }] } : ch)),
       );
       return { ok: true } as const;
     }
@@ -140,7 +145,65 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
     formData.set("checklistId", checklistId);
     formData.set("legenda", legenda ?? "");
     formData.set("ordem", String(ordem));
+    formData.set("areaId", areaId ?? "");
     return acaoAdicionarFotoPraca(formData);
+  };
+
+  // POLIMENTO pracas-areas (2026-09-23): nome da praça e áreas (pista fria,
+  // bancada, geladeira...), com nome livre. Mesmo padrão: estado local na demo,
+  // server action no app.
+  const renomearChecklist = async (checklistId: string, nome: string): Promise<boolean> => {
+    if (emModoDemo) {
+      setListaChecklists((prev) => prev.map((ch) => (ch.id === checklistId ? { ...ch, nome } : ch)));
+      return true;
+    }
+    const r = await acaoRenomearChecklist(checklistId, nome);
+    if (!r.ok) setErroAcao(r.erro);
+    return r.ok;
+  };
+
+  const criarArea = async (checklistId: string, nome: string, ordem: number): Promise<boolean> => {
+    if (emModoDemo) {
+      setListaChecklists((prev) =>
+        prev.map((ch) => (ch.id === checklistId ? { ...ch, areas: [...ch.areas, { id: `demo-area-${Date.now()}`, checklistId, nome, ordem }] } : ch)),
+      );
+      return true;
+    }
+    const r = await acaoCriarArea(checklistId, nome, ordem);
+    if (!r.ok) setErroAcao(r.erro);
+    return r.ok;
+  };
+
+  const renomearArea = async (checklistId: string, areaId: string, nome: string): Promise<boolean> => {
+    if (emModoDemo) {
+      setListaChecklists((prev) =>
+        prev.map((ch) => (ch.id === checklistId ? { ...ch, areas: ch.areas.map((a) => (a.id === areaId ? { ...a, nome } : a)) } : ch)),
+      );
+      return true;
+    }
+    const r = await acaoRenomearArea(areaId, nome);
+    if (!r.ok) setErroAcao(r.erro);
+    return r.ok;
+  };
+
+  const excluirArea = async (checklistId: string, areaId: string) => {
+    if (emModoDemo) {
+      setListaChecklists((prev) =>
+        prev.map((ch) =>
+          ch.id === checklistId
+            ? {
+                ...ch,
+                areas: ch.areas.filter((a) => a.id !== areaId),
+                itens: ch.itens.filter((i) => i.areaId !== areaId),
+                fotos: ch.fotos.filter((f) => f.areaId !== areaId),
+              }
+            : ch,
+        ),
+      );
+      return;
+    }
+    const r = await acaoRemoverArea(areaId);
+    if (!r.ok) setErroAcao(r.erro);
   };
 
   const removerFoto = async (checklistId: string, fotoId: string) => {
@@ -192,9 +255,12 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
     <div className="max-w-6xl space-y-5">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div className="max-w-2xl min-w-0 lg:flex-1">
-          <h2 className="text-[22px] font-semibold tracking-tight text-[var(--tinta)]">Checklists de turno</h2>
+          {/* POLIMENTO pracas-areas: título e texto acompanham a aba. */}
+          <h2 className="text-[22px] font-semibold tracking-tight text-[var(--tinta)]">{aba === "pracas" ? "Praças" : "Checklists de turno"}</h2>
           <p className="text-[14px] text-[var(--tinta-sub)] mt-1">
-            Os modelos são ponto de partida: edite, remova e crie o que fizer sentido. O que for marcado fica registrado no turno e no responsável escolhidos aqui.
+            {aba === "pracas"
+              ? "Crie quantas praças a cozinha tiver, com o nome que ela usa. O que for marcado fica registrado no turno e no responsável escolhidos aqui."
+              : "Os modelos são ponto de partida: edite, remova e crie o que fizer sentido. O que for marcado fica registrado no turno e no responsável escolhidos aqui."}
           </p>
         </div>
         <div className="flex flex-wrap lg:flex-nowrap items-end gap-3 shrink-0">
@@ -260,12 +326,16 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
         <PracasView
           pracas={pracas}
           onAlternarItem={toggleItem}
-          onAdicionarItem={(checklistId, texto, ordem) => addItem(checklistId, ordem, texto)}
+          onAdicionarItem={(checklistId, texto, ordem, areaId) => addItem(checklistId, ordem, texto, areaId)}
           onRemoverItem={removerItem}
           onCriarPraca={(nome) => gravarChecklist(nome, "praca")}
           onExcluirPraca={excluirChecklistComConfirmacao}
           onAdicionarFoto={adicionarFoto}
           onRemoverFoto={removerFoto}
+          onRenomearPraca={renomearChecklist}
+          onCriarArea={criarArea}
+          onRenomearArea={renomearArea}
+          onExcluirArea={excluirArea}
         />
       )}
 
