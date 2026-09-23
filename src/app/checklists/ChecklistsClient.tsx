@@ -6,6 +6,11 @@
 // turno, responsável e botões com 44px. Só a apresentação mudou: estado da demo,
 // server actions e regras continuam iguais. Versão anterior:
 // `git show 4f29ec6:src/app/checklists/ChecklistsClient.tsx`.
+//
+// POLIMENTO checklists-pracas (2026-09-22): abas "Checklists do turno" e "Praças".
+// Praças são checklists com momento "praca" (itens da praça completa + fotos de
+// referência), desenhados em components/checklists/PracasView.tsx. A aba de turno
+// mostra os outros momentos. Versão anterior: `git show 38b1401:src/app/checklists/ChecklistsClient.tsx`.
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -16,7 +21,18 @@ import { useToast } from "@/components/ficha/Toast";
 import type { Checklist, MomentoChecklist } from "@/lib/dominio/checklist";
 import { MOMENTOS } from "@/lib/dominio/checklist";
 import type { Turno } from "@/lib/dominio/producao";
-import { acaoCriarChecklist, acaoExcluirChecklist, acaoCriarItem, acaoRemoverItem, acaoAlternarItem } from "./actions";
+import { PracasView } from "@/components/checklists/PracasView";
+import {
+  acaoCriarChecklist,
+  acaoExcluirChecklist,
+  acaoCriarItem,
+  acaoRemoverItem,
+  acaoAlternarItem,
+  acaoAdicionarFotoPraca,
+  acaoRemoverFotoPraca,
+} from "./actions";
+
+const MOMENTOS_DE_TURNO = MOMENTOS.filter((m) => m.id !== "praca");
 
 export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist[]; turnos: Turno[] }) {
   const pathname = usePathname();
@@ -32,34 +48,36 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
   const [showNovoChecklist, setShowNovoChecklist] = useState(false);
   const [novoNome, setNovoNome] = useState("");
   const [novoMomento, setNovoMomento] = useState<MomentoChecklist>("abertura");
+  const [aba, setAba] = useState<"turno" | "pracas">("turno");
   const [erroNovo, setErroNovo] = useState<string | null>(null);
   const [editandoChecklist, setEditandoChecklist] = useState<string | null>(null);
   const [novoItemTexto, setNovoItemTexto] = useState("");
   const [erroAcao, setErroAcao] = useState<string | null>(null);
   const { mostrarErro } = useToast();
 
+  // Cria no estado da demo ou no banco. Devolve true se deu certo.
+  const gravarChecklist = async (nome: string, momento: MomentoChecklist): Promise<boolean> => {
+    if (emModoDemo) {
+      const novo: Checklist = { id: `demo-${Date.now()}`, nome, momento, itens: [], fotos: [] };
+      setListaChecklists((prev) => [novo, ...prev]);
+      return true;
+    }
+    const resultado = await acaoCriarChecklist({ nome, momento });
+    if (!resultado.ok) {
+      if (momento === "praca") setErroAcao(resultado.erro);
+      else setErroNovo(resultado.erro);
+      return false;
+    }
+    return true;
+  };
+
   const criarChecklist = async () => {
     if (!novoNome.trim()) return;
     setErroNovo(null);
-    if (emModoDemo) {
-      const novo: Checklist = {
-        id: `demo-${Date.now()}`,
-        nome: novoNome.trim(),
-        momento: novoMomento,
-        itens: [],
-      };
-      setListaChecklists((prev) => [novo, ...prev]);
+    if (await gravarChecklist(novoNome.trim(), novoMomento)) {
       setNovoNome("");
       setShowNovoChecklist(false);
-      return;
     }
-    const resultado = await acaoCriarChecklist({ nome: novoNome.trim(), momento: novoMomento });
-    if (!resultado.ok) {
-      setErroNovo(resultado.erro);
-      return;
-    }
-    setNovoNome("");
-    setShowNovoChecklist(false);
   };
 
   const excluirChecklistComConfirmacao = async (ch: Checklist) => {
@@ -72,8 +90,9 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
     if (!resultado.ok) mostrarErro(resultado.erro);
   };
 
-  const addItem = async (checklistId: string, ordem: number) => {
-    if (!novoItemTexto.trim()) return;
+  const addItem = async (checklistId: string, ordem: number, textoInformado?: string): Promise<boolean> => {
+    const texto = (textoInformado ?? novoItemTexto).trim();
+    if (!texto) return false;
     if (emModoDemo) {
       setListaChecklists((prev) =>
         prev.map((ch) =>
@@ -85,7 +104,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
                   {
                     id: `demo-item-${Date.now()}`,
                     checklistId,
-                    texto: novoItemTexto.trim(),
+                    texto,
                     ordem,
                     concluidoHoje: false,
                   },
@@ -94,16 +113,47 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
             : ch
         )
       );
-      setNovoItemTexto("");
-      return;
+      if (textoInformado === undefined) setNovoItemTexto("");
+      return true;
     }
-    const resultado = await acaoCriarItem(checklistId, novoItemTexto.trim(), ordem);
+    const resultado = await acaoCriarItem(checklistId, texto, ordem);
     if (!resultado.ok) {
       setErroAcao(resultado.erro);
+      return false;
+    }
+    if (textoInformado === undefined) setNovoItemTexto("");
+    return true;
+  };
+
+  // Fotos de referência das praças. Na demo a foto fica só nesta sessão
+  // (URL local do navegador); no app sobe pro bucket pracas-fotos.
+  const adicionarFoto = async (checklistId: string, arquivo: File, legenda: string | null, ordem: number) => {
+    if (emModoDemo) {
+      const url = URL.createObjectURL(arquivo);
+      setListaChecklists((prev) =>
+        prev.map((ch) => (ch.id === checklistId ? { ...ch, fotos: [...ch.fotos, { id: `demo-foto-${Date.now()}`, checklistId, url, legenda, ordem }] } : ch)),
+      );
+      return { ok: true } as const;
+    }
+    const formData = new FormData();
+    formData.set("arquivo", arquivo);
+    formData.set("checklistId", checklistId);
+    formData.set("legenda", legenda ?? "");
+    formData.set("ordem", String(ordem));
+    return acaoAdicionarFotoPraca(formData);
+  };
+
+  const removerFoto = async (checklistId: string, fotoId: string) => {
+    if (emModoDemo) {
+      setListaChecklists((prev) => prev.map((ch) => (ch.id === checklistId ? { ...ch, fotos: ch.fotos.filter((f) => f.id !== fotoId) } : ch)));
       return;
     }
-    setNovoItemTexto("");
+    const resultado = await acaoRemoverFotoPraca(fotoId);
+    if (!resultado.ok) setErroAcao(resultado.erro);
   };
+
+  const pracas = listaChecklists.filter((c) => c.momento === "praca");
+  const checklistsDoTurno = listaChecklists.filter((c) => c.momento !== "praca");
 
   const removerItem = async (itemId: string) => {
     if (emModoDemo) {
@@ -160,19 +210,43 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
             <span className="text-[12px] text-[var(--tinta-faint)]">Responsável</span>
             <input value={chefeTurno} onChange={(e) => setChefeTurno(e.target.value)} placeholder="Nome" className={`${campo} w-40`} style={{ borderColor: "var(--linha-forte)" }} />
           </label>
+          {aba === "turno" && (
+            <button
+              onClick={() => setShowNovoChecklist(!showNovoChecklist)}
+              className="flex items-center gap-2 text-[14px] font-medium px-4 min-h-[var(--alvo-toque)] rounded-lg border"
+              style={{
+                background: showNovoChecklist ? "var(--panel)" : "var(--accent)",
+                color: showNovoChecklist ? "var(--tinta)" : "var(--accent-contrast)",
+                borderColor: showNovoChecklist ? "var(--linha-forte)" : "var(--accent)",
+              }}
+            >
+              {!showNovoChecklist && <Plus size={16} />}
+              {showNovoChecklist ? "Fechar" : "Novo checklist"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="inline-flex p-0.5 rounded-lg border" style={{ background: "var(--panel-elevated)", borderColor: "var(--linha)" }} role="tablist" aria-label="Visão">
+        {[
+          { id: "turno" as const, rotulo: `Checklists do turno (${checklistsDoTurno.length})` },
+          { id: "pracas" as const, rotulo: `Praças (${pracas.length})` },
+        ].map((t) => (
           <button
-            onClick={() => setShowNovoChecklist(!showNovoChecklist)}
-            className="flex items-center gap-2 text-[14px] font-medium px-4 min-h-[var(--alvo-toque)] rounded-lg border"
+            key={t.id}
+            role="tab"
+            aria-selected={aba === t.id}
+            onClick={() => setAba(t.id)}
+            className="px-4 min-h-[var(--alvo-toque)] rounded-md text-[14px] font-medium transition-colors"
             style={{
-              background: showNovoChecklist ? "var(--panel)" : "var(--accent)",
-              color: showNovoChecklist ? "var(--tinta)" : "var(--accent-contrast)",
-              borderColor: showNovoChecklist ? "var(--linha-forte)" : "var(--accent)",
+              background: aba === t.id ? "var(--panel)" : "transparent",
+              color: aba === t.id ? "var(--tinta)" : "var(--tinta-sub)",
+              boxShadow: aba === t.id ? "var(--shadow-sm)" : "none",
             }}
           >
-            {!showNovoChecklist && <Plus size={16} />}
-            {showNovoChecklist ? "Fechar" : "Novo checklist"}
+            {t.rotulo}
           </button>
-        </div>
+        ))}
       </div>
 
       {erroAcao && (
@@ -182,12 +256,25 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
         </div>
       )}
 
-      {showNovoChecklist && (
+      {aba === "pracas" && (
+        <PracasView
+          pracas={pracas}
+          onAlternarItem={toggleItem}
+          onAdicionarItem={(checklistId, texto, ordem) => addItem(checklistId, ordem, texto)}
+          onRemoverItem={removerItem}
+          onCriarPraca={(nome) => gravarChecklist(nome, "praca")}
+          onExcluirPraca={excluirChecklistComConfirmacao}
+          onAdicionarFoto={adicionarFoto}
+          onRemoverFoto={removerFoto}
+        />
+      )}
+
+      {aba === "turno" && showNovoChecklist && (
         <Card className="p-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <input placeholder="Nome do checklist" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} className={`${campo} sm:col-span-2`} style={{ borderColor: "var(--linha-forte)" }} />
             <select value={novoMomento} onChange={(e) => setNovoMomento(e.target.value as MomentoChecklist)} className={campo} style={{ borderColor: "var(--linha-forte)" }}>
-              {MOMENTOS.map((m) => (
+              {MOMENTOS_DE_TURNO.map((m) => (
                 <option key={m.id} value={m.id}>{m.label}</option>
               ))}
             </select>
@@ -203,99 +290,101 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {listaChecklists.map((ch) => {
-          const marcados = ch.itens.filter((i) => i.concluidoHoje).length;
-          const total = ch.itens.length;
-          const completo = total > 0 && marcados === total;
-          const editando = editandoChecklist === ch.id;
-          return (
-            <Card key={ch.id} className="overflow-hidden">
-              <div className="px-5 pt-4 pb-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="text-[16px] font-semibold text-[var(--tinta)]">{ch.nome}</h3>
-                    <div className="text-[13px] text-[var(--tinta-faint)] mt-0.5">{MOMENTOS.find((m) => m.id === ch.momento)?.label}</div>
+      {aba === "turno" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {checklistsDoTurno.map((ch) => {
+            const marcados = ch.itens.filter((i) => i.concluidoHoje).length;
+            const total = ch.itens.length;
+            const completo = total > 0 && marcados === total;
+            const editando = editandoChecklist === ch.id;
+            return (
+              <Card key={ch.id} className="overflow-hidden">
+                <div className="px-5 pt-4 pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-[16px] font-semibold text-[var(--tinta)]">{ch.nome}</h3>
+                      <div className="text-[13px] text-[var(--tinta-faint)] mt-0.5">{MOMENTOS.find((m) => m.id === ch.momento)?.label}</div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[15px] font-semibold whitespace-nowrap" style={{ ...nums, color: completo ? "var(--sucesso)" : "var(--tinta)" }}>
+                        {marcados} de {total}
+                      </span>
+                      <button
+                        onClick={() => setEditandoChecklist(editando ? null : ch.id)}
+                        className="text-[13px] font-medium px-3 min-h-10 rounded-lg border hover:bg-[var(--panel-hover)]"
+                        style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}
+                      >
+                        {editando ? "Pronto" : "Editar"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-[15px] font-semibold whitespace-nowrap" style={{ ...nums, color: completo ? "var(--sucesso)" : "var(--tinta)" }}>
-                      {marcados} de {total}
-                    </span>
-                    <button
-                      onClick={() => setEditandoChecklist(editando ? null : ch.id)}
-                      className="text-[13px] font-medium px-3 min-h-10 rounded-lg border hover:bg-[var(--panel-hover)]"
-                      style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}
-                    >
-                      {editando ? "Pronto" : "Editar"}
+                  <div className="h-1.5 rounded-full mt-3" style={{ background: "var(--panel-elevated)" }} role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={marcados} aria-label={`${ch.nome}: ${marcados} de ${total}`}>
+                    <div className="h-full rounded-full transition-all duration-300" style={{ width: total ? `${(marcados / total) * 100}%` : "0%", background: completo ? "var(--sucesso)" : "var(--tinta)" }} />
+                  </div>
+                </div>
+
+                <ul className="border-t divide-y" style={{ borderColor: "var(--linha)" }}>
+                  {ch.itens.map((item) => (
+                    <li key={item.id} style={{ borderColor: "var(--linha)" }}>
+                      {editando ? (
+                        <div className="flex items-center gap-3 px-5 min-h-12">
+                          <span className="text-[15px] flex-1 text-[var(--tinta-sub)]">{item.texto}</span>
+                          <button onClick={() => removerItem(item.id)} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[var(--danger-soft)]" style={{ color: "var(--danger)" }} aria-label={`Remover "${item.texto}"`}>
+                            <X size={17} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => toggleItem(item.id, item.concluidoHoje)}
+                          role="checkbox"
+                          aria-checked={item.concluidoHoje}
+                          className="flex items-center gap-3.5 text-left w-full px-5 min-h-12 py-2 hover:bg-[var(--panel-hover)] transition-colors"
+                        >
+                          <span
+                            className="w-6 h-6 rounded-md shrink-0 flex items-center justify-center border-[1.5px] transition-colors"
+                            style={{ borderColor: item.concluidoHoje ? "var(--sucesso)" : "var(--linha-forte)", background: item.concluidoHoje ? "var(--sucesso)" : "var(--panel)" }}
+                            aria-hidden
+                          >
+                            {item.concluidoHoje && <Check size={15} strokeWidth={3} color="var(--panel)" />}
+                          </span>
+                          <span className="text-[15px]" style={{ color: item.concluidoHoje ? "var(--tinta-faint)" : "var(--tinta)", textDecoration: item.concluidoHoje ? "line-through" : "none" }}>
+                            {item.texto}
+                          </span>
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                  {ch.itens.length === 0 && <li className="px-5 py-4 text-[14px] text-[var(--tinta-faint)]">Sem itens ainda. Toque em Editar pra adicionar.</li>}
+                </ul>
+
+                {editando && (
+                  <div className="flex flex-wrap gap-2 p-4 border-t" style={{ borderColor: "var(--linha)" }}>
+                    <input
+                      placeholder="Novo item do checklist"
+                      value={novoItemTexto}
+                      onChange={(e) => setNovoItemTexto(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") addItem(ch.id, ch.itens.length);
+                      }}
+                      className={`${campo} flex-1 min-w-48`}
+                      style={{ borderColor: "var(--linha-forte)" }}
+                    />
+                    <button onClick={() => addItem(ch.id, ch.itens.length)} className="text-[14px] font-medium px-4 min-h-[var(--alvo-toque)] rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
+                      Adicionar
+                    </button>
+                    <button onClick={() => excluirChecklistComConfirmacao(ch)} className="text-[14px] font-medium px-4 min-h-[var(--alvo-toque)] rounded-lg border" style={{ color: "var(--danger)", borderColor: "var(--linha-forte)" }}>
+                      Excluir checklist
                     </button>
                   </div>
-                </div>
-                <div className="h-1.5 rounded-full mt-3" style={{ background: "var(--panel-elevated)" }} role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={marcados} aria-label={`${ch.nome}: ${marcados} de ${total}`}>
-                  <div className="h-full rounded-full transition-all duration-300" style={{ width: total ? `${(marcados / total) * 100}%` : "0%", background: completo ? "var(--sucesso)" : "var(--tinta)" }} />
-                </div>
-              </div>
-
-              <ul className="border-t divide-y" style={{ borderColor: "var(--linha)" }}>
-                {ch.itens.map((item) => (
-                  <li key={item.id} style={{ borderColor: "var(--linha)" }}>
-                    {editando ? (
-                      <div className="flex items-center gap-3 px-5 min-h-12">
-                        <span className="text-[15px] flex-1 text-[var(--tinta-sub)]">{item.texto}</span>
-                        <button onClick={() => removerItem(item.id)} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[var(--danger-soft)]" style={{ color: "var(--danger)" }} aria-label={`Remover "${item.texto}"`}>
-                          <X size={17} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => toggleItem(item.id, item.concluidoHoje)}
-                        role="checkbox"
-                        aria-checked={item.concluidoHoje}
-                        className="flex items-center gap-3.5 text-left w-full px-5 min-h-12 py-2 hover:bg-[var(--panel-hover)] transition-colors"
-                      >
-                        <span
-                          className="w-6 h-6 rounded-md shrink-0 flex items-center justify-center border-[1.5px] transition-colors"
-                          style={{ borderColor: item.concluidoHoje ? "var(--sucesso)" : "var(--linha-forte)", background: item.concluidoHoje ? "var(--sucesso)" : "var(--panel)" }}
-                          aria-hidden
-                        >
-                          {item.concluidoHoje && <Check size={15} strokeWidth={3} color="var(--panel)" />}
-                        </span>
-                        <span className="text-[15px]" style={{ color: item.concluidoHoje ? "var(--tinta-faint)" : "var(--tinta)", textDecoration: item.concluidoHoje ? "line-through" : "none" }}>
-                          {item.texto}
-                        </span>
-                      </button>
-                    )}
-                  </li>
-                ))}
-                {ch.itens.length === 0 && <li className="px-5 py-4 text-[14px] text-[var(--tinta-faint)]">Sem itens ainda. Toque em Editar pra adicionar.</li>}
-              </ul>
-
-              {editando && (
-                <div className="flex flex-wrap gap-2 p-4 border-t" style={{ borderColor: "var(--linha)" }}>
-                  <input
-                    placeholder="Novo item do checklist"
-                    value={novoItemTexto}
-                    onChange={(e) => setNovoItemTexto(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") addItem(ch.id, ch.itens.length);
-                    }}
-                    className={`${campo} flex-1 min-w-48`}
-                    style={{ borderColor: "var(--linha-forte)" }}
-                  />
-                  <button onClick={() => addItem(ch.id, ch.itens.length)} className="text-[14px] font-medium px-4 min-h-[var(--alvo-toque)] rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast)" }}>
-                    Adicionar
-                  </button>
-                  <button onClick={() => excluirChecklistComConfirmacao(ch)} className="text-[14px] font-medium px-4 min-h-[var(--alvo-toque)] rounded-lg border" style={{ color: "var(--danger)", borderColor: "var(--linha-forte)" }}>
-                    Excluir checklist
-                  </button>
-                </div>
-              )}
-            </Card>
-          );
-        })}
-        {listaChecklists.length === 0 && !showNovoChecklist && (
-          <div className="lg:col-span-2 text-[14px] py-8 text-center text-[var(--tinta-faint)]">Nenhum checklist cadastrado ainda.</div>
-        )}
-      </div>
+                )}
+              </Card>
+            );
+          })}
+          {checklistsDoTurno.length === 0 && !showNovoChecklist && (
+            <div className="lg:col-span-2 text-[14px] py-8 text-center text-[var(--tinta-faint)]">Nenhum checklist cadastrado ainda.</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
-import type { Checklist, ChecklistInput, ChecklistItem, MomentoChecklist } from "@/lib/dominio/checklist";
+import type { Checklist, ChecklistFoto, ChecklistInput, ChecklistItem, MomentoChecklist } from "@/lib/dominio/checklist";
 
-export type { Checklist, ChecklistInput, ChecklistItem, MomentoChecklist } from "@/lib/dominio/checklist";
+export type { Checklist, ChecklistFoto, ChecklistInput, ChecklistItem, MomentoChecklist } from "@/lib/dominio/checklist";
+
+// POLIMENTO checklists-pracas: bucket das fotos de referência das praças
+// (migration 20260923120000_checklist_fotos_pracas.sql).
+const BUCKET_FOTOS_PRACAS = "pracas-fotos";
 
 /** "Hoje" no fuso do servidor -- suficiente pro caso de uso (checklist de
  * turno reinicia todo dia), sem exigir configuração de fuso por cliente. */
@@ -58,6 +62,23 @@ export async function listarChecklists(): Promise<Checklist[]> {
     concluidosHoje = new Set(((execucoes ?? []) as { checklist_item_id: string }[]).map((e) => e.checklist_item_id));
   }
 
+  // POLIMENTO checklists-pracas: fotos de referência (só praças costumam ter).
+  const { data: fotos, error: erroFotos } = await supabase
+    .from("checklist_fotos")
+    .select("id, checklist_id, url, legenda, ordem")
+    .in(
+      "checklist_id",
+      listaChecklists.map((c) => c.id),
+    )
+    .order("ordem");
+  if (erroFotos) throw new Error(mensagemErro(erroFotos));
+  const fotosPorChecklist = new Map<string, ChecklistFoto[]>();
+  for (const f of (fotos ?? []) as { id: string; checklist_id: string; url: string; legenda: string | null; ordem: number }[]) {
+    const lista = fotosPorChecklist.get(f.checklist_id) ?? [];
+    lista.push({ id: f.id, checklistId: f.checklist_id, url: f.url, legenda: f.legenda, ordem: f.ordem });
+    fotosPorChecklist.set(f.checklist_id, lista);
+  }
+
   const itensPorChecklist = new Map<string, ChecklistItem[]>();
   for (const i of listaItens) {
     const lista = itensPorChecklist.get(i.checklist_id) ?? [];
@@ -65,7 +86,13 @@ export async function listarChecklists(): Promise<Checklist[]> {
     itensPorChecklist.set(i.checklist_id, lista);
   }
 
-  return listaChecklists.map((c) => ({ id: c.id, nome: c.nome, momento: c.momento, itens: itensPorChecklist.get(c.id) ?? [] }));
+  return listaChecklists.map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    momento: c.momento,
+    itens: itensPorChecklist.get(c.id) ?? [],
+    fotos: fotosPorChecklist.get(c.id) ?? [],
+  }));
 }
 
 export async function criarChecklist(clienteId: string, input: ChecklistInput): Promise<string> {
@@ -109,4 +136,32 @@ export async function desmarcarItemConcluido(itemId: string): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase.from("checklist_execucoes").delete().eq("checklist_item_id", itemId).gte("concluido_em", inicioDoDiaISO());
   if (error) throw new Error(mensagemErro(error));
+}
+
+/** POLIMENTO checklists-pracas: sobe a foto de referência da praça pro bucket
+ * público pracas-fotos, na pasta do cliente (a policy de storage exige o
+ * cliente_id como 1º segmento), e grava a linha em checklist_fotos. */
+export async function adicionarFotoChecklist(clienteId: string, checklistId: string, arquivo: File, legenda: string | null, ordem: number): Promise<void> {
+  const supabase = await createClient();
+  const extensao = arquivo.name.split(".").pop() || "jpg";
+  const caminho = `${clienteId}/${checklistId}/${crypto.randomUUID()}.${extensao}`;
+  const { error } = await supabase.storage.from(BUCKET_FOTOS_PRACAS).upload(caminho, arquivo, { contentType: arquivo.type || undefined, upsert: false });
+  if (error) throw new Error(mensagemErro(error));
+  const { data } = supabase.storage.from(BUCKET_FOTOS_PRACAS).getPublicUrl(caminho);
+  const { error: erroLinha } = await supabase.from("checklist_fotos").insert({ checklist_id: checklistId, url: data.publicUrl, caminho, legenda, ordem });
+  if (erroLinha) {
+    // Não deixa arquivo órfão no bucket se a linha não gravou.
+    await supabase.storage.from(BUCKET_FOTOS_PRACAS).remove([caminho]);
+    throw new Error(mensagemErro(erroLinha));
+  }
+}
+
+/** Remove a linha e o arquivo. Se o arquivo já não existir, a linha sai mesmo assim. */
+export async function removerFotoChecklist(fotoId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("checklist_fotos").select("caminho").eq("id", fotoId).single();
+  if (error) throw new Error(mensagemErro(error));
+  const { error: erroDelete } = await supabase.from("checklist_fotos").delete().eq("id", fotoId);
+  if (erroDelete) throw new Error(mensagemErro(erroDelete));
+  await supabase.storage.from(BUCKET_FOTOS_PRACAS).remove([(data as { caminho: string }).caminho]);
 }

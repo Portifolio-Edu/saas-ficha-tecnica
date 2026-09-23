@@ -15,11 +15,23 @@ export interface ChecklistItem {
   concluidoHoje: boolean;
 }
 
+/** POLIMENTO checklists-pracas (2026-09-22): foto de referência de uma praça
+ * montada (checklist com momento "praca"). Uma praça pode ter várias, uma por
+ * elemento (bancada, geladeira de apoio, forno...), descrito na legenda. */
+export interface ChecklistFoto {
+  id: string;
+  checklistId: string;
+  url: string;
+  legenda: string | null;
+  ordem: number;
+}
+
 export interface Checklist {
   id: string;
   nome: string;
   momento: MomentoChecklist;
   itens: ChecklistItem[];
+  fotos: ChecklistFoto[];
 }
 
 export interface ChecklistInput {

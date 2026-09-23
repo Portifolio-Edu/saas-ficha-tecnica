@@ -56,6 +56,11 @@ Não mostrar como funcionalidade pronta nem inventar números destes módulos.
 
 Hoje o app importa vendas no fechamento de CMV (planilha), não em tempo real.
 
+**Ordem combinada com o usuário (2026-09-22):** primeiro alinhar todo o
+frontend na demo; depois o backend, com **Supabase** (dados, auth, storage) e
+**n8n** como a camada de acesso aos agentes de IA do SaaS (o agente IA de hoje
+é só simulação em `/preview`).
+
 ## Operating Context
 
 - Tablet at the bench during prep and service; a computer for back-office

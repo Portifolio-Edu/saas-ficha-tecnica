@@ -195,3 +195,35 @@ pra meta, lotes perdidos e tabela por responsável no período. O botão
 
 **Reverter:** `git revert` do commit `polimento(relatorios)`; a correção da
 fixture é um commit separado (`fix(demo)`).
+
+---
+
+## 8. Checklists — visão "Praças" com fotos de referência
+
+Pedido do usuário: dentro de Checklists, uma subvisão por praça/setor com tudo
+o que precisa estar lá pra praça ficar completa e fotos da praça montada (mais
+de uma por praça, uma por elemento), pra organização continuar igual mesmo se a
+equipe inteira mudar.
+
+**Arquivos:** `src/components/checklists/PracasView.tsx` (novo),
+`src/app/checklists/ChecklistsClient.tsx` (abas "Checklists do turno" e
+"Praças"), `src/app/checklists/actions.ts` e `src/lib/dados/checklists.ts`
+(enviar/remover foto), `src/lib/dominio/checklist.ts` (`ChecklistFoto`),
+`src/lib/imagem/reduzirImagem.ts` (novo), `preview/fixtures.ts` (3 praças da
+demo) e a migration `supabase/migrations/20260923120000_checklist_fotos_pracas.sql`.
+
+- Praça = checklist com `momento = 'praca'` (já existia no banco). Itens e
+  marcação no turno são os mesmos; as fotos ficam na tabela nova
+  `checklist_fotos` e no bucket `pracas-fotos` (mesma regra de acesso do bucket
+  de receitas).
+- Foto com legenda do elemento ("Bancada de montagem"), ampliação em tela
+  cheia com setas, remoção no modo de edição.
+- Foto reduzida no aparelho (lado maior 1600px, ~300 KB) antes de subir.
+  **Bug corrigido junto:** o upload de foto das receitas mandava o arquivo
+  original, e foto de celular passava do limite de 1 MB das server actions.
+- Na demo as fotos ficam só na sessão (não há foto real da cozinha pra
+  mostrar, e foto inventada seria dado falso).
+
+**Antes do deploy real:** aplicar a migration `20260923120000_checklist_fotos_pracas.sql`.
+**Reverter:** `git revert` do commit `polimento(checklists-pracas)` e, se a
+migration já foi aplicada, rodar o bloco "Reverter" do topo dela.
