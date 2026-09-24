@@ -24,6 +24,14 @@ Decisão do dono do produto: reaproveitar este projeto para o Ficha Técnica.
    precisa; cada uma confere o `cliente_id`), e as tabelas do arquivo sem
    policy (fora da API).
 
+## Teste de isolamento
+
+`supabase/testes/isolamento.sql` cria dois restaurantes numa transação, tenta
+ler e alterar os dados de um com o login do outro e com visitante, e desfaz
+tudo no fim. Rodar depois de qualquer migration: todas as linhas precisam sair
+`OK`. Em 2026-09-24: 15/15 OK, depois da correção `20260924130000` (visitante
+recebia erro de permissão em vez de lista vazia).
+
 ## Para ligar o app a este banco
 
 Na Vercel (Settings → Environment Variables), para Preview e Production:

@@ -16,7 +16,8 @@
 // herói "Centro de Inteligência & Calibração Operacional", o selo "Motor
 // operacional ativo" (status que não existe) e as 4 réguas calibradas em cards
 // separados. A versão com réguas: `git show 32e3e97:src/app/visao-geral/VisaoGeralClient.tsx`
-// (o componente ReguaCalibrada continua no repo, sem uso).
+// (o componente ReguaCalibrada foi removido na limpeza de produção; recuperar com
+// `git show a57efba:src/components/instrumentos/ReguaCalibrada.tsx`).
 
 import { useMemo, useState } from "react";
 import Link from "next/link";

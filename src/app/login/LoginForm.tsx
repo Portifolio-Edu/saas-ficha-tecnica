@@ -12,7 +12,7 @@ import { ChefHat, AlertCircle, ArrowRight } from "lucide-react";
 
 const estadoInicial: EstadoAuth = {};
 
-export function LoginForm() {
+export function LoginForm({ linkInvalido = false }: { linkInvalido?: boolean }) {
   const [estado, formAction, pendente] = useActionState(entrar, estadoInicial);
 
   return (
@@ -38,6 +38,13 @@ export function LoginForm() {
           Entre com seus dados para acessar o painel do seu restaurante.
         </p>
 
+        {linkInvalido && (
+          <div role="status" className="text-[13px] rounded-lg px-3 py-2.5 mb-4" style={{ background: "color-mix(in srgb, var(--aviso) 10%, transparent)", color: "var(--tinta)" }}>
+            {/* PRODUCAO (2026-09-24) */}
+            Esse link já foi usado ou venceu. Entre com seu e-mail e senha, ou peça um link novo em &quot;Esqueci minha senha&quot;.
+          </div>
+        )}
+
         <form action={formAction} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-[12px] font-medium mb-1.5 text-[var(--sub)]">
@@ -59,6 +66,10 @@ export function LoginForm() {
               <label htmlFor="senha" className="text-[12px] font-medium text-[var(--sub)]">
                 Senha
               </label>
+              {/* PRODUCAO (2026-09-24): recuperação de senha. */}
+              <Link href="/recuperar-senha" className="text-[12px] font-medium text-[var(--sub)] hover:text-[var(--tinta)] underline-offset-2 hover:underline">
+                Esqueci minha senha
+              </Link>
             </div>
             <input
               id="senha"
