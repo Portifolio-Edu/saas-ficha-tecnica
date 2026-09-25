@@ -499,3 +499,31 @@ com a contagem errada. Navegador: 43 checagens, incluindo "3 folgas
 seguidas" mês a mês (gestor) e semana a semana (tablet).
 
 **Reverter:** `git revert` do commit "escalas: nunca 3 folgas seguidas".
+
+## 17. Prontuário de competências e matchmaking de extras
+
+Pedido do dono: perfil técnico e comportamental de cada pessoa e busca de
+extra que cruze nível e praças de quem faltou. Detalhes em `docs/ESCALAS.md`.
+
+- **Escalas → Equipe:** cartões com nível (azul), praças (laranja), pontos
+  fortes (azul), limitações (vermelho), 90 dias de assiduidade e a escala;
+  filtros por setor, nível e praça; aviso de quem está sem nível/praças.
+- **Prontuário** (painel lateral): nível, praças, pontos fortes, gargalos,
+  observação interna, notas de assiduidade e postura; mostra ao vivo quantos
+  extras cobrem a pessoa se ela faltar. Pede confirmação ao fechar sem salvar.
+- **Escalas → Extras:** banco de extras com autorização de WhatsApp (LGPD).
+- **Alerta de contingência:** "N extras compatíveis", com WhatsApp (mensagem
+  pronta) e Ligar.
+- **Segurança:** nível e habilidades saíram de `funcionarios` (a cozinha lia
+  pela API); tudo novo é só de dono/gestor.
+- **Correção junto:** os painéis laterais (escala, prontuário, extra) abriam
+  fora da tela no celular com a página rolada (ancestral com transform);
+  agora abrem num portal no `<body>` e travam a rolagem da página.
+- Formulário da escala: nível e habilidades saíram (estão no Prontuário).
+
+Testes: 130 unitários (12 novos de perfil e matchmaking), SQL 29/29
+(`perfil_equipe.sql`) + 6/6 (`escalas_salvar.sql`), navegador 30 checagens
+novas + 43 anteriores, em 1440/820/390 px, sem erro no console.
+
+**Reverter:** `git revert` do commit "equipe: prontuário de competências" e
+`supabase/reverter/20260927100000_perfil_equipe.sql` no banco.

@@ -2,18 +2,19 @@
 // incompleto: pessoa criada em "Equipe" só com o nome ainda não tem setor,
 // cargo nem regime) e a conversão pro formato do motor. Puro.
 import type { CadastroEscalaInput } from "./validacao";
-import type { ConfigEscala, DataISO, FuncionarioEscala, Nivel, Ocorrencia, Setor } from "./tipos";
+import { PERFIL_VAZIO, type PerfilCompetencia } from "./perfil";
+import type { ConfigEscala, DataISO, FuncionarioEscala, Ocorrencia, Setor } from "./tipos";
 
 export interface PessoaEscala {
   id: string;
   nome: string;
   setor: Setor | null;
   cargo: string | null;
-  nivel: Nivel | null;
-  habilidades: string[];
   admissao: DataISO | null;
   desligamento: DataISO | null;
   escala: ConfigEscala | null;
+  /** PERFIL (2026-09-27): prontuário de competências (só dono/gestor). */
+  perfil: PerfilCompetencia;
 }
 
 export interface OcorrenciaRegistro extends Ocorrencia {
@@ -29,8 +30,8 @@ export function paraMotor(pessoas: PessoaEscala[]): FuncionarioEscala[] {
     nome: p.nome,
     setor: p.setor!,
     cargo: p.cargo!,
-    nivel: p.nivel ?? undefined,
-    habilidades: p.habilidades,
+    nivel: p.perfil.nivel ?? undefined,
+    habilidades: p.perfil.pracas,
     admissao: p.admissao!,
     desligamento: p.desligamento,
     escala: p.escala!,
@@ -43,8 +44,6 @@ export function cadastroInicial(p: PessoaEscala | null, hoje: DataISO): Cadastro
     nome: p?.nome ?? "",
     setor: p?.setor ?? "cozinha",
     cargo: p?.cargo ?? "",
-    nivel: p?.nivel ?? null,
-    habilidades: p?.habilidades ?? [],
     admissao: p?.admissao ?? hoje,
     desligamento: p?.desligamento ?? null,
     tipo: p?.escala?.tipo ?? "6x1",
@@ -56,15 +55,15 @@ export function cadastroInicial(p: PessoaEscala | null, hoje: DataISO): Cadastro
   };
 }
 
-/** Aplica o formulário na pessoa (usado na demo, que não tem banco). */
-export function aplicarCadastro(id: string, c: CadastroEscalaInput): PessoaEscala {
+/** Aplica o formulário na pessoa (usado na demo, que não tem banco). O
+ * prontuário de competências não muda aqui (tem tela própria). */
+export function aplicarCadastro(id: string, c: CadastroEscalaInput, perfil: PerfilCompetencia = PERFIL_VAZIO): PessoaEscala {
   return {
     id,
     nome: c.nome.trim(),
     setor: c.setor,
     cargo: c.cargo.trim(),
-    nivel: c.nivel,
-    habilidades: c.habilidades,
+    perfil,
     admissao: c.admissao,
     desligamento: c.desligamento,
     escala: {

@@ -6,6 +6,8 @@ import { mensagemErro } from "./erros";
 import { REGRAS_PADRAO } from "@/lib/escalas/motor";
 import type { CadastroEscalaInput, OcorrenciaInput } from "@/lib/escalas/validacao";
 import type { OcorrenciaRegistro, PessoaEscala } from "@/lib/escalas/cadastro";
+import { PERFIL_VAZIO, type NotaInput, type NotaPerfil, type PerfilCompetencia, type PerfilInput, type TipoNota } from "@/lib/escalas/perfil";
+import { normalizarTelefone, type Extra, type ExtraInput } from "@/lib/escalas/extras";
 import type { DataISO, DiaSemana, FuncionarioEscala, Nivel, Ocorrencia, RegrasEscala, Restricao, Setor, TipoEscala, TipoOcorrencia } from "@/lib/escalas/tipos";
 
 interface LinhaFuncionario {
@@ -13,8 +15,6 @@ interface LinhaFuncionario {
   nome: string;
   setor: Setor | null;
   cargo: string | null;
-  nivel: Nivel | null;
-  habilidades: string[] | null;
   admitido_em: string | null;
   desligado_em: string | null;
 }
@@ -43,16 +43,72 @@ function paraConfig(c: LinhaConfig) {
   };
 }
 
-export async function carregarEscalasGestao(): Promise<{ pessoas: PessoaEscala[]; ocorrencias: OcorrenciaRegistro[]; regras: RegrasEscala }> {
+interface LinhaPerfil {
+  funcionario_id: string;
+  nivel: Nivel | null;
+  pracas: string[];
+  pontos_fortes: string[];
+  limitacoes: string[];
+  observacoes: string | null;
+  atualizado_em: string;
+}
+
+interface LinhaExtra {
+  id: string;
+  nome: string;
+  telefone: string;
+  setor: Setor;
+  cargos: string[];
+  nivel: Nivel | null;
+  pracas: string[];
+  aceita_whatsapp: boolean;
+  consentimento_em: string | null;
+  ativo: boolean;
+  nota: string | null;
+}
+
+const paraExtra = (e: LinhaExtra): Extra => ({
+  id: e.id,
+  nome: e.nome,
+  telefone: e.telefone,
+  setor: e.setor,
+  cargos: e.cargos ?? [],
+  nivel: e.nivel,
+  pracas: e.pracas ?? [],
+  aceitaWhatsapp: e.aceita_whatsapp,
+  consentimentoEm: e.consentimento_em,
+  ativo: e.ativo,
+  nota: e.nota,
+});
+
+export interface DadosEscalasGestao {
+  pessoas: PessoaEscala[];
+  ocorrencias: OcorrenciaRegistro[];
+  regras: RegrasEscala;
+  notas: NotaPerfil[];
+  extras: Extra[];
+}
+
+export async function carregarEscalasGestao(): Promise<DadosEscalasGestao> {
   const supabase = await createClient();
   const desde = new Date(Date.now() - 400 * 86_400_000).toISOString().slice(0, 10);
-  const [funcs, configs, regras, ocs] = await Promise.all([
-    supabase.from("funcionarios").select("id, nome, setor, cargo, nivel, habilidades, admitido_em, desligado_em").eq("ativo", true).order("nome"),
+  const [funcs, configs, regras, ocs, perfis, notas, extras] = await Promise.all([
+    supabase.from("funcionarios").select("id, nome, setor, cargo, admitido_em, desligado_em").eq("ativo", true).order("nome"),
     supabase.from("escalas_config").select("funcionario_id, tipo, ancora, folgas_preferidas, intervalo_domingo_semanas, turno_inicio, turno_fim"),
     supabase.from("escalas_regras").select("intervalo_domingo_semanas, cobertura_minima").maybeSingle(),
     supabase.from("prontuario_ocorrencias").select("id, funcionario_id, tipo, inicio, fim, restricoes, nota, criado_em").gte("fim", desde).order("inicio", { ascending: false }),
+    supabase.from("perfil_funcionario").select("funcionario_id, nivel, pracas, pontos_fortes, limitacoes, observacoes, atualizado_em"),
+    supabase.from("perfil_notas").select("id, funcionario_id, data, tipo, texto, autor, criado_em").order("data", { ascending: false }).order("criado_em", { ascending: false }).limit(2000),
+    supabase.from("banco_extras").select("id, nome, telefone, setor, cargos, nivel, pracas, aceita_whatsapp, consentimento_em, ativo, nota").order("nome"),
   ]);
-  for (const r of [funcs, configs, regras, ocs]) if (r.error) throw new Error(mensagemErro(r.error));
+  for (const r of [funcs, configs, regras, ocs, perfis, notas, extras]) if (r.error) throw new Error(mensagemErro(r.error));
+
+  const perfilPorId = new Map(
+    ((perfis.data ?? []) as LinhaPerfil[]).map((p): [string, PerfilCompetencia] => [
+      p.funcionario_id,
+      { nivel: p.nivel, pracas: p.pracas ?? [], pontosFortes: p.pontos_fortes ?? [], limitacoes: p.limitacoes ?? [], observacoes: p.observacoes, atualizadoEm: p.atualizado_em },
+    ]),
+  );
 
   const configPorId = new Map(((configs.data ?? []) as LinhaConfig[]).map((c) => [c.funcionario_id, paraConfig(c)]));
   const pessoas: PessoaEscala[] = ((funcs.data ?? []) as LinhaFuncionario[]).map((f) => ({
@@ -60,11 +116,10 @@ export async function carregarEscalasGestao(): Promise<{ pessoas: PessoaEscala[]
     nome: f.nome,
     setor: f.setor,
     cargo: f.cargo,
-    nivel: f.nivel,
-    habilidades: f.habilidades ?? [],
     admissao: f.admitido_em,
     desligamento: f.desligado_em,
     escala: configPorId.get(f.id) ?? null,
+    perfil: perfilPorId.get(f.id) ?? PERFIL_VAZIO,
   }));
   const r = regras.data as { intervalo_domingo_semanas: number; cobertura_minima: Record<string, number> } | null;
   return {
@@ -80,6 +135,16 @@ export async function carregarEscalasGestao(): Promise<{ pessoas: PessoaEscala[]
       ...(o.nota ? { nota: o.nota } : {}),
       criadoEm: o.criado_em,
     })),
+    notas: ((notas.data ?? []) as { id: string; funcionario_id: string; data: string; tipo: TipoNota; texto: string; autor: string | null; criado_em: string }[]).map((n) => ({
+      id: n.id,
+      funcionarioId: n.funcionario_id,
+      data: n.data,
+      tipo: n.tipo,
+      texto: n.texto,
+      autor: n.autor,
+      criadoEm: n.criado_em,
+    })),
+    extras: ((extras.data ?? []) as LinhaExtra[]).map(paraExtra),
   };
 }
 
@@ -122,8 +187,6 @@ export async function salvarPessoaEscala(id: string | null, c: CadastroEscalaInp
     p_nome: c.nome,
     p_setor: c.setor,
     p_cargo: c.cargo,
-    p_nivel: c.nivel,
-    p_habilidades: c.habilidades,
     p_admissao: c.admissao,
     p_desligamento: c.desligamento,
     p_tipo: c.tipo,
@@ -162,5 +225,68 @@ export async function criarOcorrencia(clienteId: string, o: OcorrenciaInput): Pr
 export async function removerOcorrencia(id: string): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase.from("prontuario_ocorrencias").delete().eq("id", id);
+  if (error) throw new Error(mensagemErro(error));
+}
+
+// PERFIL (2026-09-27): prontuário de competências, notas e banco de extras.
+// Tudo só de dono/gestor (RLS em perfil_funcionario, perfil_notas e
+// banco_extras). O banco carimba quem alterou e quem escreveu cada nota.
+
+export async function salvarPerfil(clienteId: string, funcionarioId: string, p: PerfilInput): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("perfil_funcionario").upsert({
+    funcionario_id: funcionarioId,
+    cliente_id: clienteId,
+    nivel: p.nivel,
+    pracas: p.pracas,
+    pontos_fortes: p.pontosFortes,
+    limitacoes: p.limitacoes,
+    observacoes: p.observacoes,
+  });
+  if (error) throw new Error(mensagemErro(error));
+}
+
+export async function criarNota(clienteId: string, n: NotaInput): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("perfil_notas").insert({ cliente_id: clienteId, funcionario_id: n.funcionarioId, data: n.data, tipo: n.tipo, texto: n.texto.trim() });
+  if (error) throw new Error(mensagemErro(error));
+}
+
+export async function removerNota(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("perfil_notas").delete().eq("id", id);
+  if (error) throw new Error(mensagemErro(error));
+}
+
+export async function salvarExtra(clienteId: string, id: string | null, e: ExtraInput): Promise<void> {
+  const supabase = await createClient();
+  const linha = {
+    nome: e.nome.trim(),
+    telefone: normalizarTelefone(e.telefone),
+    setor: e.setor,
+    cargos: e.cargos,
+    nivel: e.nivel,
+    pracas: e.pracas,
+    aceita_whatsapp: e.aceitaWhatsapp,
+    ativo: e.ativo,
+    nota: e.nota?.trim() || null,
+  };
+  if (id) {
+    // Consentimento: grava a data na primeira vez que a pessoa aceita; se
+    // deixar de aceitar, apaga (LGPD: o registro tem que refletir o atual).
+    const { data: atual, error: erroLeitura } = await supabase.from("banco_extras").select("aceita_whatsapp, consentimento_em").eq("id", id).single();
+    if (erroLeitura) throw new Error(mensagemErro(erroLeitura));
+    const consentimento_em = e.aceitaWhatsapp ? (atual.aceita_whatsapp ? atual.consentimento_em : new Date().toISOString()) : null;
+    const { error } = await supabase.from("banco_extras").update({ ...linha, consentimento_em }).eq("id", id);
+    if (error) throw new Error(mensagemErro(error));
+  } else {
+    const { error } = await supabase.from("banco_extras").insert({ ...linha, cliente_id: clienteId, consentimento_em: e.aceitaWhatsapp ? new Date().toISOString() : null });
+    if (error) throw new Error(mensagemErro(error));
+  }
+}
+
+export async function removerExtra(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("banco_extras").delete().eq("id", id);
   if (error) throw new Error(mensagemErro(error));
 }

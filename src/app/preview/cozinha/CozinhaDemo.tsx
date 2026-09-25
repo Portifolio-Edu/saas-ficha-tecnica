@@ -17,7 +17,7 @@ import type { RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { LoteProteinaCozinha, ProducaoCozinha, ProteinaCozinha } from "@/lib/dominio/cozinha";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { acoesCozinhaDemo } from "./acoesDemo";
-import { escalasDemoIniciais } from "@/lib/demo/escalas";
+import { escalasDemoIniciais, pessoasDemoAtuais } from "@/lib/demo/escalas";
 import { hojeLocalISO } from "@/lib/calculo/dia";
 import { paraMotor, type OcorrenciaRegistro, type PessoaEscala } from "@/lib/escalas/cadastro";
 import { montarEscalaPublica, periodoCozinha, recortePublico } from "@/lib/escalas/publica";
@@ -90,7 +90,7 @@ export function CozinhaDemo(props: Props) {
   const [regrasEscala] = useDemo<RegrasEscala>(CHAVES_DEMO.escalaRegras, padraoRegras);
   const escala = useMemo(() => {
     const { inicio, fim } = periodoCozinha(hoje);
-    return montarEscalaPublica(recortePublico(paraMotor(pessoasEscala), ocorrenciasEscala, regrasEscala[0] ?? iniciaisEscala.regras), inicio, fim);
+    return montarEscalaPublica(recortePublico(paraMotor(pessoasDemoAtuais(pessoasEscala, iniciaisEscala.pessoas)), ocorrenciasEscala, regrasEscala[0] ?? iniciaisEscala.regras), inicio, fim);
   }, [hoje, pessoasEscala, ocorrenciasEscala, regrasEscala, iniciaisEscala]);
 
   const temperaturasRecentes = useMemo(() => [...temperaturas].sort((a, b) => b.registradoEm.localeCompare(a.registradoEm)), [temperaturas]);

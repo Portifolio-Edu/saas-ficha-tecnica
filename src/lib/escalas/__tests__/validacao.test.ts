@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { normalizarHabilidades, validarCadastro, validarOcorrencia, type CadastroEscalaInput } from "../validacao";
+import { validarCadastro, validarOcorrencia, type CadastroEscalaInput } from "../validacao";
 
 const base: CadastroEscalaInput = {
   nome: "Kenji",
   setor: "cozinha",
   cargo: "Sushiman",
-  nivel: "senior",
-  habilidades: ["sushi"],
   admissao: "2026-01-10",
   desligamento: null,
   tipo: "6x1",
@@ -50,4 +48,3 @@ describe("validarOcorrencia", () => {
   it("restrição só no tipo certo", () => expect(validarOcorrencia({ ...oc, restricoes: ["sem_noturno"] })).toMatch(/só no tipo/));
 });
 
-it("normaliza habilidades", () => expect(normalizarHabilidades("Sushi, sashimi ,, Sushi")).toEqual(["sushi", "sashimi"]));

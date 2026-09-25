@@ -4,20 +4,13 @@
 // fora da tela.
 import { paraDia } from "./datas";
 import { regimesPermitidos, setorProtegido } from "./motor";
-import type { DataISO, DiaSemana, Nivel, Restricao, Setor, TipoEscala, TipoOcorrencia } from "./tipos";
+import type { DataISO, DiaSemana, Restricao, Setor, TipoEscala, TipoOcorrencia } from "./tipos";
 
 export const SETORES: { id: Setor; rotulo: string }[] = [
   { id: "cozinha", rotulo: "Cozinha" },
   { id: "salao", rotulo: "Salão" },
   { id: "bar", rotulo: "Bar" },
   { id: "outro", rotulo: "Apoio (segurança, limpeza, manutenção...)" },
-];
-export const NIVEIS: { id: Nivel; rotulo: string }[] = [
-  { id: "auxiliar", rotulo: "Auxiliar" },
-  { id: "junior", rotulo: "Júnior" },
-  { id: "pleno", rotulo: "Pleno" },
-  { id: "senior", rotulo: "Sênior" },
-  { id: "chefe", rotulo: "Chefe" },
 ];
 export const REGIMES: { id: TipoEscala; rotulo: string; descricao: string }[] = [
   { id: "5x2", rotulo: "5x2", descricao: "5 dias de trabalho e 2 folgas por semana" },
@@ -42,8 +35,6 @@ export interface CadastroEscalaInput {
   nome: string;
   setor: Setor;
   cargo: string;
-  nivel: Nivel | null;
-  habilidades: string[];
   admissao: DataISO;
   desligamento: DataISO | null;
   tipo: TipoEscala;
@@ -74,8 +65,6 @@ export function validarCadastro(c: CadastroEscalaInput): string | null {
   if (!SETORES.some((s) => s.id === c.setor)) return "Escolha o setor.";
   if (!c.cargo.trim()) return "Informe o cargo (ex.: Cozinheiro, Sushiman, Garçom).";
   if (c.cargo.trim().length > 40) return "Cargo com no máximo 40 caracteres.";
-  if (c.nivel && !NIVEIS.some((n) => n.id === c.nivel)) return "Nível inválido.";
-  if (c.habilidades.length > 20 || c.habilidades.some((h) => h.length > 30)) return "Até 20 habilidades, com até 30 caracteres cada.";
   if (!dataValida(c.admissao)) return "Informe a data de admissão.";
   if (c.desligamento && !dataValida(c.desligamento)) return "Data de desligamento inválida.";
   if (c.desligamento && paraDia(c.desligamento) < paraDia(c.admissao)) return "O desligamento não pode ser antes da admissão.";
@@ -109,9 +98,4 @@ export function validarOcorrencia(o: OcorrenciaInput): string | null {
   if (o.restricoes.some((r) => !RESTRICOES.some((x) => x.id === r))) return "Restrição inválida.";
   if (o.nota && o.nota.length > 500) return "Observação com no máximo 500 caracteres.";
   return null;
-}
-
-/** Normaliza texto de habilidades ("Sushi, sashimi ,") → ["sushi", "sashimi"]. */
-export function normalizarHabilidades(texto: string): string[] {
-  return Array.from(new Set(texto.split(",").map((h) => h.trim().toLowerCase()).filter(Boolean)));
 }

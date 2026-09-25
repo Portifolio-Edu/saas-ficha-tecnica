@@ -2,8 +2,12 @@
 
 // ESCALAS (2026-09-26): tela Escalas (dono e gestor). Abas:
 //  - Escala do mês: alertas + grade + detalhe do dia;
-//  - Equipe: quem está na escala, regime, folgas; adicionar/editar;
-//  - Prontuário: faltas, atestados, férias, afastamentos, restrições;
+//  - Equipe: PERFIL (2026-09-27) cartões com o perfil de cada pessoa; abre o
+//    Prontuário de competências (nível, praças, pontos fortes, limitações,
+//    notas) e o cadastro da escala;
+//  - Extras: banco de extras (matchmaking com quem faltou);
+//  - Ocorrências: faltas, atestados, férias, afastamentos, restrições
+//    (antes a aba se chamava "Prontuário");
 //  - Regras: travas fixas + rodízio de domingo + mínimo por equipe.
 // O cálculo roda no navegador (src/lib/escalas, puro) em cima dos dados do
 // banco; salvar passa pelas server actions (ou pela demo), que validam de
@@ -12,13 +16,18 @@
 // escala inválida.
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Pencil, AlertOctagon, CalendarPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Pencil, AlertOctagon, CalendarPlus, ClipboardList } from "lucide-react";
 import { chaveEquipe, gerarEscala } from "@/lib/escalas/motor";
 import { cadastroCompleto, paraMotor, type OcorrenciaRegistro, type PessoaEscala } from "@/lib/escalas/cadastro";
-import { NIVEIS, type CadastroEscalaInput, type OcorrenciaInput } from "@/lib/escalas/validacao";
+import type { CadastroEscalaInput, OcorrenciaInput } from "@/lib/escalas/validacao";
+import type { NotaInput, NotaPerfil, PerfilInput } from "@/lib/escalas/perfil";
+import type { Extra, ExtraInput } from "@/lib/escalas/extras";
 import type { Alerta, DataISO, RegrasEscala } from "@/lib/escalas/tipos";
 import { GradeEscala, LegendaEscala, resumoRegime } from "./GradeEscala";
-import { LinhaAlerta, PainelAlertas } from "./PainelAlertas";
+import { ContextoExtras, LinhaAlerta, PainelAlertas } from "./PainelAlertas";
+import { EquipePerfis } from "./EquipePerfis";
+import { ProntuarioPessoa } from "./ProntuarioPessoa";
+import { ExtrasView } from "./ExtrasView";
 import { FormPessoa } from "./FormPessoa";
 import { ProntuarioView, type PreenchimentoOcorrencia } from "./ProntuarioView";
 import { RegrasView } from "./RegrasView";
@@ -31,13 +40,20 @@ export interface AcoesEscalas {
   salvarRegras: (r: RegrasEscala) => Promise<Resultado>;
   criarOcorrencia: (o: OcorrenciaInput) => Promise<Resultado>;
   removerOcorrencia: (id: string) => Promise<Resultado>;
+  /** PERFIL (2026-09-27) */
+  salvarPerfil: (funcionarioId: string, p: PerfilInput) => Promise<Resultado>;
+  criarNota: (n: NotaInput) => Promise<Resultado>;
+  removerNota: (id: string) => Promise<Resultado>;
+  salvarExtra: (id: string | null, e: ExtraInput) => Promise<Resultado>;
+  removerExtra: (id: string) => Promise<Resultado>;
 }
 
-type Aba = "escala" | "equipe" | "prontuario" | "regras";
+type Aba = "escala" | "equipe" | "extras" | "ocorrencias" | "regras";
 const ABAS: { id: Aba; rotulo: string; curto?: string }[] = [
   { id: "escala", rotulo: "Escala do mês", curto: "Escala" },
   { id: "equipe", rotulo: "Equipe" },
-  { id: "prontuario", rotulo: "Prontuário" },
+  { id: "extras", rotulo: "Extras" },
+  { id: "ocorrencias", rotulo: "Ocorrências", curto: "Ocorr." },
   { id: "regras", rotulo: "Regras" },
 ];
 
@@ -45,12 +61,18 @@ export function EscalasView({
   pessoas,
   ocorrencias,
   regras,
+  notas,
+  extras,
+  nomeRestaurante,
   hoje,
   acoes,
 }: {
   pessoas: PessoaEscala[];
   ocorrencias: OcorrenciaRegistro[];
   regras: RegrasEscala;
+  notas: NotaPerfil[];
+  extras: Extra[];
+  nomeRestaurante: string;
   hoje: DataISO;
   acoes: AcoesEscalas;
 }) {
@@ -59,6 +81,9 @@ export function EscalasView({
   const [selecionado, setSelecionado] = useState<{ pessoaId: string; data: DataISO } | null>(null);
   const [editando, setEditando] = useState<PessoaEscala | "nova" | null>(null);
   const [preenchimento, setPreenchimento] = useState<PreenchimentoOcorrencia | null>(null);
+  const [prontuario, setProntuario] = useState<string | null>(null);
+  const pessoaProntuario = prontuario ? pessoas.find((p) => p.id === prontuario) : undefined;
+  const contextoExtras = useMemo(() => ({ extras, restaurante: nomeRestaurante, hoje, irParaExtras: () => setAba("extras") }), [extras, nomeRestaurante, hoje]);
 
   const funcionarios = useMemo(() => paraMotor(pessoas), [pessoas]);
   const incompletas = pessoas.filter((p) => !cadastroCompleto(p));
@@ -81,20 +106,21 @@ export function EscalasView({
 
   const lancarOcorrencia = (funcionarioId: string, data: DataISO) => {
     setPreenchimento({ funcionarioId, data });
-    setAba("prontuario");
+    setAba("ocorrencias");
   };
 
   return (
+    <ContextoExtras.Provider value={contextoExtras}>
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="grid grid-cols-4 sm:inline-flex w-full sm:w-auto p-0.5 rounded-lg border max-w-full overflow-x-auto" style={{ background: "var(--panel-elevated)", borderColor: "var(--linha)" }} role="tablist" aria-label="Seções da escala">
+        <div className="grid grid-cols-5 sm:inline-flex w-full sm:w-auto p-0.5 rounded-lg border max-w-full overflow-x-auto" style={{ background: "var(--panel-elevated)", borderColor: "var(--linha)" }} role="tablist" aria-label="Seções da escala">
           {ABAS.map((a) => (
             <button
               key={a.id}
               role="tab"
               aria-selected={aba === a.id}
               onClick={() => setAba(a.id)}
-              className="px-2 sm:px-3.5 min-h-10 rounded-md text-[14px] font-medium whitespace-nowrap transition-colors"
+              className="px-1 sm:px-3.5 min-h-10 rounded-md text-[13px] sm:text-[14px] font-medium whitespace-nowrap transition-colors"
               style={{ background: aba === a.id ? "var(--panel)" : "transparent", color: aba === a.id ? "var(--tinta)" : "var(--tinta-sub)", boxShadow: aba === a.id ? "var(--shadow-sm)" : "none" }}
             >
               {a.curto ? (
@@ -106,7 +132,7 @@ export function EscalasView({
                 a.rotulo
               )}
               {a.id === "equipe" && incompletas.length > 0 && (
-                <span className="ml-1.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: tint("var(--etapa-producao)", 18), color: "var(--etapa-producao-texto)" }}>{incompletas.length}</span>
+                <span className="ml-1.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-full hidden sm:inline" style={{ background: tint("var(--etapa-producao)", 18), color: "var(--etapa-producao-texto)" }}>{incompletas.length}</span>
               )}
             </button>
           ))}
@@ -182,6 +208,9 @@ export function EscalasView({
                     <button onClick={() => setEditando(pessoas.find((p) => p.id === pessoaSel.id) ?? null)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
                       <Pencil size={14} /> Editar escala
                     </button>
+                    <button onClick={() => setProntuario(pessoaSel.id)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
+                      <ClipboardList size={14} /> Prontuário
+                    </button>
                   </div>
                   {alertasSel.length > 0 && (
                     <ul className="border-t divide-y" style={{ borderColor: "var(--linha)" }}>
@@ -206,62 +235,19 @@ export function EscalasView({
       )}
 
       {aba === "equipe" && (
-        <section aria-label="Equipe na escala">
-          {pessoas.length === 0 ? (
-            <p className="text-[14px] text-[var(--tinta-sub)] rounded-xl border border-dashed px-4 py-10 text-center" style={{ borderColor: "var(--linha-forte)" }}>
-              Ninguém cadastrado ainda. Toque em Adicionar pessoa.
-            </p>
-          ) : (
-            <div className="rounded-xl border overflow-x-auto" style={{ borderColor: "var(--linha)", background: "var(--panel)" }}>
-              <table className="w-full text-[14px]">
-                <thead>
-                  <tr className="text-left text-[12px] text-[var(--tinta-faint)] border-b" style={{ borderColor: "var(--linha)" }}>
-                    <th className="px-4 py-2.5 font-medium">Pessoa</th>
-                    <th className="px-3 py-2.5 font-medium">Equipe</th>
-                    <th className="px-3 py-2.5 font-medium">Regime</th>
-                    <th className="px-3 py-2.5 font-medium hidden md:table-cell">Turno</th>
-                    <th className="px-3 py-2.5 font-medium hidden md:table-cell">Admissão</th>
-                    <th className="px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...pessoas].sort((a, b) => Number(cadastroCompleto(a)) - Number(cadastroCompleto(b)) || a.nome.localeCompare(b.nome)).map((p) => {
-                    const completo = cadastroCompleto(p);
-                    const f = completo ? paraMotor([p])[0] : null;
-                    const nivel = p.nivel ? NIVEIS.find((n) => n.id === p.nivel)?.rotulo : null;
-                    return (
-                      <tr key={p.id} className="border-b last:border-0" style={{ borderColor: "var(--linha)" }}>
-                        <td className="px-4 py-3">
-                          <div className="font-medium">{p.nome}</div>
-                          {(nivel || p.habilidades.length > 0) && <div className="text-[12px] text-[var(--tinta-faint)]">{[nivel, ...p.habilidades].filter(Boolean).join(" · ")}</div>}
-                        </td>
-                        <td className="px-3 py-3 text-[var(--tinta-sub)]">{p.setor && p.cargo ? `${ROTULO_SETOR[p.setor]} · ${p.cargo}` : "—"}</td>
-                        <td className="px-3 py-3">
-                          {f ? (
-                            resumoRegime(f)
-                          ) : (
-                            <span className="text-[12px] font-semibold px-2 py-0.5 rounded-full" style={{ background: tint("var(--etapa-producao)", 16), color: "var(--etapa-producao-texto)" }}>Sem escala</span>
-                          )}
-                          {p.desligamento && <div className="text-[12px] text-[var(--tinta-faint)]">desligamento {diaMes(p.desligamento)}/{p.desligamento.slice(0, 4)}</div>}
-                        </td>
-                        <td className="px-3 py-3 text-[var(--tinta-sub)] tabular-nums hidden md:table-cell">{p.escala?.turno ? `${p.escala.turno.inicio}–${p.escala.turno.fim}` : "—"}</td>
-                        <td className="px-3 py-3 text-[var(--tinta-sub)] tabular-nums hidden md:table-cell">{p.admissao ? `${diaMes(p.admissao)}/${p.admissao.slice(0, 4)}` : "—"}</td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={() => setEditando(p)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
-                            <Pencil size={14} /> {completo ? "Editar" : "Configurar"}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+        <EquipePerfis
+          pessoas={pessoas}
+          ocorrencias={ocorrencias}
+          notas={notas}
+          hoje={hoje}
+          aoAbrirProntuario={(p) => setProntuario(p.id)}
+          aoEditarEscala={(p) => setEditando(p)}
+        />
       )}
 
-      {aba === "prontuario" && (
+      {aba === "extras" && <ExtrasView extras={extras} pessoas={pessoas} aoSalvar={acoes.salvarExtra} aoRemover={acoes.removerExtra} />}
+
+      {aba === "ocorrencias" && (
         <ProntuarioView
           key={preenchimento ? `${preenchimento.funcionarioId}-${preenchimento.data}` : "vazio"}
           pessoas={pessoas}
@@ -279,6 +265,23 @@ export function EscalasView({
 
       {aba === "regras" && <RegrasView regras={regras} equipes={equipes} aoSalvar={acoes.salvarRegras} />}
 
+      {pessoaProntuario && (
+        <ProntuarioPessoa
+          key={pessoaProntuario.id}
+          pessoa={pessoaProntuario}
+          ocorrencias={ocorrencias}
+          notas={notas}
+          extras={extras}
+          hoje={hoje}
+          aoSalvarPerfil={acoes.salvarPerfil}
+          aoCriarNota={acoes.criarNota}
+          aoRemoverNota={acoes.removerNota}
+          aoEditarEscala={() => setEditando(pessoaProntuario)}
+          aoFechar={() => setProntuario(null)}
+        />
+      )}
+
+      {/* A escala abre por cima do prontuário, sem fechar (não perde o que foi editado). */}
       {editando && (
         <FormPessoa
           pessoa={editando === "nova" ? null : editando}
@@ -291,5 +294,6 @@ export function EscalasView({
         />
       )}
     </div>
+    </ContextoExtras.Provider>
   );
 }

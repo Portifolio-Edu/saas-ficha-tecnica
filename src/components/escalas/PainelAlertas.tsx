@@ -6,11 +6,16 @@
 // automáticos (folga remanejada), recolhidos. Alerta de dia que já passou
 // não pede ação: sai da contagem e fica recolhido em "Dias que já passaram".
 
-import { useState } from "react";
-import { AlertTriangle, AlertOctagon, Info, ChevronDown, UserX, Users, ShieldAlert } from "lucide-react";
+import { createContext, useContext, useState } from "react";
+import { AlertTriangle, AlertOctagon, Info, ChevronDown, UserX, Users, ShieldAlert, Phone, MessageCircle } from "lucide-react";
 import type { Alerta, DataISO, Severidade } from "@/lib/escalas/tipos";
-import { NIVEIS } from "@/lib/escalas/validacao";
+import { rotuloNivel } from "@/lib/escalas/perfil";
+import { extrasCompativeis, mensagemConvite, normalizarTelefone, type Extra } from "@/lib/escalas/extras";
 import { diaMes, rotuloEquipe, tint } from "./visual";
+import { Tag } from "./Tags";
+
+/** PERFIL (2026-09-27): banco de extras pro matchmaking dentro dos alertas. */
+export const ContextoExtras = createContext<{ extras: Extra[]; restaurante: string; hoje: DataISO; irParaExtras: () => void } | null>(null);
 
 const ORDEM: Record<Severidade, number> = { critico: 0, atencao: 1, info: 2 };
 const COR: Record<Severidade, { cor: string; texto: string }> = {
@@ -30,7 +35,7 @@ function Icone({ a }: { a: Alerta }) {
 }
 
 export function LinhaAlerta({ a }: { a: Alerta }) {
-  const nivel = a.perfil?.nivel ? NIVEIS.find((n) => n.id === a.perfil!.nivel)?.rotulo : null;
+  const nivel = rotuloNivel(a.perfil?.nivel);
   return (
     <li className="flex gap-3 px-4 py-3">
       <Icone a={a} />
@@ -39,13 +44,19 @@ export function LinhaAlerta({ a }: { a: Alerta }) {
         {a.tipo === "contingencia" && a.perfil && (
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             <span className="text-[12px] text-[var(--tinta-faint)]">Perfil do extra:</span>
-            {[a.perfil.cargo, nivel, ...a.perfil.habilidades].filter(Boolean).map((t) => (
+            {[a.perfil.cargo, nivel].filter(Boolean).map((t) => (
               <span key={t} className="text-[12px] px-2 py-0.5 rounded-full border" style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}>
                 {t}
               </span>
             ))}
+            {a.perfil.habilidades.map((t) => (
+              <Tag key={t} tom="praca">
+                {t}
+              </Tag>
+            ))}
           </div>
         )}
+        {a.tipo === "contingencia" && a.perfil && a.data && <CandidatosExtra alerta={a} />}
         {a.tipo === "cobertura" && a.equipe && <p className="text-[12px] text-[var(--tinta-faint)] mt-0.5">{rotuloEquipe(a.equipe)}</p>}
       </div>
       {a.data && <span className="text-[12px] text-[var(--tinta-faint)] shrink-0 tabular-nums">{diaMes(a.data)}</span>}
@@ -119,6 +130,71 @@ function Recolhivel({ aberto, alternar, lista, rotulo }: { aberto: boolean; alte
           {lista.map((a, i) => (
             <LinhaAlerta key={i} a={a} />
           ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Extras compatíveis com quem faltou (setor, nível ≥, praças do prontuário). */
+function CandidatosExtra({ alerta }: { alerta: Alerta }) {
+  const ctx = useContext(ContextoExtras);
+  const [aberto, setAberto] = useState(false);
+  if (!ctx || !alerta.perfil || !alerta.data || alerta.data < ctx.hoje) return null;
+  const candidatos = extrasCompativeis(alerta.perfil, ctx.extras);
+  if (candidatos.length === 0) {
+    return (
+      <p className="text-[12px] mt-2" style={{ color: "var(--etapa-producao-texto)" }}>
+        Nenhum extra compatível no banco.{" "}
+        <button onClick={ctx.irParaExtras} className="underline underline-offset-2 font-medium">
+          Cadastrar extras
+        </button>
+      </p>
+    );
+  }
+  const completos = candidatos.filter((c) => c.completo).length;
+  return (
+    <div className="mt-2">
+      <button onClick={() => setAberto((v) => !v)} aria-expanded={aberto} className="min-h-9 px-2.5 -ml-2.5 rounded-lg inline-flex items-center gap-1.5 text-[13px] font-semibold hover:bg-[var(--panel-hover)]" style={{ color: "var(--etapa-estoque-texto)" }}>
+        <ChevronDown size={15} style={{ transform: aberto ? "rotate(180deg)" : undefined, transition: "transform 150ms" }} />
+        {candidatos.length} {candidatos.length === 1 ? "extra compatível" : "extras compatíveis"}
+        {completos > 0 && <span className="font-normal text-[var(--tinta-sub)]">· {completos} {completos === 1 ? "cobre" : "cobrem"} todas as praças</span>}
+      </button>
+      {aberto && (
+        <ul className="mt-1.5 rounded-lg border divide-y" style={{ borderColor: "var(--linha)" }} aria-label="Extras compatíveis">
+          {candidatos.slice(0, 6).map((c) => {
+            const tel = normalizarTelefone(c.extra.telefone);
+            const texto = mensagemConvite(c.extra, { cargo: alerta.perfil!.cargo, data: alerta.data! }, ctx.restaurante);
+            return (
+              <li key={c.extra.id} className="px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2" style={{ borderColor: "var(--linha)" }}>
+                <div className="flex-1 min-w-[180px]">
+                  <div className="text-[14px] font-medium">
+                    {c.extra.nome}
+                    {c.extra.nivel && <span className="ml-2 text-[12px] font-semibold" style={{ color: "var(--etapa-estoque-texto)" }}>{rotuloNivel(c.extra.nivel)}</span>}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {c.pracasEmComum.map((t) => <Tag key={t} tom="praca">{t}</Tag>)}
+                    {c.pracasFaltando.map((t) => (
+                      <span key={t} className="inline-flex items-center min-h-6 px-2 rounded-md text-[12px] line-through text-[var(--tinta-faint)]" title="Não domina">
+                        {t}
+                      </span>
+                    ))}
+                    {c.pracasEmComum.length === 0 && c.mesmoCargo && <Tag tom="neutro">Mesmo cargo</Tag>}
+                  </div>
+                </div>
+                <div className="flex gap-1.5">
+                  {c.extra.aceitaWhatsapp && (
+                    <a href={`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`} target="_blank" rel="noopener noreferrer" className="min-h-9 px-3 rounded-lg text-[13px] font-semibold inline-flex items-center gap-1.5" style={{ background: tint("var(--etapa-produzido)", 16), color: "var(--etapa-produzido-texto)" }}>
+                      <MessageCircle size={14} /> WhatsApp
+                    </a>
+                  )}
+                  <a href={`tel:+${tel}`} className="min-h-9 px-3 rounded-lg border text-[13px] font-medium inline-flex items-center gap-1.5" style={{ borderColor: "var(--linha-forte)" }} aria-label={`Ligar pra ${c.extra.nome}`}>
+                    <Phone size={14} /> Ligar
+                  </a>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

@@ -8,7 +8,10 @@
 import { revalidatePath } from "next/cache";
 import { getClienteAtual } from "@/lib/dados/cliente";
 import { ehGestao } from "@/lib/auth/papeis";
-import { criarOcorrencia, removerOcorrencia, salvarPessoaEscala, salvarRegrasEscala } from "@/lib/dados/escalas";
+import { criarNota, criarOcorrencia, removerExtra, removerNota, removerOcorrencia, salvarExtra, salvarPerfil, salvarPessoaEscala, salvarRegrasEscala } from "@/lib/dados/escalas";
+import { normalizarPerfil, tagsUnicas, validarNota, validarPerfil, type NotaInput, type PerfilInput } from "@/lib/escalas/perfil";
+import { validarExtra, type ExtraInput } from "@/lib/escalas/extras";
+import { hojeLocalISO } from "@/lib/calculo/dia";
 import { validarCadastro, validarOcorrencia, type CadastroEscalaInput, type OcorrenciaInput } from "@/lib/escalas/validacao";
 import type { RegrasEscala } from "@/lib/escalas/tipos";
 
@@ -77,6 +80,71 @@ export async function acaoRemoverOcorrencia(id: string): Promise<ResultadoEscala
   try {
     await exigirGestao();
     await removerOcorrencia(id);
+    recarregar();
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+// PERFIL (2026-09-27): prontuário de competências, notas e banco de extras.
+
+export async function acaoSalvarPerfil(funcionarioId: string, p: PerfilInput): Promise<ResultadoEscala> {
+  try {
+    const cliente = await exigirGestao();
+    const perfil = normalizarPerfil(p);
+    const problema = validarPerfil(perfil);
+    if (problema) return { ok: false, erro: problema };
+    await salvarPerfil(cliente.id, funcionarioId, perfil);
+    recarregar();
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+export async function acaoCriarNota(n: NotaInput): Promise<ResultadoEscala> {
+  try {
+    const cliente = await exigirGestao();
+    const problema = validarNota(n, hojeLocalISO());
+    if (problema) return { ok: false, erro: problema };
+    await criarNota(cliente.id, n);
+    recarregar();
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+export async function acaoRemoverNota(id: string): Promise<ResultadoEscala> {
+  try {
+    await exigirGestao();
+    await removerNota(id);
+    recarregar();
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+export async function acaoSalvarExtra(id: string | null, entrada: ExtraInput): Promise<ResultadoEscala> {
+  try {
+    const cliente = await exigirGestao();
+    const extra = { ...entrada, cargos: tagsUnicas(entrada.cargos), pracas: tagsUnicas(entrada.pracas) };
+    const problema = validarExtra(extra);
+    if (problema) return { ok: false, erro: problema };
+    await salvarExtra(cliente.id, id, extra);
+    recarregar();
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+export async function acaoRemoverExtra(id: string): Promise<ResultadoEscala> {
+  try {
+    await exigirGestao();
+    await removerExtra(id);
     recarregar();
     return { ok: true };
   } catch (e) {

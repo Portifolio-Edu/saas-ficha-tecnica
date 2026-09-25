@@ -25,9 +25,9 @@ set local role authenticated;
 
 -- GESTOR cadastra
 select set_config('request.jwt.claims', '{"sub":"66666666-6666-6666-6666-666666666662","role":"authenticated"}', true);
-insert into funcionarios (id, cliente_id, nome, setor, cargo, nivel, habilidades, admitido_em) values
- ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-000000000001','Kenji','cozinha','Sushiman','senior','{sushi}','2026-01-10'),
- ('f1000000-0000-0000-0000-000000000002','f0000000-0000-0000-0000-000000000001','Rui','outro','Segurança',null,'{}','2026-02-01');
+insert into funcionarios (id, cliente_id, nome, setor, cargo, admitido_em) values
+ ('f1000000-0000-0000-0000-000000000001','f0000000-0000-0000-0000-000000000001','Kenji','cozinha','Sushiman','2026-01-10'),
+ ('f1000000-0000-0000-0000-000000000002','f0000000-0000-0000-0000-000000000001','Rui','outro','Segurança','2026-02-01');
 insert into escalas_config (cliente_id, funcionario_id, tipo, ancora, folgas_preferidas) values
  ('f0000000-0000-0000-0000-000000000001','f1000000-0000-0000-0000-000000000001','6x1','2026-09-22','{2}'),
  ('f0000000-0000-0000-0000-000000000001','f1000000-0000-0000-0000-000000000002','12x36','2026-10-01','{}');

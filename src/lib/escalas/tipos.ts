@@ -9,7 +9,7 @@ export type DiaSemana = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type TipoEscala = "5x2" | "6x1" | "12x36" | "24x48";
 export type Setor = "cozinha" | "salao" | "bar" | "outro";
-export type Nivel = "auxiliar" | "junior" | "pleno" | "senior" | "chefe";
+export type Nivel = "junior" | "pleno" | "senior" | "especialista";
 
 /** Restrição temporária vinda do prontuário. Guarda o efeito na escala,
  * nunca o diagnóstico (LGPD: dado de saúde é sensível). */

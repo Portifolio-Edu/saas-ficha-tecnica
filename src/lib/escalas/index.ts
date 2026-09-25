@@ -5,3 +5,5 @@ export * from "./validacao";
 export { paraDia, paraISO, diaDaSemana, NOME_DIA } from "./datas";
 export * from "./cadastro";
 export * from "./publica";
+export * from "./perfil";
+export * from "./extras";

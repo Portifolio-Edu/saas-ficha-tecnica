@@ -17,7 +17,7 @@
 | Aba Escala do tablet | `src/components/cozinha/EscalaCozinha.tsx`, calculada em `src/app/cozinha/page.tsx` |
 | Demo | `/preview/escalas`, aba Escala de `/preview/cozinha`, dados em `src/lib/demo/escalas.ts` |
 | Banco | `supabase/migrations/20260926100000_escalas.sql`, `…110000_escalas_salvar.sql`, `…120000_escalas_publica_ausencias.sql` |
-| Testes | `src/lib/escalas/__tests__/` (40), `supabase/testes/escalas.sql` (24), `supabase/testes/escalas_salvar.sql` (6) |
+| Testes | `src/lib/escalas/__tests__/` (53), `supabase/testes/escalas.sql` (24), `supabase/testes/escalas_salvar.sql` (6) |
 | Reverter no banco | `supabase/reverter/20260926120000_…` e depois `supabase/reverter/20260926100000_escalas.sql` |
 
 ## Regras que não dá pra desligar
@@ -85,6 +85,39 @@ teste compara, dia a dia, a escala do gestor com a da cozinha
   convenção coletiva.
 - Domingo quinzenal pra mulheres (CLT art. 386) tem aplicação discutida; se o
   contador orientar, use o intervalo por pessoa (2 semanas).
+
+## Prontuário de competências e banco de extras (2026-09-27)
+
+Aba **Equipe** em cartões (nível, praças, pontos fortes, limitações,
+assiduidade de 90 dias) com filtros por setor, nível e praça. Cada pessoa tem
+um **Prontuário**:
+
+- **Nível técnico:** Júnior, Pleno, Sênior, Especialista.
+- **Praças de domínio** (hard skills, tags por setor + outras): é o que a
+  busca de extra cruza.
+- **Pontos fortes** e **gargalos/limitações** (tags sugeridas + outras) e
+  **observação interna**.
+- **Assiduidade e comportamento:** faltas e dias de atestado (do prontuário
+  de ocorrências) e notas rápidas (elogio, pontualidade, postura, ponto de
+  atenção) com data e autor gravado pelo banco.
+
+Aba **Extras**: banco de talentos (setor, cargos, nível, praças, telefone,
+autorização de WhatsApp com data — LGPD). A aba de faltas/férias passou a se
+chamar **Ocorrências**.
+
+**Matchmaking** (`src/lib/escalas/extras.ts`): no alerta de contingência, os
+extras ativos do mesmo setor, com nível igual ou acima e pelo menos uma praça
+em comum com quem faltou (ou o mesmo cargo, se quem faltou não tem praças).
+Ordem: cobre todas as praças > mais praças > mesmo cargo > nível mais
+próximo > autorizou WhatsApp. Cada um com "WhatsApp" (mensagem pronta, só
+com autorização) e "Ligar". O disparo automático segue na fase 3.
+
+**Privacidade:** `perfil_funcionario`, `perfil_notas` e `banco_extras` só
+pra dono e gestor (RLS). Nível e habilidades **saíram** de `funcionarios`
+(que a cozinha lê pros nomes do tablet) — antes dava pra ler pela API.
+Teste: `supabase/testes/perfil_equipe.sql` (29/29). Migration
+`20260927100000_perfil_equipe.sql`; reverter em
+`supabase/reverter/20260927100000_perfil_equipe.sql`.
 
 ## Próxima fase
 

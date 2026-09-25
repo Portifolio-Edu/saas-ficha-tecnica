@@ -1,6 +1,8 @@
 -- Reverte 20260926100000_escalas. Apaga escalas, prontuário e extras.
+-- Se 20260927100000_perfil_equipe estiver aplicada, reverta ela antes.
 begin;
 drop function if exists salvar_pessoa_escala(uuid, text, text, text, text, text[], date, date, text, date, smallint[], smallint, time, time);
+drop function if exists salvar_pessoa_escala(uuid, text, text, text, date, date, text, date, smallint[], smallint, time, time);
 drop function if exists escala_publica(date, date);
 drop trigger if exists funcionarios_validar_setor on funcionarios;
 drop function if exists validar_setor_funcionario();

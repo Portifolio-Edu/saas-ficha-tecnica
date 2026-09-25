@@ -77,6 +77,18 @@ describe("escala pública = escala do gestor sem o motivo", () => {
     }
   });
 
+  it("perfil da demo passa na validação do prontuário e o atestado do Marcos acha extras", async () => {
+    const { validarPerfil } = await import("../perfil");
+    const { extrasCompativeis } = await import("../extras");
+    const demo = escalasDemoIniciais("2026-09-25");
+    for (const p of demo.pessoas) expect(validarPerfil(p.perfil), p.nome).toBeNull();
+    const funcionarios = paraMotor(demo.pessoas);
+    const r = gerarEscala({ funcionarios, ocorrencias: demo.ocorrencias, regras: demo.regras, inicio: "2026-09-21", fim: "2026-10-04" });
+    const alerta = r.alertas.find((a) => a.tipo === "contingencia" && a.funcionarioId === "f-marcos")!;
+    expect(alerta.perfil).toMatchObject({ cargo: "Cozinheiro", nivel: "pleno", habilidades: ["Grelha", "Chapa"] });
+    expect(extrasCompativeis(alerta.perfil!, demo.extras).map((c) => c.extra.id)).toEqual(["ex-lia", "ex-beatriz", "ex-otavio"]);
+  });
+
   it("nada de motivo, nota, nível ou habilidade sai pra cozinha", () => {
     const hoje = "2026-10-01";
     const { pessoas, ocorrencias, regras } = escalasDemoIniciais(hoje);
@@ -97,8 +109,6 @@ describe("dados da demo", () => {
           nome: p.nome,
           setor: p.setor!,
           cargo: p.cargo!,
-          nivel: p.nivel,
-          habilidades: p.habilidades,
           admissao: p.admissao!,
           desligamento: p.desligamento,
           tipo: e.tipo,
