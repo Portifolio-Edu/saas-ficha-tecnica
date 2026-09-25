@@ -47,16 +47,19 @@ export function LoginForm({ linkInvalido = false }: { linkInvalido?: boolean }) 
 
         <form action={formAction} className="space-y-4">
           <div>
+            {/* EQUIPE (2026-09-25): gestor e estoquista entram com o usuário criado na tela Equipe. */}
             <label htmlFor="email" className="block text-[12px] font-medium mb-1.5 text-[var(--sub)]">
-              E-mail
+              E-mail ou usuário
             </label>
             <input
               id="email"
               name="email"
-              type="email"
+              type="text"
               required
-              autoComplete="email"
-              placeholder="seu@restaurante.com"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="seu@restaurante.com ou maria.estoque"
               className="w-full text-[13px] px-3 py-2 rounded-lg outline-none transition-all duration-150 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15"
               style={inputStyle}
             />

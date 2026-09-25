@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getClienteAtual } from "@/lib/dados/cliente";
+import { exigirAcesso } from "@/lib/auth/acesso";
 import { listarInsumos } from "@/lib/dados/insumos";
 import { listarReceitas } from "@/lib/dados/receitas";
 import { listarProcessamentos } from "@/lib/dados/processamentos";
@@ -9,8 +8,7 @@ import { AppShell } from "@/components/ficha/AppShell";
 import { VisaoGeralClient } from "./VisaoGeralClient";
 
 export default async function VisaoGeralPage() {
-  const cliente = await getClienteAtual();
-  if (!cliente) redirect("/login");
+  const cliente = await exigirAcesso("/visao-geral");
 
   const [insumos, receitas, processamentos, producoes, fechamentos] = await Promise.all([
     listarInsumos(),
@@ -21,7 +19,7 @@ export default async function VisaoGeralPage() {
   ]);
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Visão geral">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Visão geral">
       <VisaoGeralClient
         margemAlvoCliente={cliente.margemAlvo}
         insumos={insumos}

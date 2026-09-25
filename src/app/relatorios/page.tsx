@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getClienteAtual } from "@/lib/dados/cliente";
+import { exigirAcesso } from "@/lib/auth/acesso";
 import { listarInsumos } from "@/lib/dados/insumos";
 import { listarReceitas } from "@/lib/dados/receitas";
 import { listarProcessamentos } from "@/lib/dados/processamentos";
@@ -10,8 +9,7 @@ import { AppShell } from "@/components/ficha/AppShell";
 import { RelatoriosClient } from "./RelatoriosClient";
 
 export default async function RelatoriosPage() {
-  const cliente = await getClienteAtual();
-  if (!cliente) redirect("/login");
+  const cliente = await exigirAcesso("/relatorios");
 
   const [insumos, receitas, processamentos, producoes, fechamentos, locais, registrosTemperatura] = await Promise.all([
     listarInsumos(),
@@ -24,7 +22,7 @@ export default async function RelatoriosPage() {
   ]);
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Relatórios">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Relatórios">
       <RelatoriosClient
         insumos={insumos}
         receitas={receitas}

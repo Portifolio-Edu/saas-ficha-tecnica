@@ -13,8 +13,9 @@ import { NovoEstoqueForm } from "@/components/estoque/NovoEstoqueForm";
 import { EditarEstoqueForm } from "@/components/estoque/EditarEstoqueForm";
 import { NovaMovimentacaoForm } from "@/components/estoque/NovaMovimentacaoForm";
 import { NovoFornecedorForm } from "@/components/estoque/NovoFornecedorForm";
+import { ContagensCegas } from "@/components/estoque/ContagensCegas";
 import { CATEGORIAS, type Insumo } from "@/lib/dominio/insumo";
-import type { EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
+import type { ContagemCega, EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
 import type { Fornecedor } from "@/lib/dominio/fornecedor";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirFornecedor } from "./actions";
@@ -31,11 +32,14 @@ export function EstoqueClient({
   estoque,
   movimentacoes,
   fornecedores,
+  contagens = [],
 }: {
   insumos: Insumo[];
   estoque: EstoqueLinha[];
   movimentacoes: Movimentacao[];
   fornecedores: Fornecedor[];
+  /** EQUIPE (2026-09-25): contagens cegas; a página só manda pra dono e gestor. */
+  contagens?: ContagemCega[];
 }) {
   const pathname = usePathname();
   const emModoDemo = pathname?.startsWith("/preview");
@@ -108,6 +112,7 @@ export function EstoqueClient({
 
   return (
     <div className="max-w-5xl space-y-6">
+      <ContagensCegas contagens={contagens} />
       <div>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Saldo em armazenamento</h2>

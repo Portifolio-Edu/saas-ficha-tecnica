@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { origemDoSite } from "./origem";
 import { VERSAO_TERMOS } from "./termos";
+import { emailDeLogin } from "./equipe";
 
 // PRODUCAO (2026-09-24): senha mínima de 8 caracteres (antes 6), termos
 // aceitos no cadastro, links dos e-mails apontando pra /auth/confirmar e
@@ -17,7 +18,7 @@ export interface EstadoAuth {
 
 function traduzirErroAuth(mensagem: string): string {
   const mapa: Record<string, string> = {
-    "Invalid login credentials": "E-mail ou senha incorretos.",
+    "Invalid login credentials": "Usuário, e-mail ou senha incorretos.",
     "User already registered": "Já existe uma conta com esse e-mail.",
     "Email not confirmed": "Confirme seu e-mail antes de entrar.",
     "Password should be at least 6 characters": "A senha precisa ter pelo menos 8 caracteres.",
@@ -29,16 +30,19 @@ function traduzirErroAuth(mensagem: string): string {
 }
 
 export async function entrar(_estado: EstadoAuth, formData: FormData): Promise<EstadoAuth> {
-  const email = String(formData.get("email") ?? "").trim();
+  // EQUIPE (2026-09-25): o campo aceita e-mail (dono) ou usuário (gestor e
+  // estoquista criados na tela Equipe), e cada papel cai na própria tela
+  // inicial pela raiz. Antes: só e-mail, sempre pra /insumos.
+  const entrada = String(formData.get("email") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
 
-  if (!email || !senha) return { erro: "Preencha e-mail e senha." };
+  if (!entrada || !senha) return { erro: "Preencha usuário ou e-mail, e a senha." };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+  const { error } = await supabase.auth.signInWithPassword({ email: emailDeLogin(entrada), password: senha });
   if (error) return { erro: traduzirErroAuth(error.message) };
 
-  redirect("/insumos");
+  redirect("/");
 }
 
 export async function cadastrar(_estado: EstadoAuth, formData: FormData): Promise<EstadoAuth> {

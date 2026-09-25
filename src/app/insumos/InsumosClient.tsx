@@ -25,7 +25,10 @@ export function InsumosClient({
   todasReceitas,
   processamentos,
   locais,
+  mostrarPreparos = true,
 }: {
+  /** EQUIPE (2026-09-25): o estoquista não vê receitas (nem as de preparo). */
+  mostrarPreparos?: boolean;
   insumos: Insumo[];
   preparos: Receita[];
   todasReceitas: Receita[];
@@ -138,6 +141,7 @@ export function InsumosClient({
         </table>
       </Card>
 
+      {mostrarPreparos && (
       <div>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-[13px] font-semibold">Preparos próprios</h2>
@@ -225,6 +229,7 @@ export function InsumosClient({
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

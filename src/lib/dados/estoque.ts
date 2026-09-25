@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
 import type { Insumo } from "@/lib/dominio/insumo";
-import type { EstoqueLinha, Movimentacao, TipoMovimentacao } from "@/lib/dominio/estoque";
+import type { ContagemCega, EstoqueLinha, Movimentacao, TipoMovimentacao } from "@/lib/dominio/estoque";
 
 export type { EstoqueLinha, Movimentacao, TipoMovimentacao } from "@/lib/dominio/estoque";
 
@@ -123,4 +123,82 @@ export async function registrarMovimentacao(
   // saida_producao depende da migration 20260922190000_movimentacao_saida_producao.
   const { error: erroInsert } = await supabase.from("movimentacoes_estoque").insert({ insumo_id: insumoId, tipo, quantidade, origem });
   if (erroInsert) throw new Error(mensagemErro(erroInsert));
+}
+
+// =========================================================================
+// EQUIPE (2026-09-25): contagem cega (enviada pelo aparelho da cozinha pela
+// função enviar_contagem). A RLS só deixa a gestão ler e aplicar.
+// =========================================================================
+
+interface LinhaContagem {
+  id: string;
+  responsavel: string;
+  criado_em: string;
+  aplicada_em: string | null;
+  contagem_itens: {
+    insumo_id: string;
+    quantidade_contada: number;
+    saldo_sistema: number;
+    insumos: { nome: string; unidade_medida: string; preco_unitario: number } | null;
+  }[];
+}
+
+export async function listarContagens(limite = 10): Promise<ContagemCega[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("contagens_estoque")
+    .select("id, responsavel, criado_em, aplicada_em, contagem_itens(insumo_id, quantidade_contada, saldo_sistema, insumos(nome, unidade_medida, preco_unitario))")
+    .order("criado_em", { ascending: false })
+    .limit(limite);
+  if (error) throw new Error(mensagemErro(error));
+  return ((data ?? []) as unknown as LinhaContagem[]).map((c) => ({
+    id: c.id,
+    responsavel: c.responsavel,
+    criadoEm: c.criado_em,
+    aplicadaEm: c.aplicada_em,
+    itens: c.contagem_itens.map((i) => ({
+      insumoId: i.insumo_id,
+      nome: i.insumos?.nome ?? "Insumo removido",
+      unidadeMedida: i.insumos?.unidade_medida ?? "",
+      precoUnitario: Number(i.insumos?.preco_unitario ?? 0),
+      contada: Number(i.quantidade_contada),
+      sistema: Number(i.saldo_sistema),
+    })),
+  }));
+}
+
+/**
+ * Leva o estoque ao que foi contado. A diferença é aplicada em relação ao
+ * saldo da HORA da contagem (não ao de agora), pra não desfazer entrada ou
+ * produção lançada depois que a cozinha contou.
+ */
+export async function aplicarContagem(contagemId: string, userId: string): Promise<void> {
+  const contagem = (await listarContagens(50)).find((c) => c.id === contagemId);
+  if (!contagem) throw new Error("Contagem não encontrada.");
+  if (contagem.aplicadaEm) throw new Error("Essa contagem já foi aplicada.");
+
+  const dia = new Date(contagem.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  for (const item of contagem.itens) {
+    const diferenca = Number((item.contada - item.sistema).toFixed(3));
+    if (diferenca === 0) continue;
+    await registrarMovimentacao(
+      item.insumoId,
+      diferenca > 0 ? "entrada" : "ajuste",
+      Math.abs(diferenca),
+      `Contagem cega de ${contagem.responsavel} (${dia})`,
+    );
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("contagens_estoque")
+    .update({ aplicada_em: new Date().toISOString(), aplicada_por: userId })
+    .eq("id", contagemId);
+  if (error) throw new Error(mensagemErro(error));
+}
+
+export async function descartarContagem(contagemId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("contagens_estoque").delete().eq("id", contagemId);
+  if (error) throw new Error(mensagemErro(error));
 }

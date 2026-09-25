@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getClienteAtual } from "@/lib/dados/cliente";
-import { rastrearInsumo, atualizarEstoque, pararDeRastrear, registrarMovimentacao } from "@/lib/dados/estoque";
+import { rastrearInsumo, atualizarEstoque, pararDeRastrear, registrarMovimentacao, aplicarContagem, descartarContagem } from "@/lib/dados/estoque";
+import { ehGestao } from "@/lib/auth/papeis";
 import { criarFornecedor, atualizarFornecedor, excluirFornecedor } from "@/lib/dados/fornecedores";
 import type { FornecedorInput } from "@/lib/dominio/fornecedor";
 
@@ -82,6 +83,32 @@ export async function acaoAtualizarFornecedor(id: string, input: FornecedorInput
 export async function acaoExcluirFornecedor(id: string): Promise<Resultado> {
   try {
     await excluirFornecedor(id);
+    revalidatePath("/estoque");
+    return { ok: true };
+  } catch (e) {
+    return paraResultado(e);
+  }
+}
+
+// EQUIPE (2026-09-25): contagem cega — só dono e gestor aplicam ou descartam
+// (a RLS também barra o estoquista).
+export async function acaoAplicarContagem(contagemId: string): Promise<Resultado> {
+  const cliente = await getClienteAtual();
+  if (!cliente || !ehGestao(cliente.papel)) return { ok: false, erro: "Só o dono e o gestor ajustam o estoque pela contagem." };
+  try {
+    await aplicarContagem(contagemId, cliente.userId);
+    revalidatePath("/estoque");
+    return { ok: true };
+  } catch (e) {
+    return paraResultado(e);
+  }
+}
+
+export async function acaoDescartarContagem(contagemId: string): Promise<Resultado> {
+  const cliente = await getClienteAtual();
+  if (!cliente || !ehGestao(cliente.papel)) return { ok: false, erro: "Só o dono e o gestor descartam contagens." };
+  try {
+    await descartarContagem(contagemId);
     revalidatePath("/estoque");
     return { ok: true };
   } catch (e) {

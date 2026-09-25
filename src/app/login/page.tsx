@@ -4,7 +4,7 @@ import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
   const cliente = await getClienteAtual();
-  if (cliente) redirect("/insumos");
+  if (cliente) redirect("/");
   // PRODUCAO (2026-09-24): /auth/confirmar manda pra cá quando o link do e-mail venceu.
   const { aviso } = await searchParams;
 

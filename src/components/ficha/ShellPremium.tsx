@@ -26,9 +26,10 @@ import { usePathname } from "next/navigation";
 import {
   ChefHat, Carrot, ClipboardList, LineChart, Settings, AlertTriangle,
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator,
-  Menu, X, Sun, Moon, Plug,
+  Menu, X, Sun, Moon, Plug, Users,
 } from "lucide-react";
 import { ToastContainer } from "./Toast";
+import { podeAcessar, ROTULO_PAPEL, type Papel } from "@/lib/auth/papeis";
 
 interface NavItem {
   id: string;
@@ -66,6 +67,8 @@ const GRUPOS: { titulo?: string; itens: NavItem[] }[] = [
       { id: "relatorios", label: "Relatórios", icon: AlertTriangle, rota: "/relatorios" },
       // INTEGRACOES (2026-09-23): PDVs, iFood e importação por XML/planilha.
       { id: "integracoes", label: "Integrações", icon: Plug, rota: "/integracoes" },
+      // EQUIPE (2026-09-25): acessos por papel e aparelhos da cozinha.
+      { id: "equipe", label: "Equipe e acessos", icon: Users, rota: "/equipe" },
       { id: "config", label: "Configurações", icon: Settings, rota: "/configuracoes" },
     ],
   },
@@ -73,6 +76,7 @@ const GRUPOS: { titulo?: string; itens: NavItem[] }[] = [
 
 export function ShellPremium({
   prefixoRotas = "",
+  papel = "dono",
   nomeRestaurante,
   subtituloRestaurante,
   tituloPagina,
@@ -81,6 +85,8 @@ export function ShellPremium({
   children,
 }: {
   prefixoRotas?: string;
+  /** EQUIPE (2026-09-25): o menu mostra só o que o papel pode abrir (src/lib/auth/papeis.ts). */
+  papel?: Papel;
   nomeRestaurante: string;
   /** Linha abaixo do nome do restaurante no rodapé do menu (ex.: "Modo demonstração"). */
   subtituloRestaurante?: ReactNode;
@@ -136,7 +142,9 @@ export function ShellPremium({
 
       {/* Navegação */}
       <nav className="flex-1 px-3 py-3 space-y-5 overflow-y-auto" aria-label="Seções">
-        {GRUPOS.map((grupo, i) => (
+        {GRUPOS.map((grupo) => ({ ...grupo, itens: grupo.itens.filter((n) => podeAcessar(papel, n.rota)) }))
+          .filter((grupo) => grupo.itens.length > 0)
+          .map((grupo, i) => (
           <div key={i}>
             {grupo.titulo && <div className="px-2.5 pb-1.5 text-[12px] font-medium text-[var(--tinta-faint)]">{grupo.titulo}</div>}
             <div className="space-y-0.5">
@@ -178,7 +186,7 @@ export function ShellPremium({
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-medium text-[var(--tinta)] leading-tight line-clamp-2">{nomeRestaurante}</div>
-          {subtituloRestaurante && <div className="text-[12px] text-[var(--tinta-faint)] mt-0.5 whitespace-nowrap">{subtituloRestaurante}</div>}
+          <div className="text-[12px] text-[var(--tinta-faint)] mt-0.5 whitespace-nowrap">{subtituloRestaurante ?? ROTULO_PAPEL[papel]}</div>
         </div>
         <button
           onClick={acaoRodape.onClick}

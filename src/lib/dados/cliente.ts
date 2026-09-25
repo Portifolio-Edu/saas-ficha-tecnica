@@ -1,12 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
 import { supabaseConfigurado } from "@/lib/supabase/config";
+import type { Papel } from "@/lib/auth/papeis";
 
+// EQUIPE (2026-09-25): além do restaurante, devolve o papel de quem está logado
+// (dono, gestor, estoquista ou cozinha) e o nome dele na equipe. Antes o login
+// era sempre o dono. Versão anterior: `git show 42faa4f:src/lib/dados/cliente.ts`.
 export interface ClienteAtual {
   id: string;
   nome: string;
   nomeRestaurante: string;
   margemAlvo: number;
+  papel: Papel;
+  nomeMembro: string;
+  /** auth.users.id de quem está logado. */
+  userId: string;
 }
 
 interface MetadadosCadastro {
@@ -40,11 +48,22 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
     .maybeSingle();
 
   if (existente) {
+    // A RLS de membros deixa cada um ler a própria linha. Sem linha (não
+    // deveria acontecer: o trigger cria o dono) trata como dono, que é o
+    // único caso em que o restaurante aparece sem membro (clientes.user_id).
+    const { data: membro } = await supabase
+      .from("membros")
+      .select("papel, nome")
+      .eq("user_id", user.id)
+      .maybeSingle();
     return {
       id: existente.id,
       nome: existente.nome,
       nomeRestaurante: existente.nome_restaurante,
       margemAlvo: Number(existente.margem_alvo),
+      papel: (membro?.papel as Papel | undefined) ?? "dono",
+      nomeMembro: membro?.nome ?? existente.nome,
+      userId: user.id,
     };
   }
 
@@ -73,5 +92,8 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
     nome: criado.nome,
     nomeRestaurante: criado.nome_restaurante,
     margemAlvo: Number(criado.margem_alvo),
+    papel: "dono",
+    nomeMembro: criado.nome,
+    userId: user.id,
   };
 }
