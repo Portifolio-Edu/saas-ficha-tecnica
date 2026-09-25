@@ -11,6 +11,11 @@
 //  - Folga regular só de segunda a quinta; domingo de folga só pelo rodízio.
 //  - No máximo 6 dias seguidos de trabalho (CLT: o 7º é repouso); se o plano
 //    passar disso, entra folga compensatória num dia de segunda a quinta.
+//  - NUNCA 3 folgas seguidas (máximo 2): nenhum dos regimes (5x2, 6x1, 12x36,
+//    24x48) é 4x3. Quando a combinação de folga fixa + domingo do rodízio,
+//    folga compensatória ou troca de regime (restrição) juntaria 3, a folga
+//    regular da semana muda de dia (seg–qui da mesma semana); `garantirLimites`
+//    confere no fim e lança erro se sobrar alguma.
 //
 // Ordem de aplicação:
 //  1. Contrato: antes da admissão / depois do desligamento não há escala.
@@ -18,7 +23,7 @@
 //     remanejada pro seg–qui mais próximo); 12x36 e 24x48 alternados (só
 //     setores de apoio).
 //  3. Rodízio de domingo por equipe (setor + cargo), com equidade.
-//  4. Máximo de 6 dias seguidos.
+//  4. Máximo de 6 dias seguidos (compensatória) e máximo de 2 folgas seguidas.
 //  5. Prontuário por cima: falta/atestado viram contingência; afastamento,
 //     férias e ausência tiram a pessoa; restrição "sem_escala_longa" troca
 //     12x36/24x48 por 5x2 enquanto durar.
@@ -44,6 +49,8 @@ export const DIAS_PROTEGIDOS: readonly DiaSemana[] = [5, 6];
 /** Folgas regulares: segunda a quinta. */
 export const DIAS_FOLGA: readonly DiaSemana[] = [1, 2, 3, 4];
 export const MAX_DIAS_SEGUIDOS = 6;
+/** Nenhum regime tem 3 folgas seguidas (5x2, 6x1, 12x36 e 24x48; não é 4x3). */
+export const MAX_FOLGAS_SEGUIDAS = 2;
 /** Setores que atendem o cliente no pico: sem folga sexta e sábado. */
 export const SETORES_PROTEGIDOS: readonly Setor[] = ["cozinha", "salao", "bar"];
 
@@ -56,6 +63,30 @@ export const REGRAS_PADRAO: RegrasEscala = {
 };
 
 const FOLGAS: readonly SituacaoDia[] = ["folga", "folga_domingo", "folga_compensatoria"];
+const ehFolga = (d: DiaEscala) => FOLGAS.includes(d.situacao);
+
+/** Tamanho da sequência que passa pelo dia `i`, contando `i` como se fosse do tipo. */
+function sequenciaEmVolta(dias: DiaEscala[], i: number, igual: (d: DiaEscala) => boolean): number {
+  let n = 1;
+  for (let j = i - 1; j >= 0 && igual(dias[j]); j--) n++;
+  for (let j = i + 1; j < dias.length && igual(dias[j]); j++) n++;
+  return n;
+}
+const folgasEmVolta = (dias: DiaEscala[], i: number) => sequenciaEmVolta(dias, i, ehFolga);
+const trabalhoEmVolta = (dias: DiaEscala[], i: number) => sequenciaEmVolta(dias, i, (d) => d.situacao === "trabalho");
+
+/** Folgas seguidas encostadas no dia `i` (à esquerda e à direita). */
+function pedacos(dias: DiaEscala[], i: number): [number, number] {
+  let e = 0;
+  let d = 0;
+  for (let j = i - 1; j >= 0 && ehFolga(dias[j]); j--) e++;
+  for (let j = i + 1; j < dias.length && ehFolga(dias[j]); j++) d++;
+  return [e, d];
+}
+
+/** Tirar a folga do dia `i` (vira trabalho) resolve a sequência dele sem
+ * passar de 6 dias de trabalho seguidos? Só olha o que a troca muda. */
+const podeTrabalhar = (dias: DiaEscala[], i: number) => trabalhoEmVolta(dias, i) <= MAX_DIAS_SEGUIDOS && pedacos(dias, i).every((n) => n <= MAX_FOLGAS_SEGUIDAS);
 
 /** Dias antes do período usados só pra conferir dias seguidos na virada. */
 const AQUECIMENTO = 14;
@@ -146,6 +177,99 @@ function restritoALongas(ocs: Ocorrencia[], dia: number): boolean {
   return ocorrenciasNoDia(ocs, dia).some((o) => o.tipo === "restricao" && o.restricoes?.includes("sem_escala_longa"));
 }
 
+/**
+ * Desfaz sequências de 3+ folgas. Primeiro tenta mudar a folga regular
+ * (5x2/6x1) pra outro dia seg–qui da mesma semana, mantendo a quantidade de
+ * folgas; se nenhum dia servir, a folga daquela semana vira trabalho (com
+ * aviso). Domingo do rodízio e folga compensatória só são tocados em último
+ * caso. Toda troca precisa manter ≤ 2 folgas e ≤ 6 dias de trabalho seguidos
+ * no que ela mexe (outras sequências são resolvidas na volta seguinte).
+ */
+function separarFolgas(f: FuncionarioEscala, dias: DiaEscala[], regular: boolean[], alertas: Alerta[]): void {
+  const PRIORIDADE: Partial<Record<SituacaoDia, number>> = { folga: 0, folga_compensatoria: 2, folga_domingo: 3 };
+  for (let guarda = 0; guarda < dias.length; guarda++) {
+    // Primeira sequência com mais de 2 folgas.
+    let ini = -1;
+    let fim = -1;
+    for (let i = 0, n = 0; i < dias.length; i++) {
+      n = ehFolga(dias[i]) ? n + 1 : 0;
+      if (n > MAX_FOLGAS_SEGUIDAS) {
+        fim = i;
+        while (fim + 1 < dias.length && ehFolga(dias[fim + 1])) fim++;
+        ini = i - n + 1;
+        break;
+      }
+    }
+    if (ini < 0) return;
+
+    const indices = Array.from({ length: fim - ini + 1 }, (_, k) => ini + k).sort(
+      (x, y) =>
+        Number(!regular[x]) - Number(!regular[y]) ||
+        (PRIORIDADE[dias[x].situacao] ?? 1) - (PRIORIDADE[dias[y].situacao] ?? 1) ||
+        y - x,
+    );
+
+    // 1) Mudar uma folga regular de dia, na mesma semana (seg–qui).
+    let resolvido = false;
+    for (const i of indices.filter((k) => regular[k])) {
+      const wd = diaDaSemana(paraDia(dias[i].data));
+      const segunda = i - mod(wd + 6, 7);
+      const candidatos = DIAS_FOLGA.map((d) => segunda + d - 1)
+        .filter((j) => j >= 0 && j < dias.length && j !== i && dias[j].situacao === "trabalho")
+        .sort((x, y) => Math.abs(x - i) - Math.abs(y - i) || y - x);
+      for (const j of candidatos) {
+        const antes = [dias[i], dias[j]];
+        dias[i] = { data: dias[i].data, situacao: "trabalho", ajuste: `Folga desta semana foi pra ${NOME_DIA[diaDaSemana(paraDia(dias[j].data))]}: seriam 3 folgas seguidas.` };
+        dias[j] = { data: dias[j].data, situacao: "folga", ajuste: `Folga veio de ${NOME_DIA[wd]}: seriam 3 folgas seguidas.` };
+        // A folga nova não pode juntar 3; o dia que voltou a ser trabalho não
+        // pode passar de 6 seguidos nem deixar 3 folgas de um dos lados; e
+        // o trabalho em volta da folga nova só encurta (dividido por ela).
+        if (folgasEmVolta(dias, j) <= MAX_FOLGAS_SEGUIDAS && podeTrabalhar(dias, i)) {
+          regular[i] = false;
+          regular[j] = true;
+          resolvido = true;
+          break;
+        }
+        [dias[i], dias[j]] = antes;
+      }
+      if (resolvido) break;
+    }
+    if (resolvido) continue;
+
+    // 2) Sem dia que sirva: uma folga da sequência vira trabalho.
+    for (const i of indices) {
+      const antes = dias[i];
+      dias[i] = { data: dias[i].data, situacao: "trabalho", ajuste: "Folga cancelada nesta semana: seriam 3 folgas seguidas." };
+      if (podeTrabalhar(dias, i)) {
+        regular[i] = false;
+        alertas.push({
+          tipo: "folga_remanejada",
+          severidade: "atencao",
+          funcionarioId: f.id,
+          data: dias[i].data,
+          mensagem: `${f.nome}: folga de ${rotuloData(dias[i].data)} cancelada pra não ter 3 folgas seguidas. Confira a escala desta semana.`,
+        });
+        resolvido = true;
+        break;
+      }
+      dias[i] = antes;
+    }
+    if (!resolvido) return; // garantirFolgasSeguidas acusa no fim.
+  }
+}
+
+/** Trava final: ninguém com 3 folgas seguidas. Se algum dia o motor gerar
+ * isso, é bug — e é melhor quebrar do que publicar a escala. */
+export function garantirFolgasSeguidas(funcionarios: FuncionarioEscala[], porFuncionario: Record<string, DiaEscala[]>): void {
+  for (const f of funcionarios) {
+    let seguidas = 0;
+    for (const d of porFuncionario[f.id] ?? []) {
+      seguidas = ehFolga(d) ? seguidas + 1 : 0;
+      if (seguidas > MAX_FOLGAS_SEGUIDAS) throw new Error(`Escala inválida: ${f.nome} com ${seguidas} folgas seguidas até ${rotuloData(d.data)}.`);
+    }
+  }
+}
+
 /** Trava final: nenhum setor protegido folga sexta ou sábado. Se algum dia
  * o motor gerar isso, é bug — e é melhor quebrar do que publicar a escala. */
 export function garantirSextaSabado(funcionarios: FuncionarioEscala[], porFuncionario: Record<string, DiaEscala[]>): void {
@@ -209,6 +333,10 @@ export function gerarEscala(entrada: {
   for (const f of entrada.funcionarios) {
     const ocs = ocorrencias.filter((o) => o.funcionarioId === f.id);
     const dias: DiaEscala[] = [];
+    /** Regime usado em cada dia (muda enquanto durar uma restrição). */
+    const tipos: TipoEscala[] = [];
+    /** Folga regular de 5x2/6x1: a única que pode mudar de dia. */
+    const regular: boolean[] = [];
     const avisos = new Set<string>();
     const base = tipoBase(f);
 
@@ -234,6 +362,8 @@ export function gerarEscala(entrada: {
       const data = paraISO(dia);
       if (!ativoNoDia(f, dia)) {
         dias.push({ data, situacao: "fora_do_contrato" });
+        tipos.push(base);
+        regular.push(false);
         continue;
       }
       const restrito = restritoALongas(ocs, dia) && !semanal(base);
@@ -243,6 +373,8 @@ export function gerarEscala(entrada: {
       if (tipo === "12x36" || tipo === "24x48") {
         const ciclo = tipo === "12x36" ? 2 : 3;
         dias.push({ data, situacao: mod(dia - paraDia(f.escala.ancora), ciclo) === 0 ? "trabalho" : "folga" });
+        tipos.push(tipo);
+        regular.push(false);
         continue;
       }
 
@@ -271,7 +403,15 @@ export function gerarEscala(entrada: {
       // regular da semana; no 6x1 soma (trocar deixaria mais de 6 dias seguidos).
       const domingoDaSemana = dia + mod(7 - wd, 7);
       const semanaDeRodizio = folgaNoDomingo(f, domingoDaSemana);
-      const folgasSemana = semanaDeRodizio && tipo === "5x2" ? folgas.slice(0, -1) : folgas;
+      let folgasSemana = semanaDeRodizio && tipo === "5x2" ? folgas.slice(0, -1) : folgas;
+      // Semana em que o regime mudou (restrição começou no meio dela): as
+      // folgas que a pessoa já teve no 12x36/24x48 contam na cota da semana.
+      if (restrito) {
+        const segunda = dias.length - mod(wd + 6, 7);
+        let jaFolgou = 0;
+        for (let j = Math.max(0, segunda); j < dias.length; j++) if (!semanal(tipos[j]) && ehFolga(dias[j])) jaFolgou++;
+        folgasSemana = folgasSemana.slice(Math.min(jaFolgou, folgasSemana.length));
+      }
 
       let situacao: SituacaoDia = "trabalho";
       let ajuste: string | undefined;
@@ -284,6 +424,8 @@ export function gerarEscala(entrada: {
           : `Folga remanejada para ${NOME_DIA[remanejado.para]}: domingo de folga só pelo rodízio.`;
       }
       dias.push({ data, situacao, ...(ajuste ? { ajuste } : {}) });
+      tipos.push(tipo);
+      regular.push(situacao === "folga");
     }
 
     // --- Lei: no máximo 6 dias seguidos. Corrige com folga compensatória. ---
@@ -295,14 +437,20 @@ export function gerarEscala(entrada: {
       }
       seguidos++;
       if (seguidos <= MAX_DIAS_SEGUIDOS) continue;
-      // Último dia seg–qui dentro da sequência (sempre existe numa sequência de 7).
-      let escolhido = i;
+      // Último dia seg–qui dentro da sequência (sempre existe numa sequência
+      // de 7) que não junte 3 folgas; se todos juntariam, o último seg–qui e
+      // o passo seguinte muda a folga regular de dia.
+      let escolhido = -1;
+      let reserva = i;
       for (let j = i; j > i - seguidos; j--) {
-        if (DIAS_FOLGA.includes(diaDaSemana(paraDia(dias[j].data)))) {
+        if (!DIAS_FOLGA.includes(diaDaSemana(paraDia(dias[j].data)))) continue;
+        if (reserva === i) reserva = j;
+        if (folgasEmVolta(dias, j) <= MAX_FOLGAS_SEGUIDAS) {
           escolhido = j;
           break;
         }
       }
+      if (escolhido < 0) escolhido = reserva;
       dias[escolhido] = {
         data: dias[escolhido].data,
         situacao: "folga_compensatoria",
@@ -310,6 +458,9 @@ export function gerarEscala(entrada: {
       };
       seguidos = i - escolhido;
     }
+
+    // --- Nunca 3 folgas seguidas. ---
+    separarFolgas(f, dias, regular, alertas);
 
     // --- Prontuário por cima do plano. ---
     // Se duas ocorrências caem no mesmo dia, vale a mais forte (não depende
@@ -356,6 +507,7 @@ export function gerarEscala(entrada: {
   }
 
   garantirSextaSabado(entrada.funcionarios, porFuncionario);
+  garantirFolgasSeguidas(entrada.funcionarios, porFuncionario);
 
   // --- Cobertura mínima por equipe, dia a dia. ---
   for (const [equipe, minimo] of Object.entries(regras.coberturaMinima)) {

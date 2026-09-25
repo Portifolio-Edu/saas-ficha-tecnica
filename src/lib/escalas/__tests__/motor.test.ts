@@ -20,6 +20,17 @@ const wd = (d: DiaEscala) => diaDaSemana(paraDia(d.data));
 const folgou = (d: DiaEscala) => d.situacao !== "trabalho";
 const trabalhou = (d: DiaEscala) => d.situacao === "trabalho";
 
+const FOLGA = ["folga", "folga_domingo", "folga_compensatoria"];
+function maisFolgasSeguidas(dias: DiaEscala[]): number {
+  let max = 0;
+  let atual = 0;
+  for (const d of dias) {
+    atual = FOLGA.includes(d.situacao) ? atual + 1 : 0;
+    max = Math.max(max, atual);
+  }
+  return max;
+}
+
 function maiorSequencia(dias: DiaEscala[]): number {
   let max = 0;
   let atual = 0;
@@ -234,5 +245,68 @@ describe("sexta e sábado: proibição absoluta nos setores protegidos", () => {
     const { porFuncionario, alertas } = gerarEscala({ funcionarios: [f], inicio: INICIO, fim: "2026-10-31" });
     expect(porFuncionario.seg.filter(trabalhou)).toHaveLength(16);
     expect(alertas.filter((a) => a.severidade === "critico")).toHaveLength(0);
+  });
+});
+
+// ESCALAS (2026-09-26): retorno do dono — "não pode ter 3 folgas seguidas;
+// nenhuma das escalas é 4x3". 5x2, 6x1, 12x36 e 24x48 nunca passam de 2.
+describe("nunca 3 folgas seguidas", () => {
+  it("12x36 com restrição começando no meio da semana (caso do Sérgio)", () => {
+    const f = pessoa("sergio", { setor: "outro", cargo: "Segurança", admissao: "2023-10-02", escala: { tipo: "12x36", ancora: "2026-01-01", turno: { inicio: "18:00", fim: "06:00" } } });
+    for (let ini = 18; ini <= 28; ini++) {
+      const inicio = `2026-09-${ini}`;
+      const oc = [{ id: "r", funcionarioId: "sergio", tipo: "restricao" as const, inicio, fim: "2026-10-05", restricoes: ["sem_escala_longa" as const] }];
+      const dias = gerarEscala({ funcionarios: [f], ocorrencias: oc, inicio: "2026-09-01", fim: "2026-10-31" }).porFuncionario.sergio;
+      expect(maisFolgasSeguidas(dias), inicio).toBeLessThanOrEqual(2);
+      expect(maiorSequencia(dias), inicio).toBeLessThanOrEqual(6);
+    }
+  });
+
+  it("5x2 com folga fixa segunda e terça na semana do rodízio de domingo", () => {
+    const f = pessoa("caio", { escala: { tipo: "5x2", ancora: "2026-09-24", folgasPreferidas: [1, 2] } });
+    const dias = gerarEscala({ funcionarios: [f], inicio: "2026-10-05", fim: "2027-03-28" }).porFuncionario.caio;
+    expect(maisFolgasSeguidas(dias)).toBeLessThanOrEqual(2);
+    for (let s = 0; s < dias.length; s += 7) expect(dias.slice(s, s + 7).filter(trabalhou).length).toBe(5);
+    expect(dias.some((d) => d.ajuste?.includes("3 folgas seguidas"))).toBe(true);
+  });
+
+  it("varredura: 400 combinações com todos os regimes, restrições e rodízio de 1 a 4 semanas", () => {
+    let semente = 7;
+    const aleatorio = () => ((semente = (semente * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+    const escolher = <T,>(xs: readonly T[]) => xs[Math.floor(aleatorio() * xs.length)];
+    for (let caso = 0; caso < 400; caso++) {
+      const setor = escolher(["cozinha", "salao", "bar", "outro"] as const);
+      const equipe = Array.from({ length: 1 + Math.floor(aleatorio() * 5) }, (_, i) => {
+        const tipo = setor === "outro" ? escolher(["5x2", "6x1", "12x36", "24x48"] as const) : escolher(["5x2", "6x1"] as const);
+        const dia = 1 + Math.floor(aleatorio() * 28);
+        const dd = String(dia).padStart(2, "0");
+        const preferidas =
+          tipo === "12x36" || tipo === "24x48" || aleatorio() < 0.4
+            ? undefined
+            : tipo === "5x2"
+              ? ([1, 2, 3, 4].sort(() => aleatorio() - 0.5).slice(0, 2) as (1 | 2 | 3 | 4)[])
+              : ([1 + Math.floor(aleatorio() * 4)] as (1 | 2 | 3 | 4)[]);
+        return pessoa(`p${caso}-${i}`, {
+          setor,
+          cargo: "Equipe",
+          admissao: `2026-0${1 + Math.floor(aleatorio() * 9)}-${dd}`,
+          escala: { tipo, ancora: `2026-10-${dd}`, folgasPreferidas: preferidas, intervaloDomingoSemanas: 1 + Math.floor(aleatorio() * 4) },
+        });
+      });
+      const ocorrencias = equipe.flatMap((f, i) => {
+        if (aleatorio() < 0.5) return [];
+        const a = 1 + Math.floor(aleatorio() * 150);
+        const b = a + Math.floor(aleatorio() * 40);
+        const data = (n: number) => new Date(Date.UTC(2026, 9, n)).toISOString().slice(0, 10);
+        return [{ id: `o${i}`, funcionarioId: f.id, tipo: "restricao" as const, inicio: data(a), fim: data(b), restricoes: ["sem_escala_longa" as const] }];
+      });
+      const { porFuncionario } = gerarEscala({ funcionarios: equipe, ocorrencias, inicio: "2026-10-01", fim: "2027-09-30" });
+      for (const f of equipe) {
+        const dias = porFuncionario[f.id];
+        expect(maisFolgasSeguidas(dias), `${f.escala.tipo} ${JSON.stringify(f.escala)}`).toBeLessThanOrEqual(2);
+        expect(maiorSequencia(dias)).toBeLessThanOrEqual(6);
+        if (setor !== "outro") expect(dias.filter((d) => (wd(d) === 5 || wd(d) === 6) && FOLGA.includes(d.situacao))).toHaveLength(0);
+      }
+    }
   });
 });

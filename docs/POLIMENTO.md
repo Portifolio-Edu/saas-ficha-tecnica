@@ -477,3 +477,25 @@ navegador (1440, 820 e 390 px) sem erro no console.
 **Reverter:** `git revert` do commit "escalas: fase 2" e, no banco,
 `supabase/reverter/20260926120000_escalas_publica_ausencias.sql` seguido de
 `supabase/reverter/20260926100000_escalas.sql`.
+
+### 16.1 Ajuste: nunca 3 folgas seguidas
+
+Retorno do dono: o Sérgio aparecia com 3 folgas seguidas ("nenhuma das
+escalas é 4x3"). Duas causas no motor, as duas corrigidas:
+
+1. **Restrição no meio da semana** (12x36 → 5x2): a folga do 12x36 não
+   contava na semana e o 5x2 ainda dava as duas dele. Agora conta na cota.
+2. **5x2 com folga fixa em segunda e terça** na semana seguinte ao domingo do
+   rodízio: domingo + segunda + terça. Também acontecia com folga automática.
+   Agora a folga regular muda de dia (seg–qui da mesma semana), com o motivo
+   no detalhe do dia; a semana mantém a quantidade de folgas.
+
+Nova regra fixa (aba Regras): no máximo 2 folgas seguidas, com trava final
+`garantirFolgasSeguidas` (se sobrar alguma, a escala não é publicada).
+Testes: caso do Sérgio em 11 datas de início, 5x2 seg+ter por 6 meses, e
+varredura de 400 equipes com todos os regimes e restrições. Numa simulação de
+195 mil semanas, nenhuma folga precisou ser cancelada e nenhuma semana ficou
+com a contagem errada. Navegador: 43 checagens, incluindo "3 folgas
+seguidas" mês a mês (gestor) e semana a semana (tablet).
+
+**Reverter:** `git revert` do commit "escalas: nunca 3 folgas seguidas".

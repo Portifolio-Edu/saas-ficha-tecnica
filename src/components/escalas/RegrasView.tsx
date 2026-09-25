@@ -15,6 +15,7 @@ const TRAVADAS = [
   "Cozinha, salão e bar nunca folgam sexta nem sábado.",
   "Folga regular só de segunda a quinta; domingo de folga só pelo rodízio.",
   "No máximo 6 dias seguidos de trabalho (o 7º é descanso).",
+  "Nunca 3 folgas seguidas: nenhum regime é 4x3. Se o domingo do rodízio encostar nas folgas fixas, uma delas muda de dia na mesma semana.",
   "Cozinha, salão e bar só em 5x2 ou 6x1 (12x36 e 24x48 fariam a folga cair na sexta ou no sábado).",
 ];
 

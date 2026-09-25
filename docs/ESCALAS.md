@@ -17,7 +17,7 @@
 | Aba Escala do tablet | `src/components/cozinha/EscalaCozinha.tsx`, calculada em `src/app/cozinha/page.tsx` |
 | Demo | `/preview/escalas`, aba Escala de `/preview/cozinha`, dados em `src/lib/demo/escalas.ts` |
 | Banco | `supabase/migrations/20260926100000_escalas.sql`, `…110000_escalas_salvar.sql`, `…120000_escalas_publica_ausencias.sql` |
-| Testes | `src/lib/escalas/__tests__/` (37), `supabase/testes/escalas.sql` (24), `supabase/testes/escalas_salvar.sql` (6) |
+| Testes | `src/lib/escalas/__tests__/` (40), `supabase/testes/escalas.sql` (24), `supabase/testes/escalas_salvar.sql` (6) |
 | Reverter no banco | `supabase/reverter/20260926120000_…` e depois `supabase/reverter/20260926100000_escalas.sql` |
 
 ## Regras que não dá pra desligar
@@ -32,7 +32,13 @@
 2. Folga regular só de segunda a quinta; domingo de folga só pelo rodízio.
 3. No máximo 6 dias seguidos de trabalho; se passar, folga compensatória
    seg–qui.
-4. 12x36 e 24x48 só pra apoio (segurança, limpeza, manutenção): nos dias
+4. **Nunca 3 folgas seguidas** (máximo 2): nenhum regime é 4x3. Quando o
+   domingo do rodízio, a folga compensatória ou a troca de regime por
+   restrição juntaria 3, a folga regular muda de dia (seg–qui da mesma
+   semana), e a semana continua com a mesma quantidade de folgas. Só se
+   nenhum dia servir a folga é cancelada, com aviso (não aconteceu em 195 mil
+   semanas simuladas). Trava final: `garantirFolgasSeguidas`.
+5. 12x36 e 24x48 só pra apoio (segurança, limpeza, manutenção): nos dias
    alternados a folga cairia na sexta/sábado. Cadastro antigo nesse estado é
    calculado como 5x2 com alerta crítico até corrigir.
 
