@@ -28,6 +28,8 @@ import { calcularCapacidadeProducao, linhasCapacidadeDaReceita, type SaldoEstoqu
 import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
 import { movimentacoes as fixturesMovimentacoes } from "@/app/preview/fixtures";
 import { acaoIniciarProducao, acaoAtualizarStatusProducao } from "./actions";
+import { tint, unidadeNoPlural } from "@/components/producoes/formato";
+import { useArrastoToque } from "@/components/producoes/useArrastoToque";
 
 type ColunaId = "estoque" | "em_producao" | "produzido" | "perda";
 
@@ -49,12 +51,8 @@ function transicaoValida(origem: ColunaId, destino: ColunaId): boolean {
 }
 
 // POLIMENTO producoes: plural da unidade de rendimento. Antes aparecia "15 porção".
-function unidadeNoPlural(qtd: number, unidade: string): string {
-  if (qtd === 1) return unidade;
-  if (unidade.endsWith("ção")) return unidade.slice(0, -3) + "ções";
-  if (/^(kg|g|l|ml|un)$/i.test(unidade) || unidade.endsWith("s")) return unidade;
-  return /[aeiou]$/i.test(unidade) ? unidade + "s" : unidade;
-}
+// (2026-09-25: unidadeNoPlural e tint foram pra src/components/producoes/formato.ts,
+// a cozinha usa os mesmos.)
 
 // POLIMENTO producoes: validade em dd/mm quando vier como data ISO ("2026-09-14");
 // texto livre ("7 dias") passa como está. Antes aparecia o ISO cru.
@@ -63,8 +61,6 @@ function validadeLegivel(v: string): string {
   return m ? `${m[3]}/${m[2]}` : v;
 }
 
-// POLIMENTO producoes: tints sobre os tokens do tema.
-const tint = (cor: string, pct: number) => `color-mix(in srgb, ${cor} ${pct}%, transparent)`;
 
 export function ProducoesClient({
   insumos,
@@ -158,8 +154,6 @@ export function ProducoesClient({
   const [turnoId, setTurnoId] = useState<string | null>(turnos[0]?.id ?? null);
   const [chefeTurno, setChefeTurno] = useState("");
   const [showNovaProducao, setShowNovaProducao] = useState(false);
-  const [loteArrastando, setLoteArrastando] = useState<{ colunaOrigem: ColunaId; item: CardEstoque | Producao } | null>(null);
-  const [colunaAlvo, setColunaAlvo] = useState<ColunaId | null>(null);
   const [modalPerda, setModalPerda] = useState<{ loteId: string; motivo: string } | null>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
 
@@ -402,9 +396,10 @@ export function ProducoesClient({
     );
   };
 
-  const soltarNaColuna = (destino: ColunaId) => {
-    if (!loteArrastando) return;
-    const { colunaOrigem, item } = loteArrastando;
+  // TOQUE (2026-09-25): arrastar com dedo, caneta ou mouse (useArrastoToque).
+  // Antes era o arrastar nativo do HTML (draggable), que não funciona com toque
+  // na maioria dos tablets. Mesmo motor do quadro do modo cozinha.
+  const soltarNaColuna = (item: CardEstoque | Producao, colunaOrigem: ColunaId, destino: ColunaId) => {
     if (!transicaoValida(colunaOrigem, destino)) return;
 
     if (colunaOrigem === "estoque" && destino === "em_producao") {
@@ -422,6 +417,11 @@ export function ProducoesClient({
       void executarAcao(acaoAtualizarStatusProducao((item as Producao).id, destino as StatusProducao));
     }
   };
+
+  const { arrasto, iniciar: iniciarArrasto, refQuadro, alvoValido } = useArrastoToque<CardEstoque | Producao, ColunaId>({
+    podeSoltar: (origem, destino) => transicaoValida(origem, destino),
+    aoSoltar: soltarNaColuna,
+  });
 
   const concluirProducao = (id: string) => {
     if (emModoDemo) {
@@ -563,12 +563,12 @@ export function ProducoesClient({
             página pra ~2.700px e "Perdas" sumia do campo de visão do chef.
             select-none só no quadro (evita selecionar texto ao arrastar); antes valia pra
             tela toda. */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+        <div ref={refQuadro} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 select-none">
           {colunas.map((col) => {
             const cardsProducao = listaProducoes.filter((p) => p.status === col.id);
-            const podeSoltarAqui = !!loteArrastando && transicaoValida(loteArrastando.colunaOrigem, col.id);
-            const emHoverValido = colunaAlvo === col.id && podeSoltarAqui;
-            const emHoverInvalido = colunaAlvo === col.id && !!loteArrastando && !podeSoltarAqui;
+            const podeSoltarAqui = !!arrasto && transicaoValida(arrasto.origem, col.id);
+            const emHoverValido = arrasto?.alvo === col.id && alvoValido;
+            const emHoverInvalido = arrasto?.alvo === col.id && arrasto.origem !== col.id && !alvoValido;
             const contagem = col.id === "estoque" ? disponivelProduzir.length : cardsProducao.length;
             const estilo = estilosColunas[col.id];
 
@@ -583,18 +583,7 @@ export function ProducoesClient({
                   borderTop: `3px solid ${emHoverInvalido ? "var(--sinal)" : estilo.cor}`,
                   boxShadow: emHoverValido || emHoverInvalido ? `0 0 0 2px ${emHoverInvalido ? "var(--sinal)" : estilo.cor} inset` : "none",
                 }}
-                onDragOver={(e) => {
-                  if (!loteArrastando) return;
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = podeSoltarAqui ? "move" : "none";
-                  if (colunaAlvo !== col.id) setColunaAlvo(col.id);
-                }}
-                onDragLeave={() => setColunaAlvo((atual) => (atual === col.id ? null : atual))}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  soltarNaColuna(col.id);
-                  setColunaAlvo(null);
-                }}
+                data-coluna={col.id}
               >
                 {/* Cabeçalho da coluna. POLIMENTO producoes: título 16px e contador maior
                     (antes 14px/12px), pra ler de longe. */}
@@ -630,20 +619,13 @@ export function ProducoesClient({
                       return (
                         <div
                           key={`${d.tipo}-${d.receitaId}`}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.effectAllowed = "move";
-                            setLoteArrastando({ colunaOrigem: "estoque", item: d });
-                          }}
-                          onDragEnd={() => {
-                            setLoteArrastando(null);
-                            setColunaAlvo(null);
-                          }}
+                          onPointerDown={(e) => iniciarArrasto(e, d, "estoque")}
                           className="rounded-xl p-3.5 bg-[var(--panel)] cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md border"
                           style={{
                             borderColor: tint(estilo.cor, 30),
                             boxShadow: "var(--shadow-sm)",
-                            opacity: loteArrastando?.item === d ? 0.4 : 1,
+                            opacity: arrasto?.item === d ? 0.35 : 1,
+                            WebkitTouchCallout: "none",
                           }}
                         >
                           <div className="text-[15px] font-black text-[var(--tinta)] leading-snug">{d.nome}</div>
@@ -687,22 +669,15 @@ export function ProducoesClient({
                     cardsProducao.map((pr) => (
                       <div
                         key={pr.id}
-                        draggable={col.id !== "perda"}
-                        onDragStart={(e) => {
-                          e.dataTransfer.effectAllowed = "move";
-                          setLoteArrastando({ colunaOrigem: col.id, item: pr });
-                        }}
-                        onDragEnd={() => {
-                          setLoteArrastando(null);
-                          setColunaAlvo(null);
-                        }}
+                        onPointerDown={col.id !== "perda" ? (e) => iniciarArrasto(e, pr, col.id) : undefined}
                         className={`rounded-xl p-3.5 bg-[var(--panel)] transition-shadow hover:shadow-md border ${
                           col.id !== "perda" ? "cursor-grab active:cursor-grabbing" : ""
                         }`}
                         style={{
                           borderColor: tint(estilo.cor, 30),
                           boxShadow: "var(--shadow-sm)",
-                          opacity: loteArrastando?.item === pr ? 0.4 : 1,
+                          opacity: arrasto?.item === pr ? 0.35 : 1,
+                          WebkitTouchCallout: "none",
                         }}
                       >
                         <div className="text-[12px] font-medium text-[var(--tinta-sub)] flex items-center gap-1.5">
@@ -774,6 +749,37 @@ export function ProducoesClient({
           })}
         </div>
       </div>
+
+      {/* TOQUE (2026-09-25): card que segue o dedo/mouse durante o arrasto. */}
+      {arrasto && (
+        <div
+          aria-hidden
+          className="fixed z-50 pointer-events-none rounded-xl p-3.5 bg-[var(--panel)] border"
+          style={{
+            left: arrasto.x - arrasto.dx,
+            top: arrasto.y - arrasto.dy,
+            width: arrasto.largura,
+            borderColor: tint(estilosColunas[arrasto.origem].cor, 40),
+            transform: "rotate(1.5deg) scale(1.03)",
+            boxShadow: "0 14px 28px rgba(0,0,0,0.22)",
+          }}
+        >
+          {"lote" in arrasto.item ? (
+            <>
+              <div className="text-[12px] font-medium text-[var(--tinta-sub)]">{arrasto.item.lote}</div>
+              <div className="text-[15px] font-black text-[var(--tinta)] leading-snug mt-1">{arrasto.item.nomeReceita}</div>
+              <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-1">
+                {arrasto.item.quantidade.toLocaleString("pt-BR")} {unidadeNoPlural(arrasto.item.quantidade, arrasto.item.unidadeRendimento)} · {arrasto.item.responsavel}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-[15px] font-black text-[var(--tinta)] leading-snug">{arrasto.item.nome}</div>
+              <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-0.5">{arrasto.item.rendimentoLabel}</div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Capacidade por prato.
           POLIMENTO producoes: texto 14px (antes 12.5px) e cabeçalhos legíveis (antes 10.5px

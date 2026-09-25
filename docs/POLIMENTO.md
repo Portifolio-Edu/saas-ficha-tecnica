@@ -353,3 +353,29 @@ respondiam "ok" e não gravavam nada.
 
 **Reverter:** `git revert` do commit. Pra só desligar a atualização
 automática, tire `<AtualizacaoAutomatica />` das páginas.
+
+## 13. Kanban de produção no modo cozinha, feito pro toque
+
+Pedido: a aba Produção do tablet tinha só formulário + lista; precisa do mesmo
+quadro do gestor e responder bem ao dedo.
+
+- **Quadro na cozinha** (`src/components/cozinha/QuadroProducaoCozinha.tsx`):
+  A produzir → Em produção → Pronto → Perda, nas cores de etapa do sistema.
+  "A produzir" lista as fichas (com busca) e não mostra "lotes possíveis",
+  porque isso sai do saldo do estoque, que a cozinha não vê.
+- **Arrastar com o dedo** (`src/components/producoes/useArrastoToque.ts`):
+  segura ~0,2 s e o card levanta (vibra no Android) e segue o dedo; deslizar
+  rápido continua rolando a coluna. A coluna de destino acende; coluna
+  proibida fica vermelha e não aceita. Perto da borda o quadro rola sozinho,
+  mais rápido quanto mais perto. Funciona com mouse também.
+- **Folhas grandes:** "Começar" pede a quantidade com − / + de 64px e atalhos
+  de 1, 2 e 3 receitas; perda tem os motivos comuns em botões.
+- **Desfazer** por 6 s depois de Pronto e de Perda. Em produção mostra há
+  quanto tempo o lote começou.
+- **Quadro do gestor** passou a usar o mesmo motor de arrasto: antes era o
+  arrastar nativo do HTML, que não funciona com toque na maioria dos tablets.
+- Verificado com toque simulado (segurar, arrastar, soltar) em tablet deitado,
+  em pé e celular, e com mouse no gestor; sem erro no console.
+
+**Reverter:** `git revert` do commit. Versão anterior da aba:
+`git show 38d1d82:src/components/cozinha/CozinhaApp.tsx`.

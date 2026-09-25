@@ -13,6 +13,7 @@ import {
   Check, ChevronLeft, Search, UserRound, EyeOff, AlertTriangle,
 } from "lucide-react";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
+import { QuadroProducaoCozinha } from "./QuadroProducaoCozinha";
 import { nums } from "@/components/ficha/tema";
 import { formatQtd } from "@/components/charts/format";
 import { MOMENTOS, type Checklist } from "@/lib/dominio/checklist";
@@ -142,7 +143,8 @@ export function CozinhaApp({
         </nav>
       </header>
 
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-5">
+      {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda. */}
+      <main className={`flex-1 w-full mx-auto px-4 py-5 ${aba === "producao" && responsavel && !trocando ? "max-w-[1440px]" : "max-w-4xl"}`}>
         {!responsavel || trocando ? (
           <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
         ) : aba === "checklists" ? (
@@ -150,7 +152,7 @@ export function CozinhaApp({
         ) : aba === "temperatura" ? (
           <SecaoTemperatura locais={locais} temperaturas={temperaturas} responsavel={responsavel} acoes={acoes} />
         ) : aba === "producao" ? (
-          <SecaoProducao fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} />
+          <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} />
         ) : aba === "fichas" ? (
           <SecaoFichas fichas={fichas} />
         ) : (
@@ -391,132 +393,8 @@ function SecaoTemperatura({ locais, temperaturas: iniciais, responsavel, acoes }
   );
 }
 
-const MOTIVOS_PERDA = ["Queimou", "Caiu no chão", "Passou da validade", "Contaminação", "Erro no preparo"];
-
-function SecaoProducao({ fichas, producoes: iniciais, responsavel, acoes }: { fichas: FichaCozinha[]; producoes: ProducaoCozinha[]; responsavel: string; acoes: AcoesCozinha }) {
-  const { mostrarErro, mostrarSucesso, mostrarInfo } = useToast();
-  const [producoes, setProducoes] = useState(iniciais);
-  useEffect(() => setProducoes(iniciais), [iniciais]);
-  const [receitaId, setReceitaId] = useState("");
-  const [quantidade, setQuantidade] = useState("");
-  const [salvando, setSalvando] = useState(false);
-  const [perdaDe, setPerdaDe] = useState<string | null>(null);
-  const ficha = fichas.find((f) => f.id === receitaId);
-
-  const registrar = async () => {
-    const q = Number(quantidade.replace(",", "."));
-    if (!ficha) return mostrarErro("Escolha o que foi produzido.");
-    if (!(q > 0)) return mostrarErro("Informe a quantidade produzida.");
-    setSalvando(true);
-    const r = await acoes.registrarProducao(ficha.id, q, responsavel);
-    setSalvando(false);
-    if (!r.ok) return mostrarErro(r.erro);
-    setProducoes((atual) => [
-      { id: `novo-${Date.now()}`, lote: "novo", receitaId: ficha.id, nomeReceita: ficha.nome, quantidade: q, unidade: ficha.unidadeRendimento, responsavel, status: "em_producao", motivoPerda: null, criadoEm: new Date().toISOString() },
-      ...atual,
-    ]);
-    setQuantidade("");
-    if (r.aviso) mostrarInfo(r.aviso);
-    else mostrarSucesso(`${ficha.nome} registrado. O estoque já foi baixado.`);
-  };
-
-  const mudarStatus = async (p: ProducaoCozinha, status: StatusProducao, motivo: string | null = null) => {
-    const r = await acoes.atualizarProducao(p.id, status, motivo);
-    if (!r.ok) return mostrarErro(r.erro);
-    setProducoes((atual) => atual.map((x) => (x.id === p.id ? { ...x, status, motivoPerda: motivo } : x)));
-    setPerdaDe(null);
-  };
-
-  const pratos = fichas.filter((f) => f.tipo === "prato_final");
-  const preparos = fichas.filter((f) => f.tipo === "preparo_base");
-
-  return (
-    <section className="space-y-6">
-      <Cartao className="p-4 space-y-3">
-        <h1 className="text-[20px] font-semibold tracking-tight">Registrar produção</h1>
-        <select className={campoGrande} style={estiloCampo} value={receitaId} onChange={(e) => setReceitaId(e.target.value)} aria-label="O que foi produzido">
-          <option value="">O que foi produzido?</option>
-          {preparos.length > 0 && (
-            <optgroup label="Preparos">
-              {preparos.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
-            </optgroup>
-          )}
-          {pratos.length > 0 && (
-            <optgroup label="Pratos">
-              {pratos.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
-            </optgroup>
-          )}
-        </select>
-        <div className="flex gap-2 items-center">
-          <input className={campoGrande} style={estiloCampo} inputMode="decimal" placeholder="Quantidade" aria-label="Quantidade produzida" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} />
-          <span className="text-[16px] text-[var(--tinta-sub)] min-w-20">{ficha?.unidadeRendimento ?? ""}</span>
-        </div>
-        <button onClick={registrar} disabled={salvando} className={`${botaoGrande} w-full`} style={{ background: "var(--tinta)", color: "var(--panel)" }}>
-          {salvando ? "Registrando..." : "Registrar produção"}
-        </button>
-      </Cartao>
-
-      <div>
-        <h2 className="text-[17px] font-semibold mb-2">Hoje</h2>
-        {producoes.length === 0 ? (
-          <p className="text-[15px] text-[var(--tinta-faint)]">Nada registrado hoje ainda.</p>
-        ) : (
-          <Cartao>
-            {producoes.map((p, n) => (
-              <div key={p.id} className={`px-4 py-3 ${n > 0 ? "border-t" : ""}`} style={{ borderColor: "var(--linha)" }}>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[16px] font-medium">
-                      {p.nomeReceita} <span className="text-[var(--tinta-sub)] font-normal" style={nums}>· {formatQtd(p.quantidade)} {p.unidade}</span>
-                    </div>
-                    <div className="text-[13px] text-[var(--tinta-faint)]">
-                      {p.responsavel} · {new Date(p.criadoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                      {p.status === "perda" && p.motivoPerda ? ` · perda: ${p.motivoPerda}` : ""}
-                    </div>
-                  </div>
-                  <StatusProducaoSelo status={p.status} />
-                  {p.status === "em_producao" && (
-                    <>
-                      <button onClick={() => mudarStatus(p, "produzido")} className="min-h-11 px-4 rounded-lg text-[15px] font-medium border" style={{ borderColor: "var(--linha-forte)" }}>
-                        Pronto
-                      </button>
-                      <button onClick={() => setPerdaDe(perdaDe === p.id ? null : p.id)} className="min-h-11 px-4 rounded-lg text-[15px] font-medium border" style={{ borderColor: "var(--linha-forte)", color: "var(--danger)" }}>
-                        Perda
-                      </button>
-                    </>
-                  )}
-                </div>
-                {perdaDe === p.id && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {MOTIVOS_PERDA.map((m) => (
-                      <button key={m} onClick={() => mudarStatus(p, "perda", m)} className="min-h-11 px-4 rounded-full text-[15px] border" style={{ borderColor: "var(--linha-forte)" }}>
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </Cartao>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function StatusProducaoSelo({ status }: { status: StatusProducao }) {
-  const mapa: Record<StatusProducao, { rotulo: string; cor: string }> = {
-    em_producao: { rotulo: "Em produção", cor: "var(--status-producao)" },
-    produzido: { rotulo: "Pronto", cor: "var(--sucesso)" },
-    perda: { rotulo: "Perda", cor: "var(--danger)" },
-  };
-  const s = mapa[status];
-  return (
-    <span className="text-[13px] font-medium px-2 py-1 rounded-md" style={{ color: s.cor, background: `color-mix(in srgb, ${s.cor} 10%, transparent)` }}>
-      {s.rotulo}
-    </span>
-  );
-}
+// TOQUE (2026-09-25): a antiga SecaoProducao (formulário + lista "Hoje") virou
+// o quadro em QuadroProducaoCozinha.tsx. Versão anterior: git show 38d1d82:src/components/cozinha/CozinhaApp.tsx
 
 function SecaoFichas({ fichas }: { fichas: FichaCozinha[] }) {
   const [busca, setBusca] = useState("");
