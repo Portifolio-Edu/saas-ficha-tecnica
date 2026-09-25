@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   Carrot, ClipboardList, LineChart, AlertTriangle,
-  CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator, ChefHat, Settings, Plug,
+  CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator, ChefHat, Settings, Plug, Users, MonitorSmartphone,
 } from "lucide-react";
 import { NOME_RESTAURANTE } from "./fixtures";
 
@@ -18,6 +18,9 @@ const LINKS = [
   { href: "/preview/receitas", label: "Receitas & Fichas", icon: ClipboardList, descricao: "Fichas técnicas e precificação" },
   { href: "/preview/relatorios", label: "Relatórios", icon: AlertTriangle, descricao: "Indicadores e alertas consolidados" },
   { href: "/preview/integracoes", label: "Integrações", icon: Plug, descricao: "PDVs, iFood e importação por XML fiscal ou planilha" },
+  // EQUIPE (2026-09-25)
+  { href: "/preview/equipe", label: "Equipe e acessos", icon: Users, descricao: "Dono, gestor, estoquista e cozinha: quem vê o quê" },
+  { href: "/preview/cozinha", label: "Modo cozinha", icon: MonitorSmartphone, descricao: "Tablet da cozinha sem senha e sem nenhum valor em R$" },
   { href: "/preview/configuracoes", label: "Configurações", icon: Settings, descricao: "Tema claro, escuro ou sistema" },
 ];
 

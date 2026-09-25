@@ -112,7 +112,7 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
                                 {dif > 0 ? "+" : ""}{formatQtd(dif)}{i.unidadeMedida}
                               </td>
                               <td className="py-2 pl-3 text-right" style={{ ...nums, color: falta ? "var(--danger)" : "var(--tinta-sub)" }}>
-                                {formatBRL(dif * i.precoUnitario)}
+                                {dif < -0.0005 ? "−" : ""}{formatBRL(Math.abs(dif * i.precoUnitario))}
                               </td>
                             </tr>
                           );

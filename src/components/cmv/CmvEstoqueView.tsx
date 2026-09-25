@@ -20,6 +20,9 @@ const periodo = (f: FechamentoEstoque) => {
 
 export const consumoDoPeriodo = (f: FechamentoEstoque) => f.estoqueInicial + f.compras - f.estoqueFinal;
 
+const diasDoPeriodo = (f: FechamentoEstoque) =>
+  Math.max(1, Math.round((Date.parse(`${f.periodoFim}T12:00:00`) - Date.parse(`${f.periodoInicio}T12:00:00`)) / 86_400_000) + 1);
+
 export function CmvEstoqueView({ fechamentos }: { fechamentos: FechamentoEstoque[] }) {
   if (fechamentos.length === 0) {
     return (
@@ -30,19 +33,15 @@ export function CmvEstoqueView({ fechamentos }: { fechamentos: FechamentoEstoque
     );
   }
 
-  const [atual, anterior] = fechamentos;
+  const [atual] = fechamentos;
   const consumoAtual = consumoDoPeriodo(atual);
-  const variacao = anterior ? (consumoAtual - consumoDoPeriodo(anterior)) / (consumoDoPeriodo(anterior) || 1) : null;
 
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Kpi
-          label="Consumo de insumos"
-          value={reais(consumoAtual)}
-          sub={periodo(atual)}
-          trend={variacao == null ? undefined : { value: `${Math.abs(variacao * 100).toFixed(0)}% vs. anterior`, isPositive: variacao <= 0 }}
-        />
+        {/* Média por dia em vez de % contra o período anterior: os períodos
+            podem ter tamanhos diferentes (quinzena x mês). */}
+        <Kpi label="Consumo de insumos" value={reais(consumoAtual)} sub={`${periodo(atual)} · ${reais(consumoAtual / diasDoPeriodo(atual))} por dia`} />
         <Kpi label="Compras do período" value={reais(atual.compras)} sub="notas lançadas no estoque" />
         <Kpi label="Estoque no fechamento" value={reais(atual.estoqueFinal)} sub={`abriu com ${reais(atual.estoqueInicial)}`} />
       </div>
@@ -60,7 +59,8 @@ export function CmvEstoqueView({ fechamentos }: { fechamentos: FechamentoEstoque
                 <th className="py-2.5 px-3 font-medium text-right">Estoque inicial</th>
                 <th className="py-2.5 px-3 font-medium text-right">Compras</th>
                 <th className="py-2.5 px-3 font-medium text-right">Estoque final</th>
-                <th className="py-2.5 px-5 font-medium text-right">Consumo</th>
+                <th className="py-2.5 px-3 font-medium text-right">Consumo</th>
+                <th className="py-2.5 px-5 font-medium text-right">Por dia</th>
               </tr>
             </thead>
             <tbody>
@@ -70,7 +70,8 @@ export function CmvEstoqueView({ fechamentos }: { fechamentos: FechamentoEstoque
                   <td className="py-2.5 px-3 text-right" style={nums}>{reais(f.estoqueInicial)}</td>
                   <td className="py-2.5 px-3 text-right" style={nums}>{reais(f.compras)}</td>
                   <td className="py-2.5 px-3 text-right" style={nums}>{reais(f.estoqueFinal)}</td>
-                  <td className="py-2.5 px-5 text-right font-medium text-[var(--tinta)]" style={nums}>{reais(consumoDoPeriodo(f))}</td>
+                  <td className="py-2.5 px-3 text-right font-medium text-[var(--tinta)]" style={nums}>{reais(consumoDoPeriodo(f))}</td>
+                  <td className="py-2.5 px-5 text-right text-[var(--tinta-sub)]" style={nums}>{reais(consumoDoPeriodo(f) / diasDoPeriodo(f))}</td>
                 </tr>
               ))}
             </tbody>

@@ -8,26 +8,13 @@ import { listarReceitas } from "@/lib/dados/receitas";
 import { listarProcessamentos } from "@/lib/dados/processamentos";
 import { registrarMovimentacao } from "@/lib/dados/estoque";
 import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
+import { gerarLote } from "@/lib/calculo/lote";
 import type { ProducaoInput, StatusProducao, TipoItemProducao } from "@/lib/dominio/producao";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
 
 function paraResultado(e: unknown): Resultado {
   return { ok: false, erro: e instanceof Error ? e.message : "Erro desconhecido." };
-}
-
-function gerarLote(nome: string, sequencia: number): string {
-  const agora = new Date();
-  const dd = String(agora.getDate()).padStart(2, "0");
-  const mm = String(agora.getMonth() + 1).padStart(2, "0");
-  const sigla = nome
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  const seq = String(sequencia).padStart(2, "0");
-  return `${sigla}-${dd}${mm}-${seq}`;
 }
 
 /**
