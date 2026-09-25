@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getClienteAtual } from "@/lib/dados/cliente";
 import { supabaseConfigurado } from "@/lib/supabase/config";
-import { carregarDadosCozinha, itensDeContagem, listarProducoesDeHoje } from "@/lib/dados/cozinha";
+import { carregarDadosCozinha, itensDeContagem, listarLotesProteina, listarProducoesDeHoje } from "@/lib/dados/cozinha";
 import { listarChecklists } from "@/lib/dados/checklists";
 import { listarLocaisArmazenamento, listarRegistrosTemperatura } from "@/lib/dados/temperatura";
 import { listarFuncionarios } from "@/lib/dados/equipe";
@@ -15,6 +15,7 @@ import {
   acaoMarcarItem,
   acaoRegistrarProducao,
   acaoRegistrarTemperatura,
+  acaoRegistrarLoteProteina,
 } from "./actions";
 
 // EQUIPE (2026-09-25): modo cozinha. Sem login mostra o pareamento por
@@ -30,12 +31,13 @@ export default async function CozinhaPage() {
   if (cliente.papel === "estoquista") redirect("/estoque");
 
   const dados = await carregarDadosCozinha();
-  const [checklists, locais, temperaturas, funcionarios, producoes] = await Promise.all([
+  const [checklists, locais, temperaturas, funcionarios, producoes, lotesProteina] = await Promise.all([
     listarChecklists(),
     listarLocaisArmazenamento(),
     listarRegistrosTemperatura(40),
     listarFuncionarios(),
     listarProducoesDeHoje(dados.fichas),
+    listarLotesProteina(30),
   ]);
 
   return (
@@ -51,6 +53,8 @@ export default async function CozinhaPage() {
         fichas={dados.fichas}
         itensContagem={itensDeContagem(dados, locais)}
         producoes={producoes}
+        proteinas={dados.proteinas}
+        lotesProteina={lotesProteina}
         acoes={{
           marcarItem: acaoMarcarItem,
           desmarcarItem: acaoDesmarcarItem,
@@ -58,6 +62,7 @@ export default async function CozinhaPage() {
           registrarProducao: acaoRegistrarProducao,
           atualizarProducao: acaoAtualizarProducao,
           enviarContagem: acaoEnviarContagem,
+          registrarLoteProteina: acaoRegistrarLoteProteina,
         }}
       />
     </>

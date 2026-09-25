@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { inicioDoDiaISO } from "@/lib/calculo/dia";
 import { mensagemErro } from "./erros";
-import type { FichaCozinha, ItemContagem, ProducaoCozinha } from "@/lib/dominio/cozinha";
+import type { FichaCozinha, ItemContagem, LoteProteinaCozinha, NovoLoteProteina, ProducaoCozinha, ProteinaCozinha } from "@/lib/dominio/cozinha";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
@@ -59,6 +59,8 @@ export interface DadosCozinha {
   insumosCalc: Insumo[];
   processamentosCalc: Processamento[];
   insumosComEstoque: InsumoRpc[];
+  /** PROTEÍNAS (2026-09-25): insumos da categoria proteína, pra manipulação no tablet. */
+  proteinas: ProteinaCozinha[];
 }
 
 export async function carregarDadosCozinha(): Promise<DadosCozinha> {
@@ -142,7 +144,11 @@ export async function carregarDadosCozinha(): Promise<DadosCozinha> {
     processadoEm: p.processado_em,
   }));
 
-  return { fichas, receitasCalc, insumosCalc, processamentosCalc, insumosComEstoque: dados.insumos.filter((i) => i.tem_estoque) };
+  const proteinas: ProteinaCozinha[] = dados.insumos
+    .filter((i) => i.categoria === "proteina")
+    .map((i) => ({ id: i.id, nome: i.nome, fatorPadrao: Number(i.fator_correcao) || 1 }));
+
+  return { fichas, receitasCalc, insumosCalc, processamentosCalc, insumosComEstoque: dados.insumos.filter((i) => i.tem_estoque), proteinas };
 }
 
 /** Itens pra contagem cega, agrupáveis por local. Sem saldo. */
@@ -186,4 +192,42 @@ export async function enviarContagemCega(responsavel: string, itens: { insumoId:
   const supabase = await createClient();
   const { error } = await supabase.rpc("enviar_contagem", { p_responsavel: responsavel, p_itens: itens });
   if (error) throw new Error(mensagemErro(error));
+}
+
+// PROTEÍNAS (2026-09-25): lotes de proteína pelo tablet, pelas funções
+// registrar_processamento_cozinha e lotes_proteina_cozinha (migration
+// 20260925150000). A cozinha não lê a tabela direto: lá tem o valor pago.
+export async function listarLotesProteina(limite = 30): Promise<LoteProteinaCozinha[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lotes_proteina_cozinha", { p_limite: limite });
+  if (error) throw new Error(mensagemErro(error));
+  return ((data ?? []) as {
+    id: string; insumo_id: string; responsavel: string; peso_bruto: number; peso_limpo: number; aparas: number;
+    descarte: number; fc: number; observacao: string | null; processado_em: string;
+  }[]).map((l) => ({
+    id: l.id,
+    insumoId: l.insumo_id,
+    responsavel: l.responsavel,
+    pesoBruto: Number(l.peso_bruto),
+    pesoLimpo: Number(l.peso_limpo),
+    aparas: Number(l.aparas),
+    descarte: Number(l.descarte),
+    fc: Number(l.fc),
+    observacao: l.observacao,
+    processadoEm: l.processado_em,
+  }));
+}
+
+export async function registrarLoteProteina(lote: NovoLoteProteina, responsavel: string): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("registrar_processamento_cozinha", {
+    p_insumo_id: lote.insumoId,
+    p_responsavel: responsavel,
+    p_peso_bruto: lote.pesoBruto,
+    p_peso_limpo: lote.pesoLimpo,
+    p_aparas: lote.aparas,
+    p_observacao: lote.observacao,
+  });
+  if (error) throw new Error(mensagemErro(error));
+  return Number(data);
 }

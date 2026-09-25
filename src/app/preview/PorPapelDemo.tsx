@@ -17,6 +17,8 @@ import { EstoqueClient } from "@/app/estoque/EstoqueClient";
 import { SegurancaClient } from "@/app/seguranca/SegurancaClient";
 import { RelatoriosClient } from "@/app/relatorios/RelatoriosClient";
 import { VisaoGeralClient } from "@/app/visao-geral/VisaoGeralClient";
+import { ProteinasClient } from "@/app/proteinas/ProteinasClient";
+import type { Processamento } from "@/lib/dominio/processamento";
 import { CmvEstoqueView } from "@/components/cmv/CmvEstoqueView";
 import { ehGestao } from "@/lib/auth/papeis";
 import { CHAVES_DEMO, useDemo } from "@/lib/demo/armazem";
@@ -55,4 +57,10 @@ export function RelatoriosDemo(props: ComponentProps<typeof RelatoriosClient>) {
 export function VisaoGeralDemo(props: ComponentProps<typeof VisaoGeralClient>) {
   const [producoes, versao] = useDemo<Producao>(CHAVES_DEMO.producoes, props.producoes);
   return <VisaoGeralClient key={versao} {...props} producoes={producoes} />;
+}
+
+// PROTEÍNAS (2026-09-25): lotes que o tablet registra aparecem aqui.
+export function ProteinasDemo(props: ComponentProps<typeof ProteinasClient>) {
+  const [processamentos, versao] = useDemo<Processamento>(CHAVES_DEMO.processamentos, props.processamentos);
+  return <ProteinasClient key={versao} {...props} processamentos={processamentos} />;
 }

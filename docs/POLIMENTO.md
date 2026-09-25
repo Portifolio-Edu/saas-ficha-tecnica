@@ -405,3 +405,27 @@ quantidades bem descritas e fáceis de ver.
   ilustrativas em 4 pratos (Parmegiana e Caprese sem foto de propósito).
 
 **Reverter:** `git revert` do commit.
+
+## 15. Manipulação de proteínas no modo cozinha + agente de IA pro estoquista
+
+- **Proteínas no tablet** (`src/components/cozinha/ProteinasCozinha.tsx`, aba
+  "Proteínas"): escolhe a peça, pesa bruto, limpo e aparas; o rendimento
+  aparece na hora contra o padrão da casa (fator de correção do cadastro).
+  Mais de 2 pontos abaixo fica amarelo; mais de 5, vermelho e o motivo é
+  obrigatório. Limpo + aparas maior que bruto bloqueia ("confira a balança").
+  Últimos lotes com quem fez e o rendimento.
+- **Sem R$ na cozinha:** banco novo em
+  `supabase/migrations/20260925150000_cozinha_proteinas.sql` (aplicada):
+  `registrar_processamento_cozinha` grava o lote com o valor pago por kg do
+  cadastro do insumo, no servidor; `lotes_proteina_cozinha` lista sem valor.
+  A tabela continua fechada pra cozinha na RLS. Teste:
+  `supabase/testes/proteinas_cozinha.sql` (10/10). Reverter:
+  `supabase/reverter/20260925150000_cozinha_proteinas.sql`.
+- O gestor vê os lotes do tablet em Manipulação de proteínas (custo real
+  por kg limpo, como antes). Na demo, a tela do gestor lê o que o tablet grava.
+- **Agente de IA pro estoquista** (commit `65d4f1a`): versão "estoque" do
+  agente (nota fiscal, chegada, perda, estoque mínimo; foto vira nota
+  fiscal), sem tabela nutricional. Cozinha segue sem agente. Por enquanto o
+  agente é só demonstração; o de verdade vem com o backend (n8n).
+
+**Reverter:** `git revert` do commit e o script de reverter no banco.

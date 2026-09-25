@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { criarClienteAdmin, serviceRoleConfigurada } from "@/lib/supabase/admin";
 import { getClienteAtual } from "@/lib/dados/cliente";
 import { hashCodigo, normalizarCodigo } from "@/lib/dados/equipe";
-import { carregarDadosCozinha, enviarContagemCega } from "@/lib/dados/cozinha";
+import { carregarDadosCozinha, enviarContagemCega, registrarLoteProteina } from "@/lib/dados/cozinha";
 import { marcarItemConcluido, desmarcarItemConcluido } from "@/lib/dados/checklists";
 import { registrarTemperatura } from "@/lib/dados/temperatura";
 import { atualizarStatusProducao, contarProducoesPorReceita } from "@/lib/dados/producoes";
@@ -15,6 +15,7 @@ import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
 import { gerarLote } from "@/lib/calculo/lote";
 import { DOMINIO_EQUIPE } from "@/lib/auth/equipe";
 import type { StatusProducao } from "@/lib/dominio/producao";
+import type { NovoLoteProteina } from "@/lib/dominio/cozinha";
 
 // EQUIPE (2026-09-25): ações do modo cozinha. Rodam com a sessão do aparelho
 // (papel cozinha), então a RLS já limita o que dá pra ler e gravar. Duas
@@ -196,6 +197,23 @@ export async function acaoEnviarContagem(responsavel: string, itens: { insumoId:
     const validos = itens.filter((i) => Number.isFinite(i.quantidade) && i.quantidade >= 0);
     if (validos.length === 0) throw new Error("Conte pelo menos um item.");
     await enviarContagemCega(exigirResponsavel(responsavel), validos);
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+/** PROTEÍNAS (2026-09-25): lote de proteína limpa pelo tablet. O valor pago
+ * por kg sai do cadastro do insumo, no banco; a cozinha só manda pesos. */
+export async function acaoRegistrarLoteProteina(lote: NovoLoteProteina, responsavel: string): Promise<Resultado> {
+  try {
+    await exigirMembro();
+    const quem = exigirResponsavel(responsavel);
+    if (!(lote.pesoBruto > 0)) throw new Error("Informe o peso bruto (como a peça chegou).");
+    if (!(lote.pesoLimpo > 0)) throw new Error("Informe o peso limpo (pronto pra usar).");
+    if (lote.pesoLimpo + (lote.aparas || 0) > lote.pesoBruto) throw new Error("O peso limpo mais as aparas passam do peso bruto. Confira a balança.");
+    await registrarLoteProteina(lote, quem);
+    revalidatePath("/cozinha");
     return { ok: true };
   } catch (e) {
     return erro(e);

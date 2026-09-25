@@ -18,6 +18,7 @@ import type { Producao } from "@/lib/dominio/producao";
 import type { Checklist } from "@/lib/dominio/checklist";
 import type { RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { ContagemCega, EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
+import type { Processamento } from "@/lib/dominio/processamento";
 import {
   checklists as checklistsFixture,
   estoque as estoqueFixture,
@@ -25,6 +26,7 @@ import {
   locais,
   movimentacoes as movimentacoesFixture,
   processamentos,
+  processamentos as processamentosFixture,
   producoes as producoesFixture,
   registrosTemperatura,
   todasReceitas,
@@ -38,6 +40,7 @@ export const lerProducoesDemo = () => lerDemo<Producao>(CHAVES_DEMO.producoes, p
 export const lerChecklistsDemo = () => lerDemo<Checklist>(CHAVES_DEMO.checklists, checklistsFixture);
 export const lerTemperaturasDemo = () => lerDemo<RegistroTemperatura>(CHAVES_DEMO.temperaturas, registrosTemperatura);
 export const lerContagensDemo = () => lerDemo<ContagemCega>(CHAVES_DEMO.contagens, contagensDemo);
+export const lerProcessamentosDemo = () => lerDemo<Processamento>(CHAVES_DEMO.processamentos, processamentosFixture);
 const lerEstoqueDemo = () => lerDemo<EstoqueLinha>(CHAVES_DEMO.estoque, estoqueFixture);
 const lerMovimentacoesDemo = () => lerDemo<Movimentacao>(CHAVES_DEMO.movimentacoes, movimentacoesFixture);
 
@@ -159,6 +162,37 @@ export const acoesCozinhaDemo: AcoesCozinha = {
       lerProducoesDemo().map((p) => (p.id === producaoId ? { ...p, status, motivoPerda: status === "perda" ? motivo : null } : p)),
     );
     return { ok: true };
+  },
+
+  // PROTEÍNAS (2026-09-25): mesmo que registrar_processamento_cozinha no banco:
+  // valor pago por kg vem do cadastro do insumo, a cozinha só manda pesos.
+  async registrarLoteProteina(lote, responsavel) {
+    await pausa();
+    try {
+      exigirNome(responsavel);
+      const insumo = insumoPorId.get(lote.insumoId);
+      if (!insumo || insumo.categoria !== "proteina") throw new Error("Proteína não encontrada.");
+      if (!(lote.pesoBruto > 0) || !(lote.pesoLimpo > 0)) throw new Error("Informe o peso bruto e o limpo.");
+      if (lote.pesoLimpo + lote.aparas > lote.pesoBruto) throw new Error("O peso limpo mais as aparas passam do peso bruto. Confira a balança.");
+      const novo: Processamento = {
+        id: id("demo-proteina"),
+        insumoId: insumo.id,
+        responsavel,
+        pesoBrutoRecebido: lote.pesoBruto,
+        valorPagoKg: insumo.precoUnitario,
+        pesoLiquidoResultante: lote.pesoLimpo,
+        pesoAparasReaproveitaveis: lote.aparas,
+        pesoDescartePuro: Number((lote.pesoBruto - lote.pesoLimpo - lote.aparas).toFixed(3)),
+        fcObservado: lote.pesoBruto / lote.pesoLimpo,
+        fornecedor: null,
+        observacao: lote.observacao,
+        processadoEm: new Date().toISOString(),
+      };
+      gravarDemo(CHAVES_DEMO.processamentos, [...lerProcessamentosDemo(), novo]);
+      return { ok: true };
+    } catch (e) {
+      return erro(e);
+    }
   },
 
   async enviarContagem(responsavel, itens) {

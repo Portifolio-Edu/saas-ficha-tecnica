@@ -14,11 +14,15 @@ import { CHAVES_DEMO, useDemo } from "@/lib/demo/armazem";
 import type { Producao } from "@/lib/dominio/producao";
 import type { Checklist } from "@/lib/dominio/checklist";
 import type { RegistroTemperatura } from "@/lib/dominio/temperatura";
-import type { ProducaoCozinha } from "@/lib/dominio/cozinha";
+import type { LoteProteinaCozinha, ProducaoCozinha, ProteinaCozinha } from "@/lib/dominio/cozinha";
+import type { Processamento } from "@/lib/dominio/processamento";
 import { acoesCozinhaDemo } from "./acoesDemo";
-import { checklists as checklistsFixture, producoes as producoesFixture, registrosTemperatura } from "../fixtures";
+import { checklists as checklistsFixture, processamentos as processamentosFixture, producoes as producoesFixture, proteinas as proteinasFixture, registrosTemperatura } from "../fixtures";
 
-type Props = Omit<ComponentProps<typeof CozinhaApp>, "acoes" | "rodape" | "producoes" | "checklists" | "temperaturas">;
+type Props = Omit<ComponentProps<typeof CozinhaApp>, "acoes" | "rodape" | "producoes" | "checklists" | "temperaturas" | "proteinas" | "lotesProteina">;
+
+// PROTEÍNAS (2026-09-25): proteínas do cadastro da demo, sem preço.
+const proteinasDemo: ProteinaCozinha[] = proteinasFixture.map((p) => ({ id: p.id, nome: p.nome, fatorPadrao: p.fatorCorrecao }));
 
 function deHoje(iso: string): boolean {
   const d = new Date(iso);
@@ -50,6 +54,25 @@ export function CozinhaDemo(props: Props) {
         })),
     [producoes],
   );
+  const [processamentos] = useDemo<Processamento>(CHAVES_DEMO.processamentos, processamentosFixture);
+  const lotesProteina = useMemo<LoteProteinaCozinha[]>(
+    () =>
+      [...processamentos]
+        .sort((a, b) => b.processadoEm.localeCompare(a.processadoEm))
+        .map((p) => ({
+          id: p.id,
+          insumoId: p.insumoId,
+          responsavel: p.responsavel,
+          pesoBruto: p.pesoBrutoRecebido,
+          pesoLimpo: p.pesoLiquidoResultante,
+          aparas: p.pesoAparasReaproveitaveis,
+          descarte: p.pesoDescartePuro,
+          fc: p.fcObservado,
+          observacao: p.observacao,
+          processadoEm: p.processadoEm,
+        })),
+    [processamentos],
+  );
   const temperaturasRecentes = useMemo(() => [...temperaturas].sort((a, b) => b.registradoEm.localeCompare(a.registradoEm)), [temperaturas]);
 
   return (
@@ -58,10 +81,12 @@ export function CozinhaDemo(props: Props) {
       producoes={producoesDeHoje}
       checklists={checklists}
       temperaturas={temperaturasRecentes}
+      proteinas={proteinasDemo}
+      lotesProteina={lotesProteina}
       acoes={acoesCozinhaDemo}
       rodape={
         <>
-          Demonstração: o que você registra aqui aparece no painel do gestor (Produções, Estoque, Checklists e Segurança alimentar), só neste
+          Demonstração: o que você registra aqui aparece no painel do gestor (Produções, Estoque, Checklists, Segurança alimentar e Proteínas), só neste
           navegador.{" "}
           <Link href="/preview/producoes" className="underline underline-offset-2">Abrir o painel</Link>
         </>

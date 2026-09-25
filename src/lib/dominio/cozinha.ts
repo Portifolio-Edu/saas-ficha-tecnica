@@ -58,3 +58,33 @@ export interface ProducaoCozinha {
   motivoPerda: string | null;
   criadoEm: string;
 }
+
+// PROTEÍNAS (2026-09-25): manipulação de proteínas no tablet. Só pesos e
+// rendimento, nenhum valor em R$ (o valor pago fica no servidor).
+export interface ProteinaCozinha {
+  id: string;
+  nome: string;
+  /** Fator de correção do cadastro (bruto ÷ limpo). Rendimento padrão = 1 ÷ fator. */
+  fatorPadrao: number;
+}
+
+export interface LoteProteinaCozinha {
+  id: string;
+  insumoId: string;
+  responsavel: string;
+  pesoBruto: number;
+  pesoLimpo: number;
+  aparas: number;
+  descarte: number;
+  fc: number;
+  observacao: string | null;
+  processadoEm: string;
+}
+
+export interface NovoLoteProteina {
+  insumoId: string;
+  pesoBruto: number;
+  pesoLimpo: number;
+  aparas: number;
+  observacao: string | null;
+}

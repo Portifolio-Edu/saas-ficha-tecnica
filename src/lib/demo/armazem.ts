@@ -19,6 +19,8 @@ export const CHAVES_DEMO = {
   checklists: "demo_checklists",
   temperaturas: "demo_temperaturas",
   contagens: "demo_contagens",
+  // PROTEÍNAS (2026-09-25): lotes de proteína limpa (tablet → Manipulação de proteínas).
+  processamentos: "demo_processamentos",
 } as const;
 
 export type ChaveDemo = (typeof CHAVES_DEMO)[keyof typeof CHAVES_DEMO];

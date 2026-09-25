@@ -9,16 +9,17 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  ChefHat, ClipboardCheck, Thermometer, CookingPot, BookOpen, PackageSearch,
+  ChefHat, ClipboardCheck, Thermometer, CookingPot, Beef, BookOpen, PackageSearch,
   Check, ChevronLeft, UserRound, EyeOff, AlertTriangle,
 } from "lucide-react";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
 import { QuadroProducaoCozinha } from "./QuadroProducaoCozinha";
 import { FichasCozinha } from "./FichasCozinha";
+import { ProteinasCozinha } from "./ProteinasCozinha";
 import { nums } from "@/components/ficha/tema";
 import { MOMENTOS, type Checklist } from "@/lib/dominio/checklist";
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
-import type { FichaCozinha, ItemContagem, ProducaoCozinha } from "@/lib/dominio/cozinha";
+import type { FichaCozinha, ItemContagem, LoteProteinaCozinha, NovoLoteProteina, ProducaoCozinha, ProteinaCozinha } from "@/lib/dominio/cozinha";
 import type { Funcionario } from "@/lib/dominio/equipe";
 import type { StatusProducao } from "@/lib/dominio/producao";
 
@@ -31,14 +32,18 @@ export interface AcoesCozinha {
   registrarProducao: (receitaId: string, quantidade: number, responsavel: string) => Promise<ResultadoCozinha>;
   atualizarProducao: (id: string, status: StatusProducao, motivo: string | null) => Promise<ResultadoCozinha>;
   enviarContagem: (responsavel: string, itens: { insumoId: string; quantidade: number }[]) => Promise<ResultadoCozinha>;
+  /** PROTEÍNAS (2026-09-25) */
+  registrarLoteProteina: (lote: NovoLoteProteina, responsavel: string) => Promise<ResultadoCozinha>;
 }
 
-type Aba = "checklists" | "temperatura" | "producao" | "fichas" | "contagem";
+type Aba = "checklists" | "temperatura" | "producao" | "proteinas" | "fichas" | "contagem";
 
 const ABAS: { id: Aba; rotulo: string; icone: typeof ChefHat }[] = [
   { id: "checklists", rotulo: "Checklists", icone: ClipboardCheck },
   { id: "temperatura", rotulo: "Temperatura", icone: Thermometer },
   { id: "producao", rotulo: "Produção", icone: CookingPot },
+  // PROTEÍNAS (2026-09-25): manipulação de proteínas (bruto → limpo) no tablet.
+  { id: "proteinas", rotulo: "Proteínas", icone: Beef },
   { id: "fichas", rotulo: "Fichas", icone: BookOpen },
   { id: "contagem", rotulo: "Contagem", icone: PackageSearch },
 ];
@@ -64,6 +69,8 @@ export function CozinhaApp({
   fichas,
   itensContagem,
   producoes,
+  proteinas = [],
+  lotesProteina = [],
   acoes,
   rodape,
 }: {
@@ -75,6 +82,9 @@ export function CozinhaApp({
   fichas: FichaCozinha[];
   itensContagem: ItemContagem[];
   producoes: ProducaoCozinha[];
+  /** PROTEÍNAS (2026-09-25) */
+  proteinas?: ProteinaCozinha[];
+  lotesProteina?: LoteProteinaCozinha[];
   acoes: AcoesCozinha;
   /** Linha no pé da tela (ex.: aviso de demonstração). */
   rodape?: ReactNode;
@@ -145,7 +155,7 @@ export function CozinhaApp({
 
       {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda.
           FICHAS (2026-09-25): Fichas usa 2 colunas (foto e ingredientes | passo a passo). */}
-      <main className={`flex-1 w-full mx-auto px-4 py-5 ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && aba === "fichas" ? "max-w-6xl" : "max-w-4xl"}`}>
+      <main className={`flex-1 w-full mx-auto px-4 py-5 ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas") ? "max-w-6xl" : "max-w-4xl"}`}>
         {!responsavel || trocando ? (
           <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
         ) : aba === "checklists" ? (
@@ -154,6 +164,8 @@ export function CozinhaApp({
           <SecaoTemperatura locais={locais} temperaturas={temperaturas} responsavel={responsavel} acoes={acoes} />
         ) : aba === "producao" ? (
           <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} />
+        ) : aba === "proteinas" ? (
+          <ProteinasCozinha proteinas={proteinas} lotes={lotesProteina} responsavel={responsavel} acoes={acoes} />
         ) : aba === "fichas" ? (
           <FichasCozinha fichas={fichas} />
         ) : (
