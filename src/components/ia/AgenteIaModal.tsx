@@ -73,7 +73,11 @@ export function AgenteIaModal({
   insumoFocoNome,
   onAplicarNutricional,
   onAplicarEstoque,
+  escopo = "completo",
 }: {
+  /** EQUIPE (2026-09-25): "estoque" = versão do estoquista: notas fiscais,
+   * chegadas, perdas e contagens. Sem tabela nutricional (tela da gestão). */
+  escopo?: "completo" | "estoque";
   aberto: boolean;
   onFechar: () => void;
   insumoFocoId?: string | null;
@@ -106,14 +110,16 @@ export function AgenteIaModal({
           remetente: "ia",
           texto: insumoFocoNome
             ? `Olá! Estou pronto para calibrar o insumo **${insumoFocoNome}**. Envie uma foto da embalagem/tabela nutricional ou grave um áudio para eu preencher os dados automaticamente.`
-            : "Olá! Sou o **Agente de IA da Cozinha & Estoque**. Você pode me enviar fotos de rótulos/notas fiscais, gravar áudios da operação ou conectar pelo WhatsApp para lançar tudo no sistema automaticamente.",
+            : escopo === "estoque"
+              ? "Olá! Sou o **Agente de IA do Estoque**. Mande a foto da nota fiscal ou do cupom, grave um áudio da chegada ou da perda, ou conecte o WhatsApp: eu preparo o lançamento no estoque pra você conferir e confirmar."
+              : "Olá! Sou o **Agente de IA da Cozinha & Estoque**. Você pode me enviar fotos de rótulos/notas fiscais, gravar áudios da operação ou conectar pelo WhatsApp para lançar tudo no sistema automaticamente.",
           timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
           origem: "web",
         },
       ];
       setMensagens(msgsIniciais);
     }
-  }, [insumoFocoNome, mensagens.length]);
+  }, [insumoFocoNome, mensagens.length, escopo]);
 
   // Scroll automático para a última mensagem
   useEffect(() => {
@@ -216,13 +222,15 @@ export function AgenteIaModal({
       const promptLower = promptTexto.toLowerCase();
 
       // Caso 1: Rótulo / Dados Nutricionais (Fermento, Farinha, etc.)
+      // No escopo do estoque a foto é de nota fiscal (cai no Caso 2).
       if (
-        imgUrl ||
+        escopo === "completo" &&
+        (imgUrl ||
         promptLower.includes("rótulo") ||
         promptLower.includes("nutricional") ||
         promptLower.includes("caloria") ||
         promptLower.includes("fermento") ||
-        insumoFocoNome
+        insumoFocoNome)
       ) {
         const insumoId = insumoFocoId || "i-fermento";
         const insumoNome = insumoFocoNome || "Fermento Biológico Seco";
@@ -268,7 +276,7 @@ export function AgenteIaModal({
       }
 
       // Caso 2: Entrada de Estoque / Nota Fiscal
-      if (promptLower.includes("peito de frango") || promptLower.includes("chegaram") || promptLower.includes("nota") || promptLower.includes("compra")) {
+      if ((escopo === "estoque" && imgUrl) || promptLower.includes("peito de frango") || promptLower.includes("chegaram") || promptLower.includes("nota") || promptLower.includes("compra")) {
         const respostaIa: MensagemChat = {
           id: `ia-${Date.now()}`,
           remetente: "ia",
@@ -304,7 +312,10 @@ export function AgenteIaModal({
       const respostaIa: MensagemChat = {
         id: `ia-${Date.now()}`,
         remetente: "ia",
-        texto: `Entendido! Posso ajudar a:\n1. 📷 Ler fotos de rótulos e embalagens para preencher tabelas nutricionais.\n2. 📄 Ler notas fiscais ou cupons de fornecedores para dar entrada no estoque.\n3. 🎙️ Ouvir áudios da equipe da cozinha com lotes, perdas ou recebimentos.\n4. 📲 Conectar ao WhatsApp para receber tudo direto do celular da equipe.`,
+        texto:
+          escopo === "estoque"
+            ? `Entendido! No estoque eu posso:\n1. 📄 Ler a foto da nota fiscal ou do cupom e preparar a entrada no estoque.\n2. 🎙️ Ouvir áudios de chegada, perda ou descarte e lançar a movimentação.\n3. 📦 Avisar quando um insumo estiver abaixo do mínimo.\n4. 📲 Receber tudo pelo WhatsApp, direto do celular.`
+            : `Entendido! Posso ajudar a:\n1. 📷 Ler fotos de rótulos e embalagens para preencher tabelas nutricionais.\n2. 📄 Ler notas fiscais ou cupons de fornecedores para dar entrada no estoque.\n3. 🎙️ Ouvir áudios da equipe da cozinha com lotes, perdas ou recebimentos.\n4. 📲 Conectar ao WhatsApp para receber tudo direto do celular da equipe.`,
         timestamp: hora,
         origem: "web",
       };
@@ -554,7 +565,7 @@ export function AgenteIaModal({
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {EXEMPLOS_AUDIO.map((ex, i) => (
+                {EXEMPLOS_AUDIO.filter((ex) => escopo === "completo" || ex.tipo !== "nutricional").map((ex, i) => (
                   <button
                     key={i}
                     onClick={() => {
@@ -765,6 +776,7 @@ export function AgenteIaModal({
               <span className="text-[11px] font-bold text-[var(--tinta-faint)] shrink-0">
                 Exemplos:
               </span>
+              {escopo === "completo" && (
               <button
                 onClick={() => {
                   setTextoEntrada("Ler rótulo do fermento biológico seco");
@@ -775,6 +787,7 @@ export function AgenteIaModal({
               >
                 📷 Rótulo Fermento
               </button>
+              )}
               <button
                 onClick={() => {
                   setTextoEntrada("Chegaram 15kg de peito de frango a R$ 17,90");

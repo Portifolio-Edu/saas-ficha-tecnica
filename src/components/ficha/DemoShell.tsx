@@ -57,7 +57,9 @@ function DemoShellComPapel({ nomeRestaurante, tituloPagina, children }: Props) {
       extrasCabecalho={
         <>
           <SeletorPapelDemo />
-          {(papel === "dono" || papel === "gestor") && <BotaoAgenteIa variante="cabecalho" />}
+          {/* EQUIPE (2026-09-25): o estoquista também usa o agente, na versão do estoque
+              (notas, chegadas, perdas). Antes: só dono e gestor. */}
+          {papel !== "cozinha" && <BotaoAgenteIa variante="cabecalho" escopo={papel === "estoquista" ? "estoque" : "completo"} />}
         </>
       }
     >

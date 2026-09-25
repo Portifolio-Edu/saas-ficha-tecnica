@@ -7,9 +7,14 @@ import { AgenteIaModal } from "./AgenteIaModal";
 export function BotaoAgenteIa({
   variante = "flutuante",
   className = "",
+  escopo = "completo",
 }: {
   variante?: "flutuante" | "cabecalho" | "inline";
   className?: string;
+  /** EQUIPE (2026-09-25): "estoque" pro estoquista (ver AgenteIaModal). O
+   * `key={escopo}` recria a conversa quando o papel muda (a mensagem de
+   * boas-vindas depende do escopo). */
+  escopo?: "completo" | "estoque";
 }) {
   const [aberto, setAberto] = useState(false);
   const [focoId, setFocoId] = useState<string | null>(null);
@@ -54,6 +59,8 @@ export function BotaoAgenteIa({
         </button>
 
         <AgenteIaModal
+          key={escopo}
+          escopo={escopo}
           aberto={aberto}
           onFechar={fechar}
           insumoFocoId={focoId}
@@ -80,6 +87,8 @@ export function BotaoAgenteIa({
         </button>
 
         <AgenteIaModal
+          key={escopo}
+          escopo={escopo}
           aberto={aberto}
           onFechar={fechar}
           insumoFocoId={focoId}
@@ -124,6 +133,8 @@ export function BotaoAgenteIa({
       </div>
 
       <AgenteIaModal
+        key={escopo}
+        escopo={escopo}
         aberto={aberto}
         onFechar={fechar}
         insumoFocoId={focoId}
