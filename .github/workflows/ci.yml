@@ -1,0 +1,49 @@
+# PLANO 9,5 (2026-09-26): rede de proteção automática. Roda em todo push.
+#  - app: tipos, lint (sem avisos), testes unitários e build de produção;
+#  - banco: recria o banco do zero com TODAS as migrations (Supabase local)
+#    e roda os testes SQL de supabase/testes (papéis, isolamento, escalas…).
+# Qualquer falha deixa o check vermelho no PR.
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App (tipos, lint, testes, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tipos
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npx eslint src --max-warnings=0
+      - name: Testes unitários
+        run: npx vitest run
+      - name: Build de produção
+        run: npm run build
+
+  banco:
+    name: Banco (migrations do zero + testes SQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Banco do zero com todas as migrations
+        run: supabase db start
+      - name: Testes SQL
+        run: supabase/testes/rodar.sh

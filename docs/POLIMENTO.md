@@ -527,3 +527,19 @@ novas + 43 anteriores, em 1440/820/390 px, sem erro no console.
 
 **Reverter:** `git revert` do commit "equipe: prontuário de competências" e
 `supabase/reverter/20260927100000_perfil_equipe.sql` no banco.
+
+## 18. Plano 9,5 — etapa 1: rede de proteção automática
+
+Plano completo em `docs/PLANO_9_5.md`.
+
+- `.github/workflows/ci.yml`: em todo push, tipos, lint sem avisos, testes
+  unitários e build; e o banco recriado do zero (Supabase local, todas as
+  17 migrations) com os testes SQL.
+- `supabase/testes/rodar.sh`: roda todos os testes SQL e falha com qualquer
+  erro, linha FALHOU ou teste sem resultado. Local: `supabase start` e
+  `supabase/testes/rodar.sh`.
+- Primeira vez que o banco foi recriado do zero: as 17 migrations aplicam
+  limpas e os 7 arquivos de teste passam (151/151). Corrigido no caminho:
+  `papeis.sql` não dava permissão à tabela de resultado pro papel do servidor.
+
+**Reverter:** `git revert` do commit "ci: rede de proteção automática".
