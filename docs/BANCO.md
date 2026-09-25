@@ -24,6 +24,28 @@ Decisão do dono do produto: reaproveitar este projeto para o Ficha Técnica.
    precisa; cada uma confere o `cliente_id`), e as tabelas do arquivo sem
    policy (fora da API).
 
+## Equipe e papéis (2026-09-25)
+
+Migration `20260925120000_equipe_papeis` (aplicada). Cada restaurante tem
+equipe (`membros`), com um papel por pessoa. O bloqueio é na RLS, não só no menu.
+
+| Papel | Vê e mexe | Não vê |
+|---|---|---|
+| dono | tudo, cria gestor | nada fica escondido |
+| gestor | tudo da operação | nada fica escondido (só não mexe no dono) |
+| estoquista | insumos (com preço de compra), estoque, fornecedores, movimentações, proteínas, locais; CMV do estoque por `fechamentos_cmv_estoque()` | receitas, preço de venda, fichas com custo, canais, faturamento, contagens cegas |
+| cozinha | checklists, temperaturas, produções e perdas, fichas sem custo (`dados_cozinha()`), contagem cega (`enviar_contagem()`) | qualquer valor em R$, saldo de estoque, fornecedores, equipe |
+
+- A produção lançada pela cozinha baixa o estoque pelo servidor
+  (`baixar_estoque_producao`, só service role, uma vez por produção).
+- Contagem cega guarda o saldo do sistema da hora (`contagem_itens.saldo_sistema`);
+  só a gestão vê a diferença.
+- Membro desativado (`membros.ativo = false`) perde o acesso na hora.
+- Auditoria: `criado_por` em produções, checklists, temperaturas e movimentações.
+- Teste: `supabase/testes/papeis.sql` (54/54 OK em 2026-09-25) + o de
+  isolamento (13/13 OK depois da migration).
+- Reverter: `supabase/reverter/20260925120000_equipe_papeis.sql`.
+
 ## Teste de isolamento
 
 `supabase/testes/isolamento.sql` cria dois restaurantes numa transação, tenta
