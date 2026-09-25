@@ -4,7 +4,7 @@
 
 import type { Membro, Funcionario } from "@/lib/dominio/equipe";
 import type { ContagemCega } from "@/lib/dominio/estoque";
-import type { FichaCozinha, ItemContagem, ProducaoCozinha } from "@/lib/dominio/cozinha";
+import type { FichaCozinha, ItemContagem } from "@/lib/dominio/cozinha";
 import type { FechamentoEstoque } from "@/lib/dominio/fechamentoCmv";
 import { fechamentos, insumos, locais, todasReceitas } from "./fixtures";
 
@@ -64,11 +64,6 @@ const hoje = (hora: string) => {
   d.setHours(h, m, 0, 0);
   return d.toISOString();
 };
-
-export const producoesCozinhaDemo: ProducaoCozinha[] = [
-  { id: "pc-1", lote: "MD-hoje-01", receitaId: "pr-massa-pizza", nomeReceita: receitaPorId.get("pr-massa-pizza")?.nomePrato ?? "Massa de Pizza", quantidade: 30, unidade: receitaPorId.get("pr-massa-pizza")?.unidadeRendimento ?? "discos", responsavel: "Ana Souza", status: "produzido", motivoPerda: null, criadoEm: hoje("08:10") },
-  { id: "pc-2", lote: "MT-hoje-01", receitaId: "pr-molho-tomate", nomeReceita: receitaPorId.get("pr-molho-tomate")?.nomePrato ?? "Molho de Tomate", quantidade: 8, unidade: receitaPorId.get("pr-molho-tomate")?.unidadeRendimento ?? "litros", responsavel: "Pedro Alves", status: "em_producao", motivoPerda: null, criadoEm: hoje("09:40") },
-];
 
 /** Contagem cega de exemplo: camarão e mussarela abaixo do que o sistema esperava. */
 export const contagensDemo: ContagemCega[] = [

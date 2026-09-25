@@ -4,6 +4,7 @@ import {
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator, ChefHat, Settings, Plug, Users, MonitorSmartphone,
 } from "lucide-react";
 import { NOME_RESTAURANTE } from "./fixtures";
+import { RecomecarDemo } from "./RecomecarDemo";
 
 const LINKS = [
   { href: "/preview/visao-geral", label: "Visão Geral", icon: LineChart, descricao: "KPIs, engenharia de cardápio e perdas do mês" },
@@ -42,10 +43,13 @@ export default function PreviewIndexPage() {
             Demo interativa — dados fictícios
           </div>
           Esta é uma demonstração navegável do produto, usando os mesmos componentes de tela da versão
-          real, mas com dados de um restaurante fictício (&ldquo;{NOME_RESTAURANTE}&rdquo;) mantidos em
-          memória — nenhuma informação é salva em banco de dados. Filtros, abas, expansão de linhas e
-          gráficos funcionam normalmente; ações de salvar/excluir que dependem de login e banco de dados
-          não se aplicam aqui.
+          real, mas com dados de um restaurante fictício (&ldquo;{NOME_RESTAURANTE}&rdquo;). Nada vai pra
+          banco de dados: o que você registra fica só neste navegador. O que a cozinha registra (produção,
+          perda, checklist, temperatura, contagem) aparece no painel do gestor, como no sistema de verdade.
+          {/* DEMO (2026-09-25): texto antigo dizia que nada era salvo; agora a demo guarda no navegador. */}
+          <div>
+            <RecomecarDemo />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

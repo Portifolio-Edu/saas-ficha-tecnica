@@ -3,7 +3,8 @@
 // EQUIPE (2026-09-25): resultado da contagem cega, só pra dono e gestor. A
 // cozinha contou sem ver o saldo; aqui aparece a diferença pro sistema, em
 // quantidade e em R$. Falta grande e repetida no mesmo item é o sinal de
-// desvio. Na demo (/preview) as ações só mexem no estado local.
+// desvio. Na demo (/preview) as ações gravam no "banco" da demo
+// (src/lib/demo/contagens.ts): o ajuste aparece no saldo e nas movimentações.
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -15,6 +16,7 @@ import { useToast } from "@/components/ficha/Toast";
 import { formatBRL, formatQtd } from "@/components/charts/format";
 import type { ContagemCega } from "@/lib/dominio/estoque";
 import { acaoAplicarContagem, acaoDescartarContagem } from "@/app/estoque/actions";
+import { aplicarContagemDemo, descartarContagemDemo } from "@/lib/demo/contagens";
 
 const valorDaDiferenca = (c: ContagemCega) =>
   c.itens.reduce((soma, i) => soma + (i.contada - i.sistema) * i.precoUnitario, 0);
@@ -22,7 +24,10 @@ const valorDaDiferenca = (c: ContagemCega) =>
 export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCega[] }) {
   const emModoDemo = usePathname()?.startsWith("/preview");
   const { mostrarErro, mostrarSucesso } = useToast();
-  const [contagens, setContagens] = useState(iniciais);
+  // Na demo a lista é local; no app vem das props, que a server action e a
+  // atualização automática da página renovam (useState das props congelaria).
+  const [contagensDemo, setContagens] = useState(iniciais);
+  const contagens = emModoDemo ? contagensDemo : iniciais;
   const [aberta, setAberta] = useState<string | null>(iniciais.find((c) => !c.aplicadaEm)?.id ?? null);
   const [ocupado, setOcupado] = useState<string | null>(null);
 
@@ -31,7 +36,7 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
   const aplicar = async (c: ContagemCega) => {
     if (!window.confirm("Ajustar o estoque pelo que foi contado? Cada diferença vira uma movimentação.")) return;
     setOcupado(c.id);
-    const r = emModoDemo ? { ok: true as const } : await acaoAplicarContagem(c.id);
+    const r = emModoDemo ? (aplicarContagemDemo(c, contagens), { ok: true as const }) : await acaoAplicarContagem(c.id);
     setOcupado(null);
     if (!r.ok) return mostrarErro(r.erro);
     setContagens((atual) => atual.map((x) => (x.id === c.id ? { ...x, aplicadaEm: new Date().toISOString() } : x)));
@@ -41,7 +46,7 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
   const descartar = async (c: ContagemCega) => {
     if (!window.confirm("Descartar esta contagem? O estoque não muda.")) return;
     setOcupado(c.id);
-    const r = emModoDemo ? { ok: true as const } : await acaoDescartarContagem(c.id);
+    const r = emModoDemo ? (descartarContagemDemo(c.id, contagens), { ok: true as const }) : await acaoDescartarContagem(c.id);
     setOcupado(null);
     if (!r.ok) return mostrarErro(r.erro);
     setContagens((atual) => atual.filter((x) => x.id !== c.id));

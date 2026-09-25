@@ -134,7 +134,8 @@ export function ProducoesClient({
     carregarDemo();
 
     const escutarStorage = (e: StorageEvent) => {
-      if (e.key === "demo_producoes" || e.key === "demo_estoque") {
+      // DEMO (2026-09-25): key nula = "Recomeçar a demonstração" (limparDemo).
+      if (!e.key || e.key === "demo_producoes" || e.key === "demo_estoque") {
         carregarDemo();
       }
     };

@@ -12,7 +12,8 @@
 // referência), desenhados em components/checklists/PracasView.tsx. A aba de turno
 // mostra os outros momentos. Versão anterior: `git show 38b1401:src/app/checklists/ChecklistsClient.tsx`.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { CHAVES_DEMO, gravarDemo, lerDemo } from "@/lib/demo/armazem";
 import { usePathname } from "next/navigation";
 import { X, Check, Plus } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
@@ -44,8 +45,28 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
   // Estado local só existe na demo (/preview), que não tem banco. Fora dela a
   // lista vem das props: a server action revalida a rota e o servidor manda a
   // versão gravada -- um useState inicializado das props ficaria congelado.
-  const [listaDemo, setListaChecklists] = useState<Checklist[]>(checklists);
+  const [listaDemo, setListaInterna] = useState<Checklist[]>(checklists);
   const listaChecklists = emModoDemo ? listaDemo : checklists;
+
+  // DEMO (2026-09-25): a lista da demo vive no "banco" da demo
+  // (src/lib/demo/armazem.ts), compartilhado com o modo cozinha: item marcado
+  // no tablet aparece aqui e vice-versa. Antes ficava só no estado desta tela.
+  useEffect(() => {
+    if (!emModoDemo) return;
+    const carregar = () => setListaInterna(lerDemo(CHAVES_DEMO.checklists, checklists));
+    carregar();
+    const escutar = (e: StorageEvent) => {
+      if (!e.key || e.key === CHAVES_DEMO.checklists) carregar();
+    };
+    window.addEventListener("storage", escutar);
+    return () => window.removeEventListener("storage", escutar);
+  }, [emModoDemo, checklists]);
+
+  const setListaChecklists = (atualizar: Checklist[] | ((prev: Checklist[]) => Checklist[])) => {
+    const novo = typeof atualizar === "function" ? atualizar(lerDemo(CHAVES_DEMO.checklists, listaDemo)) : atualizar;
+    setListaInterna(novo);
+    gravarDemo(CHAVES_DEMO.checklists, novo);
+  };
 
   const [turnoId, setTurnoId] = useState<string | null>(turnos[0]?.id ?? null);
   const [chefeTurno, setChefeTurno] = useState("");
