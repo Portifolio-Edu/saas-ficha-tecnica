@@ -18,13 +18,17 @@ A nota 9,5 depende da etapa 6: sem gente real usando, qualquer nota acima de
 
 ## 1. Rede de proteção automática
 
-- [ ] GitHub Actions em todo push/PR: tipos, lint, testes unitários, build.
-- [ ] Banco recriado do zero no CI (Supabase local, todas as migrations) — prova
+- [x] GitHub Actions em todo push/PR: tipos, lint, testes unitários, build.
+- [x] Banco recriado do zero no CI (Supabase local, todas as migrations) — prova
       que o banco é reproduzível, não só o que está no ar.
-- [ ] Testes SQL (papéis, isolamento, escalas, prontuário, proteínas…)
+- [x] Testes SQL (papéis, isolamento, escalas, prontuário, proteínas…)
       rodando sozinhos no CI; qualquer linha "FALHOU" deixa o check vermelho.
 
 **Pronto quando:** o PR mostra os checks verdes e um erro proposital deixa vermelho.
+
+✅ **Concluída em 2026-09-25.** Execução #1 no GitHub: app (tipos, lint, 130
+testes, build) e banco (17 migrations do zero + 151/151 testes SQL) verdes.
+Erro proposital num teste SQL: o executor saiu com falha (código 1).
 
 ## 2. Ponta a ponta com login real
 
