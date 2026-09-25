@@ -292,3 +292,34 @@ da lista. O cliente cria quantas praças quiser, com o nome que quiser.
 `20260923120000_checklist_fotos_pracas.sql`.
 **Reverter:** `git revert` do commit `polimento(pracas-areas)` e o bloco
 "Reverter" do topo da migration, se já aplicada.
+
+## 11. Equipe e acessos: dono, gestor, estoquista e cozinha
+
+Commits `42faa4f` (banco), `c966f91` (telas por papel e Equipe) e `cf109b5`
+(modo cozinha e "Ver como" na demo). Pedido do dono do produto: funcionário
+não pode ter acesso total às informações do restaurante nem ao estoque.
+
+| Papel | Entra com | Vê |
+|---|---|---|
+| Dono | e-mail e senha do cadastro | tudo; cria gestor |
+| Gestor | usuário e senha criados pelo dono | tudo da operação |
+| Estoquista | usuário e senha criados pelo dono ou gestor | Insumos, Estoque, Proteínas e o CMV do estoque (sem faturamento, CMV % ou margem) |
+| Cozinha | aparelho conectado por código, sem senha | checklists, temperaturas, produção e perda, fichas sem custo, contagem cega |
+
+- **O bloqueio é no banco (RLS)**, não só no menu: a sessão do estoquista ou da
+  cozinha recebe zero linhas das tabelas de preço, margem e faturamento, mesmo
+  chamando a API por fora. Teste: `supabase/testes/papeis.sql` (54/54).
+- **Contagem cega:** a cozinha conta sem ver o saldo; o dono e o gestor veem a
+  diferença em quantidade e R$ no topo de Estoque e decidem se ajustam.
+- **Produção da cozinha baixa o estoque pelo servidor**, calculada pela ficha;
+  a cozinha não consegue mexer em saldo.
+- **Quem fez:** a cozinha escolhe o nome no aparelho (lista em Equipe) e cada
+  registro sai com ele; o banco guarda também qual login gravou (`criado_por`).
+- Demo: seletor "Ver como" no topo; `/preview/equipe` e `/preview/cozinha`.
+
+**Onde mexer:** `src/lib/auth/papeis.ts` (quem abre qual tela),
+`supabase/migrations/20260925120000_equipe_papeis.sql` (matriz de acesso),
+`src/app/equipe`, `src/app/cozinha`, `src/components/cozinha/CozinhaApp.tsx`.
+**Precisa no servidor:** `SUPABASE_SERVICE_ROLE_KEY` (ver `docs/PRODUCAO.md`).
+**Reverter:** `git revert` dos três commits e
+`supabase/reverter/20260925120000_equipe_papeis.sql` no banco.

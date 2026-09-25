@@ -10,6 +10,10 @@ Estado em 2026-09-24. Cada item diz **quem faz**: 🧑 você (painel/conta/decis
       `NEXT_PUBLIC_SUPABASE_URL=https://xmjmnnjnxvlzydixyzkf.supabase.co` e
       `NEXT_PUBLIC_SUPABASE_ANON_KEY=<chave anon do Supabase>`.
       (A conta Vercel conectada aqui é outra; por isso não consigo cadastrar sozinho.)
+- [ ] 🧑 **Vercel → mais uma variável, `SUPABASE_SERVICE_ROLE_KEY`** (Supabase → Project Settings →
+      API → `service_role`, a chave secreta). Marcar só Production e Preview, **sem** o prefixo
+      `NEXT_PUBLIC_`. Sem ela não dá pra criar acesso de gestor/estoquista, conectar o aparelho da
+      cozinha nem baixar o estoque da produção da cozinha. Nunca colar essa chave em outro lugar.
 - [ ] 🧑 **Supabase → Authentication → URL Configuration**: *Site URL* = domínio de produção;
       *Redirect URLs* = domínio de produção + `https://*-voycompany.vercel.app/**` (prévias).
 - [ ] 🧑 **E-mail de verdade (SMTP)**: o e-mail padrão do Supabase só entrega pra membros da
@@ -24,11 +28,14 @@ Estado em 2026-09-24. Cada item diz **quem faz**: 🧑 você (painel/conta/decis
       obrigatório no cadastro (grava data e versão). Senha mínima passou pra 8 caracteres.
 - [ ] 🧑 Preencher razão social, CNPJ, endereço, e-mails e foro em `src/lib/legal/empresa.ts`
       (ou me mandar os dados) e passar os dois textos por um advogado.
+- [x] 🤖 Equipe com papéis (dono, gestor, estoquista, cozinha sem senha), bloqueio no banco e
+      contagem cega. Teste no banco real: 54/54 (`supabase/testes/papeis.sql`).
 - [x] 🤖 Teste de isolamento entre restaurantes no banco real: 15 de 15 OK
       (`supabase/testes/isolamento.sql`). Achou e corrigiu um erro de permissão pra visitante.
 - [ ] 🤖 Teste de ponta a ponta com login real na prévia da Vercel, **depois** das variáveis
       (o ambiente do Claude não alcança o supabase.co direto) (cadastro → insumo → receita →
-      produção → baixa de estoque → fechamento de CMV → foto de praça).
+      produção → baixa de estoque → fechamento de CMV → foto de praça → criar estoquista → conectar
+      aparelho da cozinha → contagem cega).
 
 ## Fase 2 — Pra vender (cobrança e confiança)
 
