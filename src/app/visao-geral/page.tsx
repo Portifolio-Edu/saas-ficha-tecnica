@@ -5,6 +5,7 @@ import { listarProcessamentos } from "@/lib/dados/processamentos";
 import { listarProducoes } from "@/lib/dados/producoes";
 import { listarFechamentos } from "@/lib/dados/fechamentosCmv";
 import { AppShell } from "@/components/ficha/AppShell";
+import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { VisaoGeralClient } from "./VisaoGeralClient";
 
 export default async function VisaoGeralPage() {
@@ -20,6 +21,8 @@ export default async function VisaoGeralPage() {
 
   return (
     <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Visão geral">
+      {/* EQUIPE (2026-09-25): mostra o que a cozinha registrou sem precisar recarregar. */}
+      <AtualizacaoAutomatica />
       <VisaoGeralClient
         margemAlvoCliente={cliente.margemAlvo}
         insumos={insumos}

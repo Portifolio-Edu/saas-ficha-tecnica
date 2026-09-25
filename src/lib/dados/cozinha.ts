@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { inicioDoDiaISO } from "@/lib/calculo/dia";
 import { mensagemErro } from "./erros";
 import type { FichaCozinha, ItemContagem, ProducaoCozinha } from "@/lib/dominio/cozinha";
 import type { Insumo } from "@/lib/dominio/insumo";
@@ -154,13 +155,13 @@ export function itensDeContagem(dados: DadosCozinha, locais: LocalArmazenamento[
 
 /** Produções de hoje (sem join em receitas: a cozinha não lê a tabela; o nome vem das fichas). */
 export async function listarProducoesDeHoje(fichas: FichaCozinha[]): Promise<ProducaoCozinha[]> {
-  const inicio = new Date();
-  inicio.setHours(0, 0, 0, 0);
+  // FUSO (2026-09-25): dia de Brasília, igual à tela Checklists (src/lib/calculo/dia.ts).
+  const inicio = inicioDoDiaISO();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("producoes")
     .select("id, lote, receita_id, quantidade, responsavel, status, motivo_perda, criado_em")
-    .gte("criado_em", inicio.toISOString())
+    .gte("criado_em", inicio)
     .order("criado_em", { ascending: false });
   if (error) throw new Error(mensagemErro(error));
   const fichaPorId = new Map(fichas.map((f) => [f.id, f]));

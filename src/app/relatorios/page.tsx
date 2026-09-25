@@ -6,6 +6,7 @@ import { listarProducoes } from "@/lib/dados/producoes";
 import { listarFechamentos } from "@/lib/dados/fechamentosCmv";
 import { listarLocaisArmazenamento, listarRegistrosTemperatura } from "@/lib/dados/temperatura";
 import { AppShell } from "@/components/ficha/AppShell";
+import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { RelatoriosClient } from "./RelatoriosClient";
 
 export default async function RelatoriosPage() {
@@ -23,6 +24,8 @@ export default async function RelatoriosPage() {
 
   return (
     <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Relatórios">
+      {/* EQUIPE (2026-09-25): mostra o que a cozinha registrou sem precisar recarregar. */}
+      <AtualizacaoAutomatica />
       <RelatoriosClient
         insumos={insumos}
         receitas={receitas}

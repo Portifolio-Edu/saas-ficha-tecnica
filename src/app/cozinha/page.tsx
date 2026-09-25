@@ -6,6 +6,7 @@ import { listarChecklists } from "@/lib/dados/checklists";
 import { listarLocaisArmazenamento, listarRegistrosTemperatura } from "@/lib/dados/temperatura";
 import { listarFuncionarios } from "@/lib/dados/equipe";
 import { CozinhaApp } from "@/components/cozinha/CozinhaApp";
+import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { PareamentoForm } from "./PareamentoForm";
 import {
   acaoAtualizarProducao,
@@ -38,23 +39,27 @@ export default async function CozinhaPage() {
   ]);
 
   return (
-    <CozinhaApp
-      nomeRestaurante={cliente.nomeRestaurante}
-      funcionarios={funcionarios}
-      checklists={checklists}
-      locais={locais}
-      temperaturas={temperaturas}
-      fichas={dados.fichas}
-      itensContagem={itensDeContagem(dados, locais)}
-      producoes={producoes}
-      acoes={{
-        marcarItem: acaoMarcarItem,
-        desmarcarItem: acaoDesmarcarItem,
-        registrarTemperatura: acaoRegistrarTemperatura,
-        registrarProducao: acaoRegistrarProducao,
-        atualizarProducao: acaoAtualizarProducao,
-        enviarContagem: acaoEnviarContagem,
-      }}
-    />
+    <>
+      {/* EQUIPE (2026-09-25): checklist novo ou item marcado pelo gestor aparece no tablet sozinho. */}
+      <AtualizacaoAutomatica />
+      <CozinhaApp
+        nomeRestaurante={cliente.nomeRestaurante}
+        funcionarios={funcionarios}
+        checklists={checklists}
+        locais={locais}
+        temperaturas={temperaturas}
+        fichas={dados.fichas}
+        itensContagem={itensDeContagem(dados, locais)}
+        producoes={producoes}
+        acoes={{
+          marcarItem: acaoMarcarItem,
+          desmarcarItem: acaoDesmarcarItem,
+          registrarTemperatura: acaoRegistrarTemperatura,
+          registrarProducao: acaoRegistrarProducao,
+          atualizarProducao: acaoAtualizarProducao,
+          enviarContagem: acaoEnviarContagem,
+        }}
+      />
+    </>
   );
 }

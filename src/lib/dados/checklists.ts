@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
+import { inicioDoDiaISO } from "@/lib/calculo/dia";
 import type { Checklist, ChecklistArea, ChecklistFoto, ChecklistInput, ChecklistItem, MomentoChecklist } from "@/lib/dominio/checklist";
 
 export type { Checklist, ChecklistArea, ChecklistFoto, ChecklistInput, ChecklistItem, MomentoChecklist } from "@/lib/dominio/checklist";
@@ -8,13 +9,8 @@ export type { Checklist, ChecklistArea, ChecklistFoto, ChecklistInput, Checklist
 // (migration 20260923120000_checklist_fotos_pracas.sql).
 const BUCKET_FOTOS_PRACAS = "pracas-fotos";
 
-/** "Hoje" no fuso do servidor -- suficiente pro caso de uso (checklist de
- * turno reinicia todo dia), sem exigir configuração de fuso por cliente. */
-function inicioDoDiaISO(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
+// FUSO (2026-09-25): "hoje" é o dia de Brasília (src/lib/calculo/dia.ts).
+// Antes era o fuso do servidor (UTC na Vercel): o dia virava às 21h.
 
 interface LinhaChecklist {
   id: string;

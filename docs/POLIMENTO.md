@@ -323,3 +323,33 @@ não pode ter acesso total às informações do restaurante nem ao estoque.
 **Precisa no servidor:** `SUPABASE_SERVICE_ROLE_KEY` (ver `docs/PRODUCAO.md`).
 **Reverter:** `git revert` dos três commits e
 `supabase/reverter/20260925120000_equipe_papeis.sql` no banco.
+
+## 12. Cozinha → painel do gestor: conexão verificada
+
+Teste do usuário: registrou uma produção no modo cozinha e ela não apareceu
+no painel. Era a demonstração (`/preview`): lá as ações da cozinha só
+respondiam "ok" e não gravavam nada.
+
+- **Demo:** agora existe um "banco" da demo no navegador
+  (`src/lib/demo/armazem.ts`). A cozinha grava produção, perda, checklist,
+  temperatura e contagem cega (`src/app/preview/cozinha/acoesDemo.ts`), com as
+  regras do app: a produção baixa o estoque pela ficha e lança "saída
+  produção". Produções, Estoque (saldo, movimentações, contagens), Checklists,
+  Segurança alimentar, Relatórios e Visão geral leem de lá. Aplicar uma
+  contagem cega na demo ajusta o saldo e lança a movimentação
+  (`src/lib/demo/contagens.ts`). Botão "Recomeçar a demonstração" em `/preview`.
+- **Sistema de verdade:** o banco já ligava as duas pontas; agora está provado
+  em `supabase/testes/cozinha_para_gestao.sql` (15/15): a cozinha grava como
+  as server actions gravam e o gestor lê com as consultas das telas.
+- **Tela aberta se atualiza sozinha:** `AtualizacaoAutomatica` pede os dados de
+  novo a cada 30 s e quando a aba volta a ficar visível, em Produções,
+  Checklists, Segurança, Estoque, Visão geral, Relatórios e no tablet.
+  Contagens cegas liam as props só na abertura; agora acompanham.
+- **"Hoje" no fuso de Brasília** (`src/lib/calculo/dia.ts`): o servidor da
+  Vercel roda em UTC e o dia virava às 21h. Checklist feito às 20h sumia do
+  painel às 21h; o lote da noite saía com a data de amanhã.
+- Verificado no navegador: produção, baixa, temperatura, checklist e contagem
+  feitos no tablet da demo aparecem no painel, sem erro no console.
+
+**Reverter:** `git revert` do commit. Pra só desligar a atualização
+automática, tire `<AtualizacaoAutomatica />` das páginas.

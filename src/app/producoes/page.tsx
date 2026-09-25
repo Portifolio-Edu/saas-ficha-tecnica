@@ -4,6 +4,7 @@ import { listarReceitas } from "@/lib/dados/receitas";
 import { listarProducoes, garantirTurnosPadrao } from "@/lib/dados/producoes";
 import { listarProcessamentos } from "@/lib/dados/processamentos";
 import { AppShell } from "@/components/ficha/AppShell";
+import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { ProducoesClient } from "./ProducoesClient";
 
 export default async function ProducoesPage() {
@@ -19,6 +20,8 @@ export default async function ProducoesPage() {
 
   return (
     <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Produções">
+      {/* EQUIPE (2026-09-25): mostra o que a cozinha registrou sem precisar recarregar. */}
+      <AtualizacaoAutomatica />
       <ProducoesClient insumos={insumos} receitas={receitas} producoes={producoes} turnos={turnos} processamentos={processamentos} />
     </AppShell>
   );
