@@ -10,6 +10,11 @@ export interface IngredienteFicha {
   unidade: string;
   /** Sub-receita (preparo da casa) em vez de insumo comprado. */
   ehPreparo: boolean;
+  /** FICHAS (2026-09-25): id da sub-receita, pra abrir a ficha dela no tablet. */
+  receitaId: string | null;
+  /** FICHAS (2026-09-25): fator de correção do insumo (limpeza/aparas). Acima
+   * de 1 o tablet mostra também o peso bruto a separar. Não é valor em R$. */
+  fatorCorrecao: number | null;
 }
 
 export interface EtapaFicha {

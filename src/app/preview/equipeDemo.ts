@@ -43,6 +43,8 @@ export const fichasCozinhaDemo: FichaCozinha[] = todasReceitas.map((r) => ({
     quantidade: l.pesoLiquido,
     unidade: l.unidade,
     ehPreparo: !l.insumoId,
+    receitaId: l.insumoId ? null : l.subReceitaId,
+    fatorCorrecao: l.insumoId ? (insumoPorId.get(l.insumoId)?.fatorCorrecao ?? null) : null,
   })),
   etapas: r.etapas.map((e) => ({ ordem: e.ordem, titulo: e.titulo, texto: e.texto, fotoUrl: e.fotoUrl })),
 }));

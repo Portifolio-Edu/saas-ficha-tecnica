@@ -60,6 +60,11 @@ function etapa(id: string, ordem: number, titulo: string, texto: string): EtapaR
 // =========================================================================
 // Receitas — 3 preparos (sub-receitas) + 6 pratos finais que as referenciam.
 // =========================================================================
+// FICHAS (2026-09-25): passo a passo completo (quantidades, tempos, ponto
+// certo, validade) em todos os preparos e pratos, e fotos ilustrativas do
+// empratamento (Unsplash) em 4 pratos, pra demo do tablet. Parmegiana e
+// Caprese ficam sem foto de propósito: mostram o aviso de foto faltando.
+// No sistema de verdade a foto é a do prato da casa, que o gestor sobe.
 
 export const receitasPreparos: Receita[] = [
   {
@@ -83,7 +88,13 @@ export const receitasPreparos: Receita[] = [
       linha("pr-massa-l3", { insumoId: "i-azeite", pesoLiquido: 0.15, unidade: "l" }),
       linha("pr-massa-l4", { insumoId: "i-sal", pesoLiquido: 0.04, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pr-massa-e1", 1, "Hidratar o fermento", "Misturar os 50 g de fermento em 1,3 l de água morna (35 °C). Esperar 10 min até formar espuma."),
+      etapa("pr-massa-e2", 2, "Misturar a massa", "Na masseira, colocar os 2,2 kg de farinha e os 40 g de sal. Juntar o fermento hidratado e os 150 ml de azeite. Bater em velocidade 1 por 4 min."),
+      etapa("pr-massa-e3", 3, "Sovar", "Bater em velocidade 2 por 8 min, até a massa soltar da cuba e ficar lisa. Ponto certo: esticar um pedaço fino sem rasgar (ponto de véu)."),
+      etapa("pr-massa-e4", 4, "Descanso", "Cobrir com filme e deixar crescer 2 h em temperatura ambiente, até dobrar de volume."),
+      etapa("pr-massa-e5", 5, "Porcionar", "Dividir em 10 discos de 220 g na balança. Bolear, colocar na caixa com tampa e etiquetar com data e lote. Validade: 3 dias na geladeira."),
+    ],
   },
   {
     id: "pr-molho-tomate",
@@ -108,7 +119,13 @@ export const receitasPreparos: Receita[] = [
       linha("pr-molho-l5", { insumoId: "i-sal", pesoLiquido: 0.05, unidade: "kg" }),
       linha("pr-molho-l6", { insumoId: "i-manjericao", pesoLiquido: 0.03, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pr-molho-e1", 1, "Pré-preparo", "Lavar os 5 kg de tomate (pesar bruto ~5,75 kg), tirar o olho e cortar em 4. Picar os 600 g de cebola em cubos pequenos e amassar os 100 g de alho."),
+      etapa("pr-molho-e2", 2, "Refogar", "Em panela grande, aquecer os 200 ml de azeite em fogo médio. Refogar a cebola por 5 min, até ficar transparente. Juntar o alho e mexer 1 min, sem deixar dourar."),
+      etapa("pr-molho-e3", 3, "Cozinhar", "Adicionar o tomate e os 50 g de sal. Tampar e cozinhar em fogo baixo por 40 min, mexendo a cada 10 min pra não pegar no fundo."),
+      etapa("pr-molho-e4", 4, "Bater e finalizar", "Bater com mixer até ficar liso. Desligar o fogo e juntar as 30 g de manjericão rasgado. Ponto certo: rende 4 litros, textura de nappe (cobre a colher)."),
+      etapa("pr-molho-e5", 5, "Resfriar e guardar", "Resfriar em banho-maria de gelo até 10 °C em no máximo 2 h. Porcionar em potes de 1 l, etiquetar e guardar a 4 °C. Validade: 5 dias."),
+    ],
   },
   {
     id: "pr-molho-branco",
@@ -131,7 +148,12 @@ export const receitasPreparos: Receita[] = [
       linha("pr-branco-l3", { insumoId: "i-leite", pesoLiquido: 2, unidade: "l" }),
       linha("pr-branco-l4", { insumoId: "i-sal", pesoLiquido: 0.02, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pr-branco-e1", 1, "Roux", "Derreter os 200 g de manteiga em fogo baixo. Juntar os 200 g de farinha de uma vez e mexer com fouet por 3 min, sem dourar (roux branco)."),
+      etapa("pr-branco-e2", 2, "Incorporar o leite", "Com o fogo médio, juntar os 2 l de leite frio aos poucos, sempre batendo com o fouet pra não empelotar."),
+      etapa("pr-branco-e3", 3, "Cozinhar", "Cozinhar por 8 min depois de ferver, mexendo sem parar. Temperar com os 20 g de sal. Ponto certo: cobre as costas da colher."),
+      etapa("pr-branco-e4", 4, "Guardar", "Cobrir com filme encostado no molho (não forma película). Resfriar, etiquetar e guardar a 4 °C. Validade: 3 dias."),
+    ],
   },
 ];
 
@@ -150,7 +172,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.68,
     modoPreparo: "Abrir o disco de massa, cobrir com molho de tomate, mussarela e manjericão fresco; assar a 380°C por 3min.",
-    fotoUrl: "https://picsum.photos/seed/pizza-margherita-padrao/900/650",
+    fotoUrl: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=1200&q=80",
     ficha: [
       linha("pt-marg-l1", { subReceitaId: "pr-massa-pizza", pesoLiquido: 1, unidade: "un" }),
       linha("pt-marg-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.15, unidade: "l" }),
@@ -179,7 +201,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.65,
     modoPreparo: "Abrir o disco de massa, cobrir com molho de tomate, mussarela, calabresa fatiada e cebola; assar a 380°C por 3min.",
-    fotoUrl: null,
+    fotoUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=80",
     ficha: [
       linha("pt-cal-l1", { subReceitaId: "pr-massa-pizza", pesoLiquido: 1, unidade: "un" }),
       linha("pt-cal-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.15, unidade: "l" }),
@@ -187,7 +209,13 @@ export const receitasPratos: Receita[] = [
       linha("pt-cal-l4", { insumoId: "i-calabresa", pesoLiquido: 0.12, unidade: "kg" }),
       linha("pt-cal-l5", { insumoId: "i-cebola", pesoLiquido: 0.05, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pt-cal-e1", 1, "Abrir o disco", "Abrir 1 disco de massa até 30 cm, com a borda levemente mais grossa."),
+      etapa("pt-cal-e2", 2, "Molho", "Espalhar 150 ml de molho de tomate com a concha, em espiral, deixando 2 cm de borda."),
+      etapa("pt-cal-e3", 3, "Cobertura", "Distribuir 150 g de mussarela, depois 120 g de calabresa fatiada fina (0,5 cm) e 50 g de cebola em rodelas por cima."),
+      etapa("pt-cal-e4", 4, "Assar", "Forno a 380 °C por 3 min. Ponto certo: borda dourada e calabresa levemente tostada."),
+      etapa("pt-cal-e5", 5, "Empratar", "Cortar em 8 pedaços iguais e servir na tábua. Conferir com a foto antes de sair."),
+    ],
   },
   {
     id: "pt-parmegiana",
@@ -234,7 +262,7 @@ export const receitasPratos: Receita[] = [
     // de propósito, para exercitar o estado de alerta nas telas de CMV/relatórios.
     margemAlvo: 0.72,
     modoPreparo: "Refogar camarão com alho e manteiga, finalizar o arroz com azeite, cebola e parmesão.",
-    fotoUrl: null,
+    fotoUrl: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=1200&q=80",
     ficha: [
       linha("pt-risoto-l1", { insumoId: "i-camarao", pesoLiquido: 0.18, unidade: "kg" }),
       linha("pt-risoto-l2", { insumoId: "i-azeite", pesoLiquido: 0.02, unidade: "l" }),
@@ -243,7 +271,13 @@ export const receitasPratos: Receita[] = [
       linha("pt-risoto-l5", { insumoId: "i-manteiga", pesoLiquido: 0.02, unidade: "kg" }),
       linha("pt-risoto-l6", { insumoId: "i-cebola", pesoLiquido: 0.03, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pt-risoto-e1", 1, "Separar", "Pesar 180 g de camarão limpo (bruto ~195 g), 30 g de cebola picada, 10 g de alho, 20 g de manteiga e 30 g de parmesão."),
+      etapa("pt-risoto-e2", 2, "Selar o camarão", "Frigideira bem quente com metade do azeite (10 ml). Selar o camarão 1 min de cada lado. Reservar."),
+      etapa("pt-risoto-e3", 3, "Finalizar o arroz", "Na mesma panela, refogar a cebola e o alho no restante do azeite. Juntar o arroz pré-cozido e o caldo quente aos poucos até ficar cremoso (al dente)."),
+      etapa("pt-risoto-e4", 4, "Mantecar", "Fora do fogo, juntar a manteiga gelada e o parmesão. Mexer vigorosamente até ficar brilhante. Voltar o camarão."),
+      etapa("pt-risoto-e5", 5, "Empratar", "Prato fundo aquecido. Risoto no centro, camarões por cima, fio de azeite. Servir na hora (ponto de onda)."),
+    ],
   },
   {
     id: "pt-lasanha",
@@ -259,7 +293,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.65,
     modoPreparo: "Montar camadas de carne refogada, molho de tomate, molho branco e mussarela; gratinar no forno.",
-    fotoUrl: null,
+    fotoUrl: "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=1200&q=80",
     ficha: [
       linha("pt-las-l1", { insumoId: "i-patinho", pesoLiquido: 0.15, unidade: "kg" }),
       linha("pt-las-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.2, unidade: "l" }),
@@ -296,7 +330,11 @@ export const receitasPratos: Receita[] = [
       linha("pt-cap-l4", { insumoId: "i-azeite", pesoLiquido: 0.015, unidade: "l" }),
       linha("pt-cap-l5", { insumoId: "i-sal", pesoLiquido: 0.005, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pt-cap-e1", 1, "Fatiar", "Fatiar 180 g de tomate (bruto ~207 g) e 120 g de mussarela de búfala em rodelas de 1 cm."),
+      etapa("pt-cap-e2", 2, "Montar", "Intercalar tomate e mussarela em leque no prato raso, em círculo."),
+      etapa("pt-cap-e3", 3, "Finalizar", "10 g de manjericão fresco por cima, 15 ml de azeite em fio e 5 g de flor de sal. Servir frio (até 10 °C)."),
+    ],
   },
 ];
 

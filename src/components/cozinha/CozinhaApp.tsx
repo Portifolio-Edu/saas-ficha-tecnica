@@ -7,15 +7,15 @@
 // (dados_cozinha). A faixa "Quem está fazendo" fica sempre à vista: cada
 // registro sai com o nome de quem fez.
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   ChefHat, ClipboardCheck, Thermometer, CookingPot, BookOpen, PackageSearch,
-  Check, ChevronLeft, Search, UserRound, EyeOff, AlertTriangle,
+  Check, ChevronLeft, UserRound, EyeOff, AlertTriangle,
 } from "lucide-react";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
 import { QuadroProducaoCozinha } from "./QuadroProducaoCozinha";
+import { FichasCozinha } from "./FichasCozinha";
 import { nums } from "@/components/ficha/tema";
-import { formatQtd } from "@/components/charts/format";
 import { MOMENTOS, type Checklist } from "@/lib/dominio/checklist";
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { FichaCozinha, ItemContagem, ProducaoCozinha } from "@/lib/dominio/cozinha";
@@ -143,8 +143,9 @@ export function CozinhaApp({
         </nav>
       </header>
 
-      {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda. */}
-      <main className={`flex-1 w-full mx-auto px-4 py-5 ${aba === "producao" && responsavel && !trocando ? "max-w-[1440px]" : "max-w-4xl"}`}>
+      {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda.
+          FICHAS (2026-09-25): Fichas usa 2 colunas (foto e ingredientes | passo a passo). */}
+      <main className={`flex-1 w-full mx-auto px-4 py-5 ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && aba === "fichas" ? "max-w-6xl" : "max-w-4xl"}`}>
         {!responsavel || trocando ? (
           <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
         ) : aba === "checklists" ? (
@@ -154,7 +155,7 @@ export function CozinhaApp({
         ) : aba === "producao" ? (
           <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} />
         ) : aba === "fichas" ? (
-          <SecaoFichas fichas={fichas} />
+          <FichasCozinha fichas={fichas} />
         ) : (
           <SecaoContagem itens={itensContagem} responsavel={responsavel} acoes={acoes} />
         )}
@@ -396,102 +397,8 @@ function SecaoTemperatura({ locais, temperaturas: iniciais, responsavel, acoes }
 // TOQUE (2026-09-25): a antiga SecaoProducao (formulário + lista "Hoje") virou
 // o quadro em QuadroProducaoCozinha.tsx. Versão anterior: git show 38d1d82:src/components/cozinha/CozinhaApp.tsx
 
-function SecaoFichas({ fichas }: { fichas: FichaCozinha[] }) {
-  const [busca, setBusca] = useState("");
-  const [abertaId, setAbertaId] = useState<string | null>(null);
-  const [alvo, setAlvo] = useState("");
-  const aberta = fichas.find((f) => f.id === abertaId);
-  const filtradas = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    return termo ? fichas.filter((f) => f.nome.toLowerCase().includes(termo)) : fichas;
-  }, [busca, fichas]);
-
-  if (aberta) {
-    const quantoFazer = Number(alvo.replace(",", ".")) || aberta.rendimento;
-    const fator = quantoFazer / (aberta.rendimento || 1);
-    return (
-      <section>
-        <Voltar onClick={() => { setAbertaId(null); setAlvo(""); }} />
-        <div className="flex flex-col sm:flex-row gap-4">
-          {aberta.fotoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={aberta.fotoUrl} onError={esconderImagem} alt={`Prato pronto: ${aberta.nome}`} className="w-full sm:w-56 h-48 object-cover rounded-xl border" style={{ borderColor: "var(--linha)" }} />
-          )}
-          <div>
-            <h1 className="text-[24px] font-semibold tracking-tight">{aberta.nome}</h1>
-            <p className="text-[15px] text-[var(--tinta-sub)] mt-1">
-              A ficha rende {formatQtd(aberta.rendimento)} {aberta.unidadeRendimento}
-              {aberta.pesoPorcaoG ? ` · porção de ${formatQtd(aberta.pesoPorcaoG)} g` : ""}
-            </p>
-            <label className="flex items-center gap-2 mt-3 text-[15px]">
-              Vou fazer
-              <input className="min-h-12 w-24 px-3 rounded-lg text-[18px] text-center" style={estiloCampo} inputMode="decimal" placeholder={formatQtd(aberta.rendimento)} value={alvo} onChange={(e) => setAlvo(e.target.value)} />
-              {aberta.unidadeRendimento}
-            </label>
-          </div>
-        </div>
-
-        <h2 className="text-[17px] font-semibold mt-6 mb-2">Ingredientes</h2>
-        <Cartao>
-          {aberta.ingredientes.map((i, n) => (
-            <div key={i.id} className={`min-h-14 px-4 py-3 flex items-center gap-3 ${n > 0 ? "border-t" : ""}`} style={{ borderColor: "var(--linha)" }}>
-              <span className="flex-1 text-[16px]">
-                {i.nome}
-                {i.ehPreparo && <span className="text-[13px] text-[var(--tinta-faint)]"> · preparo da casa</span>}
-              </span>
-              <span className="text-[18px] font-semibold" style={nums}>{formatQtd(Number((i.quantidade * fator).toFixed(3)))} {i.unidade}</span>
-            </div>
-          ))}
-        </Cartao>
-
-        {aberta.modoPreparo && (
-          <>
-            <h2 className="text-[17px] font-semibold mt-6 mb-2">Modo de preparo</h2>
-            <p className="text-[16px] leading-relaxed whitespace-pre-line">{aberta.modoPreparo}</p>
-          </>
-        )}
-        {aberta.etapas.length > 0 && (
-          <ol className="mt-4 space-y-3">
-            {aberta.etapas.map((e) => (
-              <li key={e.ordem} className="flex gap-3">
-                <span className="w-8 h-8 rounded-full flex items-center justify-center text-[15px] font-semibold shrink-0" style={{ background: "var(--panel-elevated)" }}>{e.ordem}</span>
-                <div className="flex-1">
-                  {e.titulo && <div className="text-[16px] font-semibold">{e.titulo}</div>}
-                  {e.texto && <p className="text-[16px] leading-relaxed">{e.texto}</p>}
-                  {e.fotoUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={e.fotoUrl} onError={esconderImagem} alt={e.titulo ?? `Etapa ${e.ordem}`} className="mt-2 max-h-52 rounded-lg border" style={{ borderColor: "var(--linha)" }} />
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
-    );
-  }
-
-  return (
-    <section>
-      <div className="relative mb-4">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--tinta-faint)]" />
-        <input className={`${campoGrande} pl-11`} style={estiloCampo} placeholder="Buscar ficha" value={busca} onChange={(e) => setBusca(e.target.value)} />
-      </div>
-      {filtradas.length === 0 ? (
-        <Vazio texto="Nenhuma ficha encontrada." />
-      ) : (
-        <Cartao>
-          {filtradas.map((f, n) => (
-            <button key={f.id} onClick={() => setAbertaId(f.id)} className={`w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left ${n > 0 ? "border-t" : ""}`} style={{ borderColor: "var(--linha)" }}>
-              <span className="flex-1 text-[16px] font-medium">{f.nome}</span>
-              <span className="text-[14px] text-[var(--tinta-faint)]">{f.tipo === "preparo_base" ? "Preparo" : "Prato"}</span>
-            </button>
-          ))}
-        </Cartao>
-      )}
-    </section>
-  );
-}
+// FICHAS (2026-09-25): a antiga SecaoFichas virou FichasCozinha.tsx. Versão
+// anterior: git show 6147be6:src/components/cozinha/CozinhaApp.tsx
 
 function SecaoContagem({ itens, responsavel, acoes }: { itens: ItemContagem[]; responsavel: string; acoes: AcoesCozinha }) {
   const { mostrarErro } = useToast();

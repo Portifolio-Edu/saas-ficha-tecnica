@@ -379,3 +379,29 @@ quadro do gestor e responder bem ao dedo.
 
 **Reverter:** `git revert` do commit. Versão anterior da aba:
 `git show 38d1d82:src/components/cozinha/CozinhaApp.tsx`.
+
+## 14. Fichas técnicas no tablet (modo cozinha)
+
+Pedido: a ficha no tablet tem que garantir o padrão da casa — foto do
+empratamento, preparos que compõem o prato com foto e modo de preparo,
+quantidades bem descritas e fáceis de ver.
+
+- `src/components/cozinha/FichasCozinha.tsx` substitui a lista simples:
+  cartões com foto, busca e filtro Pratos / Preparos.
+- Ficha aberta: foto do empratamento grande (toque amplia em tela cheia),
+  "Vou fazer" com − / + que recalcula tudo, "Separe antes de começar" com
+  marcação por item e peso bruto quando o insumo perde peso na limpeza
+  (fator de correção), passo a passo grande com "Agora" na etapa atual e
+  marcação de feita; no fim, lembrete de conferir com a foto / etiquetar.
+- Preparos da casa usados no prato abrem a própria ficha, com trilha
+  (Fichas › Prato › Preparo) e aviso de quanto o prato usa.
+- Quantidades de bancada (`src/components/cozinha/bancada.ts`, com testes):
+  0,15 l → 150 ml, 0,01 kg → 10 g, 1 un de massa → 1 disco.
+- Sem foto: aviso pedindo ao gestor pra subir em Receitas e fichas.
+- A tela não apaga com a ficha aberta (Wake Lock, onde o navegador deixa).
+- Dados: `dados_cozinha` já mandava sub-receita e fator de correção; o
+  tablet passou a usar (`IngredienteFicha.receitaId` e `fatorCorrecao`).
+- Demo: passo a passo completo em todos os preparos e pratos e fotos
+  ilustrativas em 4 pratos (Parmegiana e Caprese sem foto de propósito).
+
+**Reverter:** `git revert` do commit.

@@ -68,6 +68,7 @@ export async function carregarDadosCozinha(): Promise<DadosCozinha> {
   const dados = data as DadosRpc;
 
   const nomeInsumo = new Map(dados.insumos.map((i) => [i.id, i.nome]));
+  const fcInsumo = new Map(dados.insumos.map((i) => [i.id, Number(i.fator_correcao) || 1]));
   const nomeReceita = new Map(dados.receitas.map((r) => [r.id, r.nome_prato]));
 
   const fichas: FichaCozinha[] = dados.receitas.map((r) => ({
@@ -86,6 +87,8 @@ export async function carregarDadosCozinha(): Promise<DadosCozinha> {
       quantidade: Number(l.peso_liquido),
       unidade: l.unidade,
       ehPreparo: !l.insumo_id,
+      receitaId: l.insumo_id ? null : l.sub_receita_id,
+      fatorCorrecao: l.insumo_id ? (fcInsumo.get(l.insumo_id) ?? null) : null,
     })),
     etapas: r.etapas.map((e) => ({ ordem: e.ordem, titulo: e.titulo, texto: e.texto, fotoUrl: e.foto_url })),
   }));
