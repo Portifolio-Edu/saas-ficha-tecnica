@@ -439,3 +439,12 @@ do padrão: escolha o motivo ou escreva nas observações") e leva ao campo.
 Campo **Observações** sempre visível; vale como motivo quando o rendimento
 fica abaixo do padrão. Motivo e observação são salvos juntos ("Descongelou
 errado — ficou fora da câmara").
+
+### 15.2 Ajuste: escolher qualquer proteína cadastrada
+
+Retorno do dono: a seleção parecia uma lista fixa. Agora nenhuma peça vem
+marcada; o tablet mostra todas as proteínas cadastradas (Insumos, categoria
+proteína) com busca ("salm" → Salmão), as usadas por último no topo, e a
+contagem ("11 proteínas cadastradas"). Escolhida, a lista fecha e fica
+"Trocar". Demo com mais 7 cortes (picanha, filé mignon, costela, salmão,
+tilápia, lombo, coxa e sobrecoxa).

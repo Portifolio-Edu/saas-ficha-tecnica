@@ -13,8 +13,8 @@
 // tudo em Manipulação de proteínas, com custo real por kg limpo.
 // Reverter: git revert do commit "Manipulação de proteínas no modo cozinha".
 
-import { useEffect, useMemo, useState } from "react";
-import { Beef, Scale, Check, AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Beef, Scale, Check, AlertTriangle, Search, X, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ficha/Toast";
 import { nums } from "@/components/ficha/tema";
 import { tint } from "@/components/producoes/formato";
@@ -59,7 +59,10 @@ export function ProteinasCozinha({
   acoes: AcoesCozinha;
 }) {
   const { mostrarErro, mostrarSucesso } = useToast();
-  const [proteinaId, setProteinaId] = useState<string | null>(proteinas[0]?.id ?? null);
+  // SELEÇÃO (2026-09-25): nenhuma peça vem marcada; o funcionário procura
+  // entre todas as proteínas cadastradas (Insumos, categoria proteína).
+  const [proteinaId, setProteinaId] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
   const [bruto, setBruto] = useState("");
   const [limpo, setLimpo] = useState("");
   const [aparas, setAparas] = useState("");
@@ -71,12 +74,25 @@ export function ProteinasCozinha({
   const [aviso, setAviso] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  useEffect(() => {
-    if (!proteinaId && proteinas[0]) setProteinaId(proteinas[0].id);
-  }, [proteinas, proteinaId]);
-
   const porId = useMemo(() => new Map(proteinas.map((p) => [p.id, p])), [proteinas]);
   const proteina = proteinaId ? porId.get(proteinaId) : undefined;
+
+  // Usadas por último primeiro (pelos lotes), depois o resto em ordem alfabética.
+  const ordenadas = useMemo(() => {
+    const recentes: string[] = [];
+    for (const l of lotes) if (!recentes.includes(l.insumoId) && porId.has(l.insumoId)) recentes.push(l.insumoId);
+    const resto = proteinas.filter((p) => !recentes.includes(p.id)).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    return { recentes: recentes.map((id) => porId.get(id)!), resto };
+  }, [lotes, proteinas, porId]);
+  const termo = busca.trim().toLowerCase();
+  const encontradas = termo
+    ? proteinas.filter((p) => p.nome.toLowerCase().includes(termo)).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+    : [...ordenadas.recentes, ...ordenadas.resto];
+  const escolher = (id: string) => {
+    setProteinaId(id);
+    setBusca("");
+    setAviso(null);
+  };
 
   if (proteinas.length === 0) {
     return (
@@ -143,26 +159,67 @@ export function ProteinasCozinha({
 
       <div className="grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-6 items-start">
         <div className="space-y-5 min-w-0">
-          {/* 1. Qual proteína */}
+          {/* 1. Qual peça: busca em todas as proteínas cadastradas. */}
           <div>
             <h2 className="text-[17px] font-semibold mb-2">1. Qual peça</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {proteinas.map((p) => {
-                const ativa = p.id === proteinaId;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => setProteinaId(p.id)}
-                    aria-pressed={ativa}
-                    className="min-h-16 rounded-xl border px-3 py-2 text-left"
-                    style={{ borderColor: ativa ? "var(--tinta)" : "var(--linha-forte)", background: ativa ? tint("var(--tinta)", 6) : "var(--panel)" }}
-                  >
-                    <span className="block text-[16px] font-semibold leading-snug">{p.nome}</span>
-                    <span className="block text-[13px] text-[var(--tinta-sub)]" style={nums}>padrão: rende {pct(100 / (p.fatorPadrao || 1))}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {proteina ? (
+              <div className="rounded-xl border px-4 py-3 flex items-center gap-3" style={{ borderColor: "var(--tinta)", background: tint("var(--tinta)", 5) }}>
+                <Beef size={22} className="shrink-0 text-[var(--tinta-sub)]" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[18px] font-semibold leading-snug">{proteina.nome}</div>
+                  <div className="text-[14px] text-[var(--tinta-sub)]" style={nums}>padrão da casa: rende {pct(100 / (proteina.fatorPadrao || 1))}</div>
+                </div>
+                <button
+                  onClick={() => setProteinaId(null)}
+                  className="shrink-0 min-h-12 px-4 rounded-lg border inline-flex items-center gap-2 text-[15px] font-medium bg-[var(--panel)]"
+                  style={{ borderColor: "var(--linha-forte)" }}
+                >
+                  <RefreshCw size={16} /> Trocar
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-xl border overflow-hidden bg-[var(--panel)]" style={{ borderColor: "var(--linha-forte)" }}>
+                <label className="flex items-center gap-2.5 px-4 min-h-14 border-b" style={{ borderColor: "var(--linha)" }}>
+                  <Search size={19} className="text-[var(--tinta-faint)] shrink-0" />
+                  <input
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Procurar peça (picanha, salmão, frango...)"
+                    aria-label="Procurar proteína"
+                    className="flex-1 min-w-0 bg-transparent outline-none text-[17px]"
+                  />
+                  {busca && (
+                    <button onClick={() => setBusca("")} aria-label="Limpar busca" className="w-10 h-10 -mr-2 flex items-center justify-center text-[var(--tinta-faint)]">
+                      <X size={19} />
+                    </button>
+                  )}
+                </label>
+                <ul className="max-h-[300px] overflow-y-auto overscroll-contain" aria-label="Proteínas cadastradas">
+                  {encontradas.map((p, n) => {
+                    const recente = !termo && n < ordenadas.recentes.length;
+                    return (
+                      <li key={p.id}>
+                        <button
+                          onClick={() => escolher(p.id)}
+                          className={`w-full min-h-14 px-4 py-2 flex items-center gap-3 text-left active:bg-[var(--panel-hover)] ${n > 0 ? "border-t" : ""}`}
+                          style={{ borderColor: "var(--linha)" }}
+                        >
+                          <span className="flex-1 min-w-0 text-[16px] font-medium">{p.nome}</span>
+                          {recente && <span className="text-[12px] text-[var(--tinta-faint)] shrink-0">usada há pouco</span>}
+                          <span className="text-[13px] text-[var(--tinta-sub)] shrink-0" style={nums}>rende {pct(100 / (p.fatorPadrao || 1))}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {encontradas.length === 0 && (
+                    <li className="px-4 py-4 text-[15px] text-[var(--tinta-sub)]">Nenhuma proteína com esse nome.</li>
+                  )}
+                </ul>
+                <p className="px-4 py-2.5 text-[13px] text-[var(--tinta-faint)] border-t" style={{ borderColor: "var(--linha)" }}>
+                  {proteinas.length} {proteinas.length === 1 ? "proteína cadastrada" : "proteínas cadastradas"}. Não achou a peça? O gestor cadastra em Insumos, na categoria proteína.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 2. Pesos */}
