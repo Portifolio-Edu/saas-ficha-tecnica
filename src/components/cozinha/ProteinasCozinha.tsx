@@ -123,12 +123,18 @@ export function ProteinasCozinha({
   /** O botão fica sempre ativo; ao tocar, diz o que falta e leva ao campo. */
   const registrar = async () => {
     if (salvando) return;
-    let falta: string | null = null;
-    if (!proteina) falta = "Escolha qual peça você limpou.";
-    else if (b === null || b <= 0) (falta = "Digite o peso bruto (como a peça chegou)."), focar("peso-bruto");
-    else if (l === null || l <= 0) (falta = "Digite o peso limpo (pronto pra usar)."), focar("peso-limpo");
-    else if (passou) (falta = "O limpo mais as aparas passam do bruto. Confira a balança."), focar("peso-limpo");
-    else if (precisaMotivo && !observacaoFinal) (falta = "Rendeu abaixo do padrão: escolha o motivo ou escreva nas observações."), focar("observacoes-proteina");
+    const [falta, campo]: [string | null, string | null] = !proteina
+      ? ["Escolha qual peça você limpou.", null]
+      : b === null || b <= 0
+        ? ["Digite o peso bruto (como a peça chegou).", "peso-bruto"]
+        : l === null || l <= 0
+          ? ["Digite o peso limpo (pronto pra usar).", "peso-limpo"]
+          : passou
+            ? ["O limpo mais as aparas passam do bruto. Confira a balança.", "peso-limpo"]
+            : precisaMotivo && !observacaoFinal
+              ? ["Rendeu abaixo do padrão: escolha o motivo ou escreva nas observações.", "observacoes-proteina"]
+              : [null, null];
+    if (campo) focar(campo);
     setAviso(falta);
     if (falta || !proteina || b === null || l === null) return;
 

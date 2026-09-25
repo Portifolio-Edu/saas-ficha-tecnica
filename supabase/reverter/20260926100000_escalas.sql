@@ -1,6 +1,11 @@
--- Reverte a proposta 20260926100000_escalas (se tiver sido aplicada).
+-- Reverte 20260926100000_escalas. Apaga escalas, prontuário e extras.
 begin;
+drop function if exists salvar_pessoa_escala(uuid, text, text, text, text, text[], date, date, text, date, smallint[], smallint, time, time);
+drop function if exists escala_publica(date, date);
+drop trigger if exists funcionarios_validar_setor on funcionarios;
+drop function if exists validar_setor_funcionario();
 drop table if exists perfis_extra, banco_extras, prontuario_ocorrencias, escalas_config, escalas_regras;
+drop function if exists validar_escala_config();
 alter table funcionarios drop constraint if exists funcionarios_id_cliente_uk;
 alter table funcionarios drop constraint if exists funcionarios_datas_ok;
 alter table funcionarios

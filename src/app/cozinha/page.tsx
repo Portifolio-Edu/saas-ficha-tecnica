@@ -5,6 +5,9 @@ import { carregarDadosCozinha, itensDeContagem, listarLotesProteina, listarProdu
 import { listarChecklists } from "@/lib/dados/checklists";
 import { listarLocaisArmazenamento, listarRegistrosTemperatura } from "@/lib/dados/temperatura";
 import { listarFuncionarios } from "@/lib/dados/equipe";
+import { carregarEscalaPublica } from "@/lib/dados/escalas";
+import { hojeLocalISO } from "@/lib/calculo/dia";
+import { montarEscalaPublica, periodoCozinha, type EscalaPublica } from "@/lib/escalas/publica";
 import { CozinhaApp } from "@/components/cozinha/CozinhaApp";
 import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { PareamentoForm } from "./PareamentoForm";
@@ -23,6 +26,18 @@ import {
 // cozinha. Tudo aqui passa pela RLS do papel cozinha: sem R$, sem saldo.
 export const dynamic = "force-dynamic";
 
+// ESCALAS (2026-09-26): a escala do tablet é calculada aqui no servidor e só
+// o resultado público (trabalha/folga/férias/ausente) vai pro navegador. Se
+// algo falhar, a aba mostra "em revisão" e o resto da cozinha segue normal.
+async function escalaDaCozinha(hoje: string): Promise<EscalaPublica | null> {
+  try {
+    const { inicio, fim } = periodoCozinha(hoje);
+    return montarEscalaPublica(await carregarEscalaPublica(inicio, fim), inicio, fim);
+  } catch {
+    return null;
+  }
+}
+
 export default async function CozinhaPage() {
   if (!supabaseConfigurado()) redirect("/preview/cozinha");
 
@@ -31,13 +46,15 @@ export default async function CozinhaPage() {
   if (cliente.papel === "estoquista") redirect("/estoque");
 
   const dados = await carregarDadosCozinha();
-  const [checklists, locais, temperaturas, funcionarios, producoes, lotesProteina] = await Promise.all([
+  const hoje = hojeLocalISO();
+  const [checklists, locais, temperaturas, funcionarios, producoes, lotesProteina, escala] = await Promise.all([
     listarChecklists(),
     listarLocaisArmazenamento(),
     listarRegistrosTemperatura(40),
     listarFuncionarios(),
     listarProducoesDeHoje(dados.fichas),
     listarLotesProteina(30),
+    escalaDaCozinha(hoje),
   ]);
 
   return (
@@ -55,6 +72,8 @@ export default async function CozinhaPage() {
         producoes={producoes}
         proteinas={dados.proteinas}
         lotesProteina={lotesProteina}
+        escala={escala}
+        hoje={hoje}
         acoes={{
           marcarItem: acaoMarcarItem,
           desmarcarItem: acaoDesmarcarItem,

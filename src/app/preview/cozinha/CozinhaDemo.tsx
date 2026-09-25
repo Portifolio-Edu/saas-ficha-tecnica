@@ -8,7 +8,7 @@
 // aqui. Antes as ações só respondiam "ok" e nada chegava ao painel.
 
 import Link from "next/link";
-import { useMemo, type ComponentProps } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { CozinhaApp } from "@/components/cozinha/CozinhaApp";
 import { CHAVES_DEMO, useDemo } from "@/lib/demo/armazem";
 import type { Producao } from "@/lib/dominio/producao";
@@ -17,9 +17,14 @@ import type { RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { LoteProteinaCozinha, ProducaoCozinha, ProteinaCozinha } from "@/lib/dominio/cozinha";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { acoesCozinhaDemo } from "./acoesDemo";
+import { escalasDemoIniciais } from "@/lib/demo/escalas";
+import { hojeLocalISO } from "@/lib/calculo/dia";
+import { paraMotor, type OcorrenciaRegistro, type PessoaEscala } from "@/lib/escalas/cadastro";
+import { montarEscalaPublica, periodoCozinha, recortePublico } from "@/lib/escalas/publica";
+import type { RegrasEscala } from "@/lib/escalas/tipos";
 import { checklists as checklistsFixture, processamentos as processamentosFixture, producoes as producoesFixture, proteinas as proteinasFixture, registrosTemperatura } from "../fixtures";
 
-type Props = Omit<ComponentProps<typeof CozinhaApp>, "acoes" | "rodape" | "producoes" | "checklists" | "temperaturas" | "proteinas" | "lotesProteina">;
+type Props = Omit<ComponentProps<typeof CozinhaApp>, "acoes" | "rodape" | "producoes" | "checklists" | "temperaturas" | "proteinas" | "lotesProteina" | "escala" | "hoje">;
 
 // PROTEÍNAS (2026-09-25): proteínas do cadastro da demo, sem preço.
 const proteinasDemo: ProteinaCozinha[] = proteinasFixture.map((p) => ({ id: p.id, nome: p.nome, fatorPadrao: p.fatorCorrecao }));
@@ -73,6 +78,21 @@ export function CozinhaDemo(props: Props) {
         })),
     [processamentos],
   );
+  // ESCALAS (2026-09-26): mesma escala que o gestor monta em /preview/escalas,
+  // passada pelo mesmo recorte da função escala_publica (sem motivo de
+  // ausência). "Hoje" é do navegador; não aparece no HTML estático (a tela
+  // inicial é "Quem está usando"), então não há diferença na hidratação.
+  const [hoje] = useState(() => hojeLocalISO());
+  const iniciaisEscala = useMemo(() => escalasDemoIniciais(hoje), [hoje]);
+  const padraoRegras = useMemo(() => [iniciaisEscala.regras], [iniciaisEscala]);
+  const [pessoasEscala] = useDemo<PessoaEscala>(CHAVES_DEMO.escalaPessoas, iniciaisEscala.pessoas);
+  const [ocorrenciasEscala] = useDemo<OcorrenciaRegistro>(CHAVES_DEMO.escalaOcorrencias, iniciaisEscala.ocorrencias);
+  const [regrasEscala] = useDemo<RegrasEscala>(CHAVES_DEMO.escalaRegras, padraoRegras);
+  const escala = useMemo(() => {
+    const { inicio, fim } = periodoCozinha(hoje);
+    return montarEscalaPublica(recortePublico(paraMotor(pessoasEscala), ocorrenciasEscala, regrasEscala[0] ?? iniciaisEscala.regras), inicio, fim);
+  }, [hoje, pessoasEscala, ocorrenciasEscala, regrasEscala, iniciaisEscala]);
+
   const temperaturasRecentes = useMemo(() => [...temperaturas].sort((a, b) => b.registradoEm.localeCompare(a.registradoEm)), [temperaturas]);
 
   return (
@@ -83,10 +103,12 @@ export function CozinhaDemo(props: Props) {
       temperaturas={temperaturasRecentes}
       proteinas={proteinasDemo}
       lotesProteina={lotesProteina}
+      escala={escala}
+      hoje={hoje}
       acoes={acoesCozinhaDemo}
       rodape={
         <>
-          Demonstração: o que você registra aqui aparece no painel do gestor (Produções, Estoque, Checklists, Segurança alimentar e Proteínas), só neste
+          Demonstração: o que você registra aqui aparece no painel do gestor (Produções, Estoque, Checklists, Segurança alimentar e Proteínas) e a escala segue o que o gestor monta em Escalas, só neste
           navegador.{" "}
           <Link href="/preview/producoes" className="underline underline-offset-2">Abrir o painel</Link>
         </>

@@ -26,7 +26,7 @@ import { usePathname } from "next/navigation";
 import {
   ChefHat, Carrot, ClipboardList, LineChart, Settings, AlertTriangle,
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator,
-  Menu, X, Sun, Moon, Plug, Users,
+  Menu, X, Sun, Moon, Plug, Users, CalendarDays,
 } from "lucide-react";
 import { ToastContainer } from "./Toast";
 import { podeAcessar, ROTULO_PAPEL, type Papel } from "@/lib/auth/papeis";
@@ -68,6 +68,8 @@ const GRUPOS: { titulo?: string; itens: NavItem[] }[] = [
       // INTEGRACOES (2026-09-23): PDVs, iFood e importação por XML/planilha.
       { id: "integracoes", label: "Integrações", icon: Plug, rota: "/integracoes" },
       // EQUIPE (2026-09-25): acessos por papel e aparelhos da cozinha.
+      // ESCALAS (2026-09-26): escala da equipe, prontuário e regras (dono/gestor).
+      { id: "escalas", label: "Escalas", icon: CalendarDays, rota: "/escalas" },
       { id: "equipe", label: "Equipe e acessos", icon: Users, rota: "/equipe" },
       { id: "config", label: "Configurações", icon: Settings, rota: "/configuracoes" },
     ],

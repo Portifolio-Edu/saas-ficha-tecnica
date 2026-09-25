@@ -448,3 +448,32 @@ proteína) com busca ("salm" → Salmão), as usadas por último no topo, e a
 contagem ("11 proteínas cadastradas"). Escolhida, a lista fecha e fica
 "Trocar". Demo com mais 7 cortes (picanha, filé mignon, costela, salmão,
 tilápia, lombo, coxa e sobrecoxa).
+
+## 16. Escalas — fase 2 (tela, banco e tablet)
+
+Pedido do dono: "cozinha vê a escala mas não pode alterar; proibido folga
+sexta ou sábado; aplique a fase 2". Detalhes em `docs/ESCALAS.md`.
+
+- **Escalas** (menu Gestão, só dono e gestor): escala do mês por equipe com
+  sexta/sábado marcados e linha "Trabalhando" (vermelha abaixo do mínimo);
+  alertas pendentes de hoje em diante (os de dias passados ficam
+  recolhidos); detalhe do dia com "Lançar ocorrência" e "Editar escala";
+  abas Equipe, Prontuário e Regras. No desktop o mês inteiro cabe sem rolar;
+  no celular a grade abre no dia de hoje.
+- **Tablet da cozinha**: aba **Escala**, só leitura ("Só o gestor altera a
+  escala"): quem trabalha hoje, quem folga, quem não vem, e a semana de cada
+  um. Ausência aparece como "Ausente", nunca o motivo.
+- **Sexta e sábado**: travado no formulário, na validação, no banco e no
+  motor. 12x36/24x48 só pra apoio.
+- **Coerência gestor × cozinha**: `escala_publica` passou a separar falta/
+  atestado (só em dia de trabalho) de afastamento (período todo), e o motor
+  decide ocorrências sobrepostas por força, não pela ordem. Migration
+  `20260926120000_escalas_publica_ausencias.sql` (aplicada).
+- Ajuste junto: avisos de lint em `ProteinasCozinha.tsx` e `RegrasView.tsx`.
+
+Testes: 115 unitários (37 de escalas), SQL 24/24 e 6/6, 36 checagens no
+navegador (1440, 820 e 390 px) sem erro no console.
+
+**Reverter:** `git revert` do commit "escalas: fase 2" e, no banco,
+`supabase/reverter/20260926120000_escalas_publica_ausencias.sql` seguido de
+`supabase/reverter/20260926100000_escalas.sql`.

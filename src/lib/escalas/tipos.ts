@@ -15,7 +15,11 @@ export type Nivel = "auxiliar" | "junior" | "pleno" | "senior" | "chefe";
  * nunca o diagnóstico (LGPD: dado de saúde é sensível). */
 export type Restricao = "sem_escala_longa" | "sem_noturno" | "sem_carga_pesada";
 
-export type TipoOcorrencia = "falta" | "atestado" | "afastamento" | "ferias" | "restricao";
+export type TipoOcorrencia = "falta" | "atestado" | "afastamento" | "ferias" | "restricao" | "ausencia" | "ausencia_prolongada";
+// Versões públicas (tablet da cozinha), sem o motivo:
+//  - "ausencia" = falta ou atestado: só vale nos dias em que a pessoa trabalharia;
+//  - "ausencia_prolongada" = afastamento: vale no período todo (folga inclusive).
+// Assim a cozinha vê exatamente o que o gestor vê, só que como "Ausente".
 
 export interface ConfigEscala {
   tipo: TipoEscala;
@@ -52,15 +56,11 @@ export interface Ocorrencia {
   nota?: string;
 }
 
+/** O que o restaurante configura. Sexta/sábado protegidos, folga só seg–qui
+ * e máximo de 6 dias seguidos NÃO são configuráveis (ver motor.ts). */
 export interface RegrasEscala {
-  /** Dias em que ninguém de salão/cozinha folga (pico). Padrão: sexta e sábado. */
-  diasProtegidos: DiaSemana[];
-  /** Onde ficam as folgas regulares. Padrão: segunda a quinta. */
-  diasFolgaPermitidos: DiaSemana[];
   /** A cada quantas semanas cada pessoa folga um domingo (rodízio). */
   intervaloDomingoSemanas: number;
-  /** Máximo de dias seguidos de trabalho (CLT: o 7º dia é repouso). */
-  maxDiasSeguidos: number;
   /** Mínimo de pessoas trabalhando por dia em cada equipe ("cozinha:Sushiman"). */
   coberturaMinima: Record<string, number>;
 }
@@ -74,6 +74,7 @@ export type SituacaoDia =
   | "atestado"
   | "afastado"
   | "ferias"
+  | "ausente"
   | "fora_do_contrato";
 
 export interface DiaEscala {

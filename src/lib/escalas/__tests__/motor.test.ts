@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gerarEscala, folgasDaSemana, REGRAS_PADRAO } from "../motor";
+import { gerarEscala, folgasDaSemana } from "../motor";
 import { diaDaSemana, paraDia } from "../datas";
 import type { DiaEscala, FuncionarioEscala } from "../tipos";
 
@@ -34,7 +34,7 @@ describe("regras de ouro", () => {
   it("5x2 com folga calculada na sexta e sábado: trabalha nos dois e folga seg–qui", () => {
     // Âncora num domingo: 5 dias de trabalho (dom–qui) e folga sex + sáb.
     const f = pessoa("ana", { escala: { tipo: "5x2", ancora: "2026-09-27" } });
-    const { folgas, remanejos } = folgasDaSemana(f.escala, "5x2", REGRAS_PADRAO);
+    const { folgas, remanejos } = folgasDaSemana(f.escala, "5x2");
     expect(remanejos.map((r) => r.de)).toEqual([5, 6]);
     expect(folgas.every((d) => d >= 1 && d <= 4)).toBe(true);
 
@@ -113,19 +113,19 @@ describe("rodízio de domingo (equidade)", () => {
 
 describe("regimes alternados", () => {
   it("12x36 alterna dia sim, dia não a partir da âncora", () => {
-    const f = pessoa("rui", { escala: { tipo: "12x36", ancora: "2026-10-01" } });
+    const f = pessoa("rui", { setor: "outro", cargo: "Segurança", escala: { tipo: "12x36", ancora: "2026-10-01" } });
     const dias = gerarEscala({ funcionarios: [f], inicio: INICIO, fim: "2026-10-10" }).porFuncionario.rui;
     expect(dias.map((d) => (trabalhou(d) ? "T" : "F")).join("")).toBe("TFTFTFTFTF");
   });
 
   it("24x48 trabalha 1 a cada 3 dias", () => {
-    const f = pessoa("gil", { escala: { tipo: "24x48", ancora: "2026-10-02" } });
+    const f = pessoa("gil", { setor: "outro", cargo: "Segurança", escala: { tipo: "24x48", ancora: "2026-10-02" } });
     const dias = gerarEscala({ funcionarios: [f], inicio: INICIO, fim: "2026-10-09" }).porFuncionario.gil;
     expect(dias.map((d) => (trabalhou(d) ? "T" : "F")).join("")).toBe("FTFFTFFTF");
   });
 
   it("restrição de escala longa troca 12x36 por 5x2 enquanto durar", () => {
-    const f = pessoa("eva", { escala: { tipo: "12x36", ancora: "2026-10-01" } });
+    const f = pessoa("eva", { setor: "outro", cargo: "Segurança", escala: { tipo: "12x36", ancora: "2026-10-01" } });
     const { porFuncionario, alertas } = gerarEscala({
       funcionarios: [f],
       ocorrencias: [{ id: "o1", funcionarioId: "eva", tipo: "restricao", inicio: "2026-10-05", fim: "2026-10-18", restricoes: ["sem_escala_longa"] }],
@@ -191,5 +191,48 @@ describe("prontuário e contingência", () => {
     const f = { ...sushi, desligamento: "2026-10-15" };
     const dias = gerarEscala({ funcionarios: [f], inicio: INICIO, fim: "2026-10-31" }).porFuncionario.kenji;
     expect(dias.filter((d) => d.data > "2026-10-15").every((d) => d.situacao === "fora_do_contrato")).toBe(true);
+  });
+});
+
+describe("sexta e sábado: proibição absoluta nos setores protegidos", () => {
+  it("12x36 cadastrado na cozinha (dado inválido) é calculado como 5x2 e gera alerta crítico", () => {
+    const f = pessoa("bad", { escala: { tipo: "12x36", ancora: "2026-10-01" } });
+    const { porFuncionario, alertas } = gerarEscala({ funcionarios: [f], inicio: INICIO, fim: FIM });
+    expect(porFuncionario.bad.filter((d) => wd(d) === 5 || wd(d) === 6).every(trabalhou)).toBe(true);
+    expect(alertas.some((a) => a.tipo === "legal" && a.severidade === "critico")).toBe(true);
+  });
+
+  it("varredura: 300 combinações de regime, âncora, folga e equipe num ano inteiro, sem nenhuma folga sexta/sábado e sem 7 dias seguidos", () => {
+    let semente = 42;
+    const aleatorio = () => ((semente = (semente * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
+    for (let caso = 0; caso < 300; caso++) {
+      const tamanho = 1 + Math.floor(aleatorio() * 6);
+      const setor = (["cozinha", "salao", "bar"] as const)[Math.floor(aleatorio() * 3)];
+      const equipe = Array.from({ length: tamanho }, (_, i) => {
+        const tipo = aleatorio() < 0.5 ? "5x2" : "6x1";
+        const dia = 1 + Math.floor(aleatorio() * 28);
+        const preferidas =
+          aleatorio() < 0.5 ? undefined : tipo === "5x2" ? ([1, 2, 3, 4].sort(() => aleatorio() - 0.5).slice(0, 2) as (1 | 2 | 3 | 4)[]) : ([1 + Math.floor(aleatorio() * 4)] as (1 | 2 | 3 | 4)[]);
+        return pessoa(`p${caso}-${i}`, {
+          setor,
+          cargo: "Equipe",
+          admissao: `2026-0${1 + Math.floor(aleatorio() * 9)}-${String(dia).padStart(2, "0")}`,
+          escala: { tipo, ancora: `2026-10-${String(dia).padStart(2, "0")}`, folgasPreferidas: preferidas, intervaloDomingoSemanas: 2 + Math.floor(aleatorio() * 3) },
+        });
+      });
+      const { porFuncionario } = gerarEscala({ funcionarios: equipe, inicio: "2026-10-01", fim: "2027-09-30" });
+      for (const f of equipe) {
+        const dias = porFuncionario[f.id];
+        expect(dias.filter((d) => (wd(d) === 5 || wd(d) === 6) && ["folga", "folga_domingo", "folga_compensatoria"].includes(d.situacao))).toHaveLength(0);
+        expect(maiorSequencia(dias)).toBeLessThanOrEqual(6);
+      }
+    }
+  });
+
+  it("apoio (setor outro) pode usar 12x36 normalmente", () => {
+    const f = pessoa("seg", { setor: "outro", cargo: "Segurança", escala: { tipo: "12x36", ancora: "2026-10-01" } });
+    const { porFuncionario, alertas } = gerarEscala({ funcionarios: [f], inicio: INICIO, fim: "2026-10-31" });
+    expect(porFuncionario.seg.filter(trabalhou)).toHaveLength(16);
+    expect(alertas.filter((a) => a.severidade === "critico")).toHaveLength(0);
   });
 });

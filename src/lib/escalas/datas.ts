@@ -30,3 +30,8 @@ export function mod(n: number, m: number): number {
 }
 
 export const NOME_DIA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"] as const;
+
+/** "sexta 25/09" — usado nas mensagens dos alertas. */
+export function rotuloData(data: DataISO): string {
+  return `${NOME_DIA[diaDaSemana(paraDia(data))]} ${data.slice(8, 10)}/${data.slice(5, 7)}`;
+}

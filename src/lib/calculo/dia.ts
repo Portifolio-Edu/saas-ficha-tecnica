@@ -32,3 +32,9 @@ export function diaMesLocal(agora = new Date(), fuso = FUSO_RESTAURANTE): { dia:
   const { dia, mes } = partes(agora, fuso);
   return { dia, mes };
 }
+
+/** "2026-09-25": data de hoje no fuso do restaurante. */
+export function hojeLocalISO(agora = new Date(), fuso = FUSO_RESTAURANTE): string {
+  const { ano, mes, dia } = partes(agora, fuso);
+  return `${ano}-${mes}-${dia}`;
+}
