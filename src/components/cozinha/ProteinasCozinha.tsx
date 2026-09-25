@@ -4,8 +4,10 @@
 // a peça pesa antes (bruto), limpa, pesa o que ficou pronto pra usar (limpo)
 // e as aparas que vão ser reaproveitadas. O rendimento aparece na hora e é
 // comparado com o padrão da casa (fator de correção do cadastro); abaixo do
-// padrão, o motivo é obrigatório. É o controle de perda na limpeza, onde
-// mais some carne.
+// padrão, o motivo é obrigatório (botão ou campo de observações). É o
+// controle de perda na limpeza, onde mais some carne.
+// AJUSTE (2026-09-25): "Registrar lote" fica sempre ativo e, ao tocar, diz o
+// que falta e leva ao campo; campo de observações sempre visível.
 // Nenhum valor em R$ aqui: o valor pago por kg é preenchido no servidor com
 // o preço do cadastro (função registrar_processamento_cozinha). O gestor vê
 // tudo em Manipulação de proteínas, com custo real por kg limpo.
@@ -63,6 +65,10 @@ export function ProteinasCozinha({
   const [aparas, setAparas] = useState("");
   const [motivo, setMotivo] = useState<string | null>(null);
   const [outro, setOutro] = useState("");
+  // AJUSTE (2026-09-25): campo de observações sempre visível e aviso do que
+  // falta ao tocar em Registrar (antes o botão ficava cinza sem explicar).
+  const [observacoes, setObservacoes] = useState("");
+  const [aviso, setAviso] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -91,25 +97,43 @@ export function ProteinasCozinha({
   const situacao = rendimento !== null && padrao !== null && !passou ? situacaoDo(rendimento, padrao) : null;
   const descarte = pronto && !passou ? b! - l! - a : null;
   const textoMotivo = (motivo === "Outro" ? outro : motivo ?? "").trim();
+  const textoObs = observacoes.trim();
   const precisaMotivo = situacao === "abaixo";
-  const podeSalvar = !!proteina && pronto && !passou && (!precisaMotivo || !!textoMotivo) && !salvando;
+  // Observação salva: motivo escolhido + o que foi escrito no campo.
+  const observacaoFinal = [textoMotivo, textoObs].filter(Boolean).join(" — ");
 
+  const focar = (id: string) => document.getElementById(id)?.focus();
+
+  /** O botão fica sempre ativo; ao tocar, diz o que falta e leva ao campo. */
   const registrar = async () => {
-    if (!proteina || !pronto || passou) return;
-    if (precisaMotivo && !textoMotivo) return mostrarErro("Rendimento abaixo do padrão: escolha ou escreva o motivo.");
+    if (salvando) return;
+    let falta: string | null = null;
+    if (!proteina) falta = "Escolha qual peça você limpou.";
+    else if (b === null || b <= 0) (falta = "Digite o peso bruto (como a peça chegou)."), focar("peso-bruto");
+    else if (l === null || l <= 0) (falta = "Digite o peso limpo (pronto pra usar)."), focar("peso-limpo");
+    else if (passou) (falta = "O limpo mais as aparas passam do bruto. Confira a balança."), focar("peso-limpo");
+    else if (precisaMotivo && !observacaoFinal) (falta = "Rendeu abaixo do padrão: escolha o motivo ou escreva nas observações."), focar("observacoes-proteina");
+    setAviso(falta);
+    if (falta || !proteina || b === null || l === null) return;
+
     setSalvando(true);
     const r = await acoes.registrarLoteProteina(
-      { insumoId: proteina.id, pesoBruto: b!, pesoLimpo: l!, aparas: a, observacao: textoMotivo || null },
+      { insumoId: proteina.id, pesoBruto: b, pesoLimpo: l, aparas: a, observacao: observacaoFinal || null },
       responsavel,
     );
     setSalvando(false);
-    if (!r.ok) return mostrarErro(r.erro);
+    if (!r.ok) {
+      setAviso(r.erro);
+      return mostrarErro(r.erro);
+    }
     mostrarSucesso(`Lote de ${proteina.nome} registrado: rendeu ${pct(rendimento!)}.`);
     setBruto("");
     setLimpo("");
     setAparas("");
     setMotivo(null);
     setOutro("");
+    setObservacoes("");
+    setAviso(null);
   };
 
   return (
@@ -145,9 +169,9 @@ export function ProteinasCozinha({
           <div>
             <h2 className="text-[17px] font-semibold mb-2">2. Pese</h2>
             <div className="grid sm:grid-cols-3 gap-2.5">
-              <CampoPeso rotulo="Bruto" ajuda="como chegou" valor={bruto} onChange={setBruto} />
-              <CampoPeso rotulo="Limpo" ajuda="pronto pra usar" valor={limpo} onChange={setLimpo} />
-              <CampoPeso rotulo="Aparas" ajuda="vão ser reaproveitadas (opcional)" valor={aparas} onChange={setAparas} />
+              <CampoPeso id="peso-bruto" rotulo="Bruto" ajuda="como chegou" valor={bruto} onChange={(v) => (setBruto(v), setAviso(null))} />
+              <CampoPeso id="peso-limpo" rotulo="Limpo" ajuda="pronto pra usar" valor={limpo} onChange={(v) => (setLimpo(v), setAviso(null))} />
+              <CampoPeso id="peso-aparas" rotulo="Aparas" ajuda="vão ser reaproveitadas (opcional)" valor={aparas} onChange={(v) => (setAparas(v), setAviso(null))} />
             </div>
           </div>
 
@@ -180,14 +204,14 @@ export function ProteinasCozinha({
 
           {situacao && situacao !== "ok" && (
             <div>
-              <h2 className="text-[17px] font-semibold mb-2">O que aconteceu? {precisaMotivo ? "" : <span className="font-normal text-[var(--tinta-sub)]">(opcional)</span>}</h2>
+              <h2 className="text-[17px] font-semibold mb-2">O que aconteceu?</h2>
               <div className="grid grid-cols-2 gap-2">
                 {[...MOTIVOS, "Outro"].map((m) => {
                   const ativo = motivo === m;
                   return (
                     <button
                       key={m}
-                      onClick={() => setMotivo(ativo ? null : m)}
+                      onClick={() => (setMotivo(ativo ? null : m), setAviso(null))}
                       aria-pressed={ativo}
                       className="min-h-14 rounded-xl border px-3 text-[15px] font-medium text-left"
                       style={{ borderColor: ativo ? "var(--tinta)" : "var(--linha-forte)", background: ativo ? tint("var(--tinta)", 6) : "var(--panel)" }}
@@ -211,10 +235,32 @@ export function ProteinasCozinha({
             </div>
           )}
 
+          {/* Observações: sempre disponível (fornecedor, estado da peça, corte...). */}
+          <label className="block">
+            <span className="block text-[17px] font-semibold mb-2">
+              Observações <span className="font-normal text-[var(--tinta-sub)]">{precisaMotivo && !textoMotivo ? "(conte o que aconteceu)" : "(opcional)"}</span>
+            </span>
+            <textarea
+              id="observacoes-proteina"
+              value={observacoes}
+              onChange={(e) => (setObservacoes(e.target.value), setAviso(null))}
+              rows={3}
+              placeholder="Ex.: peça veio com muita gordura, fornecedor, lote, corte..."
+              className="w-full px-4 py-3 rounded-xl border bg-[var(--panel)] text-[16px] leading-relaxed outline-none focus:ring-2 focus:ring-[var(--marca-suave)] resize-y"
+              style={{ borderColor: "var(--linha-forte)", minHeight: 96 }}
+            />
+          </label>
+
+          {aviso && (
+            <p role="alert" className="rounded-xl px-4 py-3 text-[16px] font-medium flex items-center gap-2" style={{ background: tint("var(--etapa-perda)", 10), color: "var(--etapa-perda-texto)" }}>
+              <AlertTriangle size={18} className="shrink-0" /> {aviso}
+            </p>
+          )}
+
           <button
             onClick={registrar}
-            disabled={!podeSalvar}
-            className="w-full min-h-16 rounded-xl inline-flex items-center justify-center gap-2 text-[17px] font-semibold disabled:opacity-45"
+            disabled={salvando}
+            className="w-full min-h-16 rounded-xl inline-flex items-center justify-center gap-2 text-[17px] font-semibold active:scale-[0.99] transition-transform disabled:opacity-60"
             style={{ background: "var(--tinta)", color: "var(--panel)" }}
           >
             <Check size={19} strokeWidth={2.6} />
@@ -264,7 +310,7 @@ export function ProteinasCozinha({
   );
 }
 
-function CampoPeso({ rotulo, ajuda, valor, onChange }: { rotulo: string; ajuda: string; valor: string; onChange: (v: string) => void }) {
+function CampoPeso({ id, rotulo, ajuda, valor, onChange }: { id: string; rotulo: string; ajuda: string; valor: string; onChange: (v: string) => void }) {
   return (
     <label className="rounded-xl border px-4 pt-2.5 pb-2 bg-[var(--panel)] block focus-within:ring-2 focus-within:ring-[var(--marca-suave)]" style={{ borderColor: "var(--linha-forte)" }}>
       <span className="block text-[15px] font-semibold">{rotulo}</span>
@@ -275,6 +321,7 @@ function CampoPeso({ rotulo, ajuda, valor, onChange }: { rotulo: string; ajuda: 
           onChange={(e) => onChange(e.target.value.replace(/[^\d,.]/g, ""))}
           inputMode="decimal"
           placeholder="0,000"
+          id={id}
           aria-label={`Peso ${rotulo.toLowerCase()} em kg`}
           className="w-full min-w-0 bg-transparent outline-none text-[30px] font-semibold"
           style={nums}

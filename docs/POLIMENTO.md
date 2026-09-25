@@ -429,3 +429,13 @@ quantidades bem descritas e fáceis de ver.
   agente é só demonstração; o de verdade vem com o backend (n8n).
 
 **Reverter:** `git revert` do commit e o script de reverter no banco.
+
+### 15.1 Ajuste: "Registrar lote" sempre ativo + observações
+
+Retorno do dono: o botão parecia quebrado (ficava cinza até os pesos e o
+motivo estarem certos, sem dizer por quê). Agora fica sempre ativo; ao tocar,
+diz o que falta ("Digite o peso bruto", "Confira a balança", "Rendeu abaixo
+do padrão: escolha o motivo ou escreva nas observações") e leva ao campo.
+Campo **Observações** sempre visível; vale como motivo quando o rendimento
+fica abaixo do padrão. Motivo e observação são salvos juntos ("Descongelou
+errado — ficou fora da câmara").
