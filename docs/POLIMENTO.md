@@ -701,3 +701,14 @@ tanto que muitas vezes só a cozinha sabe.
 
 **Reverter:** `git revert` dos commits e
 `supabase/reverter/20260928130000_requisicoes_compra.sql`.
+
+## 26. Celular — todas as telas do dono, gestor e estoquista
+
+- Insumos (com busca), Fechamento de CMV (prato e histórico), Segurança
+  alimentar (leituras), Proteínas (lotes) e Receitas (ficha de custo) viram
+  lista no celular; indicadores em 2 colunas; formulários em 2 colunas com
+  rótulo em todo campo.
+- Campo de formulário no celular com 16px e 44px de altura: o iPhone dava zoom
+  na tela ao tocar em campo com letra menor.
+- `e2e/celular.spec.ts`: nenhuma das 15 telas rola pro lado no celular (dono e
+  estoquista) e a barra de baixo leva aos destinos certos. Entra no CI.

@@ -25,10 +25,10 @@ export function NovoLocalForm({ local, onCancel, onSaved }: { local?: LocalArmaz
 
   return (
     <div className="px-5 py-4">
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        <Input placeholder="Nome do local (ex: Freezer 1)" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <Input placeholder="Temp. mínima (°C)" type="number" value={min} onChange={(e) => setMin(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Temp. máxima (°C)" type="number" value={max} onChange={(e) => setMax(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+        <Input aria-label="Nome do local" placeholder="Nome do local (ex: Freezer 1)" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input aria-label="Temp. mínima (°C)" placeholder="Temp. mínima (°C)" type="number" value={min} onChange={(e) => setMin(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input aria-label="Temp. máxima (°C)" placeholder="Temp. máxima (°C)" type="number" value={max} onChange={(e) => setMax(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
       </div>
       <ErroBanner erro={erro} />
       <div className="flex gap-2">

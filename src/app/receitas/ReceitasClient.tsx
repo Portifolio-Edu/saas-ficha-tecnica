@@ -172,13 +172,13 @@ export function ReceitasClient({
 
         return (
           <Card key={p.id}>
-            <button className="w-full flex items-center justify-between px-5 py-4 text-left" onClick={() => setExpandido(aberto ? null : p.id)}>
-              <div className="flex items-center gap-3">
+            <button className="w-full flex flex-wrap md:flex-nowrap items-center justify-between gap-x-3 gap-y-1 px-4 md:px-5 py-4 text-left" onClick={() => setExpandido(aberto ? null : p.id)} aria-expanded={aberto}>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                 {aberto ? <ChevronDown size={15} style={{ color: "var(--faint)" }} /> : <ChevronRight size={15} style={{ color: "var(--faint)" }} />}
                 <span className="text-[14px] font-semibold">{p.nomePrato}</span>
                 {abaixoDoAlvo && <Badge acao>margem baixa</Badge>}
               </div>
-              <div className="flex items-center gap-5 text-[12.5px]" style={{ ...nums, color: "var(--sub)" }}>
+              <div className="flex items-center gap-3 md:gap-5 text-[13px] md:text-[12.5px] pl-7 md:pl-0" style={{ ...nums, color: "var(--sub)" }}>
                 <span>CMV {formatNumero(cmvPct, 1)}%</span>
                 <span style={{ color: abaixoDoAlvo ? "var(--danger)" : "var(--text)", fontWeight: 600 }}>margem {formatNumero(margemPct, 1)}%</span>
                 <span className="font-semibold" style={{ color: "var(--text)" }}>{formatBRL((p.precoVenda ?? 0))}</span>
@@ -186,7 +186,7 @@ export function ReceitasClient({
             </button>
 
             {aberto && (
-              <div className="px-5 pb-5" style={{ borderTop: `1px solid ${"var(--border)"}` }}>
+              <div className="px-4 md:px-5 pb-5" style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                 {editandoEsteAqui ? (
                   <ReceitaForm insumos={insumos} preparos={preparos} receita={p} onCancel={() => setEditando(null)} onSaved={() => setEditando(null)} />
                 ) : (
@@ -196,7 +196,28 @@ export function ReceitasClient({
 
                       return (
                         <>
-                          <table className="w-full text-[12.5px] mt-4 mb-4">
+                          {/* CELULAR (2026-09-26): ficha em lista no celular. */}
+                          <ul aria-label={`Ficha de ${p.nomePrato}`} className="md:hidden mt-3 mb-4">
+                            {linhasComCusto.map((l) => (
+                              <li key={l.id} className="py-2.5 border-t first:border-t-0 flex items-start justify-between gap-3" style={{ borderColor: "var(--border)" }}>
+                                <div className="min-w-0">
+                                  <div className="text-[15px]">
+                                    {l.nome} {l.ehPreparo && <Badge>preparo próprio</Badge>}
+                                  </div>
+                                  <div className="text-[13px]" style={{ ...nums, color: "var(--sub)" }}>
+                                    {formatQtd(l.pesoLiquido)} {l.unidade}
+                                    {l.fc !== null ? ` · FC ${formatNumero(l.fc, 3)}` : ""} · {formatBRL(l.precoUnitario)}/unid.
+                                  </div>
+                                </div>
+                                <div className="text-[15px] font-semibold shrink-0" style={nums}>{formatBRL(l.custo)}</div>
+                              </li>
+                            ))}
+                            <li className="pt-2.5 border-t flex justify-between text-[15px] font-semibold" style={{ borderColor: "var(--border-strong)", ...nums }}>
+                              <span>CMV total</span>
+                              <span>{formatBRL(cmv)}</span>
+                            </li>
+                          </ul>
+                          <table className="hidden md:table w-full text-[12.5px] mt-4 mb-4">
                             <thead>
                               <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                                 <th className="py-2 pr-3 font-medium">Insumo</th>
@@ -228,7 +249,7 @@ export function ReceitasClient({
                       );
                     })()}
 
-                    <div className="grid grid-cols-4 gap-3 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                       {[
                         ["CMV do prato", `${formatBRL(custoPorPorcao)}`, `${formatNumero(cmvPct, 1)}%`, false],
                         ["Preço atual", `${formatBRL((p.precoVenda ?? 0))}`, null, false],

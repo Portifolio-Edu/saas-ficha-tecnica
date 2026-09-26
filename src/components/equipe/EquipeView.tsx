@@ -298,7 +298,7 @@ export function EquipeView({
             {funcionarios.length === 0 && <span className="text-[13px] text-[var(--tinta-faint)]">Nenhum nome cadastrado.</span>}
           </div>
           <div className="flex gap-2 max-w-sm">
-            <Input placeholder="Nome" value={nomeFuncionario} onChange={(e) => setNomeFuncionario(e.target.value)} onKeyDown={(e) => e.key === "Enter" && adicionarFuncionario()} />
+            <Input aria-label="Nome" placeholder="Nome" value={nomeFuncionario} onChange={(e) => setNomeFuncionario(e.target.value)} onKeyDown={(e) => e.key === "Enter" && adicionarFuncionario()} />
             <button onClick={adicionarFuncionario} className={botaoSecundario} style={{ borderColor: "var(--linha-forte)" }}>
               Adicionar
             </button>

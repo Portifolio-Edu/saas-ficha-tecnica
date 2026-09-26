@@ -363,7 +363,7 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
       {aba === "turno" && showNovoChecklist && (
         <Card className="p-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-            <input placeholder="Nome do checklist" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} className={`${campo} sm:col-span-2`} style={{ borderColor: "var(--linha-forte)" }} />
+            <input aria-label="Nome do checklist" placeholder="Nome do checklist" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} className={`${campo} sm:col-span-2`} style={{ borderColor: "var(--linha-forte)" }} />
             <select value={novoMomento} onChange={(e) => setNovoMomento(e.target.value as MomentoChecklist)} className={campo} style={{ borderColor: "var(--linha-forte)" }}>
               {MOMENTOS_DE_TURNO.map((m) => (
                 <option key={m.id} value={m.id}>{m.label}</option>

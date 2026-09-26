@@ -14,6 +14,7 @@ import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLin
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { formatBRL, formatNumero, formatQtd } from "@/components/charts/format";
+import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -87,7 +88,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
             <Kpi label="FC cadastrado (referência)" value={formatNumero(insumo.fatorCorrecao, 2)} />
             <Kpi
               label="FC observado (média dos lotes)"
@@ -151,7 +152,26 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
             <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
               <h2 className="text-[13px] font-semibold">Histórico de lotes (auditoria)</h2>
             </div>
-            <table className="w-full text-[12px]">
+            <ListaMovel rotulo="Histórico de lotes">
+              {lotes.map((l) => {
+                const descarteAlto = l.pesoDescartePuro / l.pesoBrutoRecebido > 0.08;
+                return (
+                  <ItemMovel
+                    key={l.id}
+                    titulo={`${formatNumero(l.pesoBrutoRecebido, 2)} kg → ${formatNumero(l.pesoLiquidoResultante, 2)} kg`}
+                    subtitulo={`${formatarData(l.processadoEm)} · ${l.responsavel}${l.fornecedor ? ` · ${l.fornecedor}` : ""}`}
+                    valor={`FC ${formatNumero(l.fcObservado, 3)}`}
+                    detalhe={
+                      <span style={{ color: descarteAlto ? "var(--danger)" : undefined }}>
+                        descarte {formatNumero(l.pesoDescartePuro, 2)} kg · {formatBRL(l.valorPagoKg)}/kg
+                      </span>
+                    }
+                    selo={l.observacao ? <span className="text-[13px] text-[var(--tinta-sub)]">Obs: {l.observacao}</span> : undefined}
+                  />
+                );
+              })}
+            </ListaMovel>
+            <table className="hidden md:table w-full text-[12px]">
               <thead>
                 <tr style={{ color: "var(--faint)" }} className="text-left text-[12px]">
                   <th className="py-2.5 px-5 font-medium">Data</th>

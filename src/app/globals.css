@@ -367,3 +367,18 @@ thead th {
     scroll-behavior: auto !important;
   }
 }
+
+/* CELULAR (2026-09-26): no iPhone, campo com letra menor que 16px dá zoom na
+   tela ao tocar (e a pessoa precisa "desdar" o zoom depois). No celular todo
+   campo usa 16px e tem pelo menos 44px de altura pro dedo. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select {
+    min-height: 44px;
+  }
+}

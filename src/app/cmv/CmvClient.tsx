@@ -23,6 +23,7 @@ import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { calcularFechamentoCmv } from "@/lib/calculo/fechamentoCmv";
 import { acaoCriarFechamento } from "./actions";
 import { CHAVE_VENDAS_IMPORTADAS, type VendasImportadas } from "@/components/integracoes/ImportadorVendas";
+import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
 
 const TOP_DONUT = 5;
 
@@ -234,6 +235,31 @@ export function CmvClient({
     [historico],
   );
 
+  // CELULAR (2026-09-26): mesma composição do custo na tabela (computador) e na lista (celular).
+  const composicaoDoCusto = (receita: (typeof linhasCmv)[number]["receita"]) => {
+    const linhasComCusto = linhasCustoDetalhado(receita, insumoPorId, preparoPorId, lotesProteina, contexto);
+    const ordenadoPorCusto = [...linhasComCusto].filter((c) => c.custo > 0).sort((a, b) => b.custo - a.custo);
+    const restante = ordenadoPorCusto.slice(TOP_DONUT).reduce((s, c) => s + c.custo, 0);
+    const donutDados: FatiaDonut[] = [
+      ...ordenadoPorCusto.slice(0, TOP_DONUT).map((c) => ({ nome: c.nome, valor: c.custo })),
+      ...(restante > 0 ? [{ nome: "Outros", valor: restante, outros: true }] : []),
+    ];
+    return (
+      <>
+        <h4 className="text-[12px] font-semibold mb-1">Custo por ingrediente · {receita.nomePrato}</h4>
+        <p className="text-[11.5px] mb-2" style={{ color: "var(--sub)" }}>
+          {ordenadoPorCusto.length > TOP_DONUT ? `Os ${TOP_DONUT} maiores custos, resto agrupado em "Outros".` : "Participação de cada item no custo total do prato."}
+        </p>
+        <Donut
+          dados={donutDados}
+          altura={CHART_MIN_HEIGHT}
+          tituloVazio="Nenhum custo calculado ainda."
+          dicaVazio="Adicione insumos ou preparos na ficha desse prato pra ver a composição do custo aqui."
+        />
+      </>
+    );
+  };
+
   return (
     <div className="max-w-5xl space-y-6">
       <div>
@@ -311,7 +337,7 @@ export function CmvClient({
           A comparação só fecha quando <b>todo o cardápio</b> está cadastrado com ficha técnica. Se metade dos pratos não tem ficha, o CMV teórico sai menor que a realidade e o gap aparece inflado sem que exista problema nenhum na cozinha.
         </div>
 
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
           <span className="text-[11.5px]" style={{ color: "var(--faint)" }}>Período</span>
           <input type="date" aria-label="Início do período" value={periodoInicio} onChange={(e) => setPeriodoInicio(e.target.value)} className="text-[12px] px-2 py-1 rounded-md" style={inputStyle} />
           <span className="text-[11.5px]" style={{ color: "var(--faint)" }}>até</span>
@@ -319,7 +345,7 @@ export function CmvClient({
           {periodoFim < periodoInicio && <span className="text-[11.5px]" style={{ color: "var(--danger)" }}>Fim não pode ser antes do início.</span>}
         </div>
 
-        <div className="grid grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
           <Kpi label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
           <Kpi label="CMV teórico (fichas)" value={`${formatNumero(cmvTeoricoPct, 1)}%`} sub={formatBRLEixo(custoTeoricoPeriodo)} />
           {/* SISTEMA premium: sem base de estoque preenchida, CMV real e gap mostram "—"
@@ -337,7 +363,7 @@ export function CmvClient({
         <Card className="p-5">
           <h3 className="text-[13px] font-semibold mb-1">Base do cálculo real</h3>
           <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Valores do inventário do período (contagem física de estoque + notas de compra).</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {([
               ["Estoque inicial", estoqueInicial, setEstoqueInicial],
               ["Compras do período", compras, setCompras],
@@ -350,6 +376,8 @@ export function CmvClient({
                   value={valor}
                   onChange={(e) => setValor(e.target.value)}
                   placeholder="0"
+                  inputMode="decimal"
+                  aria-label={label}
                   className="text-[12.5px] px-2.5 py-1.5 rounded-md w-full text-right"
                   style={{ ...inputStyle, ...nums }}
                 />
@@ -367,11 +395,11 @@ export function CmvClient({
           </div>
         )}
 
-        <div className="flex items-center gap-2 mt-3">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           <button
             onClick={salvarFechamento}
             disabled={salvando || !resultado || periodoFim < periodoInicio}
-            className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
+            className="text-[13px] md:text-[12.5px] font-medium px-3.5 min-h-11 md:min-h-0 md:py-1.5 rounded-lg"
             style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando || !resultado || periodoFim < periodoInicio ? 0.6 : 1 }}
           >
             {salvando ? "Salvando..." : "Salvar fechamento do período"}
@@ -390,7 +418,33 @@ export function CmvClient({
         <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">CMV por prato</h2>
         <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Ordenado por faturamento. O que vende muito com margem baixa costuma pesar mais que o que vende pouco com margem ruim. Clique num prato pra ver de onde vem o custo dele.</p>
         <Card>
-          <table className="w-full text-[12.5px]">
+          <ListaMovel rotulo="CMV por prato">
+            {linhasCmv.map((l) => {
+              const aberto = pratoExpandido === l.receita.id;
+              return (
+                <ItemMovel
+                  key={l.receita.id}
+                  titulo={l.receita.nomePrato}
+                  subtitulo={`${l.qtdVendida} vendidos · custo ${formatBRL(l.custoPorPorcao)} de ${formatBRL(l.receita.precoVenda ?? 0)}`}
+                  valor={`R$ ${l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`}
+                  detalhe="lucro bruto"
+                  selo={l.qtdVendida === 0 ? <Badge acao>sem vendas cadastradas</Badge> : undefined}
+                  aberto={aberto}
+                  aoTocar={() => setPratoExpandido(aberto ? null : l.receita.id)}
+                >
+                  {composicaoDoCusto(l.receita)}
+                </ItemMovel>
+              );
+            })}
+            {linhasCmv.length === 0 && <li className="py-6 px-4 text-center text-[14px]" style={{ color: "var(--faint)" }}>Nenhum prato final cadastrado ainda.</li>}
+            {linhasCmv.length > 0 && (
+              <li className="px-4 py-3 border-t flex justify-between text-[14px] font-semibold" style={{ borderColor: "var(--border-strong)", ...nums }}>
+                <span>Lucro bruto do período</span>
+                <span>R$ {(faturamentoDasFichas - custoTeoricoPeriodo).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+              </li>
+            )}
+          </ListaMovel>
+          <table className="hidden md:table w-full text-[12.5px]">
             <thead>
               <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                 <th className="py-2.5 px-5 font-medium">Prato</th>
@@ -428,31 +482,13 @@ export function CmvClient({
                       <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoTeoricoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
                       <td className="py-2.5 px-5 text-right font-medium" style={nums}>R$ {l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
                     </tr>
-                    {aberto && (() => {
-                      const linhasComCusto = linhasCustoDetalhado(l.receita, insumoPorId, preparoPorId, lotesProteina, contexto);
-                      const ordenadoPorCusto = [...linhasComCusto].filter((c) => c.custo > 0).sort((a, b) => b.custo - a.custo);
-                      const restante = ordenadoPorCusto.slice(TOP_DONUT).reduce((s, c) => s + c.custo, 0);
-                      const donutDados: FatiaDonut[] = [
-                        ...ordenadoPorCusto.slice(0, TOP_DONUT).map((c) => ({ nome: c.nome, valor: c.custo })),
-                        ...(restante > 0 ? [{ nome: "Outros", valor: restante, outros: true }] : []),
-                      ];
-                      return (
-                        <tr style={{ background: "var(--bg)" }}>
-                          <td colSpan={7} className="px-5 py-4">
-                            <h4 className="text-[12px] font-semibold mb-1">Custo por ingrediente · {l.receita.nomePrato}</h4>
-                            <p className="text-[11.5px] mb-2" style={{ color: "var(--sub)" }}>
-                              {ordenadoPorCusto.length > TOP_DONUT ? `Os ${TOP_DONUT} maiores custos, resto agrupado em "Outros".` : "Participação de cada item no custo total do prato."}
-                            </p>
-                            <Donut
-                              dados={donutDados}
-                              altura={CHART_MIN_HEIGHT}
-                              tituloVazio="Nenhum custo calculado ainda."
-                              dicaVazio="Adicione insumos ou preparos na ficha desse prato pra ver a composição do custo aqui."
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })()}
+                    {aberto && (
+                      <tr style={{ background: "var(--bg)" }}>
+                        <td colSpan={7} className="px-5 py-4">
+                          {composicaoDoCusto(l.receita)}
+                        </td>
+                      </tr>
+                    )}
                   </Fragment>
                 );
               })}
@@ -515,7 +551,20 @@ export function CmvClient({
         </Card>
 
         <Card>
-          <table className="w-full text-[12.5px]">
+          <ListaMovel rotulo="Histórico de fechamentos">
+            {historico.map(({ fechamento, cmvRealPctHist, cmvTeoricoPctHist, gapPctHist }) => (
+              <ItemMovel
+                key={fechamento.id}
+                titulo={formatarPeriodo(fechamento.periodoInicio, fechamento.periodoFim)}
+                subtitulo={`R$ ${fechamento.faturamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} · teórico ${formatNumero(cmvTeoricoPctHist, 1)}% · real ${formatNumero(cmvRealPctHist, 1)}%`}
+                valor={`${gapPctHist > 0 ? "+" : ""}${formatNumero(gapPctHist, 1)} p.p.`}
+                corValor={gapPctHist > GAP_ALERTA_PP ? "var(--danger)" : undefined}
+                detalhe="gap"
+              />
+            ))}
+            {historico.length === 0 && <li className="py-6 px-4 text-center text-[14px]" style={{ color: "var(--faint)" }}>Nenhum fechamento salvo ainda.</li>}
+          </ListaMovel>
+          <table className="hidden md:table w-full text-[12.5px]">
             <thead>
               <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                 <th className="py-2.5 px-5 font-medium">Período</th>

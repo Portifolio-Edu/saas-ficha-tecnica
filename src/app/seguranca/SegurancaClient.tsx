@@ -17,6 +17,7 @@ import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temp
 import type { Insumo } from "@/lib/dominio/insumo";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirLocal } from "./actions";
+import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
 
 function formatarDataHora(iso: string): string {
   const d = new Date(iso);
@@ -71,7 +72,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
           </Card>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {locais.map((local) => {
             const ultima = registros.find((r) => r.localArmazenamentoId === local.id);
             const foraDaFaixa = !!ultima && foraDaFaixaDoLocal(local, ultima.temperaturaC);
@@ -224,7 +225,24 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
           <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
             <h2 className="text-[13px] font-semibold">Histórico de leituras</h2>
           </div>
-          <table className="w-full text-[12.5px]">
+          <ListaMovel rotulo="Histórico de leituras">
+            {registros.map((r) => {
+              const local = locais.find((l) => l.id === r.localArmazenamentoId);
+              const foraDaFaixa = foraDaFaixaDoLocal(local, r.temperaturaC);
+              return (
+                <ItemMovel
+                  key={r.id}
+                  titulo={r.nomeLocal}
+                  subtitulo={`${formatarDataHora(r.registradoEm)} · ${r.responsavel}${r.nomeInsumo ? ` · ${r.nomeInsumo}` : ""}`}
+                  valor={`${formatQtd(r.temperaturaC)}°C`}
+                  corValor={foraDaFaixa ? "var(--danger)" : undefined}
+                  detalhe={foraDaFaixa ? <span style={{ color: "var(--danger)" }}>fora da faixa</span> : undefined}
+                />
+              );
+            })}
+            {registros.length === 0 && <li className="py-6 px-4 text-center text-[14px]" style={{ color: "var(--faint)" }}>Nenhuma leitura registrada ainda.</li>}
+          </ListaMovel>
+          <table className="hidden md:table w-full text-[12.5px]">
             <thead>
               <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                 <th className="py-2.5 px-5 font-medium">Data</th>

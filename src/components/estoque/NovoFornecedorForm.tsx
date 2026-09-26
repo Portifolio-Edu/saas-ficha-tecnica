@@ -114,11 +114,11 @@ export function NovoFornecedorForm({ fornecedor, onCancel, onSaved }: { forneced
         </label>
         <label className="text-[13px] font-medium text-[var(--tinta)]">
           Horário da entrega
-          <Input placeholder="ex.: 7h às 10h" value={f.horarioEntrega} onChange={set("horarioEntrega")} className={`${campo} mt-1`} />
+          <Input aria-label="ex.: 7h às 10h" placeholder="ex.: 7h às 10h" value={f.horarioEntrega} onChange={set("horarioEntrega")} className={`${campo} mt-1`} />
         </label>
         <label className="text-[13px] font-medium text-[var(--tinta)]">
           Pedido de urgência
-          <Input placeholder="ex.: mesmo dia até 7h" value={f.prazoUrgencia} onChange={set("prazoUrgencia")} className={`${campo} mt-1`} />
+          <Input aria-label="ex.: mesmo dia até 7h" placeholder="ex.: mesmo dia até 7h" value={f.prazoUrgencia} onChange={set("prazoUrgencia")} className={`${campo} mt-1`} />
         </label>
       </div>
 

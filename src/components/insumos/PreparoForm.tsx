@@ -65,11 +65,11 @@ export function PreparoForm({
   };
 
   return (
-    <div className="px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
-      <div className="grid grid-cols-6 gap-2 mb-3">
-        <Input placeholder="Nome da receita" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-3" />
-        <Input placeholder="Rende" type="number" value={rendimento} onChange={(e) => setRendimento(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <select value={unidadeRendimento} onChange={(e) => setUnidadeRendimento(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+    <div className="px-4 md:px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-3">
+        <Input aria-label="Nome da receita" placeholder="Nome da receita" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2 md:col-span-3" />
+        <Input aria-label="Rende" placeholder="Rende" type="number" inputMode="decimal" value={rendimento} onChange={(e) => setRendimento(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <select aria-label="Unidade do rendimento" value={unidadeRendimento} onChange={(e) => setUnidadeRendimento(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md md:col-span-2" style={inputStyle}>
           {UNIDADES.map((u) => (
             <option key={u} value={u}>{u}</option>
           ))}
@@ -86,7 +86,7 @@ export function PreparoForm({
                   {insumo?.nome} · {formatQtd(f.pesoLiquido)}
                   {f.unidade}
                 </span>
-                <button onClick={() => removerLinha(idx)} style={{ color: "var(--danger)" }}>
+                <button onClick={() => removerLinha(idx)} className="min-h-10 px-2" style={{ color: "var(--danger)" }}>
                   remover
                 </button>
               </div>
@@ -95,22 +95,23 @@ export function PreparoForm({
         </div>
       )}
 
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <select
+          aria-label="Ingrediente"
           value={linhaInsumoId}
           onChange={(e) => {
             setLinhaInsumoId(e.target.value);
             setLinhaUnidade(insumoPorId.get(e.target.value)?.unidadeMedida ?? "kg");
           }}
-          className="text-[12.5px] px-2.5 py-1.5 rounded-md flex-1"
+          className="text-[12.5px] px-2.5 py-1.5 rounded-md flex-1 basis-full md:basis-auto"
           style={inputStyle}
         >
           {insumos.map((i) => (
             <option key={i.id} value={i.id}>{i.nome}</option>
           ))}
         </select>
-        <Input placeholder="Peso líquido" type="number" value={linhaPeso} onChange={(e) => setLinhaPeso(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 w-28" />
-        <select value={linhaUnidade} onChange={(e) => setLinhaUnidade(e.target.value as UnidadeMedida)} className="text-[12.5px] px-2.5 py-1.5 rounded-md w-20" style={inputStyle}>
+        <Input aria-label="Peso líquido" placeholder="Peso líquido" type="number" inputMode="decimal" value={linhaPeso} onChange={(e) => setLinhaPeso(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 w-28" />
+        <select aria-label="Unidade do ingrediente" value={linhaUnidade} onChange={(e) => setLinhaUnidade(e.target.value as UnidadeMedida)} className="text-[12.5px] px-2.5 py-1.5 rounded-md w-20" style={inputStyle}>
           {UNIDADES.map((u) => (
             <option key={u} value={u}>{u}</option>
           ))}
