@@ -773,3 +773,16 @@ tanto que muitas vezes só a cozinha sabe.
 
 **Reverter:** `git revert` do commit e
 `supabase/reverter/20260928150000_plano_producao.sql`.
+
+## 30. Integrações — lançamento com iFood, Anota AI e Saipos
+
+- Decisão do dono: integrar com PDV tem burocracia de credenciamento, então o
+  lançamento começa só com **iFood, Anota AI e Saipos**. Os três ficam em
+  destaque no topo de Integrações (cartão grande, o que cada um traz; no app
+  "Em implantação" com atalho pra importação; na demo, "Conectar").
+- Os demais (Consumer, Goomer, Colibri, TOTVS Chef, Stone, Cielo, PagSeguro,
+  Linx Degust, Menew) viram um bloco compacto "Em breve", lembrando que já
+  funcionam pela importação de XML/planilha.
+- Onde mexer: `prioridade` e `descricao` em `src/lib/integracoes/pdvs.ts`.
+
+**Reverter:** `git revert` do commit "integrações: lançamento com iFood, Anota AI e Saipos".

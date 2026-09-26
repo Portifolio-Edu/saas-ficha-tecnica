@@ -62,8 +62,13 @@ funciona com qualquer PDV, mesmo os que não liberam integração.
 **Integrações por API com PDV e iFood ainda não existem.** Escolha do usuário
 (2026-09-23): no app aparecem "Em breve"; na demo `/preview`, iFood e Saipos
 aparecem conectados, com pedidos chegando, **sempre com o selo "demo"** (mesma
-regra do agente IA). Lista de PDVs: Saipos, Consumer, Goomer, Anota AI,
-Colibri, TOTVS Chef, Stone, Cielo, PagSeguro, Linx Degust e Menew.
+regra do agente IA).
+
+**Prioridade do lançamento (2026-09-26, decisão do dono):** integrar com PDV
+tem burocracia de credenciamento, então começamos só com **iFood, Anota AI e
+Saipos**, em destaque na tela. Os demais (Consumer, Goomer, Colibri, TOTVS
+Chef, Stone, Cielo, PagSeguro, Linx Degust e Menew) ficam "Em breve" e, até
+lá, entram pela importação de XML/planilha.
 
 **Ordem combinada com o usuário (2026-09-22):** primeiro alinhar todo o
 frontend na demo; depois o backend, com **Supabase** (dados, auth, storage) e

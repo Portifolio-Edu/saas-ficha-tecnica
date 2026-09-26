@@ -8,15 +8,16 @@
 //  - Importação de XML fiscal e de planilha: REAL (components/integracoes).
 //  - Conexão com PDV/iFood: NÃO EXISTE ainda. No app aparece "Em breve"; na demo
 //    (/preview) iFood e Saipos aparecem conectados, com pedidos chegando, sempre
-//    com o selo "demo" (escolha do usuário em 2026-09-23). Os outros PDVs, na
-//    demo, "conectam" com um toque, também simulado.
+//    com o selo "demo" (escolha do usuário em 2026-09-23).
+//  - PRIORIDADE (2026-09-26): só iFood, Anota AI e Saipos em destaque (e, na
+//    demo, conectáveis); os demais ficam "Em breve" nos dois modos.
 // Pra tirar a tela: apagar src/app/integracoes, src/app/preview/integracoes, o
 // item "Integrações" em ShellPremium.tsx e em preview/page.tsx.
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Check, Plug } from "lucide-react";
-import { CANAIS, GRUPOS_CANAL, type PedidoRecebido } from "@/lib/integracoes/pdvs";
+import { Check, Plug, Sparkles } from "lucide-react";
+import { CANAIS, CANAIS_EM_BREVE, CANAIS_PRIORIDADE, type PedidoRecebido } from "@/lib/integracoes/pdvs";
 import { ImportadorVendas } from "@/components/integracoes/ImportadorVendas";
 import { formatBRL } from "@/components/charts/format";
 
@@ -99,73 +100,98 @@ export function IntegracoesClient({
         </section>
       )}
 
-      {/* Canais: iFood e PDVs. */}
-      <section aria-labelledby="titulo-canais" className="space-y-5">
+      {/* PRIORIDADE (2026-09-26): lançamento com iFood, Anota AI e Saipos em
+          destaque; os outros canais ficam "Em breve" (pdvs.ts). */}
+      <section aria-labelledby="titulo-canais" className="space-y-4">
         <div>
           <h3 id="titulo-canais" className="text-[16px] font-semibold text-[var(--tinta)]">
-            Delivery e PDV
+            Integrações do lançamento
           </h3>
-          <p className="text-[13px] text-[var(--tinta-sub)] mt-0.5">
+          <p className="text-[13px] text-[var(--tinta-sub)] mt-0.5 max-w-3xl">
             {demo
-              ? "Na demonstração, a conexão é simulada. No sistema, cada PDV pede o token de integração que ele fornece."
-              : "As conexões diretas estão em desenvolvimento. Enquanto isso, qualquer PDV funciona pela importação logo abaixo."}
+              ? "Na demonstração, a conexão é simulada. No sistema, cada canal pede o token de integração que ele fornece."
+              : "Começamos por estes três. A conexão direta está em implantação; enquanto isso, as vendas entram pela importação logo abaixo."}
           </p>
         </div>
 
-        {GRUPOS_CANAL.map(({ grupo, descricao }) => (
-          <div key={grupo} className="space-y-2.5">
-            <div className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-[14px] font-medium text-[var(--tinta)]">{grupo}</span>
-              <span className="text-[13px] text-[var(--tinta-faint)]">{descricao}</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {CANAIS.filter((c) => c.grupo === grupo).map((canal) => {
-                const conectado = conectados.includes(canal.id);
-                const hoje = demo?.resumoHoje[canal.id];
-                return (
-                  <div key={canal.id} className="rounded-xl border p-4 flex flex-col gap-3" style={{ ...painel, borderColor: conectado ? "color-mix(in srgb, var(--sucesso) 35%, var(--linha))" : "var(--linha)" }}>
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-[15px] font-semibold text-[var(--tinta)]">{canal.nome}</span>
-                      {conectado ? (
-                        <span className="inline-flex items-center gap-1 text-[12px] font-medium px-2 py-0.5 rounded-md" style={{ background: "color-mix(in srgb, var(--sucesso) 10%, transparent)", color: "var(--sucesso)" }}>
-                          <Check size={12} strokeWidth={2.5} />
-                          Conectado
-                        </span>
-                      ) : !demo ? (
-                        <span className="text-[12px] font-medium px-2 py-0.5 rounded-md" style={{ background: "var(--panel-elevated)", color: "var(--tinta-sub)" }}>
-                          Em breve
-                        </span>
-                      ) : null}
-                    </div>
-                    {conectado ? (
-                      <div className="text-[13px] text-[var(--tinta-sub)] flex items-center gap-2 flex-wrap">
-                        {hoje ? `Hoje: ${hoje.pedidos} pedidos · ${formatBRL(hoje.valor)}` : "Aguardando a primeira venda"}
-                        <SeloDemo />
-                      </div>
-                    ) : demo ? (
-                      <button
-                        onClick={() => setConectados((c) => [...c, canal.id])}
-                        className="flex items-center justify-center gap-2 text-[14px] font-medium px-3 min-h-10 rounded-lg border hover:bg-[var(--panel-hover)]"
-                        style={{ borderColor: "var(--linha-forte)", color: "var(--tinta)" }}
-                      >
-                        <Plug size={15} />
-                        Conectar
-                      </button>
-                    ) : (
-                      <div className="text-[13px] text-[var(--tinta-faint)]">Use a importação por XML ou planilha.</div>
-                    )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {CANAIS_PRIORIDADE.map((canal) => {
+            const conectado = conectados.includes(canal.id);
+            const hoje = demo?.resumoHoje[canal.id];
+            return (
+              <div
+                key={canal.id}
+                className="rounded-2xl border-2 p-5 flex flex-col gap-3"
+                style={{
+                  ...painel,
+                  borderColor: conectado ? "color-mix(in srgb, var(--sucesso) 45%, var(--linha))" : "color-mix(in srgb, var(--marca) 40%, var(--linha))",
+                  background: conectado ? "var(--panel)" : "color-mix(in srgb, var(--marca) 4%, var(--panel))",
+                }}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-[19px] font-semibold tracking-tight text-[var(--tinta)]">{canal.nome}</div>
+                    <div className="text-[12.5px] text-[var(--tinta-faint)]">{canal.grupo}</div>
                   </div>
-                );
-              })}
-            </div>
+                  {conectado ? (
+                    <span className="inline-flex items-center gap-1 text-[12px] font-medium px-2 py-0.5 rounded-md" style={{ background: "color-mix(in srgb, var(--sucesso) 10%, transparent)", color: "var(--sucesso)" }}>
+                      <Check size={12} strokeWidth={2.5} />
+                      Conectado
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-0.5 rounded-md" style={{ background: "var(--marca-suave)", color: "var(--marca)" }}>
+                      <Sparkles size={12} />
+                      {demo ? "Lançamento" : "Em implantação"}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[14px] text-[var(--tinta-sub)] flex-1">{canal.descricao}</p>
+                {conectado ? (
+                  <div className="text-[13px] text-[var(--tinta-sub)] flex items-center gap-2 flex-wrap">
+                    {hoje ? `Hoje: ${hoje.pedidos} pedidos · ${formatBRL(hoje.valor)}` : "Aguardando a primeira venda"}
+                    <SeloDemo />
+                  </div>
+                ) : demo ? (
+                  <button
+                    onClick={() => setConectados((c) => [...c, canal.id])}
+                    className="flex items-center justify-center gap-2 text-[14px] font-medium px-3 min-h-11 rounded-lg"
+                    style={{ background: "var(--tinta)", color: "var(--panel)" }}
+                  >
+                    <Plug size={15} />
+                    Conectar {canal.nome}
+                  </button>
+                ) : (
+                  <a href="#titulo-sem" className="text-[13px] font-medium text-[var(--marca)] underline underline-offset-2">
+                    Enquanto isso: importar XML ou planilha
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="rounded-xl border p-4 md:p-5" style={painel}>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <span className="text-[14px] font-medium text-[var(--tinta)]">Outros PDVs e maquininhas</span>
+            <span className="text-[12px] font-medium px-2 py-0.5 rounded-md" style={{ background: "var(--panel-elevated)", color: "var(--tinta-sub)" }}>
+              Em breve
+            </span>
           </div>
-        ))}
+          <p className="text-[13px] text-[var(--tinta-sub)] mt-1">Qualquer um deles já funciona hoje pela importação de XML fiscal ou planilha.</p>
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Integrações em breve">
+            {CANAIS_EM_BREVE.map((c) => (
+              <li key={c.id} className="text-[13px] px-2.5 py-1 rounded-full border text-[var(--tinta-sub)]" style={{ borderColor: "var(--linha)" }} title={c.grupo}>
+                {c.nome}
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       {/* Sem integração: XML fiscal ou planilha. */}
       <section aria-labelledby="titulo-sem" className="space-y-3">
         <div>
-          <h3 id="titulo-sem" className="text-[16px] font-semibold text-[var(--tinta)]">
+          <h3 id="titulo-sem" className="scroll-mt-20 text-[16px] font-semibold text-[var(--tinta)]">
             Sem integração com o PDV
           </h3>
           <p className="text-[13px] text-[var(--tinta-sub)] mt-0.5 max-w-3xl">
