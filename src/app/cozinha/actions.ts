@@ -10,6 +10,8 @@ import { hashCodigo, normalizarCodigo } from "@/lib/dados/equipe";
 import { carregarDadosCozinha, enviarContagemCega, registrarLoteProteina } from "@/lib/dados/cozinha";
 import { marcarItemConcluido, desmarcarItemConcluido } from "@/lib/dados/checklists";
 import { registrarTemperatura } from "@/lib/dados/temperatura";
+import { criarRequisicao, removerRequisicao } from "@/lib/dados/requisicoes";
+import { validarRequisicao, type NovaRequisicao } from "@/lib/dominio/requisicao";
 import { atualizarStatusProducao, contarProducoesPorReceita } from "@/lib/dados/producoes";
 import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
 import { gerarLote } from "@/lib/calculo/lote";
@@ -214,6 +216,33 @@ export async function acaoRegistrarLoteProteina(lote: NovoLoteProteina, responsa
     if (lote.pesoLimpo + (lote.aparas || 0) > lote.pesoBruto) throw new Error("O peso limpo mais as aparas passam do peso bruto. Confira a balança.");
     await registrarLoteProteina(lote, quem);
     revalidatePath("/cozinha");
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+// PEDIDOS DA COZINHA (2026-09-26): a cozinha pede o que falta; quem compra resolve no Estoque.
+export async function acaoCriarRequisicao(r: NovaRequisicao, responsavel: string): Promise<Resultado> {
+  try {
+    const cliente = await exigirMembro();
+    const problema = validarRequisicao(r);
+    if (problema) throw new Error(problema);
+    await criarRequisicao(cliente.id, r, exigirResponsavel(responsavel));
+    revalidatePath("/cozinha");
+    revalidatePath("/estoque");
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+export async function acaoRemoverRequisicao(id: string): Promise<Resultado> {
+  try {
+    await exigirMembro();
+    await removerRequisicao(id);
+    revalidatePath("/cozinha");
+    revalidatePath("/estoque");
     return { ok: true };
   } catch (e) {
     return erro(e);

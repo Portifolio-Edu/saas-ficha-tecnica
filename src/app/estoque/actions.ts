@@ -5,7 +5,9 @@ import { getClienteAtual } from "@/lib/dados/cliente";
 import { rastrearInsumo, atualizarEstoque, pararDeRastrear, registrarMovimentacao, aplicarContagem, descartarContagem } from "@/lib/dados/estoque";
 import { ehGestao } from "@/lib/auth/papeis";
 import { criarFornecedor, atualizarFornecedor, excluirFornecedor } from "@/lib/dados/fornecedores";
-import type { FornecedorInput } from "@/lib/dominio/fornecedor";
+import { validarFornecedor, type FornecedorInput } from "@/lib/dominio/fornecedor";
+import { resolverRequisicoes } from "@/lib/dados/requisicoes";
+import type { StatusRequisicao } from "@/lib/dominio/requisicao";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
 
@@ -61,6 +63,8 @@ export async function acaoRegistrarMovimentacao(
 export async function acaoCriarFornecedor(input: FornecedorInput): Promise<Resultado> {
   const cliente = await getClienteAtual();
   if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  const problema = validarFornecedor(input);
+  if (problema) return { ok: false, erro: problema };
   try {
     await criarFornecedor(cliente.id, input);
     revalidatePath("/estoque");
@@ -71,6 +75,8 @@ export async function acaoCriarFornecedor(input: FornecedorInput): Promise<Resul
 }
 
 export async function acaoAtualizarFornecedor(id: string, input: FornecedorInput): Promise<Resultado> {
+  const problema = validarFornecedor(input);
+  if (problema) return { ok: false, erro: problema };
   try {
     await atualizarFornecedor(id, input);
     revalidatePath("/estoque");
@@ -110,6 +116,23 @@ export async function acaoDescartarContagem(contagemId: string): Promise<Resulta
   try {
     await descartarContagem(contagemId);
     revalidatePath("/estoque");
+    return { ok: true };
+  } catch (e) {
+    return paraResultado(e);
+  }
+}
+
+// PEDIDOS DA COZINHA (2026-09-26): quem compra marca os itens pedidos pela
+// cozinha (a RLS só deixa dono, gestor e estoquista).
+export async function acaoResolverRequisicoes(ids: string[], status: StatusRequisicao): Promise<Resultado> {
+  const cliente = await getClienteAtual();
+  if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  if (cliente.papel === "cozinha") return { ok: false, erro: "Quem marca a compra é o estoque ou a gestão." };
+  try {
+    const n = await resolverRequisicoes(ids, status);
+    if (n === 0 && ids.length) return { ok: false, erro: "Nada foi alterado. Atualize a página e tente de novo." };
+    revalidatePath("/estoque");
+    revalidatePath("/cozinha");
     return { ok: true };
   } catch (e) {
     return paraResultado(e);

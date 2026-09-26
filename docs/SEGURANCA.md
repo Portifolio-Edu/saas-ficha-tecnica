@@ -26,7 +26,7 @@ produção em 2026-09-26, sem nenhum restaurante cadastrado). Reverter:
 
 ## Funções que o usuário logado chama de propósito
 
-O verificador do Supabase lista 9 funções `security definer` executáveis por
+O verificador do Supabase lista 10 funções `security definer` executáveis por
 usuário logado. Todas são intencionais e conferem restaurante e papel dentro:
 
 | Função | Quem usa | Trava |
@@ -37,6 +37,7 @@ usuário logado. Todas são intencionais e conferem restaurante e papel dentro:
 | `enviar_contagem` | tablet | só insumos do restaurante; não devolve saldo |
 | `registrar_processamento_cozinha` | tablet | proteína do restaurante; valida pesos |
 | `fechamentos_cmv_estoque` | estoquista | `auth_estoque()`; só colunas sem faturamento |
+| `agenda_fornecedores` | tablet | só agenda de entrega (sem telefone, e-mail ou contato) do próprio restaurante |
 
 ## Tabelas só do servidor
 

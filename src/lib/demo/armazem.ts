@@ -28,6 +28,8 @@ export const CHAVES_DEMO = {
   // PERFIL (2026-09-27): notas do prontuário de competências e banco de extras.
   escalaNotas: "demo_escala_notas",
   escalaExtras: "demo_escala_extras",
+  // PEDIDOS DA COZINHA (2026-09-26): pedidos de compra (tablet → Estoque).
+  requisicoes: "demo_requisicoes",
 } as const;
 
 export type ChaveDemo = (typeof CHAVES_DEMO)[keyof typeof CHAVES_DEMO];
@@ -35,7 +37,7 @@ export type ChaveDemo = (typeof CHAVES_DEMO)[keyof typeof CHAVES_DEMO];
 // Contagens podem zerar de verdade (gestor descartou todas); as outras listas
 // vazias são sobra de versões antigas da demo e voltam pro padrão. O
 // prontuário da escala também pode zerar (gestor apagou todas as ocorrências).
-const PODE_FICAR_VAZIA: ReadonlySet<string> = new Set([CHAVES_DEMO.contagens, CHAVES_DEMO.escalaOcorrencias, CHAVES_DEMO.escalaNotas, CHAVES_DEMO.escalaExtras]);
+const PODE_FICAR_VAZIA: ReadonlySet<string> = new Set([CHAVES_DEMO.contagens, CHAVES_DEMO.escalaOcorrencias, CHAVES_DEMO.escalaNotas, CHAVES_DEMO.escalaExtras, CHAVES_DEMO.requisicoes]);
 
 /** Lista gravada ou, se ainda não houver (ou vier vazia), o padrão dos fixtures. */
 export function lerDemo<T>(chave: ChaveDemo, padrao: T[]): T[] {

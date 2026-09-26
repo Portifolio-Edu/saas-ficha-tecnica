@@ -10,13 +10,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ChefHat, ClipboardCheck, Thermometer, CookingPot, Beef, BookOpen, PackageSearch,
-  Check, ChevronLeft, UserRound, EyeOff, AlertTriangle, CalendarDays,
+  Check, ChevronLeft, UserRound, EyeOff, AlertTriangle, CalendarDays, ShoppingBasket,
 } from "lucide-react";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
 import { QuadroProducaoCozinha } from "./QuadroProducaoCozinha";
 import { FichasCozinha } from "./FichasCozinha";
 import { ProteinasCozinha } from "./ProteinasCozinha";
 import { EscalaCozinha } from "./EscalaCozinha";
+import { PedidosCozinha, type SugestaoPedido } from "./PedidosCozinha";
+import { agoraNoRestaurante, type AgendaFornecedor, type Agora, type NovaRequisicao, type Requisicao } from "@/lib/dominio/requisicao";
 import type { EscalaPublica } from "@/lib/escalas/publica";
 import { nums } from "@/components/ficha/tema";
 import { MOMENTOS, type Checklist } from "@/lib/dominio/checklist";
@@ -36,9 +38,12 @@ export interface AcoesCozinha {
   enviarContagem: (responsavel: string, itens: { insumoId: string; quantidade: number }[]) => Promise<ResultadoCozinha>;
   /** PROTEÍNAS (2026-09-25) */
   registrarLoteProteina: (lote: NovoLoteProteina, responsavel: string) => Promise<ResultadoCozinha>;
+  /** PEDIDOS DA COZINHA (2026-09-26) */
+  pedir: (r: NovaRequisicao, responsavel: string) => Promise<ResultadoCozinha>;
+  desistirDoPedido: (id: string) => Promise<ResultadoCozinha>;
 }
 
-type Aba = "checklists" | "temperatura" | "producao" | "proteinas" | "fichas" | "contagem" | "escala";
+type Aba = "checklists" | "temperatura" | "producao" | "proteinas" | "fichas" | "pedidos" | "contagem" | "escala";
 
 const ABAS: { id: Aba; rotulo: string; icone: typeof ChefHat }[] = [
   { id: "checklists", rotulo: "Checklists", icone: ClipboardCheck },
@@ -47,6 +52,8 @@ const ABAS: { id: Aba; rotulo: string; icone: typeof ChefHat }[] = [
   // PROTEÍNAS (2026-09-25): manipulação de proteínas (bruto → limpo) no tablet.
   { id: "proteinas", rotulo: "Proteínas", icone: Beef },
   { id: "fichas", rotulo: "Fichas", icone: BookOpen },
+  // PEDIDOS DA COZINHA (2026-09-26): o que precisa comprar, por categoria.
+  { id: "pedidos", rotulo: "Pedidos", icone: ShoppingBasket },
   { id: "contagem", rotulo: "Contagem", icone: PackageSearch },
   // ESCALAS (2026-09-26): escala da equipe, só leitura (quem altera é o gestor).
   { id: "escala", rotulo: "Escala", icone: CalendarDays },
@@ -77,6 +84,10 @@ export function CozinhaApp({
   lotesProteina = [],
   escala = null,
   hoje,
+  requisicoes = [],
+  agendaFornecedores = [],
+  sugestoesPedido = [],
+  agoraInicial,
   acoes,
   rodape,
 }: {
@@ -95,6 +106,11 @@ export function CozinhaApp({
   escala?: EscalaPublica | null;
   /** Data de hoje no fuso do restaurante (YYYY-MM-DD). */
   hoje: string;
+  /** PEDIDOS DA COZINHA (2026-09-26) */
+  requisicoes?: Requisicao[];
+  agendaFornecedores?: AgendaFornecedor[];
+  sugestoesPedido?: SugestaoPedido[];
+  agoraInicial?: Agora;
   acoes: AcoesCozinha;
   /** Linha no pé da tela (ex.: aviso de demonstração). */
   rodape?: ReactNode;
@@ -165,7 +181,7 @@ export function CozinhaApp({
 
       {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda.
           FICHAS (2026-09-25): Fichas usa 2 colunas (foto e ingredientes | passo a passo). */}
-      <main id="conteudo" className={`flex-1 w-full mx-auto px-4 py-5 ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas" || aba === "escala") ? "max-w-6xl" : "max-w-4xl"}`}>
+      <main id="conteudo" className={`flex-1 w-full mx-auto px-4 py-5 ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas" || aba === "escala") ? "max-w-6xl" : aba === "pedidos" ? "max-w-2xl" : "max-w-4xl"}`}>
         {!responsavel || trocando ? (
           <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
         ) : aba === "checklists" ? (
@@ -180,6 +196,16 @@ export function CozinhaApp({
           <FichasCozinha fichas={fichas} />
         ) : aba === "escala" ? (
           <EscalaCozinha escala={escala} hoje={hoje} />
+        ) : aba === "pedidos" ? (
+          <PedidosCozinha
+            requisicoes={requisicoes}
+            agenda={agendaFornecedores}
+            sugestoes={sugestoesPedido}
+            responsavel={responsavel}
+            agoraInicial={agoraInicial ?? agoraNoRestaurante()}
+            pedir={acoes.pedir}
+            desistir={acoes.desistirDoPedido}
+          />
         ) : (
           <SecaoContagem itens={itensContagem} responsavel={responsavel} acoes={acoes} />
         )}

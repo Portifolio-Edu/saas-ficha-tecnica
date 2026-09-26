@@ -16,6 +16,7 @@ import type { Producao, Turno } from "@/lib/dominio/producao";
 import type { Checklist, ChecklistItem } from "@/lib/dominio/checklist";
 import type { EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
 import type { Fornecedor } from "@/lib/dominio/fornecedor";
+import type { Requisicao } from "@/lib/dominio/requisicao";
 import type { NutricionalOverride, Rotulagem, ValoresNutricionaisInsumo } from "@/lib/dominio/nutricional";
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { FechamentoCmv } from "@/lib/dominio/fechamentoCmv";
@@ -534,11 +535,11 @@ export const movimentacoes: Movimentacao[] = [
 ];
 
 export const fornecedores: Fornecedor[] = [
-  { id: "forn-1", empresa: "Avícola Bom Frango", contato: "Roberto Lima", telefone: "(11) 98211-3344", email: "vendas@bomfrango.com.br", fornece: "Aves", diasEntrega: "Segunda, Quarta, Sexta", horarioEntrega: "08:00-10:00", prazoUrgencia: "Mesmo dia se pedido até 07:00" },
-  { id: "forn-2", empresa: "Frigorífico Santa Fé", contato: "Camila Rocha", telefone: "(11) 97654-2211", email: "comercial@santafecarnes.com.br", fornece: "Carnes bovinas e suínas", diasEntrega: "Terça, Quinta", horarioEntrega: "07:30-09:30", prazoUrgencia: "24h" },
-  { id: "forn-3", empresa: "Peixaria do Porto", contato: "Diego Fontes", telefone: "(11) 99087-5521", email: "pedidos@peixariadoporto.com.br", fornece: "Pescados e frutos do mar", diasEntrega: "Terça, Sexta", horarioEntrega: "06:30-08:00", prazoUrgencia: "Sob consulta — sujeito a safra" },
-  { id: "forn-4", empresa: "Distribuidora Verde Horta", contato: "Sandra Melo", telefone: "(11) 98899-1122", email: "contato@verdehorta.com.br", fornece: "Hortifruti e temperos", diasEntrega: "Diário", horarioEntrega: "05:30-07:00", prazoUrgencia: "Mesmo dia" },
-  { id: "forn-5", empresa: "Laticínios Serra Azul", contato: "Fernando Nogueira", telefone: "(11) 96677-8899", email: "vendas@serraazul.com.br", fornece: "Laticínios e derivados", diasEntrega: "Segunda, Quinta", horarioEntrega: "08:00-11:00", prazoUrgencia: "48h" },
+  { id: "forn-1", empresa: "Avícola Bom Frango", contato: "Roberto Lima", telefone: "(11) 98211-3344", email: "vendas@bomfrango.com.br", fornece: "Aves", entregaDias: [1, 3, 5], pedidoAte: "17:00", pedidoAntecedencia: 1, categoriasPedido: ["proteinas"], horarioEntrega: "8h às 10h", prazoUrgencia: "Mesmo dia se pedido até 07:00" },
+  { id: "forn-2", empresa: "Frigorífico Santa Fé", contato: "Camila Rocha", telefone: "(11) 97654-2211", email: "comercial@santafecarnes.com.br", fornece: "Carnes bovinas e suínas", entregaDias: [2, 4], pedidoAte: "16:00", pedidoAntecedencia: 1, categoriasPedido: ["proteinas"], horarioEntrega: "7h30 às 9h30", prazoUrgencia: "24h" },
+  { id: "forn-3", empresa: "Peixaria do Porto", contato: "Diego Fontes", telefone: "(11) 99087-5521", email: "pedidos@peixariadoporto.com.br", fornece: "Pescados e frutos do mar", entregaDias: [2, 5], pedidoAte: "15:00", pedidoAntecedencia: 1, categoriasPedido: ["proteinas"], horarioEntrega: "6h30 às 8h", prazoUrgencia: "Sob consulta — sujeito a safra" },
+  { id: "forn-4", empresa: "Distribuidora Verde Horta", contato: "Sandra Melo", telefone: "(11) 98899-1122", email: "contato@verdehorta.com.br", fornece: "Hortifruti e temperos", entregaDias: [1, 2, 3, 4, 5, 6], pedidoAte: "18:00", pedidoAntecedencia: 1, categoriasPedido: ["hortifruti", "secos"], horarioEntrega: "5h30 às 7h", prazoUrgencia: "Mesmo dia" },
+  { id: "forn-5", empresa: "Laticínios Serra Azul", contato: "Fernando Nogueira", telefone: "(11) 96677-8899", email: "vendas@serraazul.com.br", fornece: "Laticínios e derivados", entregaDias: [1, 4], pedidoAte: "12:00", pedidoAntecedencia: 2, categoriasPedido: ["laticinios"], horarioEntrega: "8h às 11h", prazoUrgencia: "48h" },
 ];
 
 // =========================================================================
@@ -678,3 +679,11 @@ const fechamentosEmOrdemCronologica: FechamentoCmv[] = [
 export const fechamentos: FechamentoCmv[] = fechamentosEmOrdemCronologica.slice().reverse();
 
 export const margemAlvoCliente = 0.65;
+
+// PEDIDOS DA COZINHA (2026-09-26): o que a cozinha já pediu na demo.
+export const requisicoesDemo: Requisicao[] = [
+  { id: "req-1", categoria: "hortifruti", insumoId: null, descricao: "Coentro", quantidade: 4, unidade: "maço", observacao: "bem verdinho", responsavel: "Ana Souza", status: "pendente", criadoEm: "2026-09-26T10:40:00.000Z", resolvidoEm: null },
+  { id: "req-2", categoria: "hortifruti", insumoId: null, descricao: "Tomate italiano", quantidade: 8, unidade: "kg", observacao: null, responsavel: "Marcos Silva", status: "pendente", criadoEm: "2026-09-26T11:05:00.000Z", resolvidoEm: null },
+  { id: "req-3", categoria: "laticinios", insumoId: null, descricao: "Creme de leite fresco", quantidade: 6, unidade: "l", observacao: null, responsavel: "Juliana Costa", status: "pendente", criadoEm: "2026-09-26T09:20:00.000Z", resolvidoEm: null },
+  { id: "req-4", categoria: "secos", insumoId: null, descricao: "Arroz arbóreo", quantidade: 5, unidade: "kg", observacao: null, responsavel: "Pedro Alves", status: "comprado", criadoEm: "2026-09-25T15:00:00.000Z", resolvidoEm: "2026-09-25T18:30:00.000Z" },
+];

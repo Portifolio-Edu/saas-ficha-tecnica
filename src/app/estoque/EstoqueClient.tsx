@@ -18,10 +18,13 @@ import { CATEGORIAS, type Insumo } from "@/lib/dominio/insumo";
 import type { ContagemCega, EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
 import type { Fornecedor } from "@/lib/dominio/fornecedor";
 import { useToast } from "@/components/ficha/Toast";
-import { acaoExcluirFornecedor } from "./actions";
+import { acaoExcluirFornecedor, acaoResolverRequisicoes } from "./actions";
 import { abrirAgenteIaComFoco } from "@/components/ia/BotaoAgenteIa";
 import { formatBRL, formatQtd } from "@/components/charts/format";
 import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
+import { CATEGORIAS_PEDIDO, diasDeEntregaTexto } from "@/lib/dominio/requisicao";
+import { PedidosDaCozinha } from "@/components/estoque/PedidosDaCozinha";
+import type { Requisicao, StatusRequisicao } from "@/lib/dominio/requisicao";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -34,6 +37,9 @@ export function EstoqueClient({
   movimentacoes,
   fornecedores,
   contagens = [],
+  requisicoes = [],
+  nomeRestaurante = "",
+  resolverPedidos = acaoResolverRequisicoes,
 }: {
   insumos: Insumo[];
   estoque: EstoqueLinha[];
@@ -41,6 +47,11 @@ export function EstoqueClient({
   fornecedores: Fornecedor[];
   /** EQUIPE (2026-09-25): contagens cegas; a página só manda pra dono e gestor. */
   contagens?: ContagemCega[];
+  /** PEDIDOS DA COZINHA (2026-09-26): pedidos de compra da cozinha. */
+  requisicoes?: Requisicao[];
+  nomeRestaurante?: string;
+  /** Na demo, grava no "banco" do navegador. */
+  resolverPedidos?: (ids: string[], status: StatusRequisicao) => Promise<{ ok: true } | { ok: false; erro: string }>;
 }) {
   const pathname = usePathname();
   const emModoDemo = pathname?.startsWith("/preview");
@@ -120,6 +131,7 @@ export function EstoqueClient({
 
   return (
     <div className="max-w-5xl space-y-6">
+      <PedidosDaCozinha requisicoes={requisicoes} fornecedores={fornecedores} nomeRestaurante={nomeRestaurante} resolver={resolverPedidos} />
       <ContagensCegas contagens={contagens} />
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -400,57 +412,61 @@ export function EstoqueClient({
         <div className="space-y-3">
           {fornecedores.map((f) => {
             const editandoEsteAqui = fornecedorEditando?.id === f.id;
+            const prazo = f.pedidoAte
+              ? `até ${f.pedidoAte.replace(":00", "h")}${f.pedidoAntecedencia === 0 ? " do dia" : f.pedidoAntecedencia === 1 ? " do dia anterior" : `, ${f.pedidoAntecedencia} dias antes`}`
+              : f.pedidoAntecedencia === 0 ? "no próprio dia" : `${f.pedidoAntecedencia} dia${f.pedidoAntecedencia > 1 ? "s" : ""} antes`;
             return (
-              <Card key={f.id} className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="text-[13.5px] font-semibold">{f.empresa}</div>
-                    <div className="text-[12px]" style={{ color: "var(--sub)" }}>{f.fornece}</div>
+              <Card key={f.id} className="p-4 md:p-5">
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                  <div className="min-w-0">
+                    <div className="text-[15px] md:text-[13.5px] font-semibold">{f.empresa}</div>
+                    <div className="text-[13px] md:text-[12px]" style={{ color: "var(--sub)" }}>{[f.fornece, f.contato].filter(Boolean).join(" · ")}</div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="text-right">
-                      <div className="text-[13px] font-medium" style={nums}>{f.telefone}</div>
-                      <div className="text-[11.5px]" style={{ color: "var(--sub)" }}>{f.contato}</div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 pt-0.5">
-                      <button
-                        onClick={() => {
-                          setShowNovoFornecedor(false);
-                          setFornecedorEditando(editandoEsteAqui ? null : f);
-                        }}
-                        // SISTEMA premium: ações com 40px de alvo (antes texto de 11,5px sem área de toque).
-                        className="text-[13px] font-medium px-3 min-h-10 rounded-lg hover:bg-[var(--panel-hover)]"
-                        style={{ color: "var(--text)" }}
-                      >
-                        Editar
-                      </button>
-                      <button onClick={() => excluirFornecedorComConfirmacao(f)} className="text-[13px] font-medium px-3 min-h-10 rounded-lg hover:bg-[var(--danger-soft)]" style={{ color: "var(--danger)" }}>
-                        Excluir
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-1">
+                    <a href={`tel:${f.telefone.replace(/[^\d+]/g, "")}`} className="text-[14px] md:text-[13px] font-medium px-2 min-h-10 inline-flex items-center rounded-lg hover:bg-[var(--panel-hover)]" style={nums}>
+                      {f.telefone}
+                    </a>
+                    <button
+                      onClick={() => {
+                        setShowNovoFornecedor(false);
+                        setFornecedorEditando(editandoEsteAqui ? null : f);
+                      }}
+                      className="text-[13px] font-medium px-3 min-h-10 rounded-lg hover:bg-[var(--panel-hover)]"
+                      style={{ color: "var(--text)" }}
+                    >
+                      Editar
+                    </button>
+                    <button onClick={() => excluirFornecedorComConfirmacao(f)} className="text-[13px] font-medium px-3 min-h-10 rounded-lg hover:bg-[var(--danger-soft)]" style={{ color: "var(--danger)" }}>
+                      Excluir
+                    </button>
                   </div>
                 </div>
                 {editandoEsteAqui ? (
                   <NovoFornecedorForm fornecedor={f} onCancel={() => setFornecedorEditando(null)} onSaved={() => setFornecedorEditando(null)} />
                 ) : (
-                  <div className="grid grid-cols-4 gap-3 text-[11.5px]" style={{ borderTop: `1px solid ${"var(--border)"}`, paddingTop: 12 }}>
+                  <dl className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[13px] md:text-[12px]" style={{ borderTop: `1px solid ${"var(--border)"}`, paddingTop: 12 }}>
                     <div>
-                      <div style={{ color: "var(--faint)" }}>E-mail</div>
-                      <div className="mt-0.5">{f.email || "—"}</div>
+                      <dt style={{ color: "var(--faint)" }}>Entrega</dt>
+                      <dd className="mt-0.5">
+                        {f.entregaDias.length ? diasDeEntregaTexto(f.entregaDias) : "—"}
+                        {f.horarioEntrega ? ` · ${f.horarioEntrega}` : ""}
+                      </dd>
                     </div>
                     <div>
-                      <div style={{ color: "var(--faint)" }}>Dias de entrega</div>
-                      <div className="mt-0.5">{f.diasEntrega || "—"}</div>
+                      <dt style={{ color: "var(--faint)" }}>Pedido</dt>
+                      <dd className="mt-0.5">{f.entregaDias.length ? prazo : "—"}</dd>
                     </div>
                     <div>
-                      <div style={{ color: "var(--faint)" }}>Horário</div>
-                      <div className="mt-0.5">{f.horarioEntrega || "—"}</div>
+                      <dt style={{ color: "var(--faint)" }}>Atende a cozinha em</dt>
+                      <dd className="mt-0.5">
+                        {f.categoriasPedido.length ? f.categoriasPedido.map((c) => CATEGORIAS_PEDIDO.find((x) => x.id === c)?.rotulo).join(", ") : "—"}
+                      </dd>
                     </div>
                     <div>
-                      <div style={{ color: "var(--faint)" }}>Pedido de urgência</div>
-                      <div className="mt-0.5">{f.prazoUrgencia || "—"}</div>
+                      <dt style={{ color: "var(--faint)" }}>Urgência</dt>
+                      <dd className="mt-0.5">{f.prazoUrgencia || "—"}</dd>
                     </div>
-                  </div>
+                  </dl>
                 )}
               </Card>
             );

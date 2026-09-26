@@ -11,6 +11,8 @@ import { montarEscalaPublica, periodoCozinha, type EscalaPublica } from "@/lib/e
 import { CozinhaApp } from "@/components/cozinha/CozinhaApp";
 import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { PareamentoForm } from "./PareamentoForm";
+import { listarAgendaFornecedores, listarRequisicoes } from "@/lib/dados/requisicoes";
+import { agoraNoRestaurante, categoriaDoInsumo } from "@/lib/dominio/requisicao";
 import {
   acaoAtualizarProducao,
   acaoDesmarcarItem,
@@ -19,6 +21,8 @@ import {
   acaoRegistrarProducao,
   acaoRegistrarTemperatura,
   acaoRegistrarLoteProteina,
+  acaoCriarRequisicao,
+  acaoRemoverRequisicao,
 } from "./actions";
 
 // EQUIPE (2026-09-25): modo cozinha. Sem login mostra o pareamento por
@@ -47,7 +51,7 @@ export default async function CozinhaPage() {
 
   const dados = await carregarDadosCozinha();
   const hoje = hojeLocalISO();
-  const [checklists, locais, temperaturas, funcionarios, producoes, lotesProteina, escala] = await Promise.all([
+  const [checklists, locais, temperaturas, funcionarios, producoes, lotesProteina, escala, requisicoes, agendaFornecedores] = await Promise.all([
     listarChecklists(),
     listarLocaisArmazenamento(),
     listarRegistrosTemperatura(40),
@@ -55,6 +59,8 @@ export default async function CozinhaPage() {
     listarProducoesDeHoje(dados.fichas),
     listarLotesProteina(30),
     escalaDaCozinha(hoje),
+    listarRequisicoes(),
+    listarAgendaFornecedores(),
   ]);
 
   return (
@@ -74,6 +80,10 @@ export default async function CozinhaPage() {
         lotesProteina={lotesProteina}
         escala={escala}
         hoje={hoje}
+        requisicoes={requisicoes}
+        agendaFornecedores={agendaFornecedores}
+        sugestoesPedido={dados.insumosCalc.map((i) => ({ id: i.id, nome: i.nome, categoria: categoriaDoInsumo(i.categoria) }))}
+        agoraInicial={agoraNoRestaurante()}
         acoes={{
           marcarItem: acaoMarcarItem,
           desmarcarItem: acaoDesmarcarItem,
@@ -82,6 +92,8 @@ export default async function CozinhaPage() {
           atualizarProducao: acaoAtualizarProducao,
           enviarContagem: acaoEnviarContagem,
           registrarLoteProteina: acaoRegistrarLoteProteina,
+          pedir: acaoCriarRequisicao,
+          desistirDoPedido: acaoRemoverRequisicao,
         }}
       />
     </>

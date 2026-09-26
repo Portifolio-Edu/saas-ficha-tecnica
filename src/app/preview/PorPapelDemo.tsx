@@ -34,7 +34,9 @@ import type { VisaoGeralClient as TVisaoGeralClient } from "@/app/visao-geral/Vi
 import type { ProteinasClient as TProteinasClient } from "@/app/proteinas/ProteinasClient";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { ehGestao } from "@/lib/auth/papeis";
-import { CHAVES_DEMO, useDemo } from "@/lib/demo/armazem";
+import { CHAVES_DEMO, gravarDemo, lerDemo, useDemo } from "@/lib/demo/armazem";
+import type { Requisicao, StatusRequisicao } from "@/lib/dominio/requisicao";
+import { NOME_RESTAURANTE, requisicoesDemo } from "./fixtures";
 import type { ContagemCega } from "@/lib/dominio/estoque";
 import type { Producao } from "@/lib/dominio/producao";
 import type { RegistroTemperatura } from "@/lib/dominio/temperatura";
@@ -53,7 +55,23 @@ export function InsumosDemo(props: ComponentProps<typeof TInsumosClient>) {
 export function EstoqueDemo(props: ComponentProps<typeof TEstoqueClient>) {
   const { papel } = usePapelDemo();
   const [contagens, versao] = useDemo<ContagemCega>(CHAVES_DEMO.contagens, contagensDemo);
-  return <EstoqueClient key={versao} {...props} contagens={ehGestao(papel) ? contagens : []} />;
+  // PEDIDOS DA COZINHA (2026-09-26): o que o tablet da demo pediu.
+  const [requisicoes, versaoPedidos] = useDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
+  const resolverPedidos = async (ids: string[], status: StatusRequisicao) => {
+    const agora = new Date().toISOString();
+    gravarDemo(CHAVES_DEMO.requisicoes, lerDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo).map((r) => (ids.includes(r.id) ? { ...r, status, resolvidoEm: agora } : r)));
+    return { ok: true as const };
+  };
+  return (
+    <EstoqueClient
+      key={`${versao}-${versaoPedidos}`}
+      {...props}
+      contagens={ehGestao(papel) ? contagens : []}
+      requisicoes={requisicoes}
+      nomeRestaurante={NOME_RESTAURANTE}
+      resolverPedidos={resolverPedidos}
+    />
+  );
 }
 
 export function SegurancaDemo(props: ComponentProps<typeof TSegurancaClient>) {

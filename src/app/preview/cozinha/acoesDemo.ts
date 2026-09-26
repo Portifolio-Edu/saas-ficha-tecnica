@@ -29,8 +29,10 @@ import {
   processamentos as processamentosFixture,
   producoes as producoesFixture,
   registrosTemperatura,
+  requisicoesDemo,
   todasReceitas,
 } from "../fixtures";
+import { validarRequisicao, type Requisicao } from "@/lib/dominio/requisicao";
 import { contagensDemo } from "../equipeDemo";
 
 const receitaPorId = new Map(todasReceitas.map((r) => [r.id, r]));
@@ -40,6 +42,7 @@ export const lerProducoesDemo = () => lerDemo<Producao>(CHAVES_DEMO.producoes, p
 export const lerChecklistsDemo = () => lerDemo<Checklist>(CHAVES_DEMO.checklists, checklistsFixture);
 export const lerTemperaturasDemo = () => lerDemo<RegistroTemperatura>(CHAVES_DEMO.temperaturas, registrosTemperatura);
 export const lerContagensDemo = () => lerDemo<ContagemCega>(CHAVES_DEMO.contagens, contagensDemo);
+export const lerRequisicoesDemo = () => lerDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
 export const lerProcessamentosDemo = () => lerDemo<Processamento>(CHAVES_DEMO.processamentos, processamentosFixture);
 const lerEstoqueDemo = () => lerDemo<EstoqueLinha>(CHAVES_DEMO.estoque, estoqueFixture);
 const lerMovimentacoesDemo = () => lerDemo<Movimentacao>(CHAVES_DEMO.movimentacoes, movimentacoesFixture);
@@ -225,5 +228,38 @@ export const acoesCozinhaDemo: AcoesCozinha = {
     } catch (e) {
       return erro(e);
     }
+  },
+  // PEDIDOS DA COZINHA (2026-09-26)
+  async pedir(r, responsavel) {
+    await pausa();
+    try {
+      exigirNome(responsavel);
+      const problema = validarRequisicao(r);
+      if (problema) throw new Error(problema);
+      const nova: Requisicao = {
+        id: id("req"),
+        categoria: r.categoria,
+        insumoId: r.insumoId,
+        descricao: r.descricao.trim(),
+        quantidade: r.quantidade,
+        unidade: r.quantidade === null ? null : r.unidade,
+        observacao: r.observacao?.trim() || null,
+        responsavel,
+        status: "pendente",
+        criadoEm: new Date().toISOString(),
+        resolvidoEm: null,
+      };
+      gravarDemo(CHAVES_DEMO.requisicoes, [nova, ...lerRequisicoesDemo()]);
+      return { ok: true };
+    } catch (e) {
+      return erro(e);
+    }
+  },
+  async desistirDoPedido(idPedido) {
+    await pausa();
+    const lista = lerRequisicoesDemo();
+    if (!lista.some((r) => r.id === idPedido && r.status === "pendente")) return erro(new Error("Esse item já foi comprado; não dá mais pra tirar do pedido."));
+    gravarDemo(CHAVES_DEMO.requisicoes, lista.filter((r) => r.id !== idPedido));
+    return { ok: true };
   },
 };

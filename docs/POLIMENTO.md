@@ -664,3 +664,40 @@ entram mais). Migration `20260928110000_excluir_restaurante.sql` (aplicada).
 
 **Reverter:** `git revert` do commit "monitoramento de erros" e
 `supabase/reverter/20260928120000_erros_sistema.sql`.
+
+## 24. Celular — navegação e Estoque
+
+Dono, gestor e estoquista usam muito fora do restaurante. No celular:
+- **Barra fixa embaixo** (alcance do polegar) com os 4 destinos do papel —
+  dono/gestor: Início, Estoque, Produção, Escala; estoquista: Estoque,
+  Insumos, Proteínas, CMV — e **Menu** pro resto. O título da página parou de
+  sair cortado ("Visã..."); o tema foi pra dentro do Menu; área segura do iPhone.
+- **Tabela vira lista** (`ListaMovel`/`ItemMovel`): nome à esquerda, número à
+  direita, toque abre a edição. Estoque (saldo, edição, contagem cega,
+  movimentações) sem rolagem lateral.
+- **"Repor agora (N)"** e valor parado no topo do saldo (celular e computador).
+
+## 25. Pedidos da cozinha e agenda dos fornecedores
+
+Casa sem estoquista: a cozinha precisa avisar quem compra — e hortifrúti muda
+tanto que muitas vezes só a cozinha sabe.
+- **Fornecedores** (Estoque): dias da semana de entrega, "recebe pedido até"
+  (horário), antecedência (no dia / 1–3 dias antes) e categorias que atende
+  (hortifrúti, proteínas, secos, laticínios, outros). O texto livre antigo
+  ("Seg, Qua") foi convertido.
+- **Cozinha → aba Pedidos**: uma categoria por vez, com o prazo do fornecedor
+  ("Peça até amanhã às 18h pra chegar segunda"), destaque quando faltam menos
+  de 3 h; pede item (sugestões do cadastro), quantidade, unidade e observação;
+  tira do pedido enquanto não foi comprado; vê o que já foi comprado.
+- **Estoque → Pedidos da cozinha**: por categoria, com o prazo, **Pedir no
+  WhatsApp** (lista pronta pro fornecedor) e **Comprado** por item ou tudo.
+- Banco (`20260928130000_requisicoes_compra.sql`, aplicada): toda a equipe vê e
+  pede; só estoque/gestão marca comprado (o banco carimba quem e quando); a
+  cozinha vê a agenda pela função `agenda_fornecedores()` — sem telefone nem
+  e-mail do fornecedor.
+- Testes: unitários (prazo, incl. fuso de São Paulo e pedido no próprio dia),
+  SQL `requisicoes.sql` 17/17, e2e (estoquista cadastra no celular → tablet pede
+  e vê o prazo → estoquista marca comprado no celular → tablet vê comprado).
+
+**Reverter:** `git revert` dos commits e
+`supabase/reverter/20260928130000_requisicoes_compra.sql`.

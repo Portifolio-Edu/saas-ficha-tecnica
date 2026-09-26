@@ -22,9 +22,15 @@ import { hojeLocalISO } from "@/lib/calculo/dia";
 import { paraMotor, type OcorrenciaRegistro, type PessoaEscala } from "@/lib/escalas/cadastro";
 import { montarEscalaPublica, periodoCozinha, recortePublico } from "@/lib/escalas/publica";
 import type { RegrasEscala } from "@/lib/escalas/tipos";
-import { checklists as checklistsFixture, processamentos as processamentosFixture, producoes as producoesFixture, proteinas as proteinasFixture, registrosTemperatura } from "../fixtures";
+import { checklists as checklistsFixture, fornecedores as fornecedoresFixture, insumos as insumosFixture, processamentos as processamentosFixture, producoes as producoesFixture, proteinas as proteinasFixture, registrosTemperatura, requisicoesDemo } from "../fixtures";
+import { agendaDoFornecedor } from "@/lib/dominio/fornecedor";
+import { categoriaDoInsumo, type Requisicao } from "@/lib/dominio/requisicao";
 
-type Props = Omit<ComponentProps<typeof CozinhaApp>, "acoes" | "rodape" | "producoes" | "checklists" | "temperaturas" | "proteinas" | "lotesProteina" | "escala" | "hoje">;
+type Props = Omit<ComponentProps<typeof CozinhaApp>, "acoes" | "rodape" | "producoes" | "checklists" | "temperaturas" | "proteinas" | "lotesProteina" | "escala" | "hoje" | "requisicoes" | "agendaFornecedores" | "sugestoesPedido">;
+
+// PEDIDOS DA COZINHA (2026-09-26): agenda dos fornecedores da demo (sem contato) e sugestões do cadastro.
+const agendaDemo = fornecedoresFixture.map(agendaDoFornecedor).filter((a) => a.diasEntrega.length > 0);
+const sugestoesDemo = insumosFixture.map((i) => ({ id: i.id, nome: i.nome, categoria: categoriaDoInsumo(i.categoria) }));
 
 // PROTEÍNAS (2026-09-25): proteínas do cadastro da demo, sem preço.
 const proteinasDemo: ProteinaCozinha[] = proteinasFixture.map((p) => ({ id: p.id, nome: p.nome, fatorPadrao: p.fatorCorrecao }));
@@ -93,6 +99,8 @@ export function CozinhaDemo(props: Props) {
     return montarEscalaPublica(recortePublico(paraMotor(pessoasDemoAtuais(pessoasEscala, iniciaisEscala.pessoas)), ocorrenciasEscala, regrasEscala[0] ?? iniciaisEscala.regras), inicio, fim);
   }, [hoje, pessoasEscala, ocorrenciasEscala, regrasEscala, iniciaisEscala]);
 
+  const [requisicoes] = useDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
+
   const temperaturasRecentes = useMemo(() => [...temperaturas].sort((a, b) => b.registradoEm.localeCompare(a.registradoEm)), [temperaturas]);
 
   return (
@@ -105,10 +113,13 @@ export function CozinhaDemo(props: Props) {
       lotesProteina={lotesProteina}
       escala={escala}
       hoje={hoje}
+      requisicoes={requisicoes}
+      agendaFornecedores={agendaDemo}
+      sugestoesPedido={sugestoesDemo}
       acoes={acoesCozinhaDemo}
       rodape={
         <>
-          Demonstração: o que você registra aqui aparece no painel do gestor (Produções, Estoque, Checklists, Segurança alimentar e Proteínas) e a escala segue o que o gestor monta em Escalas, só neste
+          Demonstração: o que você registra aqui aparece no painel do gestor (Produções, Estoque e pedidos de compra, Checklists, Segurança alimentar e Proteínas) e a escala segue o que o gestor monta em Escalas, só neste
           navegador.{" "}
           <Link href="/preview/producoes" className="underline underline-offset-2">Abrir o painel</Link>
         </>

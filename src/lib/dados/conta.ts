@@ -20,6 +20,7 @@ const TABELAS: Tabela[] = [
   { nome: "pareamentos_cozinha", colunas: "id, expira_em, usado_em, criado_em" },
   { nome: "locais_armazenamento" },
   { nome: "fornecedores" },
+  { nome: "requisicoes" },
   { nome: "insumos" },
   { nome: "historico_preco_insumo" },
   { nome: "valores_nutricionais_insumo" },

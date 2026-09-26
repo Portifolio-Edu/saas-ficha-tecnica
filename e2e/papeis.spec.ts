@@ -238,6 +238,61 @@ test.describe.serial("com login real", () => {
     await tablet.context().close();
   });
 
+  // PEDIDOS DA COZINHA (2026-09-26): fornecedor com agenda → tablet pede → quem compra resolve (no celular).
+  test("estoquista cadastra a agenda do fornecedor; tablet pede hortifrúti com o prazo; estoquista marca comprado no celular", async ({ browser }) => {
+    const celular = await (await browser.newContext({ baseURL: "http://127.0.0.1:3000", locale: "pt-BR", timezoneId: "America/Sao_Paulo", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
+    await entrar(celular, estoquista.usuario, estoquista.senha);
+    await expect(celular).toHaveURL(/\/estoque$/);
+    await celular.getByRole("button", { name: "+ Novo fornecedor" }).click();
+    await celular.getByLabel("Empresa").fill(`Horta ${RODADA}`);
+    await celular.getByLabel("Telefone").fill("(11) 98888-7777");
+    await celular.getByRole("button", { name: "Hortifrúti", exact: true }).click();
+    for (const dia of ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]) await celular.getByRole("button", { name: dia, exact: true }).click();
+    await celular.getByLabel("Recebe pedido até").fill("23:59");
+    await celular.getByLabel("Antecedência").selectOption("0");
+    await celular.getByRole("button", { name: "Salvar fornecedor" }).click();
+    await expect(celular.getByText(`Horta ${RODADA}`, { exact: true })).toBeVisible();
+    const { data: forn } = await admin().from("fornecedores").select("entrega_dias, pedido_ate, pedido_antecedencia, categorias_pedido").eq("cliente_id", clienteId).single();
+    expect(forn).toEqual({ entrega_dias: [0, 1, 2, 3, 4, 5, 6], pedido_ate: "23:59:00", pedido_antecedencia: 0, categorias_pedido: ["hortifruti"] });
+
+    // Tablet novo (o código anterior já foi usado).
+    const dono2 = await novaAba(browser);
+    await entrar(dono2, dono.email, novaSenhaDono);
+    await dono2.goto("/equipe");
+    await dono2.getByRole("button", { name: "Conectar aparelho" }).click();
+    const codigo = (await dono2.getByText(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/).innerText()).trim();
+    await dono2.context().close();
+    const tablet = await novaAba(browser);
+    await tablet.goto("/cozinha");
+    await tablet.getByPlaceholder("K7M4-9QPX").fill(codigo);
+    await tablet.getByRole("button", { name: "Conectar" }).click();
+    await tablet.getByRole("button", { name: cozinheiro }).click();
+    await tablet.getByRole("button", { name: "Pedidos" }).click();
+    await expect(tablet.getByText(/Peça até hoje às 23h59 pra chegar/)).toBeVisible();
+    await expect(tablet.getByText(`Horta ${RODADA}`)).toBeVisible();
+    await tablet.getByLabel("O que precisa?").fill("Coentro");
+    await tablet.getByLabel("Quanto (opcional)").fill("3");
+    await tablet.getByLabel("Unidade").selectOption("maço");
+    await tablet.getByRole("button", { name: "Pedir em hortifrúti" }).click();
+    await expect(tablet.getByRole("region", { name: "Pedido de Hortifrúti pendente" }).getByText("Coentro")).toBeVisible();
+
+    await celular.reload();
+    await expect(celular.getByText("Pedidos da cozinha · 1")).toBeVisible();
+    await expect(celular.getByText(`Horta ${RODADA}: peça até hoje às 23h59`, { exact: false })).toBeVisible();
+    await celular.getByRole("button", { name: "Marcar Coentro como comprado" }).click();
+    await expect(celular.getByText("Nenhum pedido pendente.", { exact: false })).toBeVisible();
+    const { data: req } = await admin().from("requisicoes").select("descricao, quantidade, unidade, status, responsavel, resolvido_em").eq("cliente_id", clienteId).single();
+    expect(req).toMatchObject({ descricao: "Coentro", quantidade: 3, unidade: "maço", status: "comprado", responsavel: cozinheiro });
+    expect(req!.resolvido_em).toBeTruthy();
+    expect(await celular.evaluate(() => document.documentElement.scrollWidth), "Estoque sem rolagem lateral no celular").toBeLessThanOrEqual(390);
+
+    await tablet.reload();
+    await tablet.getByRole("button", { name: "Pedidos" }).click();
+    await expect(tablet.getByRole("region", { name: "Comprados nos últimos dias" }).getByText(/Coentro/)).toBeVisible();
+    await tablet.context().close();
+    await celular.context().close();
+  });
+
   test("prontuário e banco de extras gravam no banco", async ({ page }) => {
     await entrar(page, gestor.usuario, gestor.senha);
     await page.goto("/escalas");
