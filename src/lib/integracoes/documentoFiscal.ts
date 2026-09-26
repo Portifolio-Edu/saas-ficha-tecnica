@@ -225,3 +225,50 @@ export function consolidarDocumentos(arquivos: { nome: string; conteudo: string 
     produtos: lista,
   };
 }
+
+// AGENTE IA (2026-09-26): nota de COMPRA do fornecedor (NF-e modelo 55), pra
+// dar entrada no estoque pelo agente. Mesmas regras de leitura das de venda.
+export interface ItemComprado {
+  codigo: string;
+  descricao: string;
+  quantidade: number;
+  unidade: string;
+  valorUnitario: number;
+  /** Valor total do item (quantidade × unitário, menos desconto). */
+  valor: number;
+}
+
+export interface NotaDeCompra {
+  chave: string;
+  numero: string;
+  fornecedor: string;
+  cnpjFornecedor: string;
+  /** AAAA-MM-DD */
+  emitidaEm: string;
+  itens: ItemComprado[];
+}
+
+export function lerNotaDeCompra(texto: string): NotaDeCompra | { erro: string } {
+  const xml = texto.replace(/^﻿/, "");
+  if (!/<(?:[\w.-]+:)?infNFe[\s>]/.test(xml)) return { erro: "Não é o XML de uma NF-e." };
+  if (valor(xml, "mod") !== "55") return { erro: "Não é NF-e de compra (modelo 55)." };
+  const emit = blocos(xml, "emit")[0] ?? "";
+  return {
+    chave: (atributo(xml, "infNFe", "Id") ?? "").replace(/^NFe/, ""),
+    numero: valor(xml, "nNF") ?? "",
+    fornecedor: valor(emit, "xFant") ?? valor(emit, "xNome") ?? "",
+    cnpjFornecedor: valor(emit, "CNPJ") ?? "",
+    emitidaEm: (valor(xml, "dhEmi") ?? valor(xml, "dEmi") ?? "").slice(0, 10),
+    itens: blocos(xml, "det").map((det) => {
+      const prod = blocos(det, "prod")[0] ?? det;
+      return {
+        codigo: valor(prod, "cProd") ?? "",
+        descricao: valor(prod, "xProd") ?? "",
+        quantidade: numero(valor(prod, "qCom")),
+        unidade: (valor(prod, "uCom") ?? "").toUpperCase(),
+        valorUnitario: numero(valor(prod, "vUnCom")),
+        valor: Math.max(0, numero(valor(prod, "vProd")) - numero(valor(prod, "vDesc"))),
+      };
+    }),
+  };
+}

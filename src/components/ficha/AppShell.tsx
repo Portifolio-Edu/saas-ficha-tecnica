@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ShellPremium } from "./ShellPremium";
+import { BotaoAgente } from "@/components/ia/BotaoAgente";
 import type { Papel } from "@/lib/auth/papeis";
 
 export function AppShell({
@@ -38,6 +39,8 @@ export function AppShell({
       nomeRestaurante={nomeRestaurante}
       tituloPagina={tituloPagina}
       acaoRodape={{ rotulo: "Sair da conta", icone: <LogOut size={16} />, onClick: sair }}
+      // AGENTE IA (2026-09-26): o agente de verdade (n8n), pra quem usa o agente.
+      extrasCabecalho={papel === "dono" || papel === "gestor" || papel === "estoquista" ? <BotaoAgente nomeRestaurante={nomeRestaurante} /> : undefined}
     >
       {children}
     </ShellPremium>
