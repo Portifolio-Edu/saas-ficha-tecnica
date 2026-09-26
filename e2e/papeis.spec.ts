@@ -1,6 +1,7 @@
 // PLANO 9,5 (2026-09-26): ponta a ponta com login real. Um restaurante novo
 // por rodada, do cadastro até o tablet da cozinha, passando por cada papel.
 // Cada teste confere na tela E no banco (Supabase local).
+import { readFile } from "node:fs/promises";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { RODADA, admin, clienteDoDono, entrar, ultimoLink } from "./apoio";
 
@@ -272,5 +273,66 @@ test.describe.serial("com login real", () => {
     const { data: extra } = await admin().from("banco_extras").select("telefone, nivel, pracas, aceita_whatsapp, consentimento_em").eq("cliente_id", clienteId).single();
     expect(extra).toMatchObject({ telefone: "5511987654321", nivel: "senior", pracas: ["Chapa"], aceita_whatsapp: true });
     expect(extra!.consentimento_em, "data do consentimento gravada").toBeTruthy();
+  });
+  // PLANO 9,5, etapa 3 (2026-09-28): LGPD — baixar e excluir os dados.
+  test("só o dono baixa todos os dados do restaurante, sem segredo técnico", async ({ page }) => {
+    await entrar(page, estoquista.usuario, estoquista.senha);
+    expect((await page.request.get("/conta/exportar")).status()).toBe(403);
+    await page.context().clearCookies();
+
+    await entrar(page, dono.email, novaSenhaDono);
+    await page.goto("/configuracoes");
+    const [arquivo] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Baixar todos os dados" }).click()]);
+    expect(arquivo.suggestedFilename()).toMatch(/^ficha-tecnica-bistro-.*\.json$/);
+    const texto = await readFile((await arquivo.path())!, "utf8");
+    const dados = JSON.parse(texto);
+    expect(dados.restaurante).toBe(dono.restaurante);
+    expect(dados.conta_do_dono.email).toBe(dono.email);
+    expect(dados.tabelas.clientes).toHaveLength(1);
+    expect(dados.tabelas.insumos.length).toBeGreaterThan(0);
+    expect(dados.tabelas.producoes.length).toBeGreaterThan(0);
+    expect(dados.tabelas.membros.map((m: { nome: string }) => m.nome)).toEqual(expect.arrayContaining([gestor.nome, estoquista.nome]));
+    expect(dados.tabelas.banco_extras[0].nome).toBe("Lia Extra");
+    expect(texto).not.toContain("codigo_hash");
+    expect(texto).not.toContain("user_id");
+  });
+
+  test("dono exclui o restaurante: dados, fotos e acessos da equipe somem", async ({ page }) => {
+    const foto = `${clienteId}/teste-exclusao.png`;
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+    const { error: erroFoto } = await admin().storage.from("receitas-fotos").upload(foto, png, { contentType: "image/png" });
+    expect(erroFoto).toBeNull();
+
+    await entrar(page, gestor.usuario, gestor.senha);
+    await page.goto("/configuracoes");
+    await expect(page.getByText("Tema", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Excluir restaurante/ })).toHaveCount(0);
+    await page.context().clearCookies();
+
+    await entrar(page, dono.email, novaSenhaDono);
+    await page.goto("/configuracoes");
+    await page.getByRole("button", { name: /Excluir restaurante/ }).click();
+    await page.getByLabel(/digite o nome do restaurante/).fill("outro nome");
+    await page.getByRole("button", { name: "Excluir para sempre" }).click();
+    await expect(page.getByText(/Digite o nome do restaurante exatamente/)).toBeVisible();
+    expect((await admin().from("clientes").select("id").eq("id", clienteId)).data).toHaveLength(1);
+
+    await page.getByLabel(/digite o nome do restaurante/).fill(dono.restaurante);
+    await page.getByRole("button", { name: "Excluir para sempre" }).click();
+    await expect(page).toHaveURL(/\/login\?aviso=conta-excluida$/);
+    await expect(page.getByText("Restaurante excluído.")).toBeVisible();
+
+    for (const tabela of ["clientes", "membros", "insumos", "receitas", "producoes", "funcionarios", "banco_extras"]) {
+      const coluna = tabela === "clientes" ? "id" : "cliente_id";
+      const { count } = await admin().from(tabela).select("*", { count: "exact", head: true }).eq(coluna, clienteId);
+      expect(count, tabela).toBe(0);
+    }
+    const { data: restantes } = await admin().storage.from("receitas-fotos").list(clienteId);
+    expect(restantes ?? []).toHaveLength(0);
+
+    await entrar(page, gestor.usuario, gestor.senha, { esperaEntrar: false });
+    await expect(page.getByText("Usuário, e-mail ou senha incorretos.")).toBeVisible();
+    await entrar(page, dono.email, novaSenhaDono, { esperaEntrar: false });
+    await expect(page.getByText("Usuário, e-mail ou senha incorretos.")).toBeVisible();
   });
 });

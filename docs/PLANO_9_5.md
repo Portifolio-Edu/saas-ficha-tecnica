@@ -56,7 +56,7 @@ reais (telefone repetido no cadastro; "Link expirado" na recuperação de senha)
       cada função `security definer`.
 - [x] Acessibilidade (axe) e desempenho (Lighthouse) nas telas principais
       (axe: 60 varreduras sem violação séria; Lighthouse 94–100).
-- [ ] LGPD: exportar e excluir os dados do restaurante.
+- [x] LGPD: exportar e excluir os dados do restaurante (Configurações → Seus dados).
 - [ ] Erros de produção registrados (monitoramento).
 - [ ] PR #1 integrado na `main` (versão 1.0) com tudo verde.
 

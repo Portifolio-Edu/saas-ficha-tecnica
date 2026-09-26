@@ -10,7 +10,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <main id="conteudo" className="w-full min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg)" }}>
-      <LoginForm linkInvalido={aviso === "link-invalido"} />
+      <LoginForm linkInvalido={aviso === "link-invalido"} contaExcluida={aviso === "conta-excluida"} />
     </main>
   );
 }

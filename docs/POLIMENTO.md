@@ -621,3 +621,25 @@ Supabase: sumiu o alerta de função chamável por visitante.
     opacidade 0 e a tela ficava vazia até a animação rodar.
 
 **Reverter:** `git revert` do commit "acessibilidade e desempenho".
+
+## 22. Plano 9,5 — etapa 3: LGPD (baixar e excluir os dados)
+
+Só o dono, em **Configurações → Seus dados**:
+- **Baixar todos os dados** (`/conta/exportar`): JSON com as 41 tabelas do
+  restaurante, paginado, lido com a sessão do dono (a RLS garante que só sai o
+  que é dele). Sem segredo técnico (id de login, hash do código do tablet).
+- **Excluir o restaurante** (confirma digitando o nome): apaga fotos dos dois
+  baldes, todas as linhas (`excluir_restaurante()`, só service role — a
+  cascata simples esbarrava nas ligações que não apagam em cascata de
+  propósito) e os logins de toda a equipe e do dono. Volta pro login com aviso.
+- Política de privacidade cita os dois caminhos.
+
+Testes: SQL `lgpd.sql` (restaurante com todas as ligações some inteiro; o
+vizinho fica; dono logado não chama a função direto), e2e: estoquista recebe
+403 na exportação; dono baixa e o arquivo tem insumos, produções, equipe e
+extras sem `user_id`/`codigo_hash`; gestor não vê o botão de excluir; nome
+errado não exclui; nome certo apaga banco, foto e logins (gestor e dono não
+entram mais). Migration `20260928110000_excluir_restaurante.sql` (aplicada).
+
+**Reverter:** `git revert` do commit "LGPD: baixar e excluir" e
+`supabase/reverter/20260928110000_excluir_restaurante.sql`.

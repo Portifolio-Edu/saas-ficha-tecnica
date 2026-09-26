@@ -7,7 +7,7 @@ export default async function ConfiguracoesPage() {
 
   return (
     <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Configurações">
-      <ConfiguracoesClient />
+      <ConfiguracoesClient nomeRestaurante={cliente.papel === "dono" ? cliente.nomeRestaurante : undefined} />
     </AppShell>
   );
 }

@@ -81,6 +81,11 @@ export default function PrivacidadePage() {
           automatizadas (art. 18). Responderemos em até 15 dias.
         </p>
         <p>
+          O dono do restaurante faz duas dessas coisas direto no sistema, em Configurações → Seus dados: baixar todos os dados do
+          restaurante num arquivo (acesso e portabilidade) e excluir o restaurante, que apaga na hora os dados, as fotos e os acessos da
+          equipe. Cópias de segurança automáticas do provedor expiram no ciclo delas e não são usadas para recuperar dados excluídos.
+        </p>
+        <p>
           Pedidos pelo e-mail {e.emailPrivacidade}. Se o pedido for sobre dados cadastrados por um restaurante cliente (por exemplo, seu
           nome em um registro de produção), encaminharemos ao restaurante, que é o controlador desses dados.
         </p>
