@@ -173,6 +173,8 @@ test("WhatsApp: só número ativado pelo código vira passe da pessoa", async ({
   expect(sessao.status()).toBe(200);
   const s = await sessao.json();
   expect(s).toMatchObject({ sessao: `ft:${casas.a.clienteId}:${casas.a.userId}:whatsapp`, restaurante: casas.a.nome, pessoa: { papel: "dono" } });
+  expect(s.app).toBe(APP);
+  expect(s.ferramentas).toContain("- propor_valores_nutricionais: ");
   const pelaSessao = await ferramenta(s.passe, "buscar_insumos", { busca: "tomate" });
   expect(JSON.stringify(pelaSessao.corpo.dados)).toContain(`Tomate italiano ${RODADA}`);
 
@@ -200,6 +202,7 @@ test("chat da tela: mensagem com foto vai pro n8n com o passe e a proposta é co
   const ultima = recebidas.at(-1) as { canal: string; sessao: string; restaurante: string; texto: string; anexos: { tipo: string }[] };
   expect(ultima).toMatchObject({ canal: "web", sessao: `ft:${casas.a.clienteId}:${casas.a.userId}:web`, restaurante: casas.a.nome, texto: "Pede tomate pra amanhã" });
   expect(ultima.anexos).toEqual([expect.objectContaining({ tipo: "imagem" })]);
+  expect(recebidas.at(-1)).toMatchObject({ app: APP, hoje: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), ferramentas: expect.stringContaining("- propor_pedido_compra: ") });
 
   const cartao = chat.getByLabel("Proposta esperando confirmação").filter({ hasText: "Tomate italiano 5 kg" });
   await expect(cartao).toBeVisible();

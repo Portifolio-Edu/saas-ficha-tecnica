@@ -2,8 +2,9 @@
 // /api/agente/ferramentas com o passe). Cada uma diz quais papéis podem usar
 // e roda COMO a pessoa (comoUsuario → RLS). Consultas devolvem só o que a
 // tela daquela pessoa mostraria; o que grava vira PROPOSTA pra confirmar.
-// Pra criar uma ferramenta: entrada aqui + nó HTTP no workflow
-// "FT — Agente (núcleo)" do n8n (docs/AGENTE_IA.md).
+// Pra criar uma ferramenta: só a entrada aqui. O app manda pro n8n a lista
+// das que o papel pode usar (catalogoDoPapel) e o workflow "FT — Agente IA"
+// chama todas pela mesma ferramenta "sistema" (docs/AGENTE_IA.md).
 import type { Papel } from "@/lib/auth/papeis";
 import { listarInsumos } from "@/lib/dados/insumos";
 import { listarReceitas } from "@/lib/dados/receitas";
@@ -379,6 +380,15 @@ export const FERRAMENTAS: Record<string, Ferramenta> = {
 };
 
 /** Catálogo público (nomes, descrições e papéis) — sem dado de restaurante. */
+/** Ferramentas que ESTE papel pode usar, em texto pro prompt do agente (o n8n
+ * recebe junto com cada mensagem; criar ferramenta nova não mexe no n8n). */
+export function catalogoDoPapel(papel: Papel): string {
+  return Object.entries(FERRAMENTAS)
+    .filter(([, f]) => f.papeis.includes(papel))
+    .map(([nome, f]) => `- ${nome}: ${f.descricao}`)
+    .join("\n");
+}
+
 export function catalogo() {
   return Object.entries(FERRAMENTAS).map(([nome, f]) => ({ nome, descricao: f.descricao, papeis: f.papeis }));
 }

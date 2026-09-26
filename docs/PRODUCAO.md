@@ -14,6 +14,9 @@ Estado em 2026-09-24. Cada item diz **quem faz**: 🧑 você (painel/conta/decis
       API → `service_role`, a chave secreta). Marcar só Production e Preview, **sem** o prefixo
       `NEXT_PUBLIC_`. Sem ela não dá pra criar acesso de gestor/estoquista, conectar o aparelho da
       cozinha nem baixar o estoque da produção da cozinha. Nunca colar essa chave em outro lugar.
+- [ ] 🧑 **Agente IA**: variáveis `AGENTE_SEGREDO`, `AGENTE_CHAVE_N8N`, `AGENTE_N8N_URL` e
+      `AGENTE_WHATSAPP_NUMERO` na Vercel, credencial "FT — chave do app" no n8n, crédito na
+      Anthropic/OpenAI e webhook da Evolution. Passo a passo em `docs/AGENTE_IA.md`.
 - [ ] 🧑 **Supabase → Authentication → URL Configuration**: *Site URL* = domínio de produção;
       *Redirect URLs* = domínio de produção + `https://*-voycompany.vercel.app/**` (prévias).
 - [ ] 🧑 **E-mail de verdade (SMTP)**: o e-mail padrão do Supabase só entrega pra membros da

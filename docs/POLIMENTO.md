@@ -851,3 +851,28 @@ Briefing do dono: deixar o produto apto pra grandes redes, seguindo a RDC
 
 **Reverter:** `git revert` do commit e
 `supabase/reverter/20260928160000_rotulo_varejo.sql`.
+
+## 33. Agente IA de verdade (n8n, multimodal, por restaurante)
+
+O botão Agente IA deixou de ser demonstração: conversa de verdade, pelo
+sistema e pelo WhatsApp, com o restaurante e o papel de quem fala. Passo a
+passo e desenho em `docs/AGENTE_IA.md`.
+
+- **Chat do sistema**: texto, foto (câmera ou galeria), áudio gravado na
+  hora, PDF e XML de NF-e (até 3 por mensagem). Proposta aparece como cartão
+  com **Confirmar** / **Cancelar**.
+- **WhatsApp**: cada pessoa ativa o próprio número com um código de 6
+  dígitos (aba WhatsApp do chat). Só número ativado conversa.
+- **O que ele faz**: resumo do dia, insumos e estoque baixo, fichas (custo e
+  margem só pra gestão), pedidos da cozinha, produção e escala do dia; lê
+  nota (foto ou XML) e prepara a entrada no estoque casando com os insumos;
+  lê tabela nutricional de embalagem; registra perda; faz pedido de compra;
+  monta a lista de produção. Tudo que grava pede confirmação e vale uma vez.
+- **Quem usa**: dono, gestor e estoquista (o tablet da cozinha não).
+- Banco: `agente_acoes`, `agente_whatsapp` e o balde privado
+  `agente-anexos` (migration 20260928170000, aplicada).
+- n8n: workflow **FT — Agente IA** na pasta *FT — Ficha Técnica* (não
+  publicado; falta a credencial da chave e crédito de IA).
+- Testes: `supabase/testes/agente.sql` (19) e `e2e/agente.spec.ts` (n8n
+  simulado: chave e passe obrigatórios, isolamento entre restaurantes,
+  confirmação única, ativação do WhatsApp, chat com foto).

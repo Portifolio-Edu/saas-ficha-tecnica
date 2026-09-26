@@ -8,6 +8,9 @@ import { listarPropostasPendentes } from "@/lib/agente/propostas";
 import { verificarPasse } from "@/lib/agente/passe";
 import { lerNotaDeCompra } from "@/lib/integracoes/documentoFiscal";
 import { registrarErro } from "@/lib/monitoramento";
+import { catalogoDoPapel } from "@/lib/agente/ferramentas";
+import { origemDoSite } from "@/lib/auth/origem";
+import { hojeLocalISO } from "@/lib/calculo/dia";
 
 // AGENTE IA (2026-09-26): mensagem do chat do sistema → n8n.
 // Recebe texto + até 3 anexos (foto, áudio, PDF, XML de NF-e). Fotos, áudios
@@ -83,6 +86,10 @@ export async function POST(req: NextRequest) {
         anexos,
         notas,
         expira: dados.exp,
+        // Onde o n8n chama as ferramentas, quais este papel pode usar e o dia.
+        app: await origemDoSite(),
+        ferramentas: catalogoDoPapel(cliente.papel),
+        hoje: hojeLocalISO(),
       }),
       signal: AbortSignal.timeout(110_000),
     });

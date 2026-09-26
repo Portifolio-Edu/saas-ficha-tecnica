@@ -55,6 +55,29 @@ usuário logado. Todas são intencionais e conferem restaurante e papel dentro:
 - Página sem referer, sem cache e fora dos buscadores (next.config.ts).
 - Testes: `supabase/testes/link_consulta.sql` (30) e e2e em `papeis.spec.ts`.
 
+## Agente IA (n8n)
+
+- O n8n não recebe chave do banco. Cada mensagem leva um **passe** assinado
+  pelo app (HMAC-SHA256, `AGENTE_SEGREDO`, 15 min) com pessoa, restaurante e
+  papel. As ferramentas (`/api/agente/ferramentas`) conferem o passe, abrem
+  uma sessão Supabase **da pessoa** e rodam pela RLS dela; restaurante e
+  papel são conferidos de novo no banco a cada chamada.
+- A service role aparece em três pontos, todos no servidor: abrir a sessão da
+  pessoa (link mágico gerado e trocado na hora, sem e-mail), descobrir o dono
+  de um número de WhatsApp **ativado** e marcar o número como ativado depois
+  do código certo.
+- n8n → app (`/whatsapp/sessao`, `/whatsapp/ativar`, catálogo) e app → n8n
+  (webhook do chat) usam a chave `x-ft-chave` (`AGENTE_CHAVE_N8N`,
+  comparação em tempo constante).
+- `agente_acoes`: a pessoa só propõe e decide o que é dela; o conteúdo da
+  proposta não muda depois de criada; confirmar é em dois passos
+  ("aplicando"), então repetir o "sim" não aplica de novo.
+- `agente_whatsapp`: o código de ativação fica só como hash (ninguém lê pela
+  API) e vale 15 min; trocar o número ou gerar código novo desfaz a
+  ativação; um número ativado pertence a uma pessoa só.
+- Anexos: balde privado, pasta do restaurante, link assinado de 10 min.
+- Testes: `supabase/testes/agente.sql` e `e2e/agente.spec.ts`.
+
 ## Tabelas só do servidor
 
 `erros_sistema` (monitoramento) tem RLS ligada e nenhuma policy de propósito:

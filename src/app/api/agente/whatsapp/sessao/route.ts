@@ -5,6 +5,9 @@ import { assinarPasse, chaveN8nConfere } from "@/lib/agente/passe";
 import { PAPEIS_DO_AGENTE } from "@/lib/agente/pessoa";
 import { variantesTelefone } from "@/lib/agente/whatsapp";
 import type { Papel } from "@/lib/auth/papeis";
+import { catalogoDoPapel } from "@/lib/agente/ferramentas";
+import { origemDoSite } from "@/lib/auth/origem";
+import { hojeLocalISO } from "@/lib/calculo/dia";
 
 // AGENTE IA (2026-09-26): o n8n (workflow do WhatsApp) pergunta quem é o dono
 // do número que mandou a mensagem. Só com a chave do n8n (x-ft-chave) e só
@@ -41,5 +44,8 @@ export async function POST(req: NextRequest) {
     sessao: `ft:${vinculo.cliente_id}:${vinculo.user_id}:whatsapp`,
     pessoa: { nome: membro.nome, papel: membro.papel },
     restaurante: restaurante.nome_restaurante,
+    app: await origemDoSite(),
+    ferramentas: catalogoDoPapel(membro.papel as Papel),
+    hoje: hojeLocalISO(),
   });
 }
