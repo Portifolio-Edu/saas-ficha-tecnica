@@ -13,7 +13,7 @@
 // ou: git checkout 3f0b207 -- src/app/producoes/ProducoesClient.tsx
 // Registro geral: docs/POLIMENTO.md
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Plus, Play, Check, Trash2, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
@@ -149,7 +149,18 @@ export function ProducoesClient({
       }
       return atualizado;
     });
+    avisarLista.current = true;
   };
+  // DEMO (2026-09-26): avisa a lista de produção desta mesma aba (o evento
+  // "storage" do navegador só chega nas outras abas). Sem isso, registrar ou
+  // concluir uma produção não tirava o item da lista na demonstração. Só
+  // depois que a mudança foi gravada (efeito), e só quando veio da pessoa.
+  const avisarLista = useRef(false);
+  useEffect(() => {
+    if (!emModoDemo || !avisarLista.current) return;
+    avisarLista.current = false;
+    window.dispatchEvent(new StorageEvent("storage", { key: "demo_producoes" }));
+  }, [producoesDemo, emModoDemo]);
 
   const [turnoId, setTurnoId] = useState<string | null>(turnos[0]?.id ?? null);
   const [chefeTurno, setChefeTurno] = useState("");

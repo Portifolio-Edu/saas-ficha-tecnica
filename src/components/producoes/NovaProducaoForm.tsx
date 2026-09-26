@@ -33,6 +33,9 @@ export function NovaProducaoForm({
   const [lote, setLote] = useState("");
   const [validade, setValidade] = useState("");
   const { salvando, erro, executar } = useAcaoFormulario(onSave);
+  // PRODUÇÃO (2026-09-26): antes, faltando campo, o botão não fazia nada e
+  // parecia que tinha salvado. Agora diz o que falta.
+  const [faltando, setFaltando] = useState<string | null>(null);
 
   const opcoes = tipo === "preparo" ? preparos : pratos;
   const unidade = tipo === "preparo" ? (preparos.find((p) => p.id === receitaId)?.unidadeRendimento ?? "") : "porções";
@@ -43,7 +46,17 @@ export function NovaProducaoForm({
   };
 
   const salvar = () => {
-    if (!receitaId || !quantidade || !responsavel.trim() || !lote.trim()) return;
+    const faltam = [
+      !receitaId && "a ficha",
+      !(parseFloat(quantidade) > 0) && "a quantidade",
+      !responsavel.trim() && "o responsável",
+      !lote.trim() && "o número do lote",
+    ].filter(Boolean) as string[];
+    if (faltam.length) {
+      setFaltando(`Falta preencher ${faltam.length === 1 ? faltam[0] : `${faltam.slice(0, -1).join(", ")} e ${faltam.at(-1)}`}.`);
+      return;
+    }
+    setFaltando(null);
     const input: ProducaoInput = {
       lote: lote.trim(),
       tipo,
@@ -88,7 +101,7 @@ export function NovaProducaoForm({
         <Input aria-label="Número do lote" placeholder="Número do lote" value={lote} onChange={(e) => setLote(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
         <Input aria-label="Validade (ex: 17/09)" placeholder="Validade (ex: 17/09)" value={validade} onChange={(e) => setValidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
       </div>
-      <ErroBanner erro={erro} />
+      <ErroBanner erro={faltando ?? erro} />
       <div className="flex gap-2">
         <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Salvar produção"}

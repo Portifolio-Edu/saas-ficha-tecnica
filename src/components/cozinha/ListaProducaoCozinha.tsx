@@ -46,8 +46,11 @@ export function ListaProducaoCozinha({
   const { mostrarErro, mostrarSucesso, mostrarInfo } = useToast();
   const [adicionando, setAdicionando] = useState(false);
   const porId = useMemo(() => new Map(fichas.map((f) => [f.id, f])), [fichas]);
-  const progresso = useMemo(() => progressoDoPlano(plano, producoes), [plano, producoes]);
-  const resumo = resumoDoPlano(progresso);
+  const todos = useMemo(() => progressoDoPlano(plano, producoes), [plano, producoes]);
+  const resumo = resumoDoPlano(todos);
+  // O que já foi feito sai da lista; fica só a linha "Já feito".
+  const progresso = todos.filter((p) => p.estado !== "feito");
+  const feitos = todos.filter((p) => p.estado === "feito");
 
   const remover = async (p: ProgressoPlano) => {
     const nome = porId.get(p.item.receitaId)?.nome ?? "item";
@@ -67,7 +70,9 @@ export function ListaProducaoCozinha({
           <p className="text-[14px] text-[var(--tinta-sub)] mt-0.5" style={nums}>
             {resumo.total === 0
               ? "Nada na lista ainda. O gestor monta pelo painel, ou ponha aqui o que precisa sair hoje."
-              : `${resumo.feitos} de ${resumo.total} feitos${resumo.faltam ? ` · ${resumo.faltam} ${resumo.faltam === 1 ? "falta começar" : "faltam começar"}` : ""}`}
+              : progresso.length === 0
+                ? `Tudo feito hoje: ${resumo.total} ${resumo.total === 1 ? "item" : "itens"}.`
+                : `${resumo.feitos} de ${resumo.total} feitos${resumo.faltam ? ` · ${resumo.faltam} ${resumo.faltam === 1 ? "falta começar" : "faltam começar"}` : ""}`}
           </p>
         </div>
         <button
@@ -137,6 +142,12 @@ export function ListaProducaoCozinha({
             );
           })}
         </ul>
+      )}
+      {feitos.length > 0 && (
+        <p className="mt-3 text-[14px] text-[var(--tinta-sub)] flex items-start gap-1.5" aria-label="Já feitos hoje">
+          <Check size={16} className="shrink-0 mt-0.5" style={{ color: "var(--etapa-produzido-texto)" }} aria-hidden />
+          <span>Já feito: {feitos.map((p) => porId.get(p.item.receitaId)?.nome ?? "Ficha removida").join(", ")}</span>
+        </p>
       )}
 
       {adicionando && (

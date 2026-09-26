@@ -32,19 +32,46 @@ export interface ProgressoPlano {
 const ORDEM: Record<EstadoPlano, number> = { falta: 0, em_producao: 1, feito: 2 };
 const arred = (n: number) => Math.round(n * 1000) / 1000;
 
+/**
+ * Quanto de cada item da lista já foi feito / está no fogo.
+ * A produção de uma ficha abate os itens dessa ficha em ordem: primeiro a
+ * data mais antiga (hoje antes de amanhã), depois quem entrou antes na lista.
+ * Assim, duas linhas da mesma ficha não contam a mesma produção duas vezes, e
+ * quem já adiantou hoje o que está na lista de amanhã vê o item sair de lá.
+ * O que sobra depois de todos os itens fica no último (ex.: fez 11 de 10).
+ * LISTA DE PRODUÇÃO (2026-09-26, ajuste): antes cada item somava toda a
+ * produção da ficha. Reverter: voltar à soma direta por item.
+ */
 export function progressoDoPlano(
   itens: ItemPlano[],
   producoesDoDia: { receitaId: string; quantidade: number; status: StatusProducao }[],
 ): ProgressoPlano[] {
+  const pronto = new Map<string, number>();
+  const noFogo = new Map<string, number>();
+  for (const p of producoesDoDia) {
+    if (p.status === "produzido") pronto.set(p.receitaId, (pronto.get(p.receitaId) ?? 0) + p.quantidade);
+    else if (p.status === "em_producao") noFogo.set(p.receitaId, (noFogo.get(p.receitaId) ?? 0) + p.quantidade);
+  }
+  const emOrdem = [...itens].sort((a, b) => a.data.localeCompare(b.data) || a.criadoEm.localeCompare(b.criadoEm));
+  const ultimo = new Map<string, string>();
+  for (const i of emOrdem) ultimo.set(i.receitaId, i.id);
+
+  const resultado = new Map<string, ProgressoPlano>();
+  for (const item of emOrdem) {
+    const eUltimo = ultimo.get(item.receitaId) === item.id;
+    const dispPronto = pronto.get(item.receitaId) ?? 0;
+    const feito = arred(eUltimo ? dispPronto : Math.min(dispPronto, item.quantidade));
+    pronto.set(item.receitaId, arred(dispPronto - feito));
+    const precisa = Math.max(0, item.quantidade - feito);
+    const dispFogo = noFogo.get(item.receitaId) ?? 0;
+    const emProducao = arred(eUltimo ? dispFogo : Math.min(dispFogo, precisa));
+    noFogo.set(item.receitaId, arred(dispFogo - emProducao));
+    const falta = arred(Math.max(0, item.quantidade - feito - emProducao));
+    const estado: EstadoPlano = feito >= item.quantidade ? "feito" : falta === 0 ? "em_producao" : "falta";
+    resultado.set(item.id, { item, feito, emProducao, falta, estado });
+  }
   return itens
-    .map((item) => {
-      const daReceita = producoesDoDia.filter((p) => p.receitaId === item.receitaId);
-      const feito = arred(daReceita.filter((p) => p.status === "produzido").reduce((s, p) => s + p.quantidade, 0));
-      const emProducao = arred(daReceita.filter((p) => p.status === "em_producao").reduce((s, p) => s + p.quantidade, 0));
-      const falta = arred(Math.max(0, item.quantidade - feito - emProducao));
-      const estado: EstadoPlano = feito >= item.quantidade ? "feito" : falta === 0 ? "em_producao" : "falta";
-      return { item, feito, emProducao, falta, estado };
-    })
+    .map((i) => resultado.get(i.id)!)
     .sort((a, b) => ORDEM[a.estado] - ORDEM[b.estado] || a.item.criadoEm.localeCompare(b.item.criadoEm));
 }
 

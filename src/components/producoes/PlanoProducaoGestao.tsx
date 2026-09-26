@@ -63,9 +63,12 @@ export function PlanoProducaoGestao({
   const [salvando, setSalvando] = useState(false);
   const data = dia === "hoje" ? hoje : amanha;
   const porId = useMemo(() => new Map(receitas.map((r) => [r.id, r])), [receitas]);
-  const doDia = plano.filter((i) => i.data === data);
-  const progresso = progressoDoPlano(doDia, dia === "hoje" ? producoesHoje : []);
-  const resumo = resumoDoPlano(progresso);
+  // A produção de hoje abate a lista de hoje e, o que sobrar, a de amanhã.
+  // O que já foi feito sai da lista (fica só a contagem "feitos").
+  const doDia = progressoDoPlano(plano, producoesHoje).filter((p) => p.item.data === data);
+  const resumo = resumoDoPlano(doDia);
+  const progresso = doDia.filter((p) => p.estado !== "feito");
+  const feitos = doDia.filter((p) => p.estado === "feito");
   const escolhida = porId.get(receitaId);
 
   const adicionar = async () => {
@@ -147,15 +150,15 @@ export function PlanoProducaoGestao({
           </button>
         </div>
 
-        {progresso.length === 0 ? (
+        {doDia.length === 0 ? (
           <p className="px-4 md:px-5 py-5 text-[14px] text-[var(--tinta-sub)]">Nada na lista de {dia === "hoje" ? "hoje" : "amanhã"} ainda.</p>
         ) : (
           <>
-            {dia === "hoje" && (
-              <p className="px-4 md:px-5 pt-3 text-[13px] text-[var(--tinta-sub)] tabular-nums">
-                {resumo.feitos} de {resumo.total} feitos{resumo.faltam ? ` · ${resumo.faltam} sem começar` : ""}
-              </p>
-            )}
+            <p className="px-4 md:px-5 pt-3 text-[13px] text-[var(--tinta-sub)] tabular-nums">
+              {progresso.length === 0
+                ? `Tudo feito: ${resumo.total} ${resumo.total === 1 ? "item" : "itens"}.`
+                : `${resumo.feitos} de ${resumo.total} feitos${resumo.faltam ? ` · ${resumo.faltam} sem começar` : ""}`}
+            </p>
             <ul className="py-1">
               {progresso.map((p) => {
                 const r = porId.get(p.item.receitaId);
@@ -163,7 +166,7 @@ export function PlanoProducaoGestao({
                 const un = (n: number) => unidadeNoPlural(n, r?.unidade ?? "");
                 return (
                   <li key={p.item.id} className="px-4 md:px-5 py-2.5 flex items-center gap-3 border-t first:border-t-0" style={{ borderColor: "var(--linha)" }}>
-                    {dia === "hoje" ? <e.Icone size={17} className="shrink-0" style={{ color: e.texto }} aria-label={e.rotulo} /> : <CircleDashed size={17} className="shrink-0 text-[var(--tinta-faint)]" aria-hidden />}
+                    {dia === "hoje" || p.feito + p.emProducao > 0 ? <e.Icone size={17} className="shrink-0" style={{ color: e.texto }} aria-label={e.rotulo} /> : <CircleDashed size={17} className="shrink-0 text-[var(--tinta-faint)]" aria-hidden />}
                     <div className="flex-1 min-w-0">
                       <div className="text-[15px] md:text-[14px] font-medium text-[var(--tinta)] truncate">{r?.nome ?? "Ficha removida"}</div>
                       <div className="text-[12.5px] text-[var(--tinta-sub)] truncate">
@@ -172,7 +175,7 @@ export function PlanoProducaoGestao({
                     </div>
                     <div className="text-right shrink-0 tabular-nums">
                       <div className="text-[14px] font-semibold text-[var(--tinta)]">{formatQtd(p.item.quantidade)} {un(p.item.quantidade)}</div>
-                      {dia === "hoje" && (
+                      {(dia === "hoje" || p.feito + p.emProducao > 0) && (
                         <div className="text-[12px]" style={{ color: e.texto }}>
                           {p.estado === "feito" ? "feito" : p.estado === "em_producao" ? "no fogo" : p.feito + p.emProducao > 0 ? `falta ${formatQtd(p.falta)}` : "sem começar"}
                         </div>
@@ -189,6 +192,12 @@ export function PlanoProducaoGestao({
                 );
               })}
             </ul>
+            {feitos.length > 0 && (
+              <p className="px-4 md:px-5 pb-3 pt-1 text-[12.5px] text-[var(--tinta-faint)] border-t" style={{ borderColor: "var(--linha)" }} aria-label="Já feitos">
+                <Check size={13} className="inline -mt-0.5 mr-1" aria-hidden />
+                Já feito: {feitos.map((p) => porId.get(p.item.receitaId)?.nome ?? "Ficha removida").join(", ")}
+              </p>
+            )}
           </>
         )}
       </section>

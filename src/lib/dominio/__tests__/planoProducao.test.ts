@@ -31,6 +31,22 @@ describe("progressoDoPlano", () => {
     expect(resumoDoPlano(progressoDoPlano(plano, producoes))).toEqual({ total: 3, feitos: 1, faltam: 1 });
   });
 
+  it("duas linhas da mesma ficha não contam a mesma produção duas vezes", () => {
+    const p = progressoDoPlano([item("1", "molho", 4), item("2", "molho", 3)], [{ receitaId: "molho", quantidade: 5, status: "produzido" }]);
+    expect(p.find((x) => x.item.id === "1")).toMatchObject({ feito: 4, estado: "feito" });
+    expect(p.find((x) => x.item.id === "2")).toMatchObject({ feito: 1, falta: 2, estado: "falta" });
+  });
+
+  it("produção de hoje abate a lista de hoje e o que sobra vai pra de amanhã", () => {
+    const amanha = { ...item("9", "molho", 4), data: "2026-09-27" };
+    const hoje = item("1", "molho", 2);
+    const p = progressoDoPlano([amanha, hoje], [{ receitaId: "molho", quantidade: 6, status: "produzido" }]);
+    expect(p.find((x) => x.item.id === "1")).toMatchObject({ feito: 2, estado: "feito" });
+    expect(p.find((x) => x.item.id === "9")).toMatchObject({ feito: 4, estado: "feito" });
+    // Só a lista de amanhã: a produção de hoje já tira o item de lá.
+    expect(progressoDoPlano([amanha], [{ receitaId: "molho", quantidade: 4, status: "produzido" }])[0].estado).toBe("feito");
+  });
+
   it("valida o item", () => {
     expect(validarItemPlano({ receitaId: "", quantidade: 1 })).toBe("Escolha a ficha.");
     expect(validarItemPlano({ receitaId: "x", quantidade: 0 })).toBe("Informe quanto produzir.");
