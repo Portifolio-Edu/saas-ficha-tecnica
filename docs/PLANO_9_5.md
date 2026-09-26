@@ -43,6 +43,11 @@ Erro proposital num teste SQL: o executor saiu com falha (código 1).
 
 **Pronto quando:** os fluxos críticos de cada papel passam no CI a cada push.
 
+✅ **Concluída em 2026-09-26.** Execução #3 no GitHub: app, banco (157/157
+SQL) e ponta a ponta (11/11 fluxos com login real) verdes. Localmente, 4
+rodadas seguidas sem falha. Os testes acharam e ajudaram a corrigir 2 bugs
+reais (telefone repetido no cadastro; "Link expirado" na recuperação de senha).
+
 ## 3. Endurecimento e integração
 
 - [ ] Revisão de código e de segurança do PR inteiro; corrigir o que aparecer.
