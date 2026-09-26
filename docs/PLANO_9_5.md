@@ -59,15 +59,16 @@ reais (telefone repetido no cadastro; "Link expirado" na recuperação de senha)
 - [x] LGPD: exportar e excluir os dados do restaurante (Configurações → Seus dados).
 - [x] Erros de produção registrados (monitoramento): tabela `erros_sistema`,
       com o mesmo código que a pessoa vê na tela.
-- [x] PR #1 integrado na `main` (versão 1.0) com tudo verde.
+- [ ] PR #1 integrado na `main` (versão 1.0) com tudo verde — pronto, verde e
+      mergeável; a integração é do dono (publica em produção na Vercel).
 
 **Pronto quando:** zero achado crítico aberto, PR integrado.
 
-✅ **Concluída em 2026-09-26.** Segurança: 11 achados, todos corrigidos
+✅ **Código concluído em 2026-09-26** (falta só o dono integrar o PR). Segurança: 11 achados, todos corrigidos
 (`docs/SEGURANCA.md`). Acessibilidade: 60 varreduras axe sem violação séria.
 Lighthouse 94–100. LGPD: baixar e excluir em Configurações. Erros de produção
 em `erros_sistema`. CI: app (140 unitários), banco (192/192 SQL) e ponta a
-ponta (79 fluxos) verdes; PR #1 integrado na `main`.
+ponta (79 fluxos) verdes.
 
 ## 4. Produção no ar (painéis do dono; passo a passo em `docs/PRODUCAO.md`)
 
