@@ -113,7 +113,7 @@ export function ProntuarioView({
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
           <label className="block">
             <span className="block text-[13px] font-medium mb-1.5">De</span>
             <input type="date" value={o.inicio} onChange={(e) => atualizar({ inicio: e.target.value, fim: o.fim < e.target.value ? e.target.value : o.fim })} className={campo} style={estiloCampo} />

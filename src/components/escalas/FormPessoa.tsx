@@ -160,7 +160,7 @@ export function FormPessoa({
             <input value={c.cargo} onChange={(e) => atualizar({ cargo: e.target.value })} list="cargos-existentes" placeholder="Ex.: Sushiman" className={campo} style={estiloCampo} />
             <datalist id="cargos-existentes">{cargos.map((x) => <option key={x} value={x} />)}</datalist>
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
             <label className="block">
               <Rotulo>Admissão</Rotulo>
               <input type="date" value={c.admissao} onChange={(e) => atualizar({ admissao: e.target.value })} className={campo} style={estiloCampo} />
@@ -243,7 +243,7 @@ export function FormPessoa({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
             <label className="block">
               <Rotulo ajuda={nFolgas ? "Usado se as folgas estiverem no automático." : "Primeiro dia de trabalho: define a alternância."}>Início do ciclo</Rotulo>
               <input type="date" value={c.ancora} onChange={(e) => atualizar({ ancora: e.target.value })} className={campo} style={estiloCampo} />
@@ -257,15 +257,15 @@ export function FormPessoa({
                   className={campo}
                   style={estiloCampo}
                 >
-                  <option value="">Padrão (a cada {regras.intervaloDomingoSemanas} semanas)</option>
+                  <option value="">Padrão: {regras.intervaloDomingoSemanas} em {regras.intervaloDomingoSemanas}</option>
                   {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                    <option key={n} value={n}>A cada {n} {n === 1 ? "semana" : "semanas"}</option>
+                    <option key={n} value={n}>{n === 1 ? "Toda semana" : `${n} em ${n} semanas`}</option>
                   ))}
                 </select>
               </label>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
             <label className="block">
               <Rotulo>Entrada</Rotulo>
               <input type="time" value={c.turnoInicio ?? ""} onChange={(e) => atualizar({ turnoInicio: e.target.value || null })} className={campo} style={estiloCampo} />

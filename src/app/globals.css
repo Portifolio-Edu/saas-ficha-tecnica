@@ -382,3 +382,30 @@ thead th {
     min-height: 44px;
   }
 }
+
+/* CELULAR (2026-09-26): no Safari do iPhone, campo de data/hora tem largura
+   mínima própria e ignora a coluna: em grade de duas colunas empurrava o
+   vizinho e saía da tela (Nova pessoa: Admissão/Desligamento, Início do
+   ciclo, Entrada/Saída). Aqui ele passa a obedecer a largura da coluna e o
+   texto fica à esquerda, como nos outros campos. O seletor nativo continua.
+   Reverter: apagar este bloco. */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+  min-width: 0;
+  max-width: 100%;
+}
+@supports (-webkit-touch-callout: none) {
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+  }
+}
+input::-webkit-date-and-time-value {
+  text-align: left;
+}
