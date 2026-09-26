@@ -1,11 +1,11 @@
 import { DemoShell } from "@/components/ficha/DemoShell";
-import { VisaoGeralClient } from "@/app/visao-geral/VisaoGeralClient";
+import { VisaoGeralDemo } from "../PorPapelDemo";
 import { NOME_RESTAURANTE, insumos, todasReceitas, processamentos, producoes, fechamentos, margemAlvoCliente } from "../fixtures";
 
 export default function Page() {
   return (
-    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Visão Geral">
-      <VisaoGeralClient
+    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Visão geral">
+      <VisaoGeralDemo
         margemAlvoCliente={margemAlvoCliente}
         insumos={insumos}
         receitas={todasReceitas}

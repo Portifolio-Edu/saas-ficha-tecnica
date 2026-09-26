@@ -1,5 +1,5 @@
 import { DemoShell } from "@/components/ficha/DemoShell";
-import { RelatoriosClient } from "@/app/relatorios/RelatoriosClient";
+import { RelatoriosDemo } from "../PorPapelDemo";
 import {
   NOME_RESTAURANTE,
   insumos,
@@ -15,7 +15,7 @@ import {
 export default function Page() {
   return (
     <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Relatórios">
-      <RelatoriosClient
+      <RelatoriosDemo
         insumos={insumos}
         receitas={todasReceitas}
         processamentos={processamentos}
@@ -24,6 +24,7 @@ export default function Page() {
         locais={locais}
         registrosTemperatura={registrosTemperatura}
         margemAlvoCliente={margemAlvoCliente}
+        nomeRestaurante={NOME_RESTAURANTE}
       />
     </DemoShell>
   );

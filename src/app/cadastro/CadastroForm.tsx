@@ -1,5 +1,7 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): nome 20px bold virou 22px semibold; título do cartão 17px bold virou 16px semibold. Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
 import { useActionState } from "react";
 import Link from "next/link";
 import { cadastrar, type EstadoAuth } from "@/lib/auth/actions";
@@ -18,20 +20,20 @@ export function CadastroForm() {
       {/* Brand Header */}
       <div className="flex flex-col items-center mb-6 text-center">
         <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md mb-3"
+          className="w-11 h-11 rounded-lg flex items-center justify-center mb-3"
           style={{
-            background: "var(--gradient-accent)",
-            color: "#FFFFFF",
+            background: "var(--tinta)", // SISTEMA premium: antes var(--gradient-accent), que nunca existiu (botão e logo ficavam invisíveis)
+            color: "var(--panel)",
           }}
         >
           <ChefHat size={26} />
         </div>
-        <h2 className="text-[20px] font-bold tracking-tight text-[var(--text)]">Ficha Técnica</h2>
-        <p className="text-[13px] text-[var(--sub)] mt-0.5">SaaS Gastronômico & Gestão de CMV</p>
+        <h2 className="text-[22px] font-semibold tracking-tight text-[var(--text)]">Ficha Técnica</h2>
+        <p className="text-[13px] text-[var(--sub)] mt-0.5">Custo, produção e CMV da sua cozinha</p>{/* SISTEMA premium: antes "SaaS Gastronômico & Gestão de CMV" */}
       </div>
 
       <Card className="p-7 w-full shadow-lg border">
-        <h1 className="text-[17px] font-bold mb-1 tracking-tight text-[var(--text)]">
+        <h1 className="text-[16px] font-semibold mb-1 tracking-tight text-[var(--text)]">
           Cadastre seu restaurante
         </h1>
         <p className="text-[13px] mb-5 text-[var(--sub)]">
@@ -119,20 +121,37 @@ export function CadastroForm() {
 
             <div>
               <label htmlFor="senha" className="block text-[11.5px] font-medium mb-1 text-[var(--sub)]">
-                Senha (mínimo 6 caracteres)
+                Senha (mínimo 8 caracteres)
               </label>
               <input
                 id="senha"
                 name="senha"
                 type="password"
                 required
-                minLength={6}
+                minLength={8}
                 autoComplete="new-password"
                 placeholder="••••••••"
                 className="w-full text-[13px] px-3 py-2 rounded-lg outline-none transition-all duration-150 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15"
                 style={inputStyle}
               />
             </div>
+
+            {/* PRODUCAO (2026-09-24): aceite obrigatório dos termos (LGPD). O servidor
+                confere de novo e grava data e versão do aceite no cadastro. */}
+            <label className="flex items-start gap-2.5 text-[12.5px] text-[var(--sub)] cursor-pointer">
+              <input type="checkbox" name="aceite_termos" required className="mt-0.5 w-4 h-4 shrink-0" style={{ accentColor: "var(--tinta)" }} />
+              <span>
+                Li e aceito os{" "}
+                <Link href="/termos" target="_blank" className="font-medium text-[var(--tinta)] underline underline-offset-2">
+                  Termos de uso
+                </Link>{" "}
+                e a{" "}
+                <Link href="/privacidade" target="_blank" className="font-medium text-[var(--tinta)] underline underline-offset-2">
+                  Política de privacidade
+                </Link>
+                .
+              </span>
+            </label>
 
             {estado.erro && (
               <div
@@ -149,12 +168,12 @@ export function CadastroForm() {
               disabled={pendente}
               className="w-full text-[13.5px] font-semibold px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md transition-all duration-150 flex items-center justify-center gap-2"
               style={{
-                background: "var(--gradient-accent)",
-                color: "#FFFFFF",
+                background: "var(--tinta)", // SISTEMA premium: antes var(--gradient-accent), que nunca existiu (botão e logo ficavam invisíveis)
+                color: "var(--panel)",
                 opacity: pendente ? 0.7 : 1,
               }}
             >
-              {pendente ? "Criando conta..." : "Criar Conta Gratuita"}
+              {pendente ? "Criando conta..." : "Criar conta gratuita" /* SISTEMA premium: antes "Criar Conta Gratuita" */}
               {!pendente && <ArrowRight size={15} />}
             </button>
           </form>

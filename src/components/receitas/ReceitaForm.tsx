@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatQtd } from "@/components/charts/format";
 import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
@@ -92,21 +93,21 @@ export function ReceitaForm({
   };
 
   return (
-    <div className="px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
-      <div className="grid grid-cols-6 gap-2 mb-2">
-        <Input placeholder="Nome do prato" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <Input placeholder="Categoria (opcional)" value={categoria} onChange={(e) => setCategoria(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <Input placeholder="Preço de venda (R$)" type="number" value={precoVenda} onChange={(e) => setPrecoVenda(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Rende (porções)" type="number" value={rendimento} onChange={(e) => setRendimento(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+    <div className="px-4 md:px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-2">
+        <Input aria-label="Nome do prato" placeholder="Nome do prato" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input aria-label="Categoria (opcional)" placeholder="Categoria (opcional)" value={categoria} onChange={(e) => setCategoria(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input aria-label="Preço de venda (R$)" placeholder="Preço de venda (R$)" type="number" inputMode="decimal" value={precoVenda} onChange={(e) => setPrecoVenda(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input aria-label="Rende (porções)" placeholder="Rende (porções)" type="number" inputMode="decimal" value={rendimento} onChange={(e) => setRendimento(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
       </div>
-      <div className="grid grid-cols-8 gap-2 mb-3">
-        <Input placeholder="Peso da porção (g, opcional)" type="number" value={pesoPorcaoG} onChange={(e) => setPesoPorcaoG(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <Input placeholder="Vendas/mês (manual, opcional)" type="number" value={vendasMes} onChange={(e) => setVendasMes(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <select value={formaFisica} onChange={(e) => setFormaFisica(e.target.value as FormaFisica)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+      <div className="grid grid-cols-2 md:grid-cols-8 gap-2 mb-3">
+        <Input aria-label="Peso da porção (g, opcional)" placeholder="Peso da porção (g, opcional)" type="number" value={pesoPorcaoG} onChange={(e) => setPesoPorcaoG(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input aria-label="Vendas/mês (manual, opcional)" placeholder="Vendas/mês (manual, opcional)" type="number" value={vendasMes} onChange={(e) => setVendasMes(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <select aria-label="Forma física" value={formaFisica} onChange={(e) => setFormaFisica(e.target.value as FormaFisica)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           <option value="solido">Sólido</option>
           <option value="liquido">Líquido</option>
         </select>
-        <select value={destinoVenda} onChange={(e) => setDestinoVenda(e.target.value as DestinoVenda)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+        <select aria-label="Onde é vendido" value={destinoVenda} onChange={(e) => setDestinoVenda(e.target.value as DestinoVenda)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           <option value="proprio">Próprio estabelecimento</option>
           <option value="varejo_terceiro">Varejo/mercado de terceiro</option>
         </select>
@@ -119,10 +120,10 @@ export function ReceitaForm({
             return (
               <div key={idx} className="flex items-center justify-between text-[12px] px-2.5 py-1.5 rounded-md" style={{ background: "var(--panel)", border: `1px solid ${"var(--border)"}` }}>
                 <span>
-                  {label} · {f.pesoLiquido}{f.unidade}
+                  {label} · {formatQtd(f.pesoLiquido)}{f.unidade}
                   {f.subReceitaId && <span style={{ color: "var(--faint)" }}> · preparo próprio</span>}
                 </span>
-                <button onClick={() => removerLinha(idx)} style={{ color: "var(--danger)" }}>
+                <button onClick={() => removerLinha(idx)} className="min-h-10 px-2" style={{ color: "var(--danger)" }}>
                   remover
                 </button>
               </div>
@@ -136,21 +137,22 @@ export function ReceitaForm({
           <button
             key={t}
             onClick={() => trocarTipoLinha(t)}
-            className="text-[12px] font-medium px-3 py-1.5 rounded-lg"
+            className="text-[13px] md:text-[12px] font-medium px-3 min-h-10 md:min-h-0 md:py-1.5 rounded-lg"
             style={{ background: tipoLinha === t ? "var(--text)" : "var(--panel)", color: tipoLinha === t ? "var(--text-contrast, #fff)" : "var(--text)", border: `1px solid ${tipoLinha === t ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {t === "insumo" ? "Insumo" : "Preparo próprio"}
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <select
+          aria-label="Ingrediente"
           value={linhaRefId}
           onChange={(e) => {
             setLinhaRefId(e.target.value);
             if (tipoLinha === "insumo") setLinhaUnidade(insumoPorId.get(e.target.value)?.unidadeMedida ?? "kg");
           }}
-          className="text-[12.5px] px-2.5 py-1.5 rounded-md flex-1"
+          className="text-[12.5px] px-2.5 py-1.5 rounded-md flex-1 basis-full md:basis-auto"
           style={inputStyle}
         >
           {opcoesLinha.length === 0 && <option value="">Nada cadastrado</option>}
@@ -158,8 +160,8 @@ export function ReceitaForm({
             <option key={o.id} value={o.id}>{o.nome}</option>
           ))}
         </select>
-        <Input placeholder="Peso líquido" type="number" value={linhaPeso} onChange={(e) => setLinhaPeso(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 w-28" />
-        <select value={linhaUnidade} onChange={(e) => setLinhaUnidade(e.target.value as UnidadeMedida)} className="text-[12.5px] px-2.5 py-1.5 rounded-md w-20" style={inputStyle}>
+        <Input aria-label="Peso líquido" placeholder="Peso líquido" type="number" value={linhaPeso} onChange={(e) => setLinhaPeso(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 w-28" />
+        <select aria-label="Unidade do ingrediente" value={linhaUnidade} onChange={(e) => setLinhaUnidade(e.target.value as UnidadeMedida)} className="text-[12.5px] px-2.5 py-1.5 rounded-md w-20" style={inputStyle}>
           {UNIDADES.map((u) => (
             <option key={u} value={u}>{u}</option>
           ))}

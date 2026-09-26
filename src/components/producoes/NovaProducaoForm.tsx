@@ -82,11 +82,11 @@ export function NovaProducaoForm({
           ))}
         </select>
         <Input placeholder={`Quantidade${unidade ? ` (${unidade})` : ""}`} type="number" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input aria-label="Responsável" placeholder="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
       </div>
       <div className="grid grid-cols-4 gap-2 mb-3">
-        <Input placeholder="Número do lote" value={lote} onChange={(e) => setLote(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <Input placeholder="Validade (ex: 17/09)" value={validade} onChange={(e) => setValidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input aria-label="Número do lote" placeholder="Número do lote" value={lote} onChange={(e) => setLote(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input aria-label="Validade (ex: 17/09)" placeholder="Validade (ex: 17/09)" value={validade} onChange={(e) => setValidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
       </div>
       <ErroBanner erro={erro} />
       <div className="flex gap-2">

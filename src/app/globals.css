@@ -2,82 +2,131 @@
 @import "tw-animate-css";
 
 :root {
+  /* ==========================================================================
+     SISTEMA PREMIUM (2026-09-22) -- direção "padrão premium de SaaS", régua
+     Stripe (painel) + Linear + Toast/Square (ver PRODUCT.md e DESIGN.md).
+     Troca a paleta ardósia/Jakarta pesada por neutros calmos, bordas de 1px,
+     cantos menores e Hanken Grotesk. Versão anterior destes tokens: commit 81a706a
+     (`git show 81a706a:src/app/globals.css`). Reverter tudo:
+     git revert do commit "sistema(premium)".
+     ========================================================================== */
   color-scheme: light;
-  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* --fonte-app vem do next/font no layout (Hanken Grotesk, dígitos tabulares nativos). */
+  --font-sans: var(--fonte-app), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--fonte-app), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-plex-sans: var(--font-sans);
   --font-plex-mono: var(--font-mono);
-  
-  /* Apple Ceramic Light Palette - Alta Legibilidade Operacional */
-  --fundo: #F8FAFC;
+
+  /* Superfícies: névoa no fundo, papel nos cards. Antes: ardósia fria
+     (#F8FAFC / #F1F5F9 / #E2E8F0). */
+  --fundo: #F6F6F7;
   --panel: #FFFFFF;
-  --panel-elevated: #F1F5F9;
-  --panel-hover: #E2E8F0;
-  --tinta: #0F172A;
-  --tinta-sub: #334155;
-  --tinta-faint: #64748B;
-  
-  /* Brand Signals */
-  --sinal: #E11D48;
-  --sinal-glow: rgba(225, 29, 72, 0.25);
-  --sucesso: #059669;
-  --sucesso-glow: rgba(5, 150, 105, 0.25);
-  --aviso: #D97706;
-  
-  /* Borders & Dividers */
-  --linha: rgba(15, 23, 42, 0.12);
-  --linha-forte: rgba(15, 23, 42, 0.22);
+  --panel-elevated: #F3F3F5;
+  --panel-hover: #ECECEF;
+  /* Tinta quase-preta neutra. Antes: #0F172A / #334155 / #64748B (azulados). */
+  --tinta: #16171A;
+  --tinta-sub: #4A4D55;
+  --tinta-faint: #6B6F78;
+
+  /* Status: tons do padrão Stripe/Untitled, legíveis como texto em fundo claro.
+     PLANO 9,5 (2026-09-26): um tom mais escuro (antes #D92D20 / #B54708): o
+     axe acusou contraste 3,9–4,5 nas etiquetas sobre fundo tingido; WCAG AA
+     pede 4,5. Reverter: voltar os dois valores. */
+  --sinal: #B42318;
+  --sinal-glow: rgba(180, 35, 24, 0.2);
+  --sucesso: #067647;
+  --sucesso-glow: rgba(6, 118, 71, 0.2);
+  --aviso: #93370D;
+
+  /* Único acento da marca: violeta-índigo, só para foco, seleção e item ativo.
+     Não usar em botão primário (que é tinta) nem pra decorar. */
+  --marca: #5B4FE0;
+  --marca-suave: rgba(91, 79, 224, 0.10);
+
+  /* Linhas: hairline de 1px faz o papel que antes era da sombra. */
+  --linha: rgba(22, 23, 26, 0.09);
+  --linha-forte: rgba(22, 23, 26, 0.16);
   --linha-rim: rgba(255, 255, 255, 0.9);
-  
+
   --bg: var(--fundo);
   --border: var(--linha);
   --border-strong: var(--linha-forte);
   --text: var(--tinta);
   --sub: var(--tinta-sub);
   --faint: var(--tinta-faint);
-  --accent: #0F172A;
-  --accent-hover: #1E293B;
-  --accent-soft: rgba(15, 23, 42, 0.05);
+  --accent: #16171A;
+  --accent-hover: #2A2C31;
+  --accent-soft: rgba(22, 23, 26, 0.05);
   --accent-contrast: #FFFFFF;
   --text-contrast: #FFFFFF;
   --danger: var(--sinal);
-  --danger-soft: rgba(225, 29, 72, 0.10);
+  --danger-soft: rgba(217, 45, 32, 0.08);
 
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 20px;
+  /* Cantos menores e consistentes. Antes: 8 / 14 / 20px. */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05);
-  --shadow-elevated: 0 12px 36px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
-  --shadow-glow: 0 0 24px -2px rgba(225, 29, 72, 0.35);
-  --card-rim: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  /* Profundidade quase plana: borda + sombra de 1–2px. Antes as sombras eram
+     largas (20–36px de blur). */
+  --shadow-sm: 0 1px 2px rgba(16, 17, 20, 0.05);
+  --shadow-card: 0 1px 2px rgba(16, 17, 20, 0.04);
+  --shadow-elevated: 0 1px 2px rgba(16, 17, 20, 0.04), 0 8px 24px -8px rgba(16, 17, 20, 0.10);
+  --shadow-glow: none;
+  --card-rim: none;
+
+  /* SISTEMA premium: aliases que componentes compartilhados já usavam mas que
+     nunca tinham sido definidos -- Card (--shadow, --card-border) e Badge
+     (--status-*) saíam sem borda e sem cor. */
+  --shadow: var(--shadow-card);
+  --shadow-lift: var(--shadow-elevated);
+  --card-border: 1px solid var(--linha);
+  --status-producao: var(--etapa-producao-texto);
+  --status-producao-soft: color-mix(in srgb, var(--etapa-producao) 12%, transparent);
+  --status-estoque: var(--etapa-estoque-texto);
+  --status-estoque-soft: color-mix(in srgb, var(--etapa-estoque) 12%, transparent);
+
+  /* Cores das etapas de produção (ver DESIGN.md, "The Stage Color Rule"). */
+  --etapa-estoque: #2563EB;
+  --etapa-estoque-texto: #1D4ED8;
+  --etapa-producao: #D97706;
+  --etapa-producao-texto: #92400E; /* antes #B45309 (contraste 3,9–4,4 no fundo tingido) */
+  --etapa-produzido: #059669;
+  --etapa-produzido-texto: #047857;
+  --etapa-perda: #DC2626;
+  --etapa-perda-texto: #B91C1C;
+
+  /* Alvo mínimo de toque pro tablet na bancada (PRODUCT.md). */
+  --alvo-toque: 44px;
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  
-  /* Apple Pro / Obsidian Dark Palette - Alta Legibilidade Operacional */
-  --fundo: #090D16;
-  --panel: #111726;
-  --panel-elevated: #192236;
-  --panel-hover: #222E47;
-  --tinta: #F8FAFC;
-  --tinta-sub: #CBD5E1;
-  --tinta-faint: #94A3B8;
 
-  /* Brand Signals */
-  --sinal: #FF3B30;
-  --sinal-glow: rgba(255, 59, 48, 0.35);
-  --sucesso: #10B981;
-  --sucesso-glow: rgba(16, 185, 129, 0.35);
-  --aviso: #FBBF24;
+  /* Escuro no padrão Linear: grafite neutro em 3 camadas, bordas brancas a 8%.
+     Antes (commit 81a706a): --fundo #0A0A0B, --panel #141415,
+     --panel-elevated #1C1C1E, --tinta #F4F4F5. */
+  --fundo: #0B0B0C;
+  --panel: #131315;
+  --panel-elevated: #1A1A1D;
+  --panel-hover: #222226;
+  --tinta: #EDEDEF;
+  --tinta-sub: #B4B4BC;
+  --tinta-faint: #8C8C95;
 
-  /* Borders & Dividers */
-  --linha: rgba(255, 255, 255, 0.10);
-  --linha-forte: rgba(255, 255, 255, 0.18);
-  --linha-rim: rgba(255, 255, 255, 0.15);
+  --sinal: #F97066;
+  --sinal-glow: rgba(249, 112, 102, 0.25);
+  --sucesso: #47CD89;
+  --sucesso-glow: rgba(71, 205, 137, 0.25);
+  --aviso: #FDB022;
+
+  --marca: #8F87FF;
+  --marca-suave: rgba(143, 135, 255, 0.14);
+
+  --linha: rgba(255, 255, 255, 0.08);
+  --linha-forte: rgba(255, 255, 255, 0.14);
+  --linha-rim: rgba(255, 255, 255, 0.06);
 
   --bg: var(--fundo);
   --border: var(--linha);
@@ -85,24 +134,37 @@
   --text: var(--tinta);
   --sub: var(--tinta-sub);
   --faint: var(--tinta-faint);
-  --accent: #F8FAFC;
+  --accent: #EDEDEF;
   --accent-hover: #FFFFFF;
-  --accent-soft: rgba(255, 255, 255, 0.08);
-  --accent-contrast: #090D16;
-  --text-contrast: #090D16;
+  --accent-soft: rgba(255, 255, 255, 0.06);
+  --accent-contrast: #0B0B0C;
+  --text-contrast: #0B0B0C;
   --danger: var(--sinal);
-  --danger-soft: rgba(255, 59, 48, 0.15);
+  --danger-soft: rgba(249, 112, 102, 0.12);
 
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 20px;
-  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --shadow-glow: none;
+  --card-rim: none;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 8px 30px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.09);
-  --shadow-elevated: 0 16px 44px -6px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  --shadow-glow: 0 0 28px -2px rgba(255, 59, 48, 0.4);
-  --card-rim: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  --etapa-estoque: #60A5FA;
+  --etapa-estoque-texto: #93C5FD;
+  --etapa-producao: #F59E0B;
+  --etapa-producao-texto: #FCD34D;
+  --etapa-produzido: #34D399;
+  --etapa-produzido-texto: #6EE7B7;
+  --etapa-perda: #F87171;
+  --etapa-perda-texto: #FCA5A5;
+}
+
+/* SISTEMA premium: escala de peso mais calma, aplicada em todas as telas de uma
+   vez. As classes font-black (900) e font-extrabold (800) eram usadas em ~90
+   lugares e davam o ar de "painel-template gritando". Agora font-black = 700 e
+   font-extrabold = 600. Pra voltar ao peso antigo, apague este bloco. */
+@theme {
+  --font-weight-black: 700;
+  --font-weight-extrabold: 600;
 }
 
 /* Correção global de contraste para botões escuros */
@@ -116,15 +178,15 @@
 [data-theme="dark"] a[style*="background:var(--accent)"],
 [data-theme="dark"] a[style*="background: var(--text)"],
 [data-theme="dark"] a[style*="background:var(--text)"] {
-  color: #090D16 !important;
+  color: var(--accent-contrast) !important;
 }
 
 [data-theme="dark"] button[style*="background: var(--accent)"] svg,
 [data-theme="dark"] button[style*="background:var(--accent)"] svg,
 [data-theme="dark"] a[style*="background: var(--accent)"] svg,
 [data-theme="dark"] a[style*="background:var(--accent)"] svg {
-  color: #090D16 !important;
-  stroke: #090D16 !important;
+  color: var(--accent-contrast) !important;
+  stroke: var(--accent-contrast) !important;
 }
 
 @layer base {
@@ -138,14 +200,17 @@
     background: var(--fundo);
     color: var(--tinta);
     font-family: var(--font-sans);
-    font-size: 15px;
+    /* SISTEMA premium: 14px (padrão Stripe/Linear); antes 15px. Telas de operação
+       definem tamanhos maiores onde o chef lê de longe. O word-spacing extra da
+       Jakarta saiu: o espaço da Hanken já é normal (0,26em). */
+    font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
+    font-feature-settings: "tnum";
   }
   h1, h2, h3 {
     text-wrap: pretty;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
     font-weight: 600;
   }
   button, a, input, select, textarea {
@@ -161,12 +226,14 @@
   button:not(:disabled):active {
     transform: scale(0.98);
   }
+  /* SISTEMA premium: anel de foco no acento da marca (antes na tinta). */
   :focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent);
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--marca);
   }
+  /* SISTEMA: seleção visível. Antes: var(--accent-soft) (5% de opacidade, quase invisível). */
   ::selection {
-    background: var(--accent-soft);
+    background: color-mix(in srgb, var(--marca) 24%, transparent);
     color: var(--text);
   }
 
@@ -201,9 +268,13 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* PLANO 9,5 (2026-09-26): a entrada só desliza, sem começar invisível. Com
+   opacity 0 no início, a tela de login/cadastro inteira ficava sem conteúdo
+   visível até a animação rodar (Lighthouse: NO_FCP; atrasa a 1ª pintura).
+   Reverter: voltar "opacity: 0" no from e "opacity: 1" no to. */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { transform: translateY(12px); }
+  to { transform: translateY(0); }
 }
 
 @keyframes shimmer {
@@ -244,20 +315,70 @@
 
 /* Tipografia e Instrumentos de Precisão (Direção Rams/Braun/Adidas) */
 .font-mono-num {
-  font-family: var(--font-plex-mono), monospace !important;
+  font-family: var(--font-plex-mono) !important;
   font-variant-numeric: tabular-nums;
 }
 
 .ease-needle {
-  transition: all 500ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  transition: all 500ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ease-pointer {
-  transition: left 520ms cubic-bezier(0.34, 1.35, 0.64, 1), background-color 180ms ease, color 180ms ease;
+  transition: left 520ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms ease, color 180ms ease;
 }
 
 .photo-instrument {
   filter: saturate(0.85) contrast(1.02);
   border: 1px solid var(--linha);
   box-shadow: none;
+}
+
+/* SISTEMA premium (2026-09-22): cabeçalho de tabela em caixa normal, 12px, peso
+   500, em todas as telas (padrão Stripe/Linear). Antes cada tabela usava
+   "uppercase tracking-wide" em 10,5–11,5px. Fica fora de @layer de propósito,
+   pra valer sobre as classes utilitárias das telas. Pra voltar, apague o bloco. */
+thead tr,
+thead th {
+  text-transform: none;
+  letter-spacing: 0;
+}
+thead th {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tinta-faint);
+}
+
+/* POLIMENTO relatorios (2026-09-22): no papel/PDF o fundo é branco e os painéis
+   sem sombra. Pra desfazer, apagar este bloco. */
+@media print {
+  html, body, body > div, main { background: #fff !important; }
+  section, .rounded-xl { box-shadow: none !important; }
+}
+
+/* PLANO 9,5 (2026-09-26): quem pede "reduzir movimento" no aparelho não vê
+   animação nem transição (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* CELULAR (2026-09-26): no iPhone, campo com letra menor que 16px dá zoom na
+   tela ao tocar (e a pessoa precisa "desdar" o zoom depois). No celular todo
+   campo usa 16px e tem pelo menos 44px de altura pro dedo. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select {
+    min-height: 44px;
+  }
 }

@@ -7,7 +7,7 @@ import { inputStyle } from "./tema";
 export function Input({ className = "", style, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
-      className={`rounded-lg px-3 py-2 text-[13px] outline-none transition-all duration-150 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 placeholder:text-[var(--faint)] ${className}`}
+      className={`rounded-lg px-3 py-2 text-[13px] outline-none transition-all duration-150 focus:border-[var(--marca)] focus:ring-2 focus:ring-[var(--marca-suave)] placeholder:text-[var(--faint)] ${className}`}
       style={{ ...inputStyle, ...style }}
       {...props}
     />

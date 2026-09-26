@@ -16,6 +16,7 @@ import type { Producao, Turno } from "@/lib/dominio/producao";
 import type { Checklist, ChecklistItem } from "@/lib/dominio/checklist";
 import type { EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
 import type { Fornecedor } from "@/lib/dominio/fornecedor";
+import type { Requisicao } from "@/lib/dominio/requisicao";
 import type { NutricionalOverride, Rotulagem, ValoresNutricionaisInsumo } from "@/lib/dominio/nutricional";
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { FechamentoCmv } from "@/lib/dominio/fechamentoCmv";
@@ -32,6 +33,15 @@ export const insumos: Insumo[] = [
   { id: "i-patinho", nome: "Carne Bovina Patinho", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 10, precoEmbalagem: 349, precoUnitario: 34.9, fatorCorrecao: 1.18, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 22, estoqueMinimo: 15 } },
   { id: "i-calabresa", nome: "Linguiça Calabresa", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 5, precoEmbalagem: 74.5, precoUnitario: 14.9, fatorCorrecao: 1.05, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 9, estoqueMinimo: 12 } },
   { id: "i-camarao", nome: "Camarão Médio Limpo", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 2, precoEmbalagem: 159.8, precoUnitario: 79.9, fatorCorrecao: 1.08, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 4, estoqueMinimo: 5 } },
+  // PROTEÍNAS (2026-09-25): mais cortes na demo, pra seleção do tablet mostrar
+  // que lista qualquer proteína cadastrada (não só as das fichas).
+  { id: "i-picanha", nome: "Picanha Bovina", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 1.2, precoEmbalagem: 107.88, precoUnitario: 89.9, fatorCorrecao: 1.15, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 12, estoqueMinimo: 6 } },
+  { id: "i-file-mignon", nome: "Filé Mignon", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 2, precoEmbalagem: 179.8, precoUnitario: 89.9, fatorCorrecao: 1.25, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 8, estoqueMinimo: 4 } },
+  { id: "i-costela", nome: "Costela Bovina", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 10, precoEmbalagem: 299, precoUnitario: 29.9, fatorCorrecao: 1.4, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 15, estoqueMinimo: 8 } },
+  { id: "i-salmao", nome: "Salmão Inteiro", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 5, precoEmbalagem: 349.5, precoUnitario: 69.9, fatorCorrecao: 1.6, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 10, estoqueMinimo: 5 } },
+  { id: "i-tilapia", nome: "Filé de Tilápia", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 5, precoEmbalagem: 199.5, precoUnitario: 39.9, fatorCorrecao: 1.05, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 7, estoqueMinimo: 4 } },
+  { id: "i-lombo", nome: "Lombo Suíno", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 5, precoEmbalagem: 124.5, precoUnitario: 24.9, fatorCorrecao: 1.1, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 9, estoqueMinimo: 5 } },
+  { id: "i-coxa", nome: "Coxa e Sobrecoxa de Frango", categoria: "proteina", unidadeMedida: "kg", tamanhoEmbalagem: 10, precoEmbalagem: 139, precoUnitario: 13.9, fatorCorrecao: 1.3, pesoPorUnidade: null, localArmazenamentoId: "local-camara-carnes", estoque: { saldoAtual: 20, estoqueMinimo: 10 } },
   { id: "i-mussarela", nome: "Mussarela", categoria: "laticinio", unidadeMedida: "kg", tamanhoEmbalagem: 5, precoEmbalagem: 149.5, precoUnitario: 29.9, fatorCorrecao: 1.0, pesoPorUnidade: null, localArmazenamentoId: "local-geladeira-laticinios", estoque: { saldoAtual: 30, estoqueMinimo: 15 } },
   { id: "i-parmesao", nome: "Parmesão Ralado", categoria: "laticinio", unidadeMedida: "kg", tamanhoEmbalagem: 1, precoEmbalagem: 68.9, precoUnitario: 68.9, fatorCorrecao: 1.0, pesoPorUnidade: null, localArmazenamentoId: "local-geladeira-laticinios", estoque: { saldoAtual: 6, estoqueMinimo: 4 } },
   { id: "i-manteiga", nome: "Manteiga sem Sal", categoria: "laticinio", unidadeMedida: "kg", tamanhoEmbalagem: 5, precoEmbalagem: 94.5, precoUnitario: 18.9, fatorCorrecao: 1.0, pesoPorUnidade: null, localArmazenamentoId: "local-geladeira-laticinios", estoque: { saldoAtual: 8, estoqueMinimo: 5 } },
@@ -60,6 +70,11 @@ function etapa(id: string, ordem: number, titulo: string, texto: string): EtapaR
 // =========================================================================
 // Receitas — 3 preparos (sub-receitas) + 6 pratos finais que as referenciam.
 // =========================================================================
+// FICHAS (2026-09-25): passo a passo completo (quantidades, tempos, ponto
+// certo, validade) em todos os preparos e pratos, e fotos ilustrativas do
+// empratamento (Unsplash) em 4 pratos, pra demo do tablet. Parmegiana e
+// Caprese ficam sem foto de propósito: mostram o aviso de foto faltando.
+// No sistema de verdade a foto é a do prato da casa, que o gestor sobe.
 
 export const receitasPreparos: Receita[] = [
   {
@@ -83,7 +98,13 @@ export const receitasPreparos: Receita[] = [
       linha("pr-massa-l3", { insumoId: "i-azeite", pesoLiquido: 0.15, unidade: "l" }),
       linha("pr-massa-l4", { insumoId: "i-sal", pesoLiquido: 0.04, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pr-massa-e1", 1, "Hidratar o fermento", "Misturar os 50 g de fermento em 1,3 l de água morna (35 °C). Esperar 10 min até formar espuma."),
+      etapa("pr-massa-e2", 2, "Misturar a massa", "Na masseira, colocar os 2,2 kg de farinha e os 40 g de sal. Juntar o fermento hidratado e os 150 ml de azeite. Bater em velocidade 1 por 4 min."),
+      etapa("pr-massa-e3", 3, "Sovar", "Bater em velocidade 2 por 8 min, até a massa soltar da cuba e ficar lisa. Ponto certo: esticar um pedaço fino sem rasgar (ponto de véu)."),
+      etapa("pr-massa-e4", 4, "Descanso", "Cobrir com filme e deixar crescer 2 h em temperatura ambiente, até dobrar de volume."),
+      etapa("pr-massa-e5", 5, "Porcionar", "Dividir em 10 discos de 220 g na balança. Bolear, colocar na caixa com tampa e etiquetar com data e lote. Validade: 3 dias na geladeira."),
+    ],
   },
   {
     id: "pr-molho-tomate",
@@ -108,7 +129,13 @@ export const receitasPreparos: Receita[] = [
       linha("pr-molho-l5", { insumoId: "i-sal", pesoLiquido: 0.05, unidade: "kg" }),
       linha("pr-molho-l6", { insumoId: "i-manjericao", pesoLiquido: 0.03, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pr-molho-e1", 1, "Pré-preparo", "Lavar os 5 kg de tomate (pesar bruto ~5,75 kg), tirar o olho e cortar em 4. Picar os 600 g de cebola em cubos pequenos e amassar os 100 g de alho."),
+      etapa("pr-molho-e2", 2, "Refogar", "Em panela grande, aquecer os 200 ml de azeite em fogo médio. Refogar a cebola por 5 min, até ficar transparente. Juntar o alho e mexer 1 min, sem deixar dourar."),
+      etapa("pr-molho-e3", 3, "Cozinhar", "Adicionar o tomate e os 50 g de sal. Tampar e cozinhar em fogo baixo por 40 min, mexendo a cada 10 min pra não pegar no fundo."),
+      etapa("pr-molho-e4", 4, "Bater e finalizar", "Bater com mixer até ficar liso. Desligar o fogo e juntar as 30 g de manjericão rasgado. Ponto certo: rende 4 litros, textura de nappe (cobre a colher)."),
+      etapa("pr-molho-e5", 5, "Resfriar e guardar", "Resfriar em banho-maria de gelo até 10 °C em no máximo 2 h. Porcionar em potes de 1 l, etiquetar e guardar a 4 °C. Validade: 5 dias."),
+    ],
   },
   {
     id: "pr-molho-branco",
@@ -131,7 +158,12 @@ export const receitasPreparos: Receita[] = [
       linha("pr-branco-l3", { insumoId: "i-leite", pesoLiquido: 2, unidade: "l" }),
       linha("pr-branco-l4", { insumoId: "i-sal", pesoLiquido: 0.02, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pr-branco-e1", 1, "Roux", "Derreter os 200 g de manteiga em fogo baixo. Juntar os 200 g de farinha de uma vez e mexer com fouet por 3 min, sem dourar (roux branco)."),
+      etapa("pr-branco-e2", 2, "Incorporar o leite", "Com o fogo médio, juntar os 2 l de leite frio aos poucos, sempre batendo com o fouet pra não empelotar."),
+      etapa("pr-branco-e3", 3, "Cozinhar", "Cozinhar por 8 min depois de ferver, mexendo sem parar. Temperar com os 20 g de sal. Ponto certo: cobre as costas da colher."),
+      etapa("pr-branco-e4", 4, "Guardar", "Cobrir com filme encostado no molho (não forma película). Resfriar, etiquetar e guardar a 4 °C. Validade: 3 dias."),
+    ],
   },
 ];
 
@@ -150,7 +182,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.68,
     modoPreparo: "Abrir o disco de massa, cobrir com molho de tomate, mussarela e manjericão fresco; assar a 380°C por 3min.",
-    fotoUrl: "https://picsum.photos/seed/pizza-margherita-padrao/900/650",
+    fotoUrl: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=1200&q=80",
     ficha: [
       linha("pt-marg-l1", { subReceitaId: "pr-massa-pizza", pesoLiquido: 1, unidade: "un" }),
       linha("pt-marg-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.15, unidade: "l" }),
@@ -179,7 +211,7 @@ export const receitasPratos: Receita[] = [
     destinoVenda: "proprio",
     margemAlvo: 0.65,
     modoPreparo: "Abrir o disco de massa, cobrir com molho de tomate, mussarela, calabresa fatiada e cebola; assar a 380°C por 3min.",
-    fotoUrl: null,
+    fotoUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=80",
     ficha: [
       linha("pt-cal-l1", { subReceitaId: "pr-massa-pizza", pesoLiquido: 1, unidade: "un" }),
       linha("pt-cal-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.15, unidade: "l" }),
@@ -187,7 +219,13 @@ export const receitasPratos: Receita[] = [
       linha("pt-cal-l4", { insumoId: "i-calabresa", pesoLiquido: 0.12, unidade: "kg" }),
       linha("pt-cal-l5", { insumoId: "i-cebola", pesoLiquido: 0.05, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pt-cal-e1", 1, "Abrir o disco", "Abrir 1 disco de massa até 30 cm, com a borda levemente mais grossa."),
+      etapa("pt-cal-e2", 2, "Molho", "Espalhar 150 ml de molho de tomate com a concha, em espiral, deixando 2 cm de borda."),
+      etapa("pt-cal-e3", 3, "Cobertura", "Distribuir 150 g de mussarela, depois 120 g de calabresa fatiada fina (0,5 cm) e 50 g de cebola em rodelas por cima."),
+      etapa("pt-cal-e4", 4, "Assar", "Forno a 380 °C por 3 min. Ponto certo: borda dourada e calabresa levemente tostada."),
+      etapa("pt-cal-e5", 5, "Empratar", "Cortar em 8 pedaços iguais e servir na tábua. Conferir com a foto antes de sair."),
+    ],
   },
   {
     id: "pt-parmegiana",
@@ -234,7 +272,7 @@ export const receitasPratos: Receita[] = [
     // de propósito, para exercitar o estado de alerta nas telas de CMV/relatórios.
     margemAlvo: 0.72,
     modoPreparo: "Refogar camarão com alho e manteiga, finalizar o arroz com azeite, cebola e parmesão.",
-    fotoUrl: null,
+    fotoUrl: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=1200&q=80",
     ficha: [
       linha("pt-risoto-l1", { insumoId: "i-camarao", pesoLiquido: 0.18, unidade: "kg" }),
       linha("pt-risoto-l2", { insumoId: "i-azeite", pesoLiquido: 0.02, unidade: "l" }),
@@ -243,7 +281,13 @@ export const receitasPratos: Receita[] = [
       linha("pt-risoto-l5", { insumoId: "i-manteiga", pesoLiquido: 0.02, unidade: "kg" }),
       linha("pt-risoto-l6", { insumoId: "i-cebola", pesoLiquido: 0.03, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pt-risoto-e1", 1, "Separar", "Pesar 180 g de camarão limpo (bruto ~195 g), 30 g de cebola picada, 10 g de alho, 20 g de manteiga e 30 g de parmesão."),
+      etapa("pt-risoto-e2", 2, "Selar o camarão", "Frigideira bem quente com metade do azeite (10 ml). Selar o camarão 1 min de cada lado. Reservar."),
+      etapa("pt-risoto-e3", 3, "Finalizar o arroz", "Na mesma panela, refogar a cebola e o alho no restante do azeite. Juntar o arroz pré-cozido e o caldo quente aos poucos até ficar cremoso (al dente)."),
+      etapa("pt-risoto-e4", 4, "Mantecar", "Fora do fogo, juntar a manteiga gelada e o parmesão. Mexer vigorosamente até ficar brilhante. Voltar o camarão."),
+      etapa("pt-risoto-e5", 5, "Empratar", "Prato fundo aquecido. Risoto no centro, camarões por cima, fio de azeite. Servir na hora (ponto de onda)."),
+    ],
   },
   {
     id: "pt-lasanha",
@@ -256,10 +300,11 @@ export const receitasPratos: Receita[] = [
     unidadeRendimento: "porção",
     pesoPorcaoG: 400,
     formaFisica: "solido",
-    destinoVenda: "proprio",
+    // RÓTULO PARA VAREJO (2026-09-26): na demo, a lasanha também sai congelada pro supermercado.
+    destinoVenda: "varejo_terceiro",
     margemAlvo: 0.65,
     modoPreparo: "Montar camadas de carne refogada, molho de tomate, molho branco e mussarela; gratinar no forno.",
-    fotoUrl: null,
+    fotoUrl: "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=1200&q=80",
     ficha: [
       linha("pt-las-l1", { insumoId: "i-patinho", pesoLiquido: 0.15, unidade: "kg" }),
       linha("pt-las-l2", { subReceitaId: "pr-molho-tomate", pesoLiquido: 0.2, unidade: "l" }),
@@ -296,7 +341,11 @@ export const receitasPratos: Receita[] = [
       linha("pt-cap-l4", { insumoId: "i-azeite", pesoLiquido: 0.015, unidade: "l" }),
       linha("pt-cap-l5", { insumoId: "i-sal", pesoLiquido: 0.005, unidade: "kg" }),
     ],
-    etapas: [],
+    etapas: [
+      etapa("pt-cap-e1", 1, "Fatiar", "Fatiar 180 g de tomate (bruto ~207 g) e 120 g de mussarela de búfala em rodelas de 1 cm."),
+      etapa("pt-cap-e2", 2, "Montar", "Intercalar tomate e mussarela em leque no prato raso, em círculo."),
+      etapa("pt-cap-e3", 3, "Finalizar", "10 g de manjericão fresco por cima, 15 ml de azeite em fio e 5 g de flor de sal. Servir frio (até 10 °C)."),
+    ],
   },
 ];
 
@@ -345,13 +394,15 @@ export const producoes: Producao[] = [
   { id: "prod-8", lote: "LB-0915-1", tipo: "prato", receitaId: "pt-lasanha", nomeReceita: "Lasanha Bolonhesa", unidadeRendimento: "porção", quantidade: 18, responsavel: "Pedro Alves", turnoId: "turno-almoco", nomeTurno: "Almoço", chefeTurno: "Juliana Costa", validade: "2026-09-16", status: "produzido", motivoPerda: null, criadoEm: "2026-09-15T11:00:00.000Z" },
 ];
 
-function itemChecklist(id: string, checklistId: string, texto: string, ordem: number, concluidoHoje: boolean): ChecklistItem {
-  return { id, checklistId, texto, ordem, concluidoHoje };
+function itemChecklist(id: string, checklistId: string, texto: string, ordem: number, concluidoHoje: boolean, areaId: string | null = null): ChecklistItem {
+  return { id, checklistId, texto, ordem, concluidoHoje, areaId };
 }
 
 export const checklists: Checklist[] = [
   {
     id: "cl-abertura",
+    fotos: [],
+    areas: [],
     nome: "Checklist de Abertura",
     momento: "abertura",
     itens: [
@@ -362,19 +413,74 @@ export const checklists: Checklist[] = [
       itemChecklist("cl-abertura-5", "cl-abertura", "Conferir estoque mínimo de embalagens", 5, false),
     ],
   },
+  // POLIMENTO checklists-pracas (2026-09-22) + pracas-areas (2026-09-23): três praças
+  // da Cantina, cada uma dividida nas áreas que ela tem (bancada, geladeira de
+  // apoio, forno, pista quente/fria), com o que precisa estar em cada área. Fotos
+  // começam vazias: a demo não tem foto real da cozinha, e foto inventada seria
+  // dado falso (PRODUCT.md). Quem testa adiciona as próprias (ficam na sessão).
   {
     id: "cl-praca",
-    nome: "Checklist de Praça",
+    nome: "Praça de pizza",
     momento: "praca",
+    fotos: [],
+    areas: [
+      { id: "ar-pizza-bancada", checklistId: "cl-praca", nome: "Bancada de montagem", ordem: 1 },
+      { id: "ar-pizza-geladeira", checklistId: "cl-praca", nome: "Geladeira de apoio", ordem: 2 },
+      { id: "ar-pizza-forno", checklistId: "cl-praca", nome: "Forno", ordem: 3 },
+    ],
     itens: [
-      itemChecklist("cl-praca-1", "cl-praca", "Reposição de mise en place de molhos", 1, true),
-      itemChecklist("cl-praca-2", "cl-praca", "Conferir massas pré-abertas para o turno", 2, true),
-      itemChecklist("cl-praca-3", "cl-praca", "Verificar temperatura da chapa/forno", 3, true),
-      itemChecklist("cl-praca-4", "cl-praca", "Organizar geladeira de proteínas porcionadas", 4, false),
+      itemChecklist("cl-praca-2", "cl-praca", "Molho de tomate em 2 cubas 1/6", 1, true, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-3", "cl-praca", "Mussarela ralada em 2 cubas 1/3", 2, true, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-4", "cl-praca", "Calabresa fatiada em 1 cuba 1/6", 3, false, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-5", "cl-praca", "Manjericão lavado, seco e coberto com pano úmido", 4, false, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-6", "cl-praca", "Azeite, orégano e sal à direita da bancada", 5, true, "ar-pizza-bancada"),
+      itemChecklist("cl-praca-1", "cl-praca", "Discos de massa abertos (30 un), em caixas tampadas", 6, true, "ar-pizza-geladeira"),
+      itemChecklist("cl-praca-9", "cl-praca", "Reposição de mussarela (1 cuba 1/3) na prateleira de cima", 7, false, "ar-pizza-geladeira"),
+      itemChecklist("cl-praca-8", "cl-praca", "Forno a 380 °C conferido no termômetro", 8, false, "ar-pizza-forno"),
+      itemChecklist("cl-praca-7", "cl-praca", "Pá, cortador e boleadores limpos no suporte", 9, true, "ar-pizza-forno"),
+    ],
+  },
+  {
+    id: "cl-praca-fogao",
+    nome: "Praça quente (fogão)",
+    momento: "praca",
+    fotos: [],
+    areas: [
+      { id: "ar-fogao-pista", checklistId: "cl-praca-fogao", nome: "Pista quente", ordem: 1 },
+      { id: "ar-fogao-geladeira", checklistId: "cl-praca-fogao", nome: "Geladeira de apoio", ordem: 2 },
+      { id: "ar-fogao-bancada", checklistId: "cl-praca-fogao", nome: "Bancada de finalização", ordem: 3 },
+    ],
+    itens: [
+      itemChecklist("cl-praca-fogao-1", "cl-praca-fogao", "Caldo de legumes aquecido na boca de trás", 1, true, "ar-fogao-pista"),
+      itemChecklist("cl-praca-fogao-4", "cl-praca-fogao", "Molho branco em banho-maria", 2, false, "ar-fogao-pista"),
+      itemChecklist("cl-praca-fogao-6", "cl-praca-fogao", "Frigideiras, conchas e pinças nos ganchos", 3, true, "ar-fogao-pista"),
+      itemChecklist("cl-praca-fogao-2", "cl-praca-fogao", "Arroz arbóreo pré-cozido porcionado (10 porções)", 4, true, "ar-fogao-geladeira"),
+      itemChecklist("cl-praca-fogao-3", "cl-praca-fogao", "Camarão porcionado e etiquetado", 5, false, "ar-fogao-geladeira"),
+      itemChecklist("cl-praca-fogao-5", "cl-praca-fogao", "Parmesão ralado em 1 cuba 1/9", 6, true, "ar-fogao-bancada"),
+      itemChecklist("cl-praca-fogao-7", "cl-praca-fogao", "Pratos fundos aquecidos na estufa", 7, false, "ar-fogao-bancada"),
+    ],
+  },
+  {
+    id: "cl-praca-frios",
+    nome: "Garde manger (frios)",
+    momento: "praca",
+    fotos: [],
+    areas: [
+      { id: "ar-frios-pista", checklistId: "cl-praca-frios", nome: "Pista fria", ordem: 1 },
+      { id: "ar-frios-geladeira", checklistId: "cl-praca-frios", nome: "Geladeira de apoio", ordem: 2 },
+    ],
+    itens: [
+      itemChecklist("cl-praca-frios-1", "cl-praca-frios", "Tomate em rodelas em 1 cuba 1/6", 1, false, "ar-frios-pista"),
+      itemChecklist("cl-praca-frios-2", "cl-praca-frios", "Mussarela de búfala porcionada (60 g)", 2, false, "ar-frios-pista"),
+      itemChecklist("cl-praca-frios-4", "cl-praca-frios", "Pesto no pote identificado com data", 3, false, "ar-frios-pista"),
+      itemChecklist("cl-praca-frios-3", "cl-praca-frios", "Folhas lavadas, secas e em caixa com papel", 4, false, "ar-frios-geladeira"),
+      itemChecklist("cl-praca-frios-5", "cl-praca-frios", "Pratos de salada gelados na prateleira de baixo", 5, false, "ar-frios-geladeira"),
     ],
   },
   {
     id: "cl-processo",
+    fotos: [],
+    areas: [],
     nome: "Checklist de Processo — Manipulação de Proteínas",
     momento: "processo",
     itens: [
@@ -386,6 +492,8 @@ export const checklists: Checklist[] = [
   },
   {
     id: "cl-fechamento",
+    fotos: [],
+    areas: [],
     nome: "Checklist de Fechamento",
     momento: "fechamento",
     itens: [
@@ -428,11 +536,11 @@ export const movimentacoes: Movimentacao[] = [
 ];
 
 export const fornecedores: Fornecedor[] = [
-  { id: "forn-1", empresa: "Avícola Bom Frango", contato: "Roberto Lima", telefone: "(11) 98211-3344", email: "vendas@bomfrango.com.br", fornece: "Aves", diasEntrega: "Segunda, Quarta, Sexta", horarioEntrega: "08:00-10:00", prazoUrgencia: "Mesmo dia se pedido até 07:00" },
-  { id: "forn-2", empresa: "Frigorífico Santa Fé", contato: "Camila Rocha", telefone: "(11) 97654-2211", email: "comercial@santafecarnes.com.br", fornece: "Carnes bovinas e suínas", diasEntrega: "Terça, Quinta", horarioEntrega: "07:30-09:30", prazoUrgencia: "24h" },
-  { id: "forn-3", empresa: "Peixaria do Porto", contato: "Diego Fontes", telefone: "(11) 99087-5521", email: "pedidos@peixariadoporto.com.br", fornece: "Pescados e frutos do mar", diasEntrega: "Terça, Sexta", horarioEntrega: "06:30-08:00", prazoUrgencia: "Sob consulta — sujeito a safra" },
-  { id: "forn-4", empresa: "Distribuidora Verde Horta", contato: "Sandra Melo", telefone: "(11) 98899-1122", email: "contato@verdehorta.com.br", fornece: "Hortifruti e temperos", diasEntrega: "Diário", horarioEntrega: "05:30-07:00", prazoUrgencia: "Mesmo dia" },
-  { id: "forn-5", empresa: "Laticínios Serra Azul", contato: "Fernando Nogueira", telefone: "(11) 96677-8899", email: "vendas@serraazul.com.br", fornece: "Laticínios e derivados", diasEntrega: "Segunda, Quinta", horarioEntrega: "08:00-11:00", prazoUrgencia: "48h" },
+  { id: "forn-1", empresa: "Avícola Bom Frango", contato: "Roberto Lima", telefone: "(11) 98211-3344", email: "vendas@bomfrango.com.br", fornece: "Aves", entregaDias: [1, 3, 5], pedidoAte: "17:00", pedidoAntecedencia: 1, categoriasPedido: ["proteinas"], horarioEntrega: "8h às 10h", prazoUrgencia: "Mesmo dia se pedido até 07:00" },
+  { id: "forn-2", empresa: "Frigorífico Santa Fé", contato: "Camila Rocha", telefone: "(11) 97654-2211", email: "comercial@santafecarnes.com.br", fornece: "Carnes bovinas e suínas", entregaDias: [2, 4], pedidoAte: "16:00", pedidoAntecedencia: 1, categoriasPedido: ["proteinas"], horarioEntrega: "7h30 às 9h30", prazoUrgencia: "24h" },
+  { id: "forn-3", empresa: "Peixaria do Porto", contato: "Diego Fontes", telefone: "(11) 99087-5521", email: "pedidos@peixariadoporto.com.br", fornece: "Pescados e frutos do mar", entregaDias: [2, 5], pedidoAte: "15:00", pedidoAntecedencia: 1, categoriasPedido: ["proteinas"], horarioEntrega: "6h30 às 8h", prazoUrgencia: "Sob consulta — sujeito a safra" },
+  { id: "forn-4", empresa: "Distribuidora Verde Horta", contato: "Sandra Melo", telefone: "(11) 98899-1122", email: "contato@verdehorta.com.br", fornece: "Hortifruti e temperos", entregaDias: [1, 2, 3, 4, 5, 6], pedidoAte: "18:00", pedidoAntecedencia: 1, categoriasPedido: ["hortifruti", "secos"], horarioEntrega: "5h30 às 7h", prazoUrgencia: "Mesmo dia" },
+  { id: "forn-5", empresa: "Laticínios Serra Azul", contato: "Fernando Nogueira", telefone: "(11) 96677-8899", email: "vendas@serraazul.com.br", fornece: "Laticínios e derivados", entregaDias: [1, 4], pedidoAte: "12:00", pedidoAntecedencia: 2, categoriasPedido: ["laticinios"], horarioEntrega: "8h às 11h", prazoUrgencia: "48h" },
 ];
 
 // =========================================================================
@@ -483,17 +591,29 @@ export const overrides: NutricionalOverride[] = [
   },
 ];
 
-export const rotulagens: Rotulagem[] = receitasPratos.map((r) => ({
-  receitaId: r.id,
-  ingredientes: "Ingredientes conforme ficha técnica: " + r.ficha.length + " itens.",
-  alergenos: r.id === "pt-risoto-camarao" ? "Contém crustáceos." : "Contém glúten e lactose.",
-  gluten: r.id === "pt-caprese" || r.id === "pt-risoto-camarao" ? "Não contém glúten" : "Contém glúten",
-  lactose: "Contém lactose",
-  fabricante: NOME_RESTAURANTE + " Ltda.",
-  endereco: "Rua das Cantinas, 123 — São Paulo/SP",
-  pesoLiquido: `${r.pesoPorcaoG ?? 0}g`,
-  conservacao: "Consumir imediatamente após o preparo. Manter refrigerado se não consumido em até 2h.",
-}));
+export const rotulagens: Rotulagem[] = receitasPratos.map((r) => {
+  const lasanha = r.id === "pt-lasanha";
+  return {
+    receitaId: r.id,
+    ingredientes: lasanha ? null : "Ingredientes conforme ficha técnica: " + r.ficha.length + " itens.",
+    alergenos: r.id === "pt-risoto-camarao" ? "Contém crustáceos." : "Contém glúten e lactose.",
+    gluten: r.id === "pt-caprese" || r.id === "pt-risoto-camarao" ? "Não contém glúten" : "Contém glúten",
+    lactose: "Contém lactose",
+    fabricante: NOME_RESTAURANTE + " Ltda. · CNPJ 12.345.678/0001-90",
+    endereco: "Rua das Cantinas, 123 — São Paulo/SP · CEP 01000-000",
+    pesoLiquido: lasanha ? "1,2 kg" : `${r.pesoPorcaoG ?? 0}g`,
+    conservacao: lasanha
+      ? "Manter congelado a -18 °C ou mais frio. Depois de descongelado, não congelar novamente."
+      : "Consumir imediatamente após o preparo. Manter refrigerado se não consumido em até 2h.",
+    // RÓTULO PARA VAREJO (2026-09-26): a lasanha vem com o rótulo de varejo quase pronto
+    // (falta só o laudo); os outros pratos, sem os campos novos.
+    alergenicos: lasanha ? { trigo: "derivados", leite: "contem", ovos: "derivados", soja: "pode_conter" } : null,
+    glutenStatus: lasanha ? "contem" : null,
+    lactoseStatus: lasanha ? "contem" : null,
+    medidaCaseira: lasanha ? "1 pedaço" : null,
+    modoPreparo: lasanha ? "Forno convencional: retire o filme, leve ao forno preaquecido a 200 °C por 45 min. Micro-ondas: 12 min em potência alta, com o filme furado." : null,
+  };
+});
 
 // =========================================================================
 // Segurança Alimentar (locais + registros de temperatura).
@@ -524,7 +644,13 @@ export const registrosTemperatura: RegistroTemperatura[] = [
 // Fechamentos de CMV.
 // =========================================================================
 
-export const fechamentos: FechamentoCmv[] = [
+// POLIMENTO relatorios (2026-09-22): a demo passa a entregar os fechamentos na
+// mesma ordem do banco (listarFechamentos: periodo_fim decrescente, o mais
+// recente primeiro). Antes vinham em ordem crescente e fechamentos[0] (Visão
+// Geral, pendências de Relatórios) pegava agosto em vez de setembro.
+// Pra voltar: trocar `fechamentosEmOrdemCronologica.slice().reverse()` por
+// `fechamentosEmOrdemCronologica`.
+const fechamentosEmOrdemCronologica: FechamentoCmv[] = [
   {
     id: "fech-1",
     periodoInicio: "2026-08-01",
@@ -563,4 +689,14 @@ export const fechamentos: FechamentoCmv[] = [
   },
 ];
 
+export const fechamentos: FechamentoCmv[] = fechamentosEmOrdemCronologica.slice().reverse();
+
 export const margemAlvoCliente = 0.65;
+
+// PEDIDOS DA COZINHA (2026-09-26): o que a cozinha já pediu na demo.
+export const requisicoesDemo: Requisicao[] = [
+  { id: "req-1", categoria: "hortifruti", insumoId: null, descricao: "Coentro", quantidade: 4, unidade: "maço", observacao: "bem verdinho", responsavel: "Ana Souza", status: "pendente", criadoEm: "2026-09-26T10:40:00.000Z", resolvidoEm: null },
+  { id: "req-2", categoria: "hortifruti", insumoId: null, descricao: "Tomate italiano", quantidade: 8, unidade: "kg", observacao: null, responsavel: "Marcos Silva", status: "pendente", criadoEm: "2026-09-26T11:05:00.000Z", resolvidoEm: null },
+  { id: "req-3", categoria: "laticinios", insumoId: null, descricao: "Creme de leite fresco", quantidade: 6, unidade: "l", observacao: null, responsavel: "Juliana Costa", status: "pendente", criadoEm: "2026-09-26T09:20:00.000Z", resolvidoEm: null },
+  { id: "req-4", categoria: "secos", insumoId: null, descricao: "Arroz arbóreo", quantidade: 5, unidade: "kg", observacao: null, responsavel: "Pedro Alves", status: "comprado", criadoEm: "2026-09-25T15:00:00.000Z", resolvidoEm: "2026-09-25T18:30:00.000Z" },
+];

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
 import type { UnidadeMedida } from "@/lib/calculo/types";
 import type { DestinoVenda, EtapaReceita, EtapaReceitaInput, FormaFisica, LinhaFicha, LinhaFichaInput, Receita, ReceitaInput, TipoReceita } from "@/lib/dominio/receita";
+import { extensaoDaFoto } from "@/lib/imagem/tipoFoto";
 
 export type { TipoReceita, FormaFisica, DestinoVenda, LinhaFicha, LinhaFichaInput, EtapaReceita, EtapaReceitaInput, Receita, ReceitaInput } from "@/lib/dominio/receita";
 
@@ -189,9 +190,9 @@ export async function excluirReceita(id: string): Promise<void> {
  * bucket é público pra leitura, então não precisa de signed URL. */
 export async function uploadFotoReceita(clienteId: string, arquivo: File): Promise<string> {
   const supabase = await createClient();
-  const extensao = arquivo.name.split(".").pop() || "jpg";
+  const extensao = extensaoDaFoto(arquivo.type, arquivo.size);
   const caminho = `${clienteId}/${crypto.randomUUID()}.${extensao}`;
-  const { error } = await supabase.storage.from(BUCKET_FOTOS_RECEITAS).upload(caminho, arquivo, { contentType: arquivo.type || undefined, upsert: false });
+  const { error } = await supabase.storage.from(BUCKET_FOTOS_RECEITAS).upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
   if (error) throw new Error(mensagemErro(error));
   const { data } = supabase.storage.from(BUCKET_FOTOS_RECEITAS).getPublicUrl(caminho);
   return data.publicUrl;

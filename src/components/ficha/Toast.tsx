@@ -45,7 +45,7 @@ export function ToastContainer() {
   if (lista.length === 0) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 w-[min(360px,calc(100vw-2.5rem))]">
+    <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-5 right-5 z-50 flex flex-col gap-2.5 w-[min(360px,calc(100vw-2.5rem))]">
       {lista.map((t) => {
         const isSuccess = t.tipo === "sucesso";
         const isInfo = t.tipo === "info";

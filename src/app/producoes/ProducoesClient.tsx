@@ -1,7 +1,21 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): "Capacidade por prato" e título do modal de perda de 18px black para 16px semibold. Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
+// SISTEMA premium (2026-09-22): botões de etapa tingidos, colunas com canto 12px e
+// topo de 3px, título no padrão das outras telas. Versão anterior:
+// `git show 4f29ec6:src/app/producoes/ProducoesClient.tsx`.
+// POLIMENTO producoes (2026-09-22) -- elevação da tela com o Impeccable, pensada
+// pro chef no tablet da bancada (PRODUCT.md). Cada mudança marcada com
+// "POLIMENTO producoes" diz como era antes. Versão anterior: commit e5e84b8
+// (as correções de lógica de estoque daquele commit continuam valendo).
+// Desfazer só esta tela: git revert do commit "polimento(producoes)";
+// ou: git checkout 3f0b207 -- src/app/producoes/ProducoesClient.tsx
+// Registro geral: docs/POLIMENTO.md
+
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { Plus, Play, Check, Trash2, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { nums, shadow } from "@/components/ficha/tema";
 import { NovaProducaoForm } from "@/components/producoes/NovaProducaoForm";
@@ -11,9 +25,11 @@ import type { Producao, StatusProducao, Turno, TipoItemProducao } from "@/lib/do
 import type { Processamento } from "@/lib/dominio/processamento";
 import type { Movimentacao, EstoqueLinha } from "@/lib/dominio/estoque";
 import { calcularCapacidadeProducao, linhasCapacidadeDaReceita, type SaldoEstoque } from "@/lib/calculo/capacidadeProducao";
-import { pesoBrutoDaLinha } from "@/lib/dados/adaptadores";
+import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
 import { movimentacoes as fixturesMovimentacoes } from "@/app/preview/fixtures";
 import { acaoIniciarProducao, acaoAtualizarStatusProducao } from "./actions";
+import { tint, unidadeNoPlural } from "@/components/producoes/formato";
+import { useArrastoToque } from "@/components/producoes/useArrastoToque";
 
 type ColunaId = "estoque" | "em_producao" | "produzido" | "perda";
 
@@ -26,67 +42,6 @@ interface CardEstoque {
   gargalo: string | null;
 }
 
-interface ConsumoInsumo {
-  insumoId: string;
-  nome: string;
-  unidadeMedida: string;
-  quantidade: number;
-}
-
-function obterConsumosReceita(
-  receita: Receita,
-  fator: number,
-  receitasMap: Map<string, Receita>,
-  insumosMap: Map<string, Insumo>,
-  procs: Processamento[]
-): ConsumoInsumo[] {
-  const consumos: ConsumoInsumo[] = [];
-
-  for (const linha of receita.ficha) {
-    if (linha.insumoId) {
-      const insumo = insumosMap.get(linha.insumoId);
-      if (!insumo) continue;
-      let qtdBase = 0;
-      try {
-        const bruto = pesoBrutoDaLinha(linha, insumosMap, procs);
-        if (bruto !== null && !isNaN(bruto) && bruto > 0) {
-          qtdBase = bruto;
-        } else {
-          qtdBase = linha.pesoLiquido;
-        }
-      } catch {
-        qtdBase = linha.pesoLiquido;
-      }
-      consumos.push({
-        insumoId: insumo.id,
-        nome: insumo.nome,
-        unidadeMedida: insumo.unidadeMedida,
-        quantidade: Number((qtdBase * fator).toFixed(3)),
-      });
-    } else if (linha.subReceitaId) {
-      const sub = receitasMap.get(linha.subReceitaId);
-      if (sub) {
-        const proporcao = (linha.pesoLiquido / (sub.rendimento || 1)) * fator;
-        const subConsumos = obterConsumosReceita(sub, proporcao, receitasMap, insumosMap, procs);
-        consumos.push(...subConsumos);
-      }
-    }
-  }
-
-  // Agrupar insumos repetidos
-  const agrupado = new Map<string, ConsumoInsumo>();
-  for (const c of consumos) {
-    const ex = agrupado.get(c.insumoId);
-    if (ex) {
-      ex.quantidade = Number((ex.quantidade + c.quantidade).toFixed(3));
-    } else {
-      agrupado.set(c.insumoId, { ...c });
-    }
-  }
-
-  return Array.from(agrupado.values());
-}
-
 function transicaoValida(origem: ColunaId, destino: ColunaId): boolean {
   if (origem === destino) return false;
   if (origem === "estoque") return destino === "em_producao";
@@ -94,6 +49,18 @@ function transicaoValida(origem: ColunaId, destino: ColunaId): boolean {
   if (origem === "produzido") return destino === "perda";
   return false;
 }
+
+// POLIMENTO producoes: plural da unidade de rendimento. Antes aparecia "15 porção".
+// (2026-09-25: unidadeNoPlural e tint foram pra src/components/producoes/formato.ts,
+// a cozinha usa os mesmos.)
+
+// POLIMENTO producoes: validade em dd/mm quando vier como data ISO ("2026-09-14");
+// texto livre ("7 dias") passa como está. Antes aparecia o ISO cru.
+function validadeLegivel(v: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
+  return m ? `${m[3]}/${m[2]}` : v;
+}
+
 
 export function ProducoesClient({
   insumos,
@@ -113,15 +80,21 @@ export function ProducoesClient({
   const pathname = usePathname();
   const emModoDemo = isDemo || pathname?.startsWith("/preview");
 
-  const [listaProducoes, setListaProducoes] = useState<Producao[]>(producoes);
-
-  const [saldosMap, setSaldosMap] = useState<Map<string, number>>(() => {
+  const saldosDoServidor = useMemo(() => {
     const mapa = new Map<string, number>();
     for (const i of insumos) {
       if (i.estoque) mapa.set(i.id, i.estoque.saldoAtual);
     }
     return mapa;
-  });
+  }, [insumos]);
+
+  // Estado local só alimenta a demo (/preview, sem banco). Fora dela o quadro
+  // e os saldos vêm das props, que o servidor atualiza quando a server action
+  // revalida a rota -- um useState inicializado das props ficaria congelado.
+  const [producoesDemo, setListaProducoes] = useState<Producao[]>(producoes);
+  const [saldosDemo, setSaldosMap] = useState<Map<string, number>>(saldosDoServidor);
+  const listaProducoes = emModoDemo ? producoesDemo : producoes;
+  const saldosMap = emModoDemo ? saldosDemo : saldosDoServidor;
 
   // Carregar dados salvos em preview para persistência imediata
   useEffect(() => {
@@ -157,7 +130,8 @@ export function ProducoesClient({
     carregarDemo();
 
     const escutarStorage = (e: StorageEvent) => {
-      if (e.key === "demo_producoes" || e.key === "demo_estoque") {
+      // DEMO (2026-09-25): key nula = "Recomeçar a demonstração" (limparDemo).
+      if (!e.key || e.key === "demo_producoes" || e.key === "demo_estoque") {
         carregarDemo();
       }
     };
@@ -180,8 +154,6 @@ export function ProducoesClient({
   const [turnoId, setTurnoId] = useState<string | null>(turnos[0]?.id ?? null);
   const [chefeTurno, setChefeTurno] = useState("");
   const [showNovaProducao, setShowNovaProducao] = useState(false);
-  const [loteArrastando, setLoteArrastando] = useState<{ colunaOrigem: ColunaId; item: CardEstoque | Producao } | null>(null);
-  const [colunaAlvo, setColunaAlvo] = useState<ColunaId | null>(null);
   const [modalPerda, setModalPerda] = useState<{ loteId: string; motivo: string } | null>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
 
@@ -239,7 +211,7 @@ export function ProducoesClient({
           receitaId: c.receita.id,
           tipo: "preparo" as const,
           nome: c.receita.nomePrato,
-          rendimentoLabel: `${c.receita.rendimento}${c.receita.unidadeRendimento} por lote`,
+          rendimentoLabel: `${c.receita.rendimento} ${c.receita.unidadeRendimento} por lote`,
           lotes: c.lotesPossiveis as number,
           gargalo: c.nomeGargalo,
         })),
@@ -266,56 +238,24 @@ export function ProducoesClient({
     { id: "perda", titulo: "Perdas", desc: "lote descartado" },
   ];
 
-  // Identidade de cor marcante por etapa do fluxo:
-  // estoque=Azul Safira, em produção=Âmbar/Laranja, produzido=Verde Esmeralda, perda=Vermelho Carmim
-  const estilosColunas: Record<
-    ColunaId,
-    {
-      cor: string;
-      corTexto: string;
-      fundoColuna: string;
-      fundoBadge: string;
-      borda: string;
-      bordaTopo: string;
-      ponto: string;
-    }
-  > = {
-    estoque: {
-      cor: "#2563EB",
-      corTexto: "#1D4ED8",
-      fundoColuna: "rgba(37, 99, 235, 0.04)",
-      fundoBadge: "rgba(37, 99, 235, 0.12)",
-      borda: "rgba(37, 99, 235, 0.22)",
-      bordaTopo: "#2563EB",
-      ponto: "#2563EB",
-    },
-    em_producao: {
-      cor: "#D97706",
-      corTexto: "#B45309",
-      fundoColuna: "rgba(217, 119, 6, 0.04)",
-      fundoBadge: "rgba(217, 119, 6, 0.12)",
-      borda: "rgba(217, 119, 6, 0.22)",
-      bordaTopo: "#D97706",
-      ponto: "#D97706",
-    },
-    produzido: {
-      cor: "#059669",
-      corTexto: "#047857",
-      fundoColuna: "rgba(5, 150, 105, 0.04)",
-      fundoBadge: "rgba(5, 150, 105, 0.12)",
-      borda: "rgba(5, 150, 105, 0.22)",
-      bordaTopo: "#059669",
-      ponto: "#059669",
-    },
-    perda: {
-      cor: "#DC2626",
-      corTexto: "#B91C1C",
-      fundoColuna: "rgba(220, 38, 38, 0.04)",
-      fundoBadge: "rgba(220, 38, 38, 0.12)",
-      borda: "rgba(220, 38, 38, 0.22)",
-      bordaTopo: "#DC2626",
-      ponto: "#DC2626",
-    },
+  // POLIMENTO producoes: cor de cada etapa vem dos tokens --etapa-* (globals.css,
+  // DESIGN.md "The Stage Color Rule"). Antes: hex fixos aqui (#2563EB, #D97706,
+  // #059669, #DC2626), iguais nos dois temas -- o texto azul-escuro sumia no escuro.
+  const estiloDaEtapa = (etapa: "estoque" | "producao" | "produzido" | "perda") => {
+    const cor = `var(--etapa-${etapa})`;
+    return {
+      cor,
+      corTexto: `var(--etapa-${etapa}-texto)`,
+      fundoColuna: tint(cor, 5),
+      fundoBadge: tint(cor, 14),
+      borda: tint(cor, 26),
+    };
+  };
+  const estilosColunas: Record<ColunaId, ReturnType<typeof estiloDaEtapa>> = {
+    estoque: estiloDaEtapa("estoque"),
+    em_producao: estiloDaEtapa("producao"),
+    produzido: estiloDaEtapa("produzido"),
+    perda: estiloDaEtapa("perda"),
   };
 
   const executarAcao = async (promessa: Promise<{ ok: boolean; erro?: string }>) => {
@@ -365,13 +305,7 @@ export function ProducoesClient({
 
       // REGISTRAR SAÍDA DO ESTOQUE PARA PRODUÇÃO
       if (receitaObj) {
-        const consumos = obterConsumosReceita(
-          receitaObj,
-          1,
-          receitaPorId,
-          insumoPorId,
-          processamentos
-        );
+        const consumos = consumoDeInsumosDaProducao(receitaObj, receitaObj.rendimento, receitaPorId, insumoPorId, processamentos);
 
         if (consumos.length > 0) {
           // 1. Criar e salvar movimentações de saída para produção
@@ -462,9 +396,10 @@ export function ProducoesClient({
     );
   };
 
-  const soltarNaColuna = (destino: ColunaId) => {
-    if (!loteArrastando) return;
-    const { colunaOrigem, item } = loteArrastando;
+  // TOQUE (2026-09-25): arrastar com dedo, caneta ou mouse (useArrastoToque).
+  // Antes era o arrastar nativo do HTML (draggable), que não funciona com toque
+  // na maioria dos tablets. Mesmo motor do quadro do modo cozinha.
+  const soltarNaColuna = (item: CardEstoque | Producao, colunaOrigem: ColunaId, destino: ColunaId) => {
     if (!transicaoValida(colunaOrigem, destino)) return;
 
     if (colunaOrigem === "estoque" && destino === "em_producao") {
@@ -482,6 +417,11 @@ export function ProducoesClient({
       void executarAcao(acaoAtualizarStatusProducao((item as Producao).id, destino as StatusProducao));
     }
   };
+
+  const { arrasto, iniciar: iniciarArrasto, refQuadro, alvoValido } = useArrastoToque<CardEstoque | Producao, ColunaId>({
+    podeSoltar: (origem, destino) => transicaoValida(origem, destino),
+    aoSoltar: soltarNaColuna,
+  });
 
   const concluirProducao = (id: string) => {
     if (emModoDemo) {
@@ -513,245 +453,75 @@ export function ProducoesClient({
   };
 
   return (
-    <div className="max-w-6xl space-y-7 select-none font-sans">
+    <div className="max-w-7xl space-y-8 font-sans">
       {erroAcao && (
-        <div className="text-[13px] font-bold rounded-xl px-4 py-3 flex items-center justify-between border shadow-sm" style={{ background: "var(--danger-soft)", color: "var(--danger)", borderColor: "rgba(220, 38, 38, 0.3)" }}>
-          <span>{erroAcao}</span>
-          <button onClick={() => setErroAcao(null)} className="font-extrabold uppercase text-[11px] ml-3 px-2 py-1 rounded bg-[var(--panel)] border border-[var(--linha)]">
-            fechar
+        <div
+          role="alert"
+          className="text-[14px] font-bold rounded-xl px-4 py-3 flex items-center justify-between gap-3 border"
+          style={{ background: tint("var(--sinal)", 10), color: "var(--sinal)", borderColor: tint("var(--sinal)", 30) }}
+        >
+          <span className="flex items-center gap-2"><AlertTriangle size={16} className="shrink-0" />{erroAcao}</span>
+          <button onClick={() => setErroAcao(null)} className="font-bold text-[13px] min-h-[var(--alvo-toque)] px-3 rounded-lg bg-[var(--panel)] border border-[var(--linha)]">
+            Fechar
           </button>
         </div>
       )}
 
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+        {/* Cabeçalho do quadro.
+            POLIMENTO producoes: "Registrar produção" subiu pra cá (antes ficava escondido
+            abaixo do quadro, junto da tabela de capacidade); turno e chefe com 44px de
+            altura pro dedo (antes ~30px); rótulos em caixa normal (antes "TURNO:"/"CHEFE:");
+            subtítulo mais curto. */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5">
           <div>
-            <h2 className="text-[18px] md:text-[20px] font-black tracking-tight text-[var(--tinta)]">
-              Quadro de Produção da Cozinha
-            </h2>
-            <p className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-0.5">
-              Acompanhamento do fluxo operacional da bancada por lotes e estações.
+            <h2 className="text-[22px] font-semibold tracking-tight text-[var(--tinta)]">Quadro de produção</h2>
+            <p className="text-[14px] text-[var(--tinta-sub)] mt-1">
+              Arraste o lote entre as etapas ou use os botões do card.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 p-2 rounded-xl border bg-[var(--panel)] shadow-sm" style={{ borderColor: "var(--linha)" }}>
-            <span className="text-[12px] font-bold text-[var(--tinta-sub)] uppercase">Turno:</span>
-            <select
-              value={turnoId ?? ""}
-              onChange={(e) => setTurnoId(e.target.value || null)}
-              className="text-[13px] font-bold px-2.5 py-1.5 rounded-lg border bg-[var(--panel-elevated)]"
-              style={{ borderColor: "var(--linha-forte)", color: "var(--tinta)" }}
+          <div className="flex flex-wrap lg:flex-nowrap items-end gap-3 shrink-0">
+            <label className="flex flex-col gap-1">
+              <span className="text-[12px] font-bold text-[var(--tinta-sub)]">Turno</span>
+              <select
+                value={turnoId ?? ""}
+                onChange={(e) => setTurnoId(e.target.value || null)}
+                className="text-[14px] font-bold px-3 min-h-[var(--alvo-toque)] rounded-xl border bg-[var(--panel)]"
+                style={{ borderColor: "var(--linha-forte)", color: "var(--tinta)" }}
+              >
+                {turnos.map((t) => (
+                  <option key={t.id} value={t.id}>{t.nome}{t.horario ? ` (${t.horario})` : ""}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[12px] font-bold text-[var(--tinta-sub)]">Chefe do turno</span>
+              <input
+                value={chefeTurno}
+                onChange={(e) => setChefeTurno(e.target.value)}
+                placeholder="Nome"
+                className="text-[14px] font-bold px-3 min-h-[var(--alvo-toque)] rounded-xl border bg-[var(--panel)] w-40"
+                style={{ borderColor: "var(--linha-forte)", color: "var(--tinta)" }}
+              />
+            </label>
+            <button
+              onClick={() => setShowNovaProducao(!showNovaProducao)}
+              className="flex items-center gap-2 text-[14px] font-extrabold px-4 min-h-[var(--alvo-toque)] rounded-xl"
+              style={{
+                background: showNovaProducao ? "var(--panel)" : "var(--accent)",
+                color: showNovaProducao ? "var(--tinta)" : "var(--accent-contrast)",
+                border: `1px solid ${showNovaProducao ? "var(--linha-forte)" : "var(--accent)"}`,
+              }}
             >
-              {turnos.map((t) => (
-                <option key={t.id} value={t.id}>{t.nome}{t.horario ? ` (${t.horario})` : ""}</option>
-              ))}
-            </select>
-            <span className="text-[12px] font-bold text-[var(--tinta-sub)] uppercase">Chefe:</span>
-            <input
-              value={chefeTurno}
-              onChange={(e) => setChefeTurno(e.target.value)}
-              placeholder="Nome"
-              className="text-[13px] font-bold px-2.5 py-1.5 rounded-lg border bg-[var(--panel-elevated)] w-28"
-              style={{ borderColor: "var(--linha-forte)", color: "var(--tinta)" }}
-            />
+              {!showNovaProducao && <Plus size={16} strokeWidth={2.6} />}
+              {showNovaProducao ? "Fechar" : "Registrar produção"}
+            </button>
           </div>
         </div>
 
-        {/* Grid do Kanban com Cores Distintas por Coluna */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-          {colunas.map((col) => {
-            const cardsProducao = listaProducoes.filter((p) => p.status === col.id);
-            const podeSoltarAqui = !!loteArrastando && transicaoValida(loteArrastando.colunaOrigem, col.id);
-            const emHoverValido = colunaAlvo === col.id && podeSoltarAqui;
-            const emHoverInvalido = colunaAlvo === col.id && !!loteArrastando && !podeSoltarAqui;
-            const contagem = col.id === "estoque" ? disponivelProduzir.length : cardsProducao.length;
-            const estilo = estilosColunas[col.id];
-
-            return (
-              <div
-                key={col.id}
-                className="rounded-2xl p-4 flex flex-col transition-all duration-200"
-                style={{
-                  backgroundColor: emHoverValido ? estilo.fundoBadge : estilo.fundoColuna,
-                  border: `1px solid ${emHoverInvalido ? "var(--danger)" : estilo.borda}`,
-                  borderTop: `4px solid ${emHoverInvalido ? "var(--danger)" : estilo.bordaTopo}`,
-                  boxShadow: emHoverValido || emHoverInvalido ? `0 0 0 2px ${emHoverInvalido ? "var(--danger)" : estilo.cor} inset` : "0 4px 16px -2px rgba(0, 0, 0, 0.03)",
-                }}
-                onDragOver={(e) => {
-                  if (!loteArrastando) return;
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = podeSoltarAqui ? "move" : "none";
-                  if (colunaAlvo !== col.id) setColunaAlvo(col.id);
-                }}
-                onDragLeave={() => setColunaAlvo((atual) => (atual === col.id ? null : atual))}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  soltarNaColuna(col.id);
-                  setColunaAlvo(null);
-                }}
-              >
-                {/* Header da Coluna */}
-                <div className="flex items-center justify-between pb-2 mb-1 border-b" style={{ borderColor: estilo.borda }}>
-                  <span className="flex items-center gap-2 text-[14px] font-black tracking-tight" style={{ color: estilo.corTexto }}>
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: estilo.ponto }} />
-                    {col.titulo}
-                  </span>
-                  <span
-                    className="text-[12px] font-black px-2.5 py-0.5 rounded-full shadow-sm"
-                    style={{ backgroundColor: estilo.fundoBadge, color: estilo.corTexto }}
-                  >
-                    {contagem}
-                  </span>
-                </div>
-                <div className="text-[11.5px] font-semibold mb-3 text-[var(--tinta-sub)]">{col.desc}</div>
-
-                {/* Área de Cards */}
-                <div className="space-y-3 flex-1 overflow-y-auto">
-                  {contagem === 0 && (
-                    <div className="text-[12px] font-bold py-6 text-center rounded-xl border border-dashed" style={{ borderColor: estilo.borda, color: estilo.corTexto }}>
-                      {podeSoltarAqui ? "Solte o lote aqui" : "Nenhum item nesta etapa"}
-                    </div>
-                  )}
-
-                  {col.id === "estoque" &&
-                    disponivelProduzir.map((d) => (
-                      <div
-                        key={`${d.tipo}-${d.receitaId}`}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.effectAllowed = "move";
-                          setLoteArrastando({ colunaOrigem: "estoque", item: d });
-                        }}
-                        onDragEnd={() => {
-                          setLoteArrastando(null);
-                          setColunaAlvo(null);
-                        }}
-                        className="rounded-xl p-3.5 bg-[var(--panel)] cursor-grab active:cursor-grabbing transition-all hover:shadow-md border shadow-sm"
-                        style={{
-                          borderColor: "var(--linha)",
-                          borderLeft: `4px solid ${estilo.cor}`,
-                          opacity: loteArrastando?.item === d ? 0.4 : 1,
-                        }}
-                      >
-                        <div className="text-[14px] font-bold text-[var(--tinta)] leading-snug">{d.nome}</div>
-                        <div className="text-[12px] font-semibold text-[var(--tinta-sub)] mt-1">{d.rendimentoLabel}</div>
-                        <div className="text-[12px] font-extrabold mt-2 flex items-baseline gap-1.5">
-                          <span
-                            className="px-2 py-0.5 rounded text-[13px] font-black"
-                            style={{
-                              backgroundColor: d.lotes <= 2 ? "rgba(220, 38, 38, 0.12)" : "rgba(37, 99, 235, 0.12)",
-                              color: d.lotes <= 2 ? "var(--danger)" : estilo.corTexto,
-                            }}
-                          >
-                            {d.lotes} {d.lotes > 1 ? "lotes possíveis" : "lote possível"}
-                          </span>
-                        </div>
-                        {d.gargalo && (
-                          <div className="text-[11px] font-bold mt-1.5 text-[var(--tinta-sub)]">
-                            Gargalo: <strong className="text-[var(--tinta)]">{d.gargalo}</strong>
-                          </div>
-                        )}
-                        <button
-                          onClick={() => iniciarProducao(d)}
-                          className="mt-3 w-full text-[12px] font-black py-2 rounded-xl text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer"
-                          style={{ backgroundColor: estilo.cor }}
-                        >
-                          Iniciar Produção
-                        </button>
-                      </div>
-                    ))}
-
-                  {col.id !== "estoque" &&
-                    cardsProducao.map((pr) => (
-                      <div
-                        key={pr.id}
-                        draggable={col.id !== "perda"}
-                        onDragStart={(e) => {
-                          e.dataTransfer.effectAllowed = "move";
-                          setLoteArrastando({ colunaOrigem: col.id, item: pr });
-                        }}
-                        onDragEnd={() => {
-                          setLoteArrastando(null);
-                          setColunaAlvo(null);
-                        }}
-                        className={`rounded-xl p-3.5 bg-[var(--panel)] transition-all hover:shadow-md border shadow-sm ${
-                          col.id !== "perda" ? "cursor-grab active:cursor-grabbing" : ""
-                        }`}
-                        style={{
-                          borderColor: "var(--linha)",
-                          borderLeft: `4px solid ${estilo.cor}`,
-                          opacity: loteArrastando?.item === pr ? 0.4 : 1,
-                        }}
-                      >
-                        <div className="text-[11px] font-black uppercase tracking-wider text-[var(--tinta-sub)]">{pr.lote}</div>
-                        <div className="text-[14px] font-bold text-[var(--tinta)] leading-snug mt-0.5">{pr.nomeReceita}</div>
-                        <div className="text-[12px] font-semibold text-[var(--tinta-sub)] mt-1.5">
-                          {pr.quantidade} {pr.unidadeRendimento} · <strong className="text-[var(--tinta)]">{pr.responsavel}</strong>
-                        </div>
-                        <div className="text-[11px] font-bold mt-1.5 inline-block px-2 py-0.5 rounded-md bg-[var(--panel-elevated)] border border-[var(--linha)] text-[var(--tinta-sub)]">
-                          {pr.nomeTurno ?? "—"} · chefe {pr.chefeTurno ?? "—"}
-                        </div>
-                        {pr.validade && (
-                          <div className="text-[11px] font-semibold mt-1 text-[var(--tinta-sub)]">
-                            Validade: {pr.validade}
-                          </div>
-                        )}
-                        {pr.motivoPerda && (
-                          <div className="text-[12px] font-extrabold mt-2 p-2 rounded-lg bg-rose-100/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-700 dark:text-rose-300">
-                            Motivo: {pr.motivoPerda}
-                          </div>
-                        )}
-
-                        {col.id === "em_producao" && (
-                          <div className="flex gap-2 mt-3">
-                            <button
-                              onClick={() => concluirProducao(pr.id)}
-                              className="flex-1 text-[12px] font-black py-2 rounded-xl text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer"
-                              style={{ backgroundColor: "#059669" }}
-                            >
-                              Concluir
-                            </button>
-                            <button
-                              onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
-                              className="text-[12px] font-black py-2 px-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer"
-                            >
-                              Perda
-                            </button>
-                          </div>
-                        )}
-
-                        {col.id === "produzido" && (
-                          <button
-                            onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
-                            className="mt-3 w-full text-[12px] font-black py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 cursor-pointer"
-                          >
-                            Registrar Descarte / Perda
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Detalhe de capacidade por prato</h2>
-          <button
-            onClick={() => setShowNovaProducao(!showNovaProducao)}
-            className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
-            style={{ background: showNovaProducao ? "var(--bg)" : "var(--accent)", color: showNovaProducao ? "var(--text)" : "#fff", border: `1px solid ${showNovaProducao ? "var(--border-strong)" : "var(--accent)"}` }}
-          >
-            {showNovaProducao ? "Fechar" : "+ Registrar produção"}
-          </button>
-        </div>
-        <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>Detalhamento em porções por prato, com o insumo que vai faltar primeiro. O quadro acima mostra a mesma coisa em lotes.</p>
-
         {showNovaProducao && (
-          <Card className="mb-3">
+          <Card className="mb-5">
             <NovaProducaoForm
               preparos={preparos}
               pratos={pratos}
@@ -787,25 +557,259 @@ export function ProducoesClient({
           </Card>
         )}
 
+        {/* Quadro.
+            POLIMENTO producoes: a partir de 1024px cada coluna rola por dentro e o quadro
+            inteiro cabe na altura da tela -- antes "Em estoque" com 9 cards esticava a
+            página pra ~2.700px e "Perdas" sumia do campo de visão do chef.
+            select-none só no quadro (evita selecionar texto ao arrastar); antes valia pra
+            tela toda. */}
+        <div ref={refQuadro} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 select-none">
+          {colunas.map((col) => {
+            const cardsProducao = listaProducoes.filter((p) => p.status === col.id);
+            const podeSoltarAqui = !!arrasto && transicaoValida(arrasto.origem, col.id);
+            const emHoverValido = arrasto?.alvo === col.id && alvoValido;
+            const emHoverInvalido = arrasto?.alvo === col.id && arrasto.origem !== col.id && !alvoValido;
+            const contagem = col.id === "estoque" ? disponivelProduzir.length : cardsProducao.length;
+            const estilo = estilosColunas[col.id];
+
+            return (
+              <section
+                key={col.id}
+                aria-label={`${col.titulo}: ${contagem}`}
+                className="rounded-xl flex flex-col transition-colors duration-200 min-w-0 lg:max-h-[calc(100dvh-230px)] lg:min-h-[520px]"
+                style={{
+                  backgroundColor: emHoverValido ? estilo.fundoBadge : estilo.fundoColuna,
+                  border: `1px solid ${emHoverInvalido ? "var(--sinal)" : estilo.borda}`,
+                  borderTop: `3px solid ${emHoverInvalido ? "var(--sinal)" : estilo.cor}`,
+                  boxShadow: emHoverValido || emHoverInvalido ? `0 0 0 2px ${emHoverInvalido ? "var(--sinal)" : estilo.cor} inset` : "none",
+                }}
+                data-coluna={col.id}
+              >
+                {/* Cabeçalho da coluna. POLIMENTO producoes: título 16px e contador maior
+                    (antes 14px/12px), pra ler de longe. */}
+                <div className="px-4 pt-3.5 pb-3 border-b" style={{ borderColor: estilo.borda }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="flex items-center gap-2 text-[16px] font-black tracking-tight" style={{ color: estilo.corTexto }}>
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: estilo.cor }} aria-hidden />
+                      {col.titulo}
+                    </h3>
+                    <span className="text-[14px] font-black min-w-8 text-center px-2.5 py-0.5 rounded-full" style={{ backgroundColor: estilo.fundoBadge, color: estilo.corTexto }}>
+                      {contagem}
+                    </span>
+                  </div>
+                  <p className="text-[13px] font-semibold mt-1 text-[var(--tinta-sub)]">{col.desc}</p>
+                </div>
+
+                {/* Cards (rolam por dentro da coluna no desktop/tablet deitado) */}
+                <div className="p-3 space-y-3 flex-1 lg:overflow-y-auto overscroll-contain">
+                  {contagem === 0 && (
+                    <div className="text-[13px] font-bold py-8 text-center rounded-xl border border-dashed" style={{ borderColor: estilo.borda, color: estilo.corTexto }}>
+                      {podeSoltarAqui ? "Solte o lote aqui" : "Nenhum lote nesta etapa"}
+                    </div>
+                  )}
+
+                  {/* Card de capacidade ("Em estoque").
+                      POLIMENTO producoes: o número de lotes virou o destaque (24px) com o rótulo
+                      embaixo; antes "27 lotes possíveis" era um chip de 13px que quebrava linha.
+                      "Gargalo:" virou "Falta primeiro:", que é o que a cozinha fala.
+                      Botão com 44px e ícone; antes ~32px e "Iniciar Produção". */}
+                  {col.id === "estoque" &&
+                    disponivelProduzir.map((d) => {
+                      const poucos = d.lotes <= 2;
+                      return (
+                        <div
+                          key={`${d.tipo}-${d.receitaId}`}
+                          onPointerDown={(e) => iniciarArrasto(e, d, "estoque")}
+                          className="rounded-xl p-3.5 bg-[var(--panel)] cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md border"
+                          style={{
+                            borderColor: tint(estilo.cor, 30),
+                            boxShadow: "var(--shadow-sm)",
+                            opacity: arrasto?.item === d ? 0.35 : 1,
+                            WebkitTouchCallout: "none",
+                          }}
+                        >
+                          <div className="text-[15px] font-black text-[var(--tinta)] leading-snug">{d.nome}</div>
+                          <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-0.5">{d.rendimentoLabel}</div>
+
+                          <div className="flex items-baseline gap-1.5 mt-2.5">
+                            <span className="text-[24px] font-black leading-none" style={{ color: poucos ? "var(--sinal)" : estilo.corTexto }}>
+                              {d.lotes}
+                            </span>
+                            <span className="text-[13px] font-bold text-[var(--tinta-sub)]">
+                              {d.lotes === 1 ? "lote possível" : "lotes possíveis"}
+                            </span>
+                          </div>
+                          {d.gargalo && (
+                            <div className="text-[12px] font-semibold mt-1 text-[var(--tinta-sub)]">
+                              Falta primeiro: <strong className="text-[var(--tinta)]">{d.gargalo}</strong>
+                            </div>
+                          )}
+
+                          <button
+                            onClick={() => iniciarProducao(d)}
+                            className="mt-3 w-full flex items-center justify-center gap-1.5 px-2 text-[14px] font-extrabold min-h-[var(--alvo-toque)] rounded-xl transition-opacity hover:opacity-90"
+                            // SISTEMA premium: botão tingido da etapa (fundo 12%, texto -texto, borda 30%).
+                            // Antes era preenchido, e no escuro virava um pastel chapado destoando do resto.
+                            style={{ backgroundColor: tint(estilo.cor, 12), color: estilo.corTexto, border: `1px solid ${tint(estilo.cor, 30)}` }}
+                          >
+                            {/* Ícone só a partir de 1280px: na coluna do tablet deitado ele empurrava o texto pra 2 linhas. */}
+                            <Play size={15} strokeWidth={2.6} className="hidden xl:block" />
+                            <span className="whitespace-nowrap">Iniciar produção</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                  {/* Card de lote (em produção / produzido / perda).
+                      POLIMENTO producoes: quantidade com plural certo, validade em dd/mm,
+                      botões de 44px. "Registrar Descarte / Perda" (vermelho em todo card
+                      produzido) virou "Registrar perda" neutro com ícone -- o vermelho fica
+                      reservado pra perda que aconteceu. Motivo da perda com tint do token. */}
+                  {col.id !== "estoque" &&
+                    cardsProducao.map((pr) => (
+                      <div
+                        key={pr.id}
+                        onPointerDown={col.id !== "perda" ? (e) => iniciarArrasto(e, pr, col.id) : undefined}
+                        className={`rounded-xl p-3.5 bg-[var(--panel)] transition-shadow hover:shadow-md border ${
+                          col.id !== "perda" ? "cursor-grab active:cursor-grabbing" : ""
+                        }`}
+                        style={{
+                          borderColor: tint(estilo.cor, 30),
+                          boxShadow: "var(--shadow-sm)",
+                          opacity: arrasto?.item === pr ? 0.35 : 1,
+                          WebkitTouchCallout: "none",
+                        }}
+                      >
+                        <div className="text-[12px] font-medium text-[var(--tinta-sub)] flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: estilo.cor }} aria-hidden />
+                          {pr.lote}
+                        </div>
+                        <div className="text-[15px] font-black text-[var(--tinta)] leading-snug mt-1">{pr.nomeReceita}</div>
+                        <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-1">
+                          <strong className="text-[var(--tinta)] font-black">
+                            {pr.quantidade.toLocaleString("pt-BR")} {unidadeNoPlural(pr.quantidade, pr.unidadeRendimento)}
+                          </strong>
+                          {" · "}
+                          {pr.responsavel}
+                        </div>
+                        <div className="text-[12px] font-semibold mt-1.5 text-[var(--tinta-sub)]">
+                          {pr.nomeTurno ?? "Sem turno"}
+                          {pr.chefeTurno ? ` · chefe ${pr.chefeTurno}` : ""}
+                          {pr.validade ? ` · validade ${validadeLegivel(pr.validade)}` : ""}
+                        </div>
+                        {pr.motivoPerda && (
+                          <div
+                            className="text-[13px] font-bold mt-2.5 p-2.5 rounded-lg"
+                            style={{ background: tint("var(--etapa-perda)", 10), color: "var(--etapa-perda-texto)" }}
+                          >
+                            {pr.motivoPerda}
+                          </div>
+                        )}
+
+                        {col.id === "em_producao" && (
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => concluirProducao(pr.id)}
+                              className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-[14px] font-extrabold min-h-[var(--alvo-toque)] rounded-xl transition-opacity hover:opacity-90"
+                              // SISTEMA premium: tingido como os demais botões de etapa (antes preenchido).
+                              style={{ backgroundColor: tint("var(--etapa-produzido)", 12), color: "var(--etapa-produzido-texto)", border: `1px solid ${tint("var(--etapa-produzido)", 30)}` }}
+                            >
+                              <Check size={16} strokeWidth={2.8} />
+                              Concluir
+                            </button>
+                            {/* Perda como botão de ícone quadrado (44px): com o texto, os dois botões
+                                não cabiam lado a lado na coluna de ~200px do tablet deitado. */}
+                            <button
+                              onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
+                              className="shrink-0 flex items-center justify-center w-[var(--alvo-toque)] min-h-[var(--alvo-toque)] rounded-xl border bg-[var(--panel)]"
+                              style={{ borderColor: tint("var(--etapa-perda)", 40), color: "var(--etapa-perda-texto)" }}
+                              aria-label={`Registrar perda do lote ${pr.lote}`}
+                              title="Registrar perda"
+                            >
+                              <Trash2 size={17} />
+                            </button>
+                          </div>
+                        )}
+
+                        {col.id === "produzido" && (
+                          <button
+                            onClick={() => setModalPerda({ loteId: pr.id, motivo: "" })}
+                            className="mt-3 w-full flex items-center justify-center gap-2 text-[14px] font-bold min-h-[var(--alvo-toque)] rounded-xl border bg-[var(--panel)] text-[var(--tinta-sub)] hover:text-[var(--etapa-perda-texto)]"
+                            style={{ borderColor: "var(--linha-forte)" }}
+                          >
+                            <Trash2 size={15} />
+                            Registrar perda
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* TOQUE (2026-09-25): card que segue o dedo/mouse durante o arrasto. */}
+      {arrasto && (
+        <div
+          aria-hidden
+          className="fixed z-50 pointer-events-none rounded-xl p-3.5 bg-[var(--panel)] border"
+          style={{
+            left: arrasto.x - arrasto.dx,
+            top: arrasto.y - arrasto.dy,
+            width: arrasto.largura,
+            borderColor: tint(estilosColunas[arrasto.origem].cor, 40),
+            transform: "rotate(1.5deg) scale(1.03)",
+            boxShadow: "0 14px 28px rgba(0,0,0,0.22)",
+          }}
+        >
+          {"lote" in arrasto.item ? (
+            <>
+              <div className="text-[12px] font-medium text-[var(--tinta-sub)]">{arrasto.item.lote}</div>
+              <div className="text-[15px] font-black text-[var(--tinta)] leading-snug mt-1">{arrasto.item.nomeReceita}</div>
+              <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-1">
+                {arrasto.item.quantidade.toLocaleString("pt-BR")} {unidadeNoPlural(arrasto.item.quantidade, arrasto.item.unidadeRendimento)} · {arrasto.item.responsavel}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-[15px] font-black text-[var(--tinta)] leading-snug">{arrasto.item.nome}</div>
+              <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-0.5">{arrasto.item.rendimentoLabel}</div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Capacidade por prato.
+          POLIMENTO producoes: texto 14px (antes 12.5px) e cabeçalhos legíveis (antes 10.5px
+          em --faint). O botão "Registrar produção" saiu daqui e foi pro cabeçalho do quadro. */}
+      <div>
+        <h2 className="text-[16px] font-semibold tracking-tight text-[var(--tinta)]">Capacidade por prato</h2>
+        <p className="text-[14px] mt-1 mb-3 text-[var(--tinta-sub)]">
+          Quantas porções ainda dá pra fazer com o estoque de hoje, e o que acaba primeiro.
+        </p>
+
         <Card>
-          <table className="w-full text-[12.5px]">
+          <table className="w-full text-[14px]">
             <thead>
-              <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
-                <th className="py-2.5 px-5 font-medium">Prato</th>
-                <th className="py-2.5 px-3 font-medium text-right">Rende por receita</th>
-                <th className="py-2.5 px-3 font-medium text-right">Ainda dá pra fazer</th>
-                <th className="py-2.5 px-5 font-medium">Primeiro insumo a faltar</th>
+              <tr className="text-left text-[12px] uppercase tracking-wide text-[var(--tinta-sub)]">
+                <th className="py-3 px-5 font-bold">Prato</th>
+                {/* "Rende por receita" some no celular: 4 colunas não cabiam em 390px. */}
+                <th className="py-3 px-3 font-bold text-right hidden sm:table-cell">Rende por receita</th>
+                <th className="py-3 px-3 font-bold text-right">Ainda dá pra fazer</th>
+                <th className="py-3 px-5 font-bold">Acaba primeiro</th>
               </tr>
             </thead>
             <tbody>
               {capacidadePratos.map((p) => (
-                <tr key={p.receita.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
-                  <td className="py-2.5 px-5 font-medium">{p.receita.nomePrato}</td>
-                  <td className="py-2.5 px-3 text-right" style={nums}>{p.receita.rendimento} porç{p.receita.rendimento > 1 ? "ões" : "ão"}</td>
-                  <td className="py-2.5 px-3 text-right font-semibold" style={{ ...nums, color: p.porcoesPossiveis !== null && p.porcoesPossiveis < 10 ? "var(--danger)" : "var(--text)" }}>
-                    {p.porcoesPossiveis === null ? <span style={{ color: "var(--faint)", fontWeight: 400 }}>sem estoque rastreado</span> : `${p.porcoesPossiveis} porções`}
+                <tr key={p.receita.id} style={{ borderTop: "1px solid var(--border)" }}>
+                  <td className="py-3 px-5 font-bold">{p.receita.nomePrato}</td>
+                  <td className="py-3 px-3 text-right hidden sm:table-cell" style={nums}>{p.receita.rendimento} {unidadeNoPlural(p.receita.rendimento, "porção")}</td>
+                  <td className="py-3 px-3 text-right font-black" style={{ ...nums, color: p.porcoesPossiveis !== null && p.porcoesPossiveis < 10 ? "var(--sinal)" : "var(--text)" }}>
+                    {p.porcoesPossiveis === null ? <span style={{ color: "var(--faint)", fontWeight: 500 }}>sem estoque rastreado</span> : `${p.porcoesPossiveis} ${unidadeNoPlural(p.porcoesPossiveis, "porção")}`}
                   </td>
-                  <td className="py-2.5 px-5" style={{ color: "var(--sub)" }}>
+                  <td className="py-3 px-5 text-[var(--tinta-sub)]">
                     {p.nomeGargalo ?? "—"}
                     {p.semRastreio > 0 && <span style={{ color: "var(--faint)" }}> · {p.semRastreio} insumo{p.semRastreio > 1 ? "s" : ""} fora do cálculo</span>}
                   </td>
@@ -823,32 +827,41 @@ export function ProducoesClient({
         </Card>
       </div>
 
+      {/* Modal de perda. POLIMENTO producoes: botões e campo com 44px, texto 14px
+          (antes 12.5px e botões ~30px); fundo do overlay neutro (antes rgba azulado). */}
       {modalPerda && (
         <div
           className="fixed inset-0 flex items-center justify-center p-4"
-          style={{ background: "rgba(13,13,15,0.45)", zIndex: 50 }}
+          style={{ background: "rgba(0,0,0,0.5)", zIndex: 50 }}
           onClick={() => setModalPerda(null)}
         >
-          <div className="rounded-xl p-5 w-full max-w-sm ftv-panel" style={{ background: "var(--panel)", boxShadow: shadow }} onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[14px] font-semibold mb-1">Registrar perda</h3>
-            <p className="text-[12px] mb-3" style={{ color: "var(--sub)" }}>O que aconteceu com esse lote? O motivo fica registrado pra investigar depois — perda sem motivo não serve pra nada.</p>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-modal-perda"
+            className="rounded-2xl p-5 w-full max-w-md"
+            style={{ background: "var(--panel)", boxShadow: shadow, border: "1px solid var(--linha)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="titulo-modal-perda" className="text-[16px] font-semibold mb-1">Registrar perda</h3>
+            <p className="text-[14px] mb-3 text-[var(--tinta-sub)]">O que aconteceu com esse lote? O motivo fica registrado pra investigar depois.</p>
             <textarea
               autoFocus
               value={modalPerda.motivo}
               onChange={(e) => setModalPerda({ ...modalPerda, motivo: e.target.value })}
-              placeholder="Ex: esqueceu fora da câmara a noite toda, queimou na chapa, validade vencida..."
-              className="text-[12.5px] px-2.5 py-2 rounded-md w-full mb-3"
-              style={{ border: `1px solid ${"var(--border-strong)"}`, background: "var(--panel)", minHeight: 84 }}
+              placeholder="Ex: ficou fora da câmara a noite toda, queimou na chapa, validade vencida..."
+              className="text-[15px] px-3 py-2.5 rounded-xl w-full mb-4"
+              style={{ border: "1px solid var(--border-strong)", background: "var(--panel)", minHeight: 110 }}
             />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setModalPerda(null)} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
+              <button onClick={() => setModalPerda(null)} className="text-[14px] font-bold px-4 min-h-[var(--alvo-toque)] rounded-xl" style={{ border: "1px solid var(--border-strong)" }}>
                 Cancelar
               </button>
               <button
                 onClick={confirmarPerda}
                 disabled={!modalPerda.motivo.trim()}
-                className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg"
-                style={{ background: "var(--danger)", color: "#fff", opacity: modalPerda.motivo.trim() ? 1 : 0.5 }}
+                className="text-[14px] font-extrabold px-4 min-h-[var(--alvo-toque)] rounded-xl"
+                style={{ background: "var(--etapa-perda-texto)", color: "var(--panel)", opacity: modalPerda.motivo.trim() ? 1 : 0.5 }}
               >
                 Registrar perda
               </button>

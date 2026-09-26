@@ -1,17 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Bot, Sparkles, Mic, Camera } from "lucide-react";
-import { AgenteIaModal } from "./AgenteIaModal";
+
+// PLANO 9,5 (2026-09-26): o modal do agente (~40 KB) só baixa quando alguém
+// abre o agente pela primeira vez; antes vinha junto com toda página.
+const AgenteIaModal = dynamic(() => import("./AgenteIaModal").then((m) => m.AgenteIaModal), { ssr: false });
 
 export function BotaoAgenteIa({
   variante = "flutuante",
   className = "",
+  escopo = "completo",
 }: {
   variante?: "flutuante" | "cabecalho" | "inline";
   className?: string;
+  /** EQUIPE (2026-09-25): "estoque" pro estoquista (ver AgenteIaModal). O
+   * `key={escopo}` recria a conversa quando o papel muda (a mensagem de
+   * boas-vindas depende do escopo). */
+  escopo?: "completo" | "estoque";
 }) {
   const [aberto, setAberto] = useState(false);
+  const [jaAbriu, setJaAbriu] = useState(false);
+  const abrir = () => {
+    setJaAbriu(true);
+    setAberto(true);
+  };
   const [focoId, setFocoId] = useState<string | null>(null);
   const [focoNome, setFocoNome] = useState<string | null>(null);
 
@@ -21,7 +35,7 @@ export function BotaoAgenteIa({
       const detail = (e as CustomEvent<{ insumoId?: string; insumoNome?: string }>).detail || {};
       setFocoId(detail.insumoId || null);
       setFocoNome(detail.insumoNome || null);
-      setAberto(true);
+      abrir();
     };
 
     window.addEventListener("abrir-agente-ia", escutarAbertura);
@@ -38,27 +52,30 @@ export function BotaoAgenteIa({
     return (
       <>
         <button
-          onClick={() => setAberto(true)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[12px] font-extrabold transition-all shadow-sm hover:scale-[1.02] active:scale-[0.98] ${className}`}
-          style={{
-            background: "linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(124, 58, 237, 0.15) 100%)",
-            borderColor: "rgba(124, 58, 237, 0.35)",
-            color: "var(--tinta)",
-          }}
-          title="Abrir Agente de IA (Imagens, Áudios e WhatsApp)"
+          onClick={() => abrir()}
+          // SISTEMA premium: botão neutro da barra (borda 1px, 40px), no mesmo idioma do
+          // botão de tema. Antes: pílula com degradê azul-violeta e ponto verde pulsando
+          // (que sugeria "online" num agente que é só demonstração).
+          aria-label="Agente IA (demonstração)"
+          className={`flex items-center gap-2 px-3 min-h-10 rounded-lg border text-[13px] font-medium transition-colors hover:bg-[var(--panel-hover)] ${className}`}
+          style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}
+          title="Demonstração do agente de IA (imagens, áudios e WhatsApp)"
         >
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <Bot size={15} className="text-purple-600 dark:text-purple-400" />
-          <span className="hidden sm:inline">Agente IA &amp; WhatsApp</span>
-          <span className="sm:hidden">IA</span>
+          <Bot size={16} style={{ color: "var(--marca)" }} />
+          <span className="hidden sm:inline">Agente IA</span>
+          <span className="hidden sm:inline text-[11px] font-medium px-1.5 py-px rounded border" style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}>
+            demo
+          </span>
         </button>
 
-        <AgenteIaModal
+        {jaAbriu && <AgenteIaModal
+          key={escopo}
+          escopo={escopo}
           aberto={aberto}
           onFechar={fechar}
           insumoFocoId={focoId}
           insumoFocoNome={focoNome}
-        />
+        />}
       </>
     );
   }
@@ -67,7 +84,7 @@ export function BotaoAgenteIa({
     return (
       <>
         <button
-          onClick={() => setAberto(true)}
+          onClick={() => abrir()}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11.5px] font-extrabold transition-all ${className}`}
           style={{
             background: "rgba(124, 58, 237, 0.1)",
@@ -79,22 +96,25 @@ export function BotaoAgenteIa({
           <span>Preencher com IA</span>
         </button>
 
-        <AgenteIaModal
+        {jaAbriu && <AgenteIaModal
+          key={escopo}
+          escopo={escopo}
           aberto={aberto}
           onFechar={fechar}
           insumoFocoId={focoId}
           insumoFocoNome={focoNome}
-        />
+        />}
       </>
     );
   }
 
+  // Só montado no DemoShell: o agente é simulado e ainda não existe em produção.
   // Variante flutuante padrão (fixo no canto inferior direito)
   return (
     <>
       <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 font-sans select-none">
         <button
-          onClick={() => setAberto(true)}
+          onClick={() => abrir()}
           className="group relative flex items-center gap-2.5 px-4 py-3 rounded-full text-white shadow-xl transition-all hover:scale-105 active:scale-95 border border-white/20"
           style={{
             background: "linear-gradient(135deg, #1E40AF 0%, #6D28D9 50%, #059669 100%)",
@@ -111,8 +131,8 @@ export function BotaoAgenteIa({
               <span className="text-[12.5px] font-black tracking-tight leading-none">
                 Agente IA Cozinha
               </span>
-              <span className="text-[9px] font-black uppercase px-1 py-0.2 rounded bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                Online
+              <span className="text-[9px] font-black px-1 py-0.2 rounded bg-white/15 text-white border border-white/30">
+                Demo
               </span>
             </div>
             <span className="text-[10px] text-white/80 font-medium leading-none mt-0.5 flex items-center gap-1">
@@ -122,12 +142,14 @@ export function BotaoAgenteIa({
         </button>
       </div>
 
-      <AgenteIaModal
+      {jaAbriu && <AgenteIaModal
+        key={escopo}
+        escopo={escopo}
         aberto={aberto}
         onFechar={fechar}
         insumoFocoId={focoId}
         insumoFocoNome={focoNome}
-      />
+      />}
     </>
   );
 }

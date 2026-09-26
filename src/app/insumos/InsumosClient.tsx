@@ -17,6 +17,8 @@ import { fatorCorrecaoEfetivo } from "@/lib/calculo/fatorCorrecao";
 import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirInsumo, acaoExcluirPreparo } from "./actions";
+import { formatBRL, formatNumero, formatQtd } from "@/components/charts/format";
+import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
 
 export function InsumosClient({
   insumos,
@@ -24,7 +26,10 @@ export function InsumosClient({
   todasReceitas,
   processamentos,
   locais,
+  mostrarPreparos = true,
 }: {
+  /** EQUIPE (2026-09-25): o estoquista não vê receitas (nem as de preparo). */
+  mostrarPreparos?: boolean;
   insumos: Insumo[];
   preparos: Receita[];
   todasReceitas: Receita[];
@@ -32,6 +37,10 @@ export function InsumosClient({
   locais: LocalArmazenamento[];
 }) {
   const [showNovoInsumo, setShowNovoInsumo] = useState(false);
+  // CELULAR (2026-09-26): busca — no celular a lista é longa pra rolar.
+  const [busca, setBusca] = useState("");
+  const termo = busca.trim().toLowerCase();
+  const filtrados = termo ? insumos.filter((i) => i.nome.toLowerCase().includes(termo)) : insumos;
   const [insumoEditando, setInsumoEditando] = useState<Insumo | null>(null);
   const [showNovoPreparo, setShowNovoPreparo] = useState(false);
   const [preparoEditando, setPreparoEditando] = useState<Receita | null>(null);
@@ -55,21 +64,74 @@ export function InsumosClient({
   return (
     <div className="max-w-5xl space-y-6">
       <Card>
-        <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
-          <h2 className="text-[13px] font-semibold">Insumos comprados</h2>
+        <div className="px-4 md:px-5 py-3.5 flex items-center justify-between gap-2" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
+          <h2 className="text-[15px] md:text-[13px] font-semibold">Insumos comprados</h2>
           <button
             onClick={() => {
               setInsumoEditando(null);
               setShowNovoInsumo(!showNovoInsumo);
             }}
-            className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+            className="text-[13px] md:text-[12.5px] font-medium px-3 min-h-10 md:min-h-0 md:py-1.5 rounded-lg"
             style={{ background: showNovoInsumo ? "var(--bg)" : "var(--accent)", color: showNovoInsumo ? "var(--text)" : "#fff", border: `1px solid ${showNovoInsumo ? "var(--border-strong)" : "var(--accent)"}` }}
           >
             {showNovoInsumo ? "Fechar" : "+ Novo insumo"}
           </button>
         </div>
         {showNovoInsumo && <InsumoForm locais={locais} onCancel={() => setShowNovoInsumo(false)} onSaved={() => setShowNovoInsumo(false)} />}
-        <table className="w-full text-[13px]">
+        {insumos.length > 8 && (
+          <div className="px-4 md:px-5 pt-3">
+            <input
+              type="search"
+              aria-label="Buscar insumo"
+              placeholder="Buscar insumo..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="text-[14px] px-3 min-h-10 rounded-lg w-full md:max-w-xs"
+              style={{ border: "1px solid var(--linha-forte)", background: "var(--panel)" }}
+            />
+          </div>
+        )}
+        <ListaMovel rotulo="Insumos comprados" className="mt-1">
+          {filtrados.map((i) => {
+            const abaixoMinimo = i.estoque && i.estoque.saldoAtual < i.estoque.estoqueMinimo;
+            const aberto = insumoEditando?.id === i.id;
+            return (
+              <ItemMovel
+                key={i.id}
+                titulo={i.nome}
+                subtitulo={`${CATEGORIAS.find((c) => c.id === i.categoria)?.label ?? i.categoria} · ${formatQtd(i.tamanhoEmbalagem)} ${i.unidadeMedida} por ${formatBRL(i.precoEmbalagem)}`}
+                valor={`${formatBRL(i.precoUnitario)}/${i.unidadeMedida}`}
+                detalhe={
+                  i.estoque ? (
+                    <span style={{ color: abaixoMinimo ? "var(--danger)" : undefined }}>
+                      {formatQtd(i.estoque.saldoAtual)} {i.unidadeMedida} em estoque{abaixoMinimo ? " · repor" : ""}
+                    </span>
+                  ) : i.fatorCorrecao > 1 ? (
+                    `FC ${formatNumero(i.fatorCorrecao, 2)}`
+                  ) : undefined
+                }
+                aberto={aberto}
+                aoTocar={() => {
+                  setShowNovoInsumo(false);
+                  setInsumoEditando(aberto ? null : i);
+                }}
+              >
+                <div className="-mx-4">
+                  <InsumoForm insumo={i} locais={locais} onCancel={() => setInsumoEditando(null)} onSaved={() => setInsumoEditando(null)} />
+                </div>
+                <button onClick={() => excluirInsumoComConfirmacao(i)} className="mt-2 min-h-11 px-1 text-[14px] font-medium" style={{ color: "var(--danger)" }}>
+                  Excluir insumo
+                </button>
+              </ItemMovel>
+            );
+          })}
+          {filtrados.length === 0 && (
+            <li className="py-6 px-4 text-center text-[14px]" style={{ color: "var(--faint)" }}>
+              {insumos.length === 0 ? "Nenhum insumo cadastrado ainda." : "Nenhum insumo com esse nome."}
+            </li>
+          )}
+        </ListaMovel>
+        <table className="hidden md:table w-full text-[13px]">
           <thead>
             <tr style={{ color: "var(--faint)" }} className="text-left text-[11px] uppercase tracking-wide">
               <th className="py-2.5 px-5 font-medium">Insumo</th>
@@ -84,7 +146,7 @@ export function InsumosClient({
             </tr>
           </thead>
           <tbody>
-            {insumos.map((i) => {
+            {filtrados.map((i) => {
               const abaixoMinimo = i.estoque && i.estoque.saldoAtual < i.estoque.estoqueMinimo;
               const editandoEsteAqui = insumoEditando?.id === i.id;
               return (
@@ -93,12 +155,12 @@ export function InsumosClient({
                     <td className="py-2.5 px-5">{i.nome}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === i.categoria)?.label ?? i.categoria}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.unidadeMedida}</td>
-                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.tamanhoEmbalagem} {i.unidadeMedida}</td>
-                    <td className="py-2.5 px-3 text-right" style={nums}>R$ {i.precoEmbalagem.toFixed(2)}</td>
-                    <td className="py-2.5 px-3 text-right" style={nums}>R$ {i.precoUnitario.toFixed(2)}</td>
-                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: i.fatorCorrecao > 1 ? "var(--danger)" : "var(--faint)" }}>{i.fatorCorrecao.toFixed(2)}</td>
-                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: abaixoMinimo ? "var(--danger)" : "var(--text)" }}>
-                      {i.estoque ? `${i.estoque.saldoAtual}${i.unidadeMedida}${abaixoMinimo ? " · abaixo do mín." : ""}` : <span style={{ color: "var(--faint)" }}>não rastreado</span>}
+                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{formatQtd(i.tamanhoEmbalagem)} {i.unidadeMedida}</td>
+                    <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL(i.precoEmbalagem)}</td>
+                    <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL(i.precoUnitario)}</td>
+                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: i.fatorCorrecao > 1 ? "var(--danger)" : "var(--faint)" }}>{formatNumero(i.fatorCorrecao, 2)}</td>
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap" style={{ ...nums, color: abaixoMinimo ? "var(--danger)" : "var(--text)" }}>
+                      {i.estoque ? `${formatQtd(i.estoque.saldoAtual)}${i.unidadeMedida}${abaixoMinimo ? " · abaixo do mín." : ""}` : <span style={{ color: "var(--faint)" }}>não rastreado</span>}
                     </td>
                     <td className="py-2.5 px-5 text-right whitespace-nowrap">
                       <button
@@ -111,7 +173,7 @@ export function InsumosClient({
                       >
                         editar
                       </button>
-                      <button onClick={() => excluirInsumoComConfirmacao(i)} className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
+                      <button onClick={() => excluirInsumoComConfirmacao(i)} className="text-[13px] md:text-[11.5px] font-medium min-h-10 md:min-h-0 px-1" style={{ color: "var(--danger)" }}>
                         excluir
                       </button>
                     </td>
@@ -137,6 +199,7 @@ export function InsumosClient({
         </table>
       </Card>
 
+      {mostrarPreparos && (
       <div>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-[13px] font-semibold">Preparos próprios</h2>
@@ -167,27 +230,27 @@ export function InsumosClient({
             const custoUnitario = calcularCustoPorPorcao(prep.id, contexto);
             return (
               <Card key={prep.id}>
-                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
-                  <div className="flex items-center gap-2">
+                <div className="px-4 md:px-5 py-3 flex flex-wrap items-center justify-between gap-2" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
+                  <div className="flex flex-wrap items-center gap-2">
                     <CookingPot size={14} style={{ color: "var(--sub)" }} />
                     <span className="text-[13px] font-semibold">{prep.nomePrato}</span>
                     <Badge>preparo próprio</Badge>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="text-[12px]" style={{ ...nums, color: "var(--sub)" }}>
-                      rende {prep.rendimento}{prep.unidadeRendimento} · R$ {custoUnitario.toFixed(2)}/{prep.unidadeRendimento}
+                      rende {formatQtd(prep.rendimento)} {prep.unidadeRendimento} · {formatBRL(custoUnitario)}/{prep.unidadeRendimento}
                     </div>
                     <button
                       onClick={() => {
                         setShowNovoPreparo(false);
                         setPreparoEditando(editandoEsteAqui ? null : prep);
                       }}
-                      className="text-[11.5px] font-medium"
+                      className="text-[13px] md:text-[11.5px] font-medium min-h-10 md:min-h-0 px-1"
                       style={{ color: "var(--text)" }}
                     >
                       editar
                     </button>
-                    <button onClick={() => excluirPreparoComConfirmacao(prep)} className="text-[11.5px] font-medium" style={{ color: "var(--danger)" }}>
+                    <button onClick={() => excluirPreparoComConfirmacao(prep)} className="text-[13px] md:text-[11.5px] font-medium min-h-10 md:min-h-0 px-1" style={{ color: "var(--danger)" }}>
                       excluir
                     </button>
                   </div>
@@ -206,9 +269,9 @@ export function InsumosClient({
                       return (
                         <div key={f.id} className="flex justify-between text-[12.5px] py-2" style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                           <span>
-                            {insumo.nome} <span style={{ color: "var(--faint)" }}>· {f.pesoLiquido}{f.unidade} · FC {fc.toFixed(2)}</span>
+                            {insumo.nome} <span style={{ color: "var(--faint)" }}>· {formatQtd(f.pesoLiquido)}{f.unidade} · FC {formatNumero(fc, 2)}</span>
                           </span>
-                          <span style={nums}>R$ {custo.toFixed(2)}</span>
+                          <span style={nums}>{formatBRL(custo)}</span>
                         </div>
                       );
                     })}
@@ -224,6 +287,7 @@ export function InsumosClient({
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

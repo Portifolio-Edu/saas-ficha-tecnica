@@ -1,6 +1,7 @@
 "use client";
 
 import { Cell, Legend, Pie, PieChart, Tooltip } from "recharts";
+import { formatNumero } from "@/components/charts/format";
 import { ChartFrame } from "./ChartFrame";
 import { ChartTooltipCard } from "./ChartTooltipCard";
 import { formatBRL, formatPercent } from "./format";
@@ -29,7 +30,7 @@ function rotuloFatia({ cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 
   const y = cy + raio * Math.sin(-midAngle * RADIAN);
   return (
     <text x={x} y={y} fill={"var(--sub)"} fontSize={11} textAnchor={x > cx ? "start" : "end"} dominantBaseline="central">
-      {`${name} · ${(percent * 100).toFixed(0)}%`}
+      {`${name} · ${formatNumero((percent * 100), 0)}%`}
     </text>
   );
 }

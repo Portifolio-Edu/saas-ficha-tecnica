@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatNumero } from "@/components/charts/format";
 import { inputStyle, nums } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
@@ -60,31 +61,31 @@ export function NovoProcessamentoForm({
 
   return (
     <div className="px-5 py-4">
-      <div className="grid grid-cols-6 gap-2 mb-2">
-        <select value={insumoId} onChange={(e) => setInsumoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-2">
+        <select aria-label="Proteína" value={insumoId} onChange={(e) => setInsumoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           {proteinas.map((i) => (
             <option key={i.id} value={i.id}>{i.nome}</option>
           ))}
         </select>
-        <Input type="date" value={processadoEm} onChange={(e) => setProcessadoEm(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Responsável pelo corte" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-3" />
+        <Input type="date" aria-label="Data do processamento" value={processadoEm} onChange={(e) => setProcessadoEm(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input aria-label="Responsável pelo corte" placeholder="Responsável pelo corte" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2 md:col-span-3" />
       </div>
-      <div className="grid grid-cols-4 gap-2 mb-2">
-        <Input placeholder="Peso bruto recebido (kg)" type="number" value={pesoBrutoRecebido} onChange={(e) => setPesoBrutoRecebido(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Valor pago/kg (R$)" type="number" value={valorPagoKg} onChange={(e) => setValorPagoKg(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Peso líquido usável (kg)" type="number" value={pesoLiquidoResultante} onChange={(e) => setPesoLiquidoResultante(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input placeholder="Aparas reaproveitáveis (kg)" type="number" value={pesoAparasReaproveitaveis} onChange={(e) => setPesoAparasReaproveitaveis(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+        <Input aria-label="Peso bruto recebido (kg)" placeholder="Peso bruto recebido (kg)" type="number" value={pesoBrutoRecebido} onChange={(e) => setPesoBrutoRecebido(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input aria-label="Valor pago/kg (R$)" placeholder="Valor pago/kg (R$)" type="number" value={valorPagoKg} onChange={(e) => setValorPagoKg(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input aria-label="Peso líquido usável (kg)" placeholder="Peso líquido usável (kg)" type="number" value={pesoLiquidoResultante} onChange={(e) => setPesoLiquidoResultante(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input aria-label="Aparas reaproveitáveis (kg)" placeholder="Aparas reaproveitáveis (kg)" type="number" value={pesoAparasReaproveitaveis} onChange={(e) => setPesoAparasReaproveitaveis(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
       </div>
       <div className="flex items-center gap-3 mb-2">
-        <Input placeholder="Fornecedor (opcional)" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 flex-1" />
+        <Input aria-label="Fornecedor (opcional)" placeholder="Fornecedor (opcional)" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 flex-1" />
         {fcPreview && (
           <div className="text-[12.5px]" style={{ color: "var(--sub)" }}>
-            FC do lote: <b style={{ ...nums, color: "var(--text)" }}>{fcPreview.toFixed(3)}</b>
+            FC do lote: <b style={{ ...nums, color: "var(--text)" }}>{formatNumero(fcPreview, 3)}</b>
           </div>
         )}
         {descartePuro !== null && (
           <div className="text-[12.5px]" style={{ color: reconciliacaoInvalida ? "var(--danger)" : "var(--sub)" }}>
-            Descarte puro: <b style={{ ...nums, color: reconciliacaoInvalida ? "var(--danger)" : "var(--text)" }}>{descartePuro.toFixed(2)}kg</b>
+            Descarte puro: <b style={{ ...nums, color: reconciliacaoInvalida ? "var(--danger)" : "var(--text)" }}>{formatNumero(descartePuro, 2)}kg</b>
           </div>
         )}
       </div>

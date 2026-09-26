@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { acaoUploadFotoReceita } from "@/app/receitas/actions";
+import { reduzirImagem } from "@/lib/imagem/reduzirImagem";
 
 /** Picker de foto reutilizado pela foto principal do prato e pela foto de
  * cada etapa. Mostra preview local instantâneo (URL.createObjectURL) enquanto
@@ -51,7 +52,10 @@ export function UploadFoto({
 
     try {
       const formData = new FormData();
-      formData.set("arquivo", arquivo);
+      // POLIMENTO checklists-pracas: reduz a foto antes de subir. Antes ia o
+      // arquivo original, e foto de celular (3–8 MB) passava do limite de 1 MB
+      // das server actions. Reverter: voltar a `formData.set("arquivo", arquivo)`.
+      formData.set("arquivo", await reduzirImagem(arquivo));
       const resultado = await acaoUploadFotoReceita(formData);
       if (resultado.ok) {
         onChange(resultado.url);
@@ -100,7 +104,7 @@ export function UploadFoto({
       </div>
 
       <div className="flex items-center gap-2">
-        <input ref={inputRef} type="file" accept="image/*" onChange={selecionarArquivo} className="hidden" />
+        <input ref={inputRef} type="file" aria-label="Foto da receita" accept="image/*" onChange={selecionarArquivo} className="hidden" />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}

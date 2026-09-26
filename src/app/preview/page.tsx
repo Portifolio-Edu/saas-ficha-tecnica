@@ -1,9 +1,10 @@
 import Link from "next/link";
 import {
   Carrot, ClipboardList, LineChart, AlertTriangle,
-  CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator, ChefHat, Settings,
+  CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator, ChefHat, Settings, Plug, Users, MonitorSmartphone, CalendarDays,
 } from "lucide-react";
 import { NOME_RESTAURANTE } from "./fixtures";
+import { RecomecarDemo } from "./RecomecarDemo";
 
 const LINKS = [
   { href: "/preview/visao-geral", label: "Visão Geral", icon: LineChart, descricao: "KPIs, engenharia de cardápio e perdas do mês" },
@@ -17,6 +18,11 @@ const LINKS = [
   { href: "/preview/seguranca", label: "Segurança Alimentar", icon: Thermometer, descricao: "Temperaturas por local de armazenamento" },
   { href: "/preview/receitas", label: "Receitas & Fichas", icon: ClipboardList, descricao: "Fichas técnicas e precificação" },
   { href: "/preview/relatorios", label: "Relatórios", icon: AlertTriangle, descricao: "Indicadores e alertas consolidados" },
+  { href: "/preview/integracoes", label: "Integrações", icon: Plug, descricao: "PDVs, iFood e importação por XML fiscal ou planilha" },
+  // EQUIPE (2026-09-25)
+  { href: "/preview/escalas", label: "Escalas", icon: CalendarDays, descricao: "Escala do mês, folgas, prontuário e alertas de cobertura" },
+  { href: "/preview/equipe", label: "Equipe e acessos", icon: Users, descricao: "Dono, gestor, estoquista e cozinha: quem vê o quê" },
+  { href: "/preview/cozinha", label: "Modo cozinha", icon: MonitorSmartphone, descricao: "Tablet da cozinha sem senha e sem nenhum valor em R$" },
   { href: "/preview/configuracoes", label: "Configurações", icon: Settings, descricao: "Tema claro, escuro ou sistema" },
 ];
 
@@ -38,10 +44,13 @@ export default function PreviewIndexPage() {
             Demo interativa — dados fictícios
           </div>
           Esta é uma demonstração navegável do produto, usando os mesmos componentes de tela da versão
-          real, mas com dados de um restaurante fictício (&ldquo;{NOME_RESTAURANTE}&rdquo;) mantidos em
-          memória — nenhuma informação é salva em banco de dados. Filtros, abas, expansão de linhas e
-          gráficos funcionam normalmente; ações de salvar/excluir que dependem de login e banco de dados
-          não se aplicam aqui.
+          real, mas com dados de um restaurante fictício (&ldquo;{NOME_RESTAURANTE}&rdquo;). Nada vai pra
+          banco de dados: o que você registra fica só neste navegador. O que a cozinha registra (produção,
+          perda, checklist, temperatura, contagem) aparece no painel do gestor, como no sistema de verdade.
+          {/* DEMO (2026-09-25): texto antigo dizia que nada era salvo; agora a demo guarda no navegador. */}
+          <div>
+            <RecomecarDemo />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

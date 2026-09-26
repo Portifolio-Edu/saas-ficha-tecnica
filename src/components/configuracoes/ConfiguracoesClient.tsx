@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ficha/Card";
+import { DadosDaConta } from "./DadosDaConta";
 
 type Preferencia = "light" | "dark" | "system";
 
@@ -19,7 +20,8 @@ const OPCOES: { valor: Preferencia; label: string }[] = [
   { valor: "system", label: "Sistema" },
 ];
 
-export function ConfiguracoesClient() {
+/** `nomeRestaurante` só vem pro dono (LGPD: baixar e excluir os dados). */
+export function ConfiguracoesClient({ nomeRestaurante }: { nomeRestaurante?: string } = {}) {
   const [preferencia, setPreferencia] = useState<Preferencia>("system");
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function ConfiguracoesClient() {
   };
 
   return (
-    <div className="max-w-md">
+    <div className="max-w-md space-y-4">
       <Card className="p-5">
         <h2 className="text-[13px] font-semibold mb-1">Tema</h2>
         <p className="text-[12.5px] mb-4" style={{ color: "var(--sub)" }}>
@@ -70,6 +72,7 @@ export function ConfiguracoesClient() {
           ))}
         </div>
       </Card>
+      {nomeRestaurante && <DadosDaConta nomeRestaurante={nomeRestaurante} />}
     </div>
   );
 }

@@ -1,11 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabaseConfigurado } from "@/lib/supabase/config";
 
 // Refreshes the Supabase auth token on every request that isn't a static
 // asset (see the matcher in middleware.ts) and keeps the cookie in sync on
 // both the incoming request and the outgoing response.
 export async function updateSession(request: NextRequest) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (!supabaseConfigurado()) {
     return NextResponse.next({ request });
   }
 

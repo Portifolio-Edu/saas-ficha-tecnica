@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
-import type { FechamentoCmv, NovoFechamentoInput, VendaPeriodoLinha } from "@/lib/dominio/fechamentoCmv";
+import type { FechamentoCmv, FechamentoEstoque, NovoFechamentoInput, VendaPeriodoLinha } from "@/lib/dominio/fechamentoCmv";
 
-export type { FechamentoCmv, NovoFechamentoInput, VendaPeriodoLinha } from "@/lib/dominio/fechamentoCmv";
+export type { FechamentoCmv, FechamentoEstoque, NovoFechamentoInput, VendaPeriodoLinha } from "@/lib/dominio/fechamentoCmv";
 
 interface LinhaFechamento {
   id: string;
@@ -85,4 +85,30 @@ export async function criarFechamento(clienteId: string, input: NovoFechamentoIn
     vendas.map((v) => ({ fechamento_id: fechamentoId, receita_id: v.receitaId, quantidade: v.quantidade })),
   );
   if (erroVendas) throw new Error(mensagemErro(erroVendas));
+}
+
+interface LinhaFechamentoEstoque {
+  id: string;
+  periodo_inicio: string;
+  periodo_fim: string;
+  estoque_inicial: number;
+  compras: number;
+  estoque_final: number;
+}
+
+/** EQUIPE (2026-09-25): fechamentos sem faturamento, pro estoquista. A
+ * tabela fechamentos_cmv é só da gestão; a função devolve só as colunas de
+ * estoque. */
+export async function listarFechamentosEstoque(): Promise<FechamentoEstoque[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("fechamentos_cmv_estoque");
+  if (error) throw new Error(mensagemErro(error));
+  return ((data ?? []) as LinhaFechamentoEstoque[]).map((f) => ({
+    id: f.id,
+    periodoInicio: f.periodo_inicio,
+    periodoFim: f.periodo_fim,
+    estoqueInicial: Number(f.estoque_inicial),
+    compras: Number(f.compras),
+    estoqueFinal: Number(f.estoque_final),
+  }));
 }

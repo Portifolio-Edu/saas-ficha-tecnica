@@ -1,12 +1,29 @@
 import type { Metadata, Viewport } from "next";
+import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
+
+// SISTEMA premium (2026-09-22): Hanken Grotesk, grotesca neutra no tom do painel
+// Stripe, com algarismos tabulares por padrão (todos os dígitos têm a mesma
+// largura, então colunas de número alinham sozinhas) e espaço normal.
+// Testadas e descartadas: Mona Sans (o zero tabular vira um retângulo estreito
+// em peso alto), Schibsted (vírgula solta nos números), Onest e Host (largas
+// demais pra tabela densa). Antes: Plus Jakarta Sans (--fonte-jakarta), que o
+// Impeccable lista entre as fontes-padrão de app gerado por IA.
+const hanken = Hanken_Grotesk({
+  variable: "--fonte-app",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // CELULAR (2026-09-26): ocupa a tela toda no iPhone; a barra de baixo
+  // respeita a área do gesto (env(safe-area-inset-bottom)).
+  viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAFAFA" },
-    { media: "(prefers-color-scheme: dark)", color: "#0D0D0F" },
+    { media: "(prefers-color-scheme: light)", color: "#F6F6F7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0B0C" }, // SISTEMA: mesmo --fundo do tema escuro
   ],
 };
 
@@ -32,14 +49,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className={hanken.variable} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("tema");if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();`,

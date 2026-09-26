@@ -1,6 +1,9 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): temperatura de 30px bold para 28px semibold (numero-destaque). Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
 import { useState } from "react";
+import { formatQtd } from "@/components/charts/format";
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
@@ -14,6 +17,7 @@ import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temp
 import type { Insumo } from "@/lib/dominio/insumo";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirLocal } from "./actions";
+import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
 
 function formatarDataHora(iso: string): string {
   const d = new Date(iso);
@@ -48,7 +52,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
     <div className="max-w-5xl space-y-6">
       <div>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Locais de armazenamento</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Locais de armazenamento</h2>
           <button
             onClick={() => {
               setLocalEditando(null);
@@ -68,7 +72,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
           </Card>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {locais.map((local) => {
             const ultima = registros.find((r) => r.localArmazenamentoId === local.id);
             const foraDaFaixa = !!ultima && foraDaFaixaDoLocal(local, ultima.temperaturaC);
@@ -81,11 +85,14 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
                 ) : (
                   <>
                     <div className="text-[13px]" style={{ color: "var(--sub)" }}>{local.nome}</div>
-                    <div className="text-[30px] font-bold mt-1.5 leading-none" style={{ ...nums, color: foraDaFaixa ? "var(--danger)" : "var(--text)", letterSpacing: "-0.02em" }}>
-                      {ultima ? `${ultima.temperaturaC}°C` : "—"}
+                    <div className="text-[28px] font-semibold mt-1.5 leading-none" style={{ ...nums, color: foraDaFaixa ? "var(--danger)" : "var(--text)", letterSpacing: "-0.02em" }}>
+                      {ultima ? `${formatQtd(ultima.temperaturaC)}°C` : "—"}
                     </div>
                     <div className="text-[12px] mt-2" style={{ color: "var(--faint)" }}>
-                      faixa ideal: {local.temperaturaMinC ?? "—"}°C a {local.temperaturaMaxC ?? "—"}°C
+                      {/* SISTEMA premium: local sem faixa (estoque seco) dizia "faixa ideal: —°C a —°C". */}
+                      {local.temperaturaMinC == null && local.temperaturaMaxC == null
+                        ? "sem controle de temperatura"
+                        : `faixa ideal: ${local.temperaturaMinC != null ? formatQtd(local.temperaturaMinC) : "—"}°C a ${local.temperaturaMaxC != null ? formatQtd(local.temperaturaMaxC) : "—"}°C`}
                     </div>
                     {insumosDoLocal.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -124,7 +131,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
 
       <div>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-[14px] font-semibold">Temperatura de armazenamento</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Temperatura de armazenamento</h2>
           <button
             onClick={() => setShowNovaTemperatura(!showNovaTemperatura)}
             className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
@@ -161,7 +168,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
         </div>
 
         <Card className="p-6 mb-5">
-          <h2 className="text-[14px] font-semibold mb-1">Oscilação de temperatura{localSelecionado ? ` — ${localSelecionado.nome}` : ""}</h2>
+          <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">Oscilação de temperatura{localSelecionado ? ` — ${localSelecionado.nome}` : ""}</h2>
           <p className="text-[12px] mb-4" style={{ color: "var(--sub)" }}>
             Linhas tracejadas marcam os limites cadastrados pro local. Ponto maior e vermelho é leitura fora da faixa.
           </p>
@@ -173,7 +180,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
             <LineChart data={leiturasLocal} margin={CHART_MARGIN}>
               <CartesianGrid {...chartGridProps} />
               <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
-              <YAxis tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} unit="°" />
+              <YAxis tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={44} tickFormatter={(v: number) => `${formatQtd(v)}°`} />
               {localSelecionado?.temperaturaMinC != null && (
                 <ReferenceLine y={localSelecionado.temperaturaMinC} stroke="var(--border-strong)" strokeDasharray="4 4" label={{ value: "mín.", position: "insideBottomRight", fontSize: 10, fill: "var(--sub)" }} />
               )}
@@ -189,7 +196,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
                     <ChartTooltipCard
                       titulo={`${p.dataLabel} · ${p.responsavel}`}
                       linhas={[
-                        { rotulo: "Temperatura", valor: `${p.temperaturaC}°C`, destaque: fora },
+                        { rotulo: "Temperatura", valor: `${formatQtd(p.temperaturaC)}°C`, destaque: fora },
                         ...(p.nomeInsumo ? [{ rotulo: "Motivo", valor: p.nomeInsumo }] : []),
                       ]}
                     />
@@ -218,7 +225,24 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
           <div className="px-5 py-3.5" style={{ borderBottom: `1px solid ${"var(--border)"}` }}>
             <h2 className="text-[13px] font-semibold">Histórico de leituras</h2>
           </div>
-          <table className="w-full text-[12.5px]">
+          <ListaMovel rotulo="Histórico de leituras">
+            {registros.map((r) => {
+              const local = locais.find((l) => l.id === r.localArmazenamentoId);
+              const foraDaFaixa = foraDaFaixaDoLocal(local, r.temperaturaC);
+              return (
+                <ItemMovel
+                  key={r.id}
+                  titulo={r.nomeLocal}
+                  subtitulo={`${formatarDataHora(r.registradoEm)} · ${r.responsavel}${r.nomeInsumo ? ` · ${r.nomeInsumo}` : ""}`}
+                  valor={`${formatQtd(r.temperaturaC)}°C`}
+                  corValor={foraDaFaixa ? "var(--danger)" : undefined}
+                  detalhe={foraDaFaixa ? <span style={{ color: "var(--danger)" }}>fora da faixa</span> : undefined}
+                />
+              );
+            })}
+            {registros.length === 0 && <li className="py-6 px-4 text-center text-[14px]" style={{ color: "var(--faint)" }}>Nenhuma leitura registrada ainda.</li>}
+          </ListaMovel>
+          <table className="hidden md:table w-full text-[12.5px]">
             <thead>
               <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                 <th className="py-2.5 px-5 font-medium">Data</th>
@@ -239,7 +263,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{r.responsavel}</td>
                     <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{r.nomeInsumo ?? "—"}</td>
                     <td className="py-2.5 px-5 text-right font-medium" style={{ ...nums, color: foraDaFaixa ? "var(--danger)" : "var(--text)" }}>
-                      {r.temperaturaC}°C{foraDaFaixa && " · fora da faixa"}
+                      {formatQtd(r.temperaturaC)}°C{foraDaFaixa && " · fora da faixa"}
                     </td>
                   </tr>
                 );
