@@ -18,6 +18,9 @@ const hanken = Hanken_Grotesk({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // CELULAR (2026-09-26): ocupa a tela toda no iPhone; a barra de baixo
+  // respeita a área do gesto (env(safe-area-inset-bottom)).
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#F6F6F7" },
     { media: "(prefers-color-scheme: dark)", color: "#0B0B0C" }, // SISTEMA: mesmo --fundo do tema escuro

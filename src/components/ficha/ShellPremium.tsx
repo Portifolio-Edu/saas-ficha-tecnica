@@ -19,6 +19,13 @@
 //    (classes print:hidden / print:p-0), pro PDF do relatório sair só com o conteúdo.
 // Reverter só a casca: git revert do commit "polimento(shell-premium)"; os
 // arquivos AppShell.tsx e DemoShell.tsx voltam a ter o layout próprio.
+//
+// CELULAR (2026-09-26): dono, gestor e estoquista usam muito fora do
+// restaurante. No celular a navegação vai pra uma barra fixa embaixo (alcance
+// do polegar) com os 4 destinos mais usados do papel + "Menu" (o resto). O
+// botão de menu e o de tema saem do topo — sobra espaço pro título, que antes
+// aparecia cortado ("Visã..."). Tema fica dentro do Menu. Reverter: git revert
+// do commit "celular: navegação".
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -40,6 +47,20 @@ interface NavItem {
 
 // Mesmas rotas e grupos do hub que o usuário montou; só o rótulo dos grupos saiu
 // da caixa alta. O prefixo ("/preview" na demo) vem por prop.
+// Barra de baixo no celular: rótulo curto e ordem por uso fora do restaurante.
+const ATALHOS_GESTAO: { id: string; rotulo: string }[] = [
+  { id: "visao-geral", rotulo: "Início" },
+  { id: "estoque", rotulo: "Estoque" },
+  { id: "producoes", rotulo: "Produção" },
+  { id: "escalas", rotulo: "Escala" },
+];
+const ATALHOS_ESTOQUISTA: { id: string; rotulo: string }[] = [
+  { id: "estoque", rotulo: "Estoque" },
+  { id: "insumos", rotulo: "Insumos" },
+  { id: "proteinas", rotulo: "Proteínas" },
+  { id: "cmv", rotulo: "CMV" },
+];
+
 const GRUPOS: { titulo?: string; itens: NavItem[] }[] = [
   { itens: [{ id: "visao-geral", label: "Visão geral", icon: LineChart, rota: "/visao-geral" }] },
   {
@@ -117,6 +138,14 @@ export function ShellPremium({
     } catch {}
   };
 
+  const ITENS = GRUPOS.flatMap((g) => g.itens);
+  const atalhos = (papel === "estoquista" ? ATALHOS_ESTOQUISTA : ATALHOS_GESTAO).filter((a) => {
+    const item = ITENS.find((n) => n.id === a.id);
+    return item && podeAcessar(papel, item.rota);
+  });
+  // "Menu" aparece ativo quando a tela aberta não é um dos atalhos.
+  const atalhoAtivo = atalhos.some((a) => pathname.startsWith(`${prefixoRotas}${ITENS.find((n) => n.id === a.id)!.rota}`));
+
   const iniciais = (nomeRestaurante || "FT")
     .split(" ")
     .slice(0, 2)
@@ -178,6 +207,17 @@ export function ShellPremium({
         ))}
       </nav>
 
+      {/* Tema (no celular fica aqui; no computador, no topo) */}
+      <div className="md:hidden px-3 pb-2">
+        <button
+          onClick={alternarTema}
+          className="w-full flex items-center gap-2.5 px-2.5 min-h-11 rounded-lg text-[14px] text-[var(--tinta-sub)] hover:bg-[var(--panel-hover)]"
+        >
+          {tema === "dark" ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}
+          {tema === "dark" ? "Usar tema claro" : "Usar tema escuro"}
+        </button>
+      </div>
+
       {/* Restaurante */}
       <div className="p-3 border-t flex items-center gap-2.5" style={{ borderColor: "var(--linha)" }}>
         <div
@@ -229,13 +269,6 @@ export function ShellPremium({
           style={{ backgroundColor: "color-mix(in srgb, var(--fundo) 88%, transparent)", borderColor: "var(--linha)", backdropFilter: "blur(8px)" }}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <button
-              onClick={() => setMobileAberto(true)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg text-[var(--tinta-sub)] hover:bg-[var(--panel-hover)]"
-              aria-label="Abrir menu"
-            >
-              <Menu size={19} />
-            </button>
             <h1 className="text-[15px] font-semibold tracking-tight text-[var(--tinta)] truncate">{tituloPagina}</h1>
           </div>
 
@@ -243,7 +276,7 @@ export function ShellPremium({
             {extrasCabecalho}
             <button
               onClick={alternarTema}
-              className="w-10 h-10 flex items-center justify-center rounded-lg border text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
+              className="hidden md:flex w-10 h-10 items-center justify-center rounded-lg border text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
               style={{ borderColor: "var(--linha)", background: "var(--panel)" }}
               aria-label={tema === "dark" ? "Usar tema claro" : "Usar tema escuro"}
               title={tema === "dark" ? "Tema claro" : "Tema escuro"}
@@ -252,8 +285,43 @@ export function ShellPremium({
             </button>
           </div>
         </header>
-        <div className="p-4 md:p-8 print:p-0 flex-1 animate-fade-in">{children}</div>
+        <div className="p-4 pb-[calc(96px+env(safe-area-inset-bottom))] md:p-8 print:p-0 flex-1 animate-fade-in">{children}</div>
       </main>
+
+      {/* CELULAR (2026-09-26): barra de baixo. */}
+      <nav
+        aria-label="Atalhos"
+        className="md:hidden print:hidden fixed bottom-0 inset-x-0 z-30 border-t grid grid-cols-5"
+        style={{ backgroundColor: "color-mix(in srgb, var(--panel) 94%, transparent)", borderColor: "var(--linha)", backdropFilter: "blur(10px)", paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        {atalhos.map((a) => {
+          const item = ITENS.find((n) => n.id === a.id)!;
+          const href = `${prefixoRotas}${item.rota}`;
+          const ativo = pathname.startsWith(href);
+          const Icone = item.icon;
+          return (
+            <Link
+              key={a.id}
+              href={href}
+              aria-current={ativo ? "page" : undefined}
+              className="flex flex-col items-center justify-center gap-1 min-h-[60px] text-[11.5px] font-medium"
+              style={{ color: ativo ? "var(--tinta)" : "var(--tinta-faint)" }}
+            >
+              <Icone size={21} strokeWidth={ativo ? 2.1 : 1.8} style={{ color: ativo ? "var(--marca)" : undefined }} />
+              {a.rotulo}
+            </Link>
+          );
+        })}
+        <button
+          onClick={() => setMobileAberto(true)}
+          aria-expanded={mobileAberto}
+          className="flex flex-col items-center justify-center gap-1 min-h-[60px] text-[11.5px] font-medium"
+          style={{ color: atalhoAtivo ? "var(--tinta-faint)" : "var(--tinta)" }}
+        >
+          <Menu size={21} strokeWidth={atalhoAtivo ? 1.8 : 2.1} style={{ color: atalhoAtivo ? undefined : "var(--marca)" }} />
+          Menu
+        </button>
+      </nav>
       <ToastContainer />
     </div>
   );

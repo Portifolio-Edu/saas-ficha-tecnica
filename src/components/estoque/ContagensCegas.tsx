@@ -72,7 +72,7 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
             <li key={c.id} className="border-t first:border-t-0" style={{ borderColor: "var(--linha)" }}>
               <button
                 onClick={() => setAberta(expandida ? null : c.id)}
-                className="w-full px-5 py-3 flex items-center gap-3 text-left hover:bg-[var(--panel-hover)]"
+                className="w-full px-4 md:px-5 py-3 flex flex-wrap md:flex-nowrap items-center gap-x-3 gap-y-1 text-left hover:bg-[var(--panel-hover)]"
                 aria-expanded={expandida}
               >
                 {expandida ? <ChevronDown size={16} className="text-[var(--tinta-faint)]" /> : <ChevronRight size={16} className="text-[var(--tinta-faint)]" />}
@@ -92,8 +92,35 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
               </button>
 
               {expandida && (
-                <div className="px-5 pb-4">
-                  <div tabIndex={0} role="region" aria-label="Itens da contagem" className="overflow-x-auto">
+                <div className="px-4 md:px-5 pb-4">
+                  {/* CELULAR (2026-09-26): no celular, lista (item, contado × sistema, diferença). */}
+                  <ul aria-label="Itens da contagem" className="md:hidden">
+                    {c.itens.map((i) => {
+                      const dif = i.contada - i.sistema;
+                      const falta = dif < -0.0005;
+                      return (
+                        <li key={i.insumoId} className="py-2.5 border-t first:border-t-0 flex items-start justify-between gap-3" style={{ borderColor: "var(--linha)" }}>
+                          <div className="min-w-0">
+                            <div className="text-[15px] text-[var(--tinta)]">{i.nome}</div>
+                            <div className="text-[13px] text-[var(--tinta-sub)]" style={nums}>
+                              contou {formatQtd(i.contada)}{i.unidadeMedida} · sistema {formatQtd(i.sistema)}{i.unidadeMedida}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0" style={nums}>
+                            <div className="text-[15px] font-semibold" style={{ color: falta ? "var(--danger)" : "var(--tinta)" }}>
+                              {dif > 0 ? "+" : ""}{formatQtd(dif)}{i.unidadeMedida}
+                            </div>
+                            {Math.abs(dif) > 0.0005 && (
+                              <div className="text-[12.5px]" style={{ color: falta ? "var(--danger)" : "var(--tinta-faint)" }}>
+                                {falta ? "−" : ""}{formatBRL(Math.abs(dif * i.precoUnitario))}
+                              </div>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <div tabIndex={0} role="region" aria-label="Itens da contagem" className="hidden md:block overflow-x-auto">
                     <table className="w-full text-[13px]">
                       <thead>
                         <tr className="text-left text-[var(--tinta-faint)]">
@@ -130,7 +157,7 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
                       <button
                         onClick={() => aplicar(c)}
                         disabled={ocupado === c.id}
-                        className="text-[13px] font-medium px-3.5 min-h-9 rounded-lg disabled:opacity-60"
+                        className="text-[13px] font-medium px-3.5 min-h-11 md:min-h-9 rounded-lg disabled:opacity-60"
                         style={{ background: "var(--tinta)", color: "var(--panel)" }}
                       >
                         Ajustar estoque pela contagem
@@ -138,7 +165,7 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
                       <button
                         onClick={() => descartar(c)}
                         disabled={ocupado === c.id}
-                        className="text-[13px] font-medium px-3 min-h-9 rounded-lg border hover:bg-[var(--panel-hover)] disabled:opacity-60"
+                        className="text-[13px] font-medium px-3 min-h-11 md:min-h-9 rounded-lg border hover:bg-[var(--panel-hover)] disabled:opacity-60"
                         style={{ borderColor: "var(--linha-forte)" }}
                       >
                         Descartar

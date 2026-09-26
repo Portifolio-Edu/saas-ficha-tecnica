@@ -21,6 +21,7 @@ import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirFornecedor } from "./actions";
 import { abrirAgenteIaComFoco } from "@/components/ia/BotaoAgenteIa";
 import { formatBRL, formatQtd } from "@/components/charts/format";
+import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -102,7 +103,14 @@ export function EstoqueClient({
   const insumosRastreados = new Set(listaEstoque.map((e) => e.insumoId));
   const insumosDisponiveis = insumos.filter((i) => !insumosRastreados.has(i.id));
 
-  const estoqueFiltrado = listaEstoque.filter((e) => !buscaInsumo.trim() || e.nome.toLowerCase().includes(buscaInsumo.trim().toLowerCase()));
+  // CELULAR (2026-09-26): "o que preciso repor?" é a pergunta de quem abre o
+  // estoque fora do restaurante; o filtro responde num toque (vale no computador também).
+  const [soRepor, setSoRepor] = useState(false);
+  const aRepor = listaEstoque.filter((e) => e.saldoAtual < e.estoqueMinimo);
+  const valorParado = listaEstoque.reduce((t, e) => t + e.saldoAtual * e.precoUnitario, 0);
+  const estoqueFiltrado = listaEstoque.filter(
+    (e) => (!soRepor || e.saldoAtual < e.estoqueMinimo) && (!buscaInsumo.trim() || e.nome.toLowerCase().includes(buscaInsumo.trim().toLowerCase())),
+  );
 
   const excluirFornecedorComConfirmacao = async (fornecedor: Fornecedor) => {
     if (!window.confirm(`Excluir "${fornecedor.empresa}"? Isso não pode ser desfeito.`)) return;
@@ -114,9 +122,9 @@ export function EstoqueClient({
     <div className="max-w-5xl space-y-6">
       <ContagensCegas contagens={contagens} />
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
           <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Saldo em armazenamento</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {emModoDemo && (
             <button
               onClick={() => abrirAgenteIaComFoco()}
@@ -147,16 +155,61 @@ export function EstoqueClient({
           </Card>
         )}
 
-        <input
-          placeholder="Buscar insumo pelo nome..."
-          value={buscaInsumo}
-          onChange={(e) => setBuscaInsumo(e.target.value)}
-          className="text-[14px] px-3 min-h-[var(--alvo-toque)] rounded-lg mb-3 w-full max-w-xs"
-          style={inputStyle}
-        />
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <input
+            type="search"
+            aria-label="Buscar insumo pelo nome"
+            placeholder="Buscar insumo pelo nome..."
+            value={buscaInsumo}
+            onChange={(e) => setBuscaInsumo(e.target.value)}
+            className="text-[15px] md:text-[14px] px-3 min-h-[var(--alvo-toque)] rounded-lg w-full md:max-w-xs"
+            style={inputStyle}
+          />
+          <button
+            type="button"
+            onClick={() => setSoRepor(!soRepor)}
+            aria-pressed={soRepor}
+            className="text-[13px] font-medium px-3 min-h-10 rounded-lg border"
+            style={{
+              borderColor: soRepor ? "var(--danger)" : "var(--linha-forte)",
+              background: soRepor ? "color-mix(in srgb, var(--danger) 10%, transparent)" : "var(--panel)",
+              color: aRepor.length ? "var(--danger)" : "var(--tinta-sub)",
+            }}
+          >
+            {aRepor.length ? `Repor agora (${aRepor.length})` : "Nada abaixo do mínimo"}
+          </button>
+          <span className="text-[13px] text-[var(--tinta-sub)] ml-auto" style={nums}>
+            Valor parado: <strong className="text-[var(--tinta)]">{formatBRL(valorParado)}</strong>
+          </span>
+        </div>
 
         <Card>
-          <table className="w-full text-[12.5px]">
+          <ListaMovel rotulo="Saldo por insumo">
+            {estoqueFiltrado.map((e) => {
+              const abaixo = e.saldoAtual < e.estoqueMinimo;
+              const aberto = editandoInsumoId === e.insumoId;
+              return (
+                <ItemMovel
+                  key={e.insumoId}
+                  titulo={e.nome}
+                  subtitulo={CATEGORIAS.find((c) => c.id === e.categoria)?.label ?? e.categoria}
+                  valor={`${e.saldoAtual.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} ${e.unidadeMedida}`}
+                  corValor={abaixo ? "var(--danger)" : undefined}
+                  detalhe={abaixo ? `repor · mín. ${e.estoqueMinimo.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} ${e.unidadeMedida}` : `${formatBRL(e.saldoAtual * e.precoUnitario)} parado`}
+                  aberto={aberto}
+                  aoTocar={() => setEditandoInsumoId(aberto ? null : e.insumoId)}
+                >
+                  <EditarEstoqueForm bloco linha={e} onCancel={() => setEditandoInsumoId(null)} onSaved={() => setEditandoInsumoId(null)} />
+                </ItemMovel>
+              );
+            })}
+            {estoqueFiltrado.length === 0 && (
+              <li className="py-6 px-4 text-center text-[14px]" style={{ color: "var(--faint)" }}>
+                {soRepor ? "Nada abaixo do mínimo." : "Nenhum insumo rastreado ainda."}
+              </li>
+            )}
+          </ListaMovel>
+          <table className="hidden md:table w-full text-[12.5px]">
             <thead>
               <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
                 <th className="py-2.5 px-5 font-medium">Insumo</th>
@@ -203,9 +256,9 @@ export function EstoqueClient({
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
           <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Entradas e saídas</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {emModoDemo && (
             <button
               onClick={() => abrirAgenteIaComFoco()}
@@ -277,7 +330,7 @@ export function EstoqueClient({
         )}
 
         <Card>
-          <div className="px-5 py-1">
+          <div className="px-4 md:px-5 py-1">
             {listaMovimentacoes.map((m, idx) => {
               const isSaidaProducao = m.tipo === "saida_producao" || (!!m.origem && m.origem.toLowerCase().includes("produção"));
               const label = isSaidaProducao
@@ -291,12 +344,12 @@ export function EstoqueClient({
                 ? "var(--danger)"
                 : "var(--sub)";
               return (
-                <div key={m.id} className="flex items-center justify-between gap-3 text-[14px] py-3" style={{ borderTop: idx ? `1px solid ${"var(--border)"}` : "none" }}>
+                <div key={m.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 text-[14px] py-3" style={{ borderTop: idx ? `1px solid ${"var(--border)"}` : "none" }}>
                   <div>
                     <span className="font-medium text-[var(--tinta)]">{m.nomeInsumo}</span>
                     {m.origem && <span className="text-[var(--tinta-sub)] text-[13px]"> · {m.origem}</span>}
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span style={{ color: "var(--tinta-faint)" }}>{formatarData(m.criadoEm)}</span>
                     <span className="whitespace-nowrap" style={{ ...nums, color: cor, fontWeight: 600 }}>
                       {m.tipo === "entrada" ? "+" : "-"}{formatQtd(Math.abs(m.quantidade))}{m.unidadeMedida}
@@ -323,7 +376,7 @@ export function EstoqueClient({
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
           <h2 className="text-[16px] font-semibold text-[var(--tinta)]">Fornecedores</h2>
           <button
             onClick={() => {

@@ -56,13 +56,14 @@ export function BotaoAgenteIa({
           // SISTEMA premium: botão neutro da barra (borda 1px, 40px), no mesmo idioma do
           // botão de tema. Antes: pílula com degradê azul-violeta e ponto verde pulsando
           // (que sugeria "online" num agente que é só demonstração).
+          aria-label="Agente IA (demonstração)"
           className={`flex items-center gap-2 px-3 min-h-10 rounded-lg border text-[13px] font-medium transition-colors hover:bg-[var(--panel-hover)] ${className}`}
           style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}
           title="Demonstração do agente de IA (imagens, áudios e WhatsApp)"
         >
           <Bot size={16} style={{ color: "var(--marca)" }} />
           <span className="hidden sm:inline">Agente IA</span>
-          <span className="text-[11px] font-medium px-1.5 py-px rounded border" style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}>
+          <span className="hidden sm:inline text-[11px] font-medium px-1.5 py-px rounded border" style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}>
             demo
           </span>
         </button>

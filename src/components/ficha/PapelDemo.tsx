@@ -42,11 +42,11 @@ export function SeletorPapelDemo() {
   const { papel, setPapel } = usePapelDemo();
   return (
     <label
-      className="h-10 pl-3 pr-1 rounded-lg border inline-flex items-center gap-1.5 text-[13px] text-[var(--tinta-sub)]"
+      className="h-10 pl-2 sm:pl-3 pr-1 rounded-lg border inline-flex items-center gap-1.5 text-[13px] text-[var(--tinta-sub)]"
       style={{ borderColor: "var(--linha)", background: "var(--panel)" }}
       title="Ver a demonstração como outro papel da equipe"
     >
-      <Eye size={15} />
+      <Eye size={15} className="hidden sm:block" />
       <span className="hidden sm:inline">Ver como</span>
       <select
         value={papel}
