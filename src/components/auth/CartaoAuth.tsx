@@ -6,7 +6,7 @@ import { Card } from "@/components/ficha/Card";
 // nova senha), no mesmo desenho do login e do cadastro.
 export function CartaoAuth({ titulo, subtitulo, children }: { titulo: string; subtitulo?: string; children: ReactNode }) {
   return (
-    <div className="w-full min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg)" }}>
+    <main id="conteudo" className="w-full min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg)" }}>
       <div className="w-full max-w-sm flex flex-col items-center">
         <div className="flex flex-col items-center mb-6 text-center">
           <div className="w-11 h-11 rounded-lg flex items-center justify-center mb-3" style={{ background: "var(--tinta)", color: "var(--panel)" }}>
@@ -20,7 +20,7 @@ export function CartaoAuth({ titulo, subtitulo, children }: { titulo: string; su
           {children}
         </Card>
       </div>
-    </div>
+    </main>
   );
 }
 

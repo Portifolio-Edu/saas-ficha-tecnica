@@ -595,3 +595,29 @@ Supabase: sumiu o alerta de função chamável por visitante.
 
 **Reverter:** `git revert` do commit "segurança: revisão do PR inteiro" e
 `supabase/reverter/20260928100000_endurecimento.sql`.
+
+## 21. Plano 9,5 — etapa 3: acessibilidade e desempenho
+
+- **axe (WCAG 2.1 A/AA)** em 20 telas × tema claro, escuro e celular (60
+  varreduras, `e2e/acessibilidade.spec.ts`, roda no CI). Corrigido:
+  - contraste das etiquetas de status no tema claro (vermelho `#D92D20` →
+    `#B42318`, âmbar `#B45309` → `#92400E`, aviso `#B54708` → `#93370D`;
+    antes 3,9–4,5, abaixo do mínimo 4,5 do AA);
+  - campos de data do CMV, seleção de proteína e campos de arquivo sem rótulo;
+  - menu do celular fechado continuava no Tab (`inert`);
+  - tabelas com rolagem lateral inalcançáveis pelo teclado (`tabIndex` +
+    `role="region"` com nome);
+  - "Pular para o conteúdo" sem destino no login, cadastro, senha, termos,
+    tablet e erro (viraram `<main id="conteudo">`);
+  - animações respeitam "reduzir movimento" do aparelho.
+- **Lighthouse (celular, 4G simulado):** desempenho 94–100, acessibilidade,
+  boas práticas 100; SEO 100 (90 no login/cadastro: o Next 15 manda a
+  descrição depois do `<head>` em página dinâmica pra navegador comum — pra
+  buscador vai no `<head>`).
+  - Visão geral 86 → 95: a demo puxava todas as telas (inclusive a biblioteca
+    de gráficos, ~110 KB) pra qualquer página — agora import dinâmico; o modal
+    do agente de IA só baixa quando é aberto.
+  - Login e cadastro sem medida (NO_FCP) → 100: a entrada começava com
+    opacidade 0 e a tela ficava vazia até a animação rodar.
+
+**Reverter:** `git revert` do commit "acessibilidade e desempenho".

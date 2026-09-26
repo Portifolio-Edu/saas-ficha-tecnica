@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Bot, Sparkles, Mic, Camera } from "lucide-react";
-import { AgenteIaModal } from "./AgenteIaModal";
+
+// PLANO 9,5 (2026-09-28): o modal do agente (~40 KB) só baixa quando alguém
+// abre o agente pela primeira vez; antes vinha junto com toda página.
+const AgenteIaModal = dynamic(() => import("./AgenteIaModal").then((m) => m.AgenteIaModal), { ssr: false });
 
 export function BotaoAgenteIa({
   variante = "flutuante",
@@ -17,6 +21,11 @@ export function BotaoAgenteIa({
   escopo?: "completo" | "estoque";
 }) {
   const [aberto, setAberto] = useState(false);
+  const [jaAbriu, setJaAbriu] = useState(false);
+  const abrir = () => {
+    setJaAbriu(true);
+    setAberto(true);
+  };
   const [focoId, setFocoId] = useState<string | null>(null);
   const [focoNome, setFocoNome] = useState<string | null>(null);
 
@@ -26,7 +35,7 @@ export function BotaoAgenteIa({
       const detail = (e as CustomEvent<{ insumoId?: string; insumoNome?: string }>).detail || {};
       setFocoId(detail.insumoId || null);
       setFocoNome(detail.insumoNome || null);
-      setAberto(true);
+      abrir();
     };
 
     window.addEventListener("abrir-agente-ia", escutarAbertura);
@@ -43,7 +52,7 @@ export function BotaoAgenteIa({
     return (
       <>
         <button
-          onClick={() => setAberto(true)}
+          onClick={() => abrir()}
           // SISTEMA premium: botão neutro da barra (borda 1px, 40px), no mesmo idioma do
           // botão de tema. Antes: pílula com degradê azul-violeta e ponto verde pulsando
           // (que sugeria "online" num agente que é só demonstração).
@@ -58,14 +67,14 @@ export function BotaoAgenteIa({
           </span>
         </button>
 
-        <AgenteIaModal
+        {jaAbriu && <AgenteIaModal
           key={escopo}
           escopo={escopo}
           aberto={aberto}
           onFechar={fechar}
           insumoFocoId={focoId}
           insumoFocoNome={focoNome}
-        />
+        />}
       </>
     );
   }
@@ -74,7 +83,7 @@ export function BotaoAgenteIa({
     return (
       <>
         <button
-          onClick={() => setAberto(true)}
+          onClick={() => abrir()}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11.5px] font-extrabold transition-all ${className}`}
           style={{
             background: "rgba(124, 58, 237, 0.1)",
@@ -86,14 +95,14 @@ export function BotaoAgenteIa({
           <span>Preencher com IA</span>
         </button>
 
-        <AgenteIaModal
+        {jaAbriu && <AgenteIaModal
           key={escopo}
           escopo={escopo}
           aberto={aberto}
           onFechar={fechar}
           insumoFocoId={focoId}
           insumoFocoNome={focoNome}
-        />
+        />}
       </>
     );
   }
@@ -104,7 +113,7 @@ export function BotaoAgenteIa({
     <>
       <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 font-sans select-none">
         <button
-          onClick={() => setAberto(true)}
+          onClick={() => abrir()}
           className="group relative flex items-center gap-2.5 px-4 py-3 rounded-full text-white shadow-xl transition-all hover:scale-105 active:scale-95 border border-white/20"
           style={{
             background: "linear-gradient(135deg, #1E40AF 0%, #6D28D9 50%, #059669 100%)",
@@ -132,14 +141,14 @@ export function BotaoAgenteIa({
         </button>
       </div>
 
-      <AgenteIaModal
+      {jaAbriu && <AgenteIaModal
         key={escopo}
         escopo={escopo}
         aberto={aberto}
         onFechar={fechar}
         insumoFocoId={focoId}
         insumoFocoNome={focoNome}
-      />
+      />}
     </>
   );
 }

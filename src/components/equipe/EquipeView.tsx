@@ -330,7 +330,7 @@ function QuadroAcessos() {
       <div className="px-5 py-4 border-b" style={{ borderColor: "var(--linha)" }}>
         <h2 className="text-[15px] font-semibold text-[var(--tinta)]">O que cada papel vê</h2>
       </div>
-      <div className="overflow-x-auto">
+      <div tabIndex={0} role="region" aria-label="Acessos da equipe" className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>
             <tr className="text-[var(--tinta-faint)]">

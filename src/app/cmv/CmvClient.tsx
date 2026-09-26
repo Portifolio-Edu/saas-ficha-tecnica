@@ -313,9 +313,9 @@ export function CmvClient({
 
         <div className="flex items-center gap-2 mb-3">
           <span className="text-[11.5px]" style={{ color: "var(--faint)" }}>Período</span>
-          <input type="date" value={periodoInicio} onChange={(e) => setPeriodoInicio(e.target.value)} className="text-[12px] px-2 py-1 rounded-md" style={inputStyle} />
+          <input type="date" aria-label="Início do período" value={periodoInicio} onChange={(e) => setPeriodoInicio(e.target.value)} className="text-[12px] px-2 py-1 rounded-md" style={inputStyle} />
           <span className="text-[11.5px]" style={{ color: "var(--faint)" }}>até</span>
-          <input type="date" value={periodoFim} onChange={(e) => setPeriodoFim(e.target.value)} className="text-[12px] px-2 py-1 rounded-md" style={inputStyle} />
+          <input type="date" aria-label="Fim do período" value={periodoFim} onChange={(e) => setPeriodoFim(e.target.value)} className="text-[12px] px-2 py-1 rounded-md" style={inputStyle} />
           {periodoFim < periodoInicio && <span className="text-[11.5px]" style={{ color: "var(--danger)" }}>Fim não pode ser antes do início.</span>}
         </div>
 

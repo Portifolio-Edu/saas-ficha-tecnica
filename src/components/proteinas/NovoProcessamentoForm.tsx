@@ -62,12 +62,12 @@ export function NovoProcessamentoForm({
   return (
     <div className="px-5 py-4">
       <div className="grid grid-cols-6 gap-2 mb-2">
-        <select value={insumoId} onChange={(e) => setInsumoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+        <select aria-label="Proteína" value={insumoId} onChange={(e) => setInsumoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           {proteinas.map((i) => (
             <option key={i.id} value={i.id}>{i.nome}</option>
           ))}
         </select>
-        <Input type="date" value={processadoEm} onChange={(e) => setProcessadoEm(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input type="date" aria-label="Data do processamento" value={processadoEm} onChange={(e) => setProcessadoEm(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
         <Input placeholder="Responsável pelo corte" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-3" />
       </div>
       <div className="grid grid-cols-4 gap-2 mb-2">

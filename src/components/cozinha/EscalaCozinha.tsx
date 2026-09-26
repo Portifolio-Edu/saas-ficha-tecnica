@@ -105,7 +105,7 @@ function Grade({ escala, hoje }: { escala: EscalaPublica; hoje: DataISO }) {
         </button>
       </div>
 
-      <div className="rounded-xl border overflow-x-auto" style={{ borderColor: "var(--linha)", background: "var(--panel)" }}>
+      <div tabIndex={0} role="region" aria-label="Escala da equipe" className="rounded-xl border overflow-x-auto" style={{ borderColor: "var(--linha)", background: "var(--panel)" }}>
         <table className="w-full border-separate" style={{ borderSpacing: 0 }}>
           <thead>
             <tr>

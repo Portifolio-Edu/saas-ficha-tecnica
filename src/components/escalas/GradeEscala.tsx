@@ -58,7 +58,7 @@ export function GradeEscala({
 
   return (
     <div className="rounded-xl border overflow-hidden" style={{ background: "var(--panel)", borderColor: "var(--linha)" }}>
-      <div ref={rolagem} className="overflow-x-auto overscroll-x-contain">
+      <div tabIndex={0} role="region" aria-label="Escala da equipe" ref={rolagem} className="overflow-x-auto overscroll-x-contain">
         <table className="w-full border-separate" style={{ borderSpacing: 0 }}>
           <thead>
             <tr>

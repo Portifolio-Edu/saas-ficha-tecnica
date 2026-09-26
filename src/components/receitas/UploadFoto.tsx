@@ -104,7 +104,7 @@ export function UploadFoto({
       </div>
 
       <div className="flex items-center gap-2">
-        <input ref={inputRef} type="file" accept="image/*" onChange={selecionarArquivo} className="hidden" />
+        <input ref={inputRef} type="file" aria-label="Foto da receita" accept="image/*" onChange={selecionarArquivo} className="hidden" />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}

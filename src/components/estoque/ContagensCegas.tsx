@@ -93,7 +93,7 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
 
               {expandida && (
                 <div className="px-5 pb-4">
-                  <div className="overflow-x-auto">
+                  <div tabIndex={0} role="region" aria-label="Itens da contagem" className="overflow-x-auto">
                     <table className="w-full text-[13px]">
                       <thead>
                         <tr className="text-left text-[var(--tinta-faint)]">

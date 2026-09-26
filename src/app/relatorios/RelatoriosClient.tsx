@@ -617,7 +617,7 @@ export function RelatoriosClient({
               titulo="Pratos vendidos no período"
               subtitulo="Ordenados por faturamento. A última coluna é quanto faltou pra cada prato bater a própria meta de margem."
             >
-              <div className="overflow-x-auto">
+              <div tabIndex={0} role="region" aria-label="Tabela do relatório" className="overflow-x-auto">
                 <table className="w-full text-[14px] min-w-[640px]">
                   <thead>
                     <tr className="text-left">
@@ -696,7 +696,7 @@ export function RelatoriosClient({
               {porResponsavel.length === 0 ? (
                 <p className="px-5 pb-5 text-[14px] text-[var(--tinta-sub)]">Ninguém registrou produção, lote de proteína ou temperatura neste período.</p>
               ) : (
-                <div className="overflow-x-auto">
+                <div tabIndex={0} role="region" aria-label="Tabela do relatório" className="overflow-x-auto">
                   <table className="w-full text-[14px] min-w-[640px]">
                     <thead>
                       <tr className="text-left">

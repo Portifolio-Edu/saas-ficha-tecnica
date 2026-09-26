@@ -28,12 +28,15 @@
   --tinta-sub: #4A4D55;
   --tinta-faint: #6B6F78;
 
-  /* Status: tons do padrão Stripe/Untitled, legíveis como texto em fundo claro. */
-  --sinal: #D92D20;
-  --sinal-glow: rgba(217, 45, 32, 0.2);
+  /* Status: tons do padrão Stripe/Untitled, legíveis como texto em fundo claro.
+     PLANO 9,5 (2026-09-28): um tom mais escuro (antes #D92D20 / #B54708): o
+     axe acusou contraste 3,9–4,5 nas etiquetas sobre fundo tingido; WCAG AA
+     pede 4,5. Reverter: voltar os dois valores. */
+  --sinal: #B42318;
+  --sinal-glow: rgba(180, 35, 24, 0.2);
   --sucesso: #067647;
   --sucesso-glow: rgba(6, 118, 71, 0.2);
-  --aviso: #B54708;
+  --aviso: #93370D;
 
   /* Único acento da marca: violeta-índigo, só para foco, seleção e item ativo.
      Não usar em botão primário (que é tinta) nem pra decorar. */
@@ -88,7 +91,7 @@
   --etapa-estoque: #2563EB;
   --etapa-estoque-texto: #1D4ED8;
   --etapa-producao: #D97706;
-  --etapa-producao-texto: #B45309;
+  --etapa-producao-texto: #92400E; /* antes #B45309 (contraste 3,9–4,4 no fundo tingido) */
   --etapa-produzido: #059669;
   --etapa-produzido-texto: #047857;
   --etapa-perda: #DC2626;
@@ -265,9 +268,13 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* PLANO 9,5 (2026-09-28): a entrada só desliza, sem começar invisível. Com
+   opacity 0 no início, a tela de login/cadastro inteira ficava sem conteúdo
+   visível até a animação rodar (Lighthouse: NO_FCP; atrasa a 1ª pintura).
+   Reverter: voltar "opacity: 0" no from e "opacity: 1" no to. */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { transform: translateY(12px); }
+  to { transform: translateY(0); }
 }
 
 @keyframes shimmer {
@@ -346,4 +353,17 @@ thead th {
 @media print {
   html, body, body > div, main { background: #fff !important; }
   section, .rounded-xl { box-shadow: none !important; }
+}
+
+/* PLANO 9,5 (2026-09-28): quem pede "reduzir movimento" no aparelho não vê
+   animação nem transição (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

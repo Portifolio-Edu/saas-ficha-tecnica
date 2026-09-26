@@ -850,6 +850,7 @@ export function AgenteIaModal({
                 <div className="flex items-center gap-2">
                   <input
                     type="file"
+                    aria-label="Imagem pro agente"
                     ref={fileInputRef}
                     onChange={handleSelecionarImagem}
                     accept="image/*"

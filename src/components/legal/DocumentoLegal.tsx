@@ -7,7 +7,7 @@ import { VERSAO_TERMOS } from "@/lib/auth/termos";
 export function DocumentoLegal({ titulo, children }: { titulo: string; children: ReactNode }) {
   const [a, m, d] = VERSAO_TERMOS.split("-");
   return (
-    <div className="w-full min-h-screen" style={{ background: "var(--bg)", color: "var(--tinta)" }}>
+    <main id="conteudo" className="w-full min-h-screen" style={{ background: "var(--bg)", color: "var(--tinta)" }}>
       <div className="max-w-3xl mx-auto px-5 py-10">
         <Link href="/" className="inline-flex items-center gap-2 text-[15px] font-semibold mb-8">
           <span className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: "var(--tinta)", color: "var(--panel)" }}>
@@ -24,7 +24,7 @@ export function DocumentoLegal({ titulo, children }: { titulo: string; children:
           <Link href="/login" className="hover:text-[var(--tinta)]">Entrar</Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

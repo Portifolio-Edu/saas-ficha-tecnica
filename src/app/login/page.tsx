@@ -9,8 +9,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { aviso } = await searchParams;
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg)" }}>
+    <main id="conteudo" className="w-full min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg)" }}>
       <LoginForm linkInvalido={aviso === "link-invalido"} />
-    </div>
+    </main>
   );
 }

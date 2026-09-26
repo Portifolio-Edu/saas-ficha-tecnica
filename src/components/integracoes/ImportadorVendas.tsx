@@ -197,7 +197,7 @@ export function ImportadorVendas({
               NFC-e ou SAT. Todo PDV emite; peça o lote do período ao PDV ou ao contador. Dá pra escolher todos os arquivos de uma vez. Notas canceladas e
               repetidas ficam de fora sozinhas.
             </p>
-            <input ref={xmlRef} type="file" accept=".xml,text/xml,application/xml,.zip" multiple className="hidden" onChange={escolherXml} />
+            <input ref={xmlRef} type="file" aria-label="Arquivos XML das notas" accept=".xml,text/xml,application/xml,.zip" multiple className="hidden" onChange={escolherXml} />
             <div className="flex flex-wrap gap-2 mt-4">
               <button
                 onClick={() => xmlRef.current?.click()}
@@ -227,7 +227,7 @@ export function ImportadorVendas({
             <p className="text-[13px] text-[var(--tinta-sub)] mt-1.5 flex-1">
               O relatório de vendas por produto que o PDV exporta, em CSV. Você confirma quais colunas são produto, quantidade e valor.
             </p>
-            <input ref={csvRef} type="file" accept=".csv,text/csv,.txt,.xls,.xlsx" className="hidden" onChange={escolherCsv} />
+            <input ref={csvRef} type="file" aria-label="Planilha de vendas" accept=".csv,text/csv,.txt,.xls,.xlsx" className="hidden" onChange={escolherCsv} />
             <div className="mt-4">
               <button
                 onClick={() => csvRef.current?.click()}
@@ -289,7 +289,7 @@ export function ImportadorVendas({
             </label>
           ))}
         </div>
-        <div className="overflow-x-auto border-t" style={{ borderColor: "var(--linha)" }}>
+        <div tabIndex={0} role="region" aria-label="Vendas importadas" className="overflow-x-auto border-t" style={{ borderColor: "var(--linha)" }}>
           <table className="w-full text-[13px]">
             <thead>
               <tr className="text-left">
@@ -371,7 +371,7 @@ export function ImportadorVendas({
         </details>
       )}
 
-      <div className="overflow-x-auto">
+      <div tabIndex={0} role="region" aria-label="Produtos do PDV e fichas" className="overflow-x-auto">
         <table className="w-full text-[14px] min-w-[680px]">
           <thead>
             <tr className="text-left">

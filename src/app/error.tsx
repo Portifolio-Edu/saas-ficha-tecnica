@@ -16,7 +16,7 @@ export default function Erro({ error, reset }: { error: Error & { digest?: strin
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "var(--fundo)", color: "var(--tinta)" }}>
+    <main id="conteudo" className="min-h-screen flex items-center justify-center p-6" style={{ background: "var(--fundo)", color: "var(--tinta)" }}>
       <div className="w-full max-w-md rounded-xl border p-7" style={{ background: "var(--panel)", borderColor: "var(--linha)" }}>
         <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: "color-mix(in srgb, var(--etapa-perda) 14%, transparent)", color: "var(--etapa-perda-texto)" }}>
           <AlertTriangle size={20} />
@@ -39,6 +39,6 @@ export default function Erro({ error, reset }: { error: Error & { digest?: strin
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -422,7 +422,7 @@ function BlocoArea({
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         {/* Fotos da área */}
         <div className="p-5 lg:border-r" style={{ borderColor: "var(--linha)" }}>
-          <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={escolherArquivo} />
+          <input ref={inputRef} type="file" aria-label="Foto da praça" accept="image/*" className="hidden" onChange={escolherArquivo} />
           {rascunho ? (
             <div className="rounded-lg border p-3 flex flex-col sm:flex-row gap-3" style={{ borderColor: "var(--linha-forte)", background: "var(--panel-elevated)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}

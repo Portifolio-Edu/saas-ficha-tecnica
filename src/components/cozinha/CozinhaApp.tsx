@@ -165,7 +165,7 @@ export function CozinhaApp({
 
       {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda.
           FICHAS (2026-09-25): Fichas usa 2 colunas (foto e ingredientes | passo a passo). */}
-      <main className={`flex-1 w-full mx-auto px-4 py-5 ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas" || aba === "escala") ? "max-w-6xl" : "max-w-4xl"}`}>
+      <main id="conteudo" className={`flex-1 w-full mx-auto px-4 py-5 ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas" || aba === "escala") ? "max-w-6xl" : "max-w-4xl"}`}>
         {!responsavel || trocando ? (
           <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
         ) : aba === "checklists" ? (

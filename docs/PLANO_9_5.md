@@ -54,7 +54,8 @@ reais (telefone repetido no cadastro; "Link expirado" na recuperação de senha)
       (11 achados, todos corrigidos — `docs/SEGURANCA.md`).
 - [x] Alertas do Supabase: funções `auth_*` sem execução pra visitante; revisar
       cada função `security definer`.
-- [ ] Acessibilidade (axe) e desempenho (Lighthouse) nas telas principais.
+- [x] Acessibilidade (axe) e desempenho (Lighthouse) nas telas principais
+      (axe: 60 varreduras sem violação séria; Lighthouse 94–100).
 - [ ] LGPD: exportar e excluir os dados do restaurante.
 - [ ] Erros de produção registrados (monitoramento).
 - [ ] PR #1 integrado na `main` (versão 1.0) com tudo verde.

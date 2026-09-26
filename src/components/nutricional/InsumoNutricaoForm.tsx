@@ -126,6 +126,7 @@ export function InsumoNutricaoForm({
         <div className="flex items-center gap-2">
           <input
             type="file"
+            aria-label="Foto do rótulo"
             ref={fileInputRef}
             onChange={simularLeituraRotulo}
             accept="image/*"

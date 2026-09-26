@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="w-full min-h-screen flex items-center justify-center px-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
+    <main id="conteudo" className="w-full min-h-screen flex items-center justify-center px-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
       <div className="max-w-sm text-center">
         <div className="text-[13px] font-semibold mb-2" style={{ color: "var(--faint)" }}>Erro 404</div>
         <h1 className="text-[22px] font-semibold mb-2" style={{ letterSpacing: "-0.01em" }}>Página não encontrada</h1>
@@ -18,6 +18,6 @@ export default function NotFound() {
           Voltar ao início
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

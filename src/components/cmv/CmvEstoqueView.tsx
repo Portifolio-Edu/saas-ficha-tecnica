@@ -51,7 +51,7 @@ export function CmvEstoqueView({ fechamentos }: { fechamentos: FechamentoEstoque
           <h2 className="text-[15px] font-semibold text-[var(--tinta)]">Períodos fechados</h2>
           <p className="text-[13px] text-[var(--tinta-sub)] mt-0.5">Consumo = estoque inicial + compras − estoque final.</p>
         </div>
-        <div className="overflow-x-auto">
+        <div tabIndex={0} role="region" aria-label="Fechamentos de estoque" className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="text-left text-[var(--tinta-faint)]">
