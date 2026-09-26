@@ -1,4 +1,4 @@
-// PLANO 9,5, etapa 3 (2026-09-28): LGPD — o dono baixa todos os dados do
+// PLANO 9,5, etapa 3 (2026-09-26): LGPD — o dono baixa todos os dados do
 // restaurante e pode apagar tudo (art. 18: acesso, portabilidade e
 // eliminação). A exportação roda com a sessão do dono: a RLS garante que só
 // sai o que é do restaurante dele. A exclusão usa a service role, depois de

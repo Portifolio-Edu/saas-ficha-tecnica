@@ -215,7 +215,7 @@ export function ShellPremium({
         }`}
         style={{ backgroundColor: "var(--panel)", borderColor: "var(--linha)" }}
         aria-hidden={!mobileAberto}
-        // PLANO 9,5 (2026-09-28): fechado, o menu sai também do Tab (antes o
+        // PLANO 9,5 (2026-09-26): fechado, o menu sai também do Tab (antes o
         // teclado entrava nos links escondidos fora da tela — axe
         // aria-hidden-focus).
         inert={!mobileAberto}

@@ -1,7 +1,7 @@
 import { criarClienteAdmin, serviceRoleConfigurada } from "@/lib/supabase/admin";
 import { montarRegistro } from "./registro";
 
-// PLANO 9,5, etapa 3 (2026-09-28): grava o erro em erros_sistema e no log.
+// PLANO 9,5, etapa 3 (2026-09-26): grava o erro em erros_sistema e no log.
 // Nunca lança: se o banco falhar, o erro original não pode virar outro erro.
 // Só no servidor (usa a service role).
 

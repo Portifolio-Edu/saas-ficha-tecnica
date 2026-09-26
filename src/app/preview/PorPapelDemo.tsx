@@ -8,7 +8,7 @@
 // geral) e contagens cegas (Estoque). Produções e Estoque já liam direto.
 // O `key={versao}` remonta a tela quando o dado muda, porque algumas só leem
 // as props na montagem.
-// PLANO 9,5 (2026-09-28): cada tela entra por import dinâmico (continua
+// PLANO 9,5 (2026-09-26): cada tela entra por import dinâmico (continua
 // renderizando no servidor). Antes este arquivo puxava todas as telas pra
 // qualquer página da demo — a Visão geral carregava a biblioteca de gráficos
 // do CMV (~110 KB) sem usar. Lighthouse: desempenho 86 → ver docs/POLIMENTO §21.

@@ -1,4 +1,4 @@
--- PLANO 9,5, etapa 3 (2026-09-28): endurecimento do banco, achados da revisão
+-- PLANO 9,5, etapa 3 (2026-09-26): endurecimento do banco, achados da revisão
 -- de segurança do PR inteiro. Nenhum restaurante real no ar quando foi aplicada.
 --
 --  1. Referência cruzada entre restaurantes. As policies conferem o dono da

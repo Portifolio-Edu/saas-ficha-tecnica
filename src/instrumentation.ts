@@ -1,4 +1,4 @@
-// PLANO 9,5, etapa 3 (2026-09-28): todo erro do servidor (página, server
+// PLANO 9,5, etapa 3 (2026-09-26): todo erro do servidor (página, server
 // action, rota) é gravado em erros_sistema — ver src/lib/monitoramento.
 import type { Instrumentation } from "next";
 

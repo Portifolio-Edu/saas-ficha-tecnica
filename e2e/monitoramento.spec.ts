@@ -1,4 +1,4 @@
-// PLANO 9,5, etapa 3 (2026-09-28): erro de servidor em produção vira linha em
+// PLANO 9,5, etapa 3 (2026-09-26): erro de servidor em produção vira linha em
 // erros_sistema, com o mesmo código que a pessoa vê na tela. Caso real: a
 // pessoa confirma o e-mail depois que outro restaurante pegou o WhatsApp dela.
 import { test, expect } from "@playwright/test";

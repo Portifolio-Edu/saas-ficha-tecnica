@@ -3,7 +3,7 @@ import { getClienteAtual } from "@/lib/dados/cliente";
 import { exportarDadosRestaurante } from "@/lib/dados/conta";
 import { createClient } from "@/lib/supabase/server";
 
-// PLANO 9,5, etapa 3 (2026-09-28): LGPD — download de todos os dados do
+// PLANO 9,5, etapa 3 (2026-09-26): LGPD — download de todos os dados do
 // restaurante em JSON (acesso e portabilidade). Só o dono.
 export async function GET() {
   const cliente = await getClienteAtual();

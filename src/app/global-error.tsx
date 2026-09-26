@@ -1,6 +1,6 @@
 "use client";
 
-// PLANO 9,5, etapa 3 (2026-09-28): erro no próprio layout raiz (a tela de erro
+// PLANO 9,5, etapa 3 (2026-09-26): erro no próprio layout raiz (a tela de erro
 // normal depende dele). Sem os estilos do sistema: só o essencial, legível.
 import { useEffect } from "react";
 import { acaoRegistrarErroNavegador } from "@/lib/monitoramento/acoes";

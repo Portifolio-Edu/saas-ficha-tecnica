@@ -1,6 +1,6 @@
 "use client";
 
-// PLANO 9,5, etapa 3 (2026-09-28): LGPD na tela Configurações, só pro dono.
+// PLANO 9,5, etapa 3 (2026-09-26): LGPD na tela Configurações, só pro dono.
 // Baixar tudo (JSON) e excluir o restaurante (confirmando pelo nome).
 
 import { useActionState, useState } from "react";

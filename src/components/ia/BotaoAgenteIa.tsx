@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Bot, Sparkles, Mic, Camera } from "lucide-react";
 
-// PLANO 9,5 (2026-09-28): o modal do agente (~40 KB) só baixa quando alguém
+// PLANO 9,5 (2026-09-26): o modal do agente (~40 KB) só baixa quando alguém
 // abre o agente pela primeira vez; antes vinha junto com toda página.
 const AgenteIaModal = dynamic(() => import("./AgenteIaModal").then((m) => m.AgenteIaModal), { ssr: false });
 

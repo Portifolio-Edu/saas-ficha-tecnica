@@ -1,4 +1,4 @@
--- PLANO 9,5, etapa 3 (2026-09-28): monitoramento de erros de produção.
+-- PLANO 9,5, etapa 3 (2026-09-26): monitoramento de erros de produção.
 -- Antes, erro no servidor só ficava no log da Vercel (some em dias e ninguém
 -- é avisado). Agora cada erro vira uma linha aqui (src/lib/monitoramento.ts):
 -- do servidor (instrumentation.ts → onRequestError) e da tela de erro no

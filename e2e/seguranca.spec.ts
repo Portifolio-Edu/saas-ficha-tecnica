@@ -1,4 +1,4 @@
-// PLANO 9,5 (2026-09-28): proteções da etapa 3 vistas de fora, como um
+// PLANO 9,5 (2026-09-26): proteções da etapa 3 vistas de fora, como um
 // navegador ou um atacante veria. Complementa supabase/testes/endurecimento.sql.
 import { test, expect } from "@playwright/test";
 

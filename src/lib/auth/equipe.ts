@@ -6,7 +6,7 @@
 // mesmo domínio com um nome sorteado.
 // Onde mexer: DOMINIO_EQUIPE (trocar quebra o login de quem já foi criado).
 //
-// PLANO 9,5 (2026-09-28): o domínio era "equipe.fichatecnica.app", que não é
+// PLANO 9,5 (2026-09-26): o domínio era "equipe.fichatecnica.app", que não é
 // nosso. Quem registrasse esse domínio receberia o link de "esqueci minha
 // senha" de qualquer gestor/estoquista (o usuário é fácil de adivinhar) e
 // tomaria a conta. ".invalid" é reservado (RFC 6761): ninguém registra e

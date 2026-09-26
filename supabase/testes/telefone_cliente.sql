@@ -18,7 +18,7 @@ do $$ begin
   exception when others then insert into resultado values ('trava: telefone fora do formato','bloqueado','bloqueado'); end;
 end $$;
 
--- Só o servidor (service role) pergunta se o número está livre (2026-09-28).
+-- Só o servidor (service role) pergunta se o número está livre (2026-09-26).
 set local role service_role;
 insert into resultado select 'servidor: número já usado (outro formato)', 'false', telefone_disponivel('11987654321')::text;
 insert into resultado select 'servidor: número livre', 'true', telefone_disponivel('(21) 99999-0000')::text;

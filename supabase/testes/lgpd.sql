@@ -1,4 +1,4 @@
--- Teste da exclusão do restaurante (LGPD, 2026-09-28): um restaurante com
+-- Teste da exclusão do restaurante (LGPD, 2026-09-26): um restaurante com
 -- todas as ligações que não apagam em cascata some inteiro; o vizinho fica.
 -- Roda numa transação e desfaz no fim. Toda linha precisa sair OK.
 begin;

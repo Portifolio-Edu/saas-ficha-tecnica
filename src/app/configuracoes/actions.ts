@@ -6,7 +6,7 @@ import { excluirRestaurante } from "@/lib/dados/conta";
 import { createClient } from "@/lib/supabase/server";
 import { serviceRoleConfigurada } from "@/lib/supabase/admin";
 
-// PLANO 9,5, etapa 3 (2026-09-28): LGPD — o dono apaga o restaurante e tudo o
+// PLANO 9,5, etapa 3 (2026-09-26): LGPD — o dono apaga o restaurante e tudo o
 // que está nele. Confirma digitando o nome do restaurante; a exclusão usa a
 // service role (apaga logins e fotos), então confere o papel antes.
 

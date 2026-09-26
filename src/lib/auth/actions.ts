@@ -69,7 +69,7 @@ export async function cadastrar(_estado: EstadoAuth, formData: FormData): Promis
 
   const supabase = await createClient();
 
-  // PLANO 9,5 (2026-09-28): a conferência roda com a service role (só o
+  // PLANO 9,5 (2026-09-26): a conferência roda com a service role (só o
   // servidor pode perguntar se um número é cliente; visitante não). Sem a
   // chave configurada, pula a conferência e o índice único do banco segura
   // (a conta recém-criada é desfeita logo abaixo).

@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 
-// PLANO 9,5 (2026-09-28): cabeçalhos de segurança em todas as páginas (antes
+// PLANO 9,5 (2026-09-26): cabeçalhos de segurança em todas as páginas (antes
 // não havia nenhum). O principal: nenhum site de fora consegue abrir o sistema
 // dentro de um quadro (iframe) pra enganar o clique de quem está logado.
 // A CSP aqui é a parte que não quebra nada (quadros, <base>, formulários,

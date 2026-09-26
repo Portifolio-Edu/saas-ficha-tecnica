@@ -1,6 +1,6 @@
 # Segurança
 
-Revisão do PR inteiro na etapa 3 do plano 9,5 (2026-09-28). Cada achado com o
+Revisão do PR inteiro na etapa 3 do plano 9,5 (2026-09-26). Cada achado com o
 que foi feito, onde está e como testar. Testes: `supabase/testes/endurecimento.sql`
 (banco) e `e2e/seguranca.spec.ts` (de fora, como navegador/atacante).
 

@@ -274,7 +274,7 @@ test.describe.serial("com login real", () => {
     expect(extra).toMatchObject({ telefone: "5511987654321", nivel: "senior", pracas: ["Chapa"], aceita_whatsapp: true });
     expect(extra!.consentimento_em, "data do consentimento gravada").toBeTruthy();
   });
-  // PLANO 9,5, etapa 3 (2026-09-28): LGPD — baixar e excluir os dados.
+  // PLANO 9,5, etapa 3 (2026-09-26): LGPD — baixar e excluir os dados.
   test("só o dono baixa todos os dados do restaurante, sem segredo técnico", async ({ page }) => {
     await entrar(page, estoquista.usuario, estoquista.senha);
     expect((await page.request.get("/conta/exportar")).status()).toBe(403);

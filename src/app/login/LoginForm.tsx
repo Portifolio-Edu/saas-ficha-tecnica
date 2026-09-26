@@ -46,7 +46,7 @@ export function LoginForm({ linkInvalido = false, contaExcluida = false }: { lin
         )}
         {contaExcluida && (
           <div role="status" className="text-[13px] rounded-lg px-3 py-2.5 mb-4" style={{ background: "color-mix(in srgb, var(--sucesso) 10%, transparent)", color: "var(--tinta)" }}>
-            {/* PLANO 9,5 (2026-09-28): volta da exclusão da conta (LGPD). */}
+            {/* PLANO 9,5 (2026-09-26): volta da exclusão da conta (LGPD). */}
             Restaurante excluído. Os dados, as fotos e os acessos da equipe foram apagados.
           </div>
         )}

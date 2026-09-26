@@ -1,4 +1,4 @@
--- PLANO 9,5, etapa 3 (2026-09-28): LGPD — apagar o restaurante inteiro.
+-- PLANO 9,5, etapa 3 (2026-09-26): LGPD — apagar o restaurante inteiro.
 -- Só "delete from clientes" não basta: algumas ligações não apagam em
 -- cascata de propósito (insumo usado em ficha, receita com produção, turno com
 -- checklist…), pra que no dia a dia não dê pra apagar um item em uso. Aqui a

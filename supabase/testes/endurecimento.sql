@@ -1,4 +1,4 @@
--- Teste do endurecimento da etapa 3 (2026-09-28): referência cruzada entre
+-- Teste do endurecimento da etapa 3 (2026-09-26): referência cruzada entre
 -- restaurantes, colunas protegidas, carimbo de autoria e funções fora da API.
 -- Roda numa transação e desfaz no fim. Toda linha precisa sair OK.
 begin;
@@ -116,7 +116,7 @@ do $$ begin
   exception when others then insert into resultado values ('logado ainda usa as funções de papel (policies)','ok','falhou'); end;
 end $$;
 
--- Erros do sistema (2026-09-28): só a service role lê e grava.
+-- Erros do sistema (2026-09-26): só a service role lê e grava.
 do $$ begin
   begin perform count(*) from erros_sistema;
     insert into resultado values ('logado lê a tabela de erros','bloqueado','PASSOU (falha)');

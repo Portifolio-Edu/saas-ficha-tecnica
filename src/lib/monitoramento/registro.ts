@@ -1,4 +1,4 @@
-// PLANO 9,5, etapa 3 (2026-09-28): monta a linha de erro que vai pro banco
+// PLANO 9,5, etapa 3 (2026-09-26): monta a linha de erro que vai pro banco
 // (erros_sistema). Puro, sem dependência de servidor, pra dar pra testar.
 // Corta nos limites da tabela e tira do texto o que não pode ficar guardado:
 // tokens (JWT, chave de API), e-mails e números longos (telefone, documento).

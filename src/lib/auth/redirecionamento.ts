@@ -1,4 +1,4 @@
-// PLANO 9,5 (2026-09-28): destino depois do link do e-mail (?next=). Antes a
+// PLANO 9,5 (2026-09-26): destino depois do link do e-mail (?next=). Antes a
 // regra era "começa com / e não com //", mas "/\site.com" passava e o
 // navegador lê a barra invertida como "//": ia parar em site de fora (open
 // redirect, bom pra phishing com link legítimo nosso). Agora resolve o

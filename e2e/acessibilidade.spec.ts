@@ -1,4 +1,4 @@
-// PLANO 9,5 (2026-09-28): acessibilidade (axe, regras WCAG 2.1 A/AA) nas telas
+// PLANO 9,5 (2026-09-26): acessibilidade (axe, regras WCAG 2.1 A/AA) nas telas
 // principais, nos dois temas. As telas de demonstração usam os mesmos
 // componentes das telas logadas, então cobrem o sistema sem precisar de login.
 // Falha se aparecer qualquer violação séria ou crítica.

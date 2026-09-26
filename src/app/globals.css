@@ -29,7 +29,7 @@
   --tinta-faint: #6B6F78;
 
   /* Status: tons do padrão Stripe/Untitled, legíveis como texto em fundo claro.
-     PLANO 9,5 (2026-09-28): um tom mais escuro (antes #D92D20 / #B54708): o
+     PLANO 9,5 (2026-09-26): um tom mais escuro (antes #D92D20 / #B54708): o
      axe acusou contraste 3,9–4,5 nas etiquetas sobre fundo tingido; WCAG AA
      pede 4,5. Reverter: voltar os dois valores. */
   --sinal: #B42318;
@@ -268,7 +268,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* PLANO 9,5 (2026-09-28): a entrada só desliza, sem começar invisível. Com
+/* PLANO 9,5 (2026-09-26): a entrada só desliza, sem começar invisível. Com
    opacity 0 no início, a tela de login/cadastro inteira ficava sem conteúdo
    visível até a animação rodar (Lighthouse: NO_FCP; atrasa a 1ª pintura).
    Reverter: voltar "opacity: 0" no from e "opacity: 1" no to. */
@@ -355,7 +355,7 @@ thead th {
   section, .rounded-xl { box-shadow: none !important; }
 }
 
-/* PLANO 9,5 (2026-09-28): quem pede "reduzir movimento" no aparelho não vê
+/* PLANO 9,5 (2026-09-26): quem pede "reduzir movimento" no aparelho não vê
    animação nem transição (WCAG 2.3.3). */
 @media (prefers-reduced-motion: reduce) {
   *,

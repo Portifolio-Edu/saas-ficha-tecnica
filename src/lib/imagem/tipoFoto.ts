@@ -1,4 +1,4 @@
-// PLANO 9,5 (2026-09-28): só foto sobe pros baldes públicos. Antes o servidor
+// PLANO 9,5 (2026-09-26): só foto sobe pros baldes públicos. Antes o servidor
 // aceitava qualquer arquivo e usava a extensão do nome: um .html ficava
 // público no endereço do Storage (hospedagem de página falsa com o nosso
 // link). O balde também recusa (migration 20260928100000_endurecimento).
