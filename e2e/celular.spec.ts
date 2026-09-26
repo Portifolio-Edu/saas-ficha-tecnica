@@ -53,3 +53,33 @@ test("escala no celular: agenda do dia com turno; tocar na pessoa abre o detalhe
   await detalhe.getByRole("button", { name: "Prontuário" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
 });
+
+// AGENTE IA (2026-09-26): abria preso no cabeçalho (que tem desfoque),
+// espremido e sem o X à vista. Agora vai pro <body> e cabe na tela visível.
+for (const [nome, viewport] of [["notebook baixo", { width: 1214, height: 460 }], ["celular", { width: 390, height: 844 }]] as const) {
+  test(`agente IA abre inteiro e fecha (${nome})`, async ({ browser }) => {
+    const ctx = await browser.newContext({ baseURL: "http://127.0.0.1:3000", viewport, isMobile: nome === "celular", hasTouch: nome === "celular", locale: "pt-BR" });
+    const page = await ctx.newPage();
+    await page.goto("/preview/escalas");
+    const abrir = () => page.getByRole("button", { name: "Agente IA (demonstração)" }).click();
+
+    await abrir();
+    const dlg = page.getByRole("dialog", { name: "Agente IA" });
+    await expect(dlg).toBeVisible();
+    const caixa = (await dlg.boundingBox())!;
+    expect(caixa.y, "começa dentro da tela").toBeGreaterThanOrEqual(0);
+    expect(caixa.y + caixa.height, "termina dentro da tela").toBeLessThanOrEqual(viewport.height);
+    await expect(dlg.getByRole("button", { name: "Fechar" })).toBeInViewport();
+    await dlg.getByRole("button", { name: "Fechar" }).click();
+    await expect(dlg).toHaveCount(0);
+
+    await abrir();
+    await page.keyboard.press("Escape");
+    await expect(dlg).toHaveCount(0);
+
+    await abrir();
+    await page.mouse.click(2, viewport.height - 2);
+    await expect(dlg).toHaveCount(0);
+    await ctx.close();
+  });
+}

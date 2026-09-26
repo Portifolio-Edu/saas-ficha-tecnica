@@ -786,3 +786,18 @@ tanto que muitas vezes só a cozinha sabe.
 - Onde mexer: `prioridade` e `descricao` em `src/lib/integracoes/pdvs.ts`.
 
 **Reverter:** `git revert` do commit "integrações: lançamento com iFood, Anota AI e Saipos".
+
+## 31. Agente IA — modal abria cortado e sem como fechar
+
+- Causa: o botão fica no cabeçalho, que tem desfoque (`backdrop-filter`); isso
+  faz o `position: fixed` do modal se prender ao cabeçalho em vez da janela.
+  O modal abria espremido, cortado em cima, sem o X.
+- Agora o modal vai direto pro `<body>` (portal), com altura pela tela
+  visível (dvh); fecha pelo X, pelo Esc e clicando fora. No celular, título e
+  X na primeira linha e as abas embaixo; o campo de texto encolhe e o botão
+  de enviar não sai mais da tela. Botões só de ícone ganharam nome (leitor de tela).
+- `e2e/celular.spec.ts`: abre inteiro e fecha (X, Esc, clique fora) num
+  notebook baixo (1214×460) e no celular.
+- Onde mexer: `src/components/ia/AgenteIaModal.tsx`.
+
+**Reverter:** `git revert` do commit "agente IA: modal inteiro na tela e fecha".

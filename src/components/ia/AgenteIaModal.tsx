@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X, Send, Mic, Camera, Smartphone,
   Sparkles, CheckCircle2, Play, Square, QrCode,
@@ -427,12 +428,32 @@ export function AgenteIaModal({
     processarComIa(exemplo.texto, undefined, true);
   };
 
+  // AGENTE IA (2026-09-26): Esc fecha (antes, com o modal cortado, não tinha
+  // como fechar).
+  useEffect(() => {
+    if (!aberto) return;
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onFechar();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [aberto, onFechar]);
+
   if (!aberto) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in font-sans">
+  // AGENTE IA (2026-09-26): vai direto pro <body> (portal). O botão fica no
+  // cabeçalho, que tem desfoque (backdrop-filter) — e isso faz o "fixed" do
+  // modal se prender ao cabeçalho: abria espremido, cortado em cima e sem o X.
+  // Altura pela tela visível (dvh), pra caber em notebook baixo e no celular.
+  // Clicar fora também fecha.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in font-sans"
+      onClick={(e) => e.target === e.currentTarget && onFechar()}
+    >
       <div
-        className="w-full max-w-2xl h-[90vh] max-h-[720px] rounded-2xl flex flex-col overflow-hidden border shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Agente IA"
+        className="w-full max-w-2xl h-[calc(100dvh-1.5rem)] sm:h-[calc(100dvh-2rem)] max-h-[720px] rounded-2xl flex flex-col overflow-hidden border shadow-2xl"
         style={{
           backgroundColor: "var(--panel)",
           borderColor: "var(--linha-forte)",
@@ -441,15 +462,17 @@ export function AgenteIaModal({
       >
         {/* Header do Agente */}
         <div
-          className="px-5 py-3.5 border-b flex items-center justify-between"
+          // AGENTE IA (2026-09-26): no celular, título + X na 1ª linha e as abas
+          // na 2ª (antes o título quebrava palavra por palavra e o X sumia).
+          className="px-4 sm:px-5 py-3 sm:py-3.5 border-b flex flex-wrap items-center gap-x-3 gap-y-2.5"
           style={{
             borderColor: "var(--linha)",
             backgroundColor: "var(--panel-elevated)",
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm relative"
+              className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-white shadow-sm relative"
               style={{
                 background: "linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)",
               }}
@@ -457,25 +480,25 @@ export function AgenteIaModal({
               <Bot size={22} strokeWidth={2.2} />
               <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[var(--panel)] animate-pulse" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-[15px] font-black tracking-tight text-[var(--tinta)]">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <h3 className="text-[15px] font-black tracking-tight leading-tight text-[var(--tinta)]">
                   Agente IA de Cozinha &amp; Estoque
                 </h3>
                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
                   Demonstração
                 </span>
               </div>
-              <p className="text-[11.5px] font-medium text-[var(--tinta-sub)]">
+              <p className="hidden sm:block text-[11.5px] font-medium text-[var(--tinta-sub)]">
                 Simulação de como o agente vai funcionar -- as respostas são de exemplo
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="contents">
             {/* Seletor de Abas */}
             <div
-              className="flex items-center p-0.5 rounded-lg border text-[12px] font-bold"
+              className="order-3 w-full sm:order-none sm:w-auto flex items-center p-0.5 rounded-lg border text-[12px] font-bold"
               style={{
                 backgroundColor: "var(--panel)",
                 borderColor: "var(--linha)",
@@ -483,7 +506,7 @@ export function AgenteIaModal({
             >
               <button
                 onClick={() => setAbaAtiva("chat")}
-                className={`px-3 py-1 rounded-md transition-all ${
+                className={`flex-1 sm:flex-none min-h-10 sm:min-h-0 px-3 py-1 rounded-md transition-all ${
                   abaAtiva === "chat"
                     ? "bg-[var(--tinta)] text-[var(--panel)] shadow-sm"
                     : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
@@ -493,7 +516,7 @@ export function AgenteIaModal({
               </button>
               <button
                 onClick={() => setAbaAtiva("whatsapp")}
-                className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                className={`flex-1 sm:flex-none min-h-10 sm:min-h-0 justify-center px-3 py-1 rounded-md transition-all flex items-center gap-1.5 ${
                   abaAtiva === "whatsapp"
                     ? "bg-emerald-600 text-white shadow-sm"
                     : "text-[var(--tinta-sub)] hover:text-emerald-500"
@@ -506,7 +529,8 @@ export function AgenteIaModal({
 
             <button
               onClick={onFechar}
-              className="p-1.5 rounded-xl text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel)] border border-transparent hover:border-[var(--linha)] transition-all"
+              aria-label="Fechar"
+              className="order-2 sm:order-none shrink-0 w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel)] border border-transparent hover:border-[var(--linha)] transition-all"
             >
               <X size={18} />
             </button>
@@ -861,6 +885,7 @@ export function AgenteIaModal({
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     title="Enviar foto de embalagem ou nota fiscal"
+                    aria-label="Enviar foto"
                     className="p-2.5 rounded-xl border text-[var(--tinta-sub)] hover:text-purple-600 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all shrink-0"
                     style={{
                       backgroundColor: "var(--panel)",
@@ -874,6 +899,7 @@ export function AgenteIaModal({
                   <button
                     onClick={iniciarGravacao}
                     title="Gravar áudio da cozinha"
+                    aria-label="Gravar áudio"
                     className="p-2.5 rounded-xl border text-[var(--tinta-sub)] hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/5 transition-all shrink-0"
                     style={{
                       backgroundColor: "var(--panel)",
@@ -894,7 +920,8 @@ export function AgenteIaModal({
                         ? `Dite ou escreva dados do ${insumoFocoNome}...`
                         : "Digite uma instrução, envie foto ou grave áudio..."
                     }
-                    className="flex-1 px-3.5 py-2.5 rounded-xl text-[13px] border bg-[var(--panel)] focus:outline-none focus:border-purple-500 transition-all font-sans"
+                    aria-label="Mensagem para o agente"
+                    className="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl text-[13px] border bg-[var(--panel)] focus:outline-none focus:border-purple-500 transition-all font-sans"
                     style={{
                       borderColor: "var(--linha)",
                       color: "var(--tinta)",
@@ -905,6 +932,7 @@ export function AgenteIaModal({
                   <button
                     onClick={enviarMensagem}
                     disabled={!textoEntrada.trim() && !imagemSelecionada}
+                    aria-label="Enviar"
                     className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white shadow-sm transition-all shrink-0"
                   >
                     <Send size={16} />
@@ -916,5 +944,7 @@ export function AgenteIaModal({
         )}
       </div>
     </div>
+    ,
+    document.body,
   );
 }
