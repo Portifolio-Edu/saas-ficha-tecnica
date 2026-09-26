@@ -749,3 +749,27 @@ tanto que muitas vezes só a cozinha sabe.
 
 **Reverter:** `git revert` do commit e
 `supabase/reverter/20260928140000_link_consulta.sql`.
+
+## 29. Cozinha — menu lateral e lista do que produzir
+
+- **Menu:** as 8 seções do modo cozinha não cabiam numa fileira e a barra
+  rolava pro lado. Agora, no tablet, um menu lateral agrupado (Rotina,
+  Produção, Estoque, Equipe) que recolhe pra só ícones — a escolha fica
+  guardada no aparelho. No celular, barra de baixo com Checklists, Produção,
+  Fichas e Pedidos + "Mais" (Temperatura, Proteínas, Contagem, Escala).
+  Números nos itens: checklist que falta hoje, pedidos pendentes e itens da
+  lista sem começar. Onde mexer: `src/components/cozinha/MenuCozinha.tsx`.
+- **Lista de produção:** embaixo do quadro de Produção, "O que produzir
+  hoje". Gestor/dono montam no painel (Produções → Lista de produção, hoje ou
+  amanhã) e a cozinha também põe no tablet. Cada item mostra quanto falta,
+  somando sozinho o que foi começado/pronto no dia (perda não conta);
+  "Começar" já abre com a quantidade que falta. A cozinha tira só o que o
+  tablet pediu. Mesma ficha no mesmo dia = muda a quantidade.
+- Banco: `plano_producao` (migration 20260928150000, aplicada) com RLS
+  (gestão tudo; cozinha cria e mexe no que pediu; estoquista só vê).
+- Testes: unitários (progresso), SQL `plano_producao.sql` 16/16, e2e (gestor
+  põe no painel → tablet vê, menu recolhe, começa pela lista com o que falta
+  → vai pro fogo; cozinha não sobrescreve o pedido do gestor).
+
+**Reverter:** `git revert` do commit e
+`supabase/reverter/20260928150000_plano_producao.sql`.

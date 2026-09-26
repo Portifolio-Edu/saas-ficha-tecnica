@@ -11,6 +11,9 @@ import { carregarDadosCozinha, enviarContagemCega, registrarLoteProteina } from 
 import { marcarItemConcluido, desmarcarItemConcluido } from "@/lib/dados/checklists";
 import { registrarTemperatura } from "@/lib/dados/temperatura";
 import { criarRequisicao, removerRequisicao } from "@/lib/dados/requisicoes";
+import { adicionarAoPlano, tirarDoPlano } from "@/lib/dados/planoProducao";
+import { validarItemPlano } from "@/lib/dominio/planoProducao";
+import { hojeLocalISO } from "@/lib/calculo/dia";
 import { validarRequisicao, type NovaRequisicao } from "@/lib/dominio/requisicao";
 import { atualizarStatusProducao, contarProducoesPorReceita } from "@/lib/dados/producoes";
 import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
@@ -243,6 +246,34 @@ export async function acaoRemoverRequisicao(id: string): Promise<Resultado> {
     await removerRequisicao(id);
     revalidatePath("/cozinha");
     revalidatePath("/estoque");
+    return { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+// LISTA DE PRODUÇÃO (2026-09-26): o tablet põe na lista do dia e tira o que
+// ele mesmo pediu (a RLS não deixa tirar o que o gestor pediu).
+export async function acaoAdicionarAoPlano(receitaId: string, quantidade: number, observacao: string | null, responsavel: string): Promise<Resultado> {
+  try {
+    const cliente = await exigirMembro();
+    const problema = validarItemPlano({ receitaId, quantidade, observacao });
+    if (problema) throw new Error(problema);
+    const { aviso } = await adicionarAoPlano(cliente.id, { data: hojeLocalISO(), receitaId, quantidade, observacao, responsavel: exigirResponsavel(responsavel) });
+    revalidatePath("/cozinha");
+    revalidatePath("/producoes");
+    return aviso ? { ok: true, aviso } : { ok: true };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+export async function acaoTirarDoPlano(id: string): Promise<Resultado> {
+  try {
+    await exigirMembro();
+    await tirarDoPlano(id);
+    revalidatePath("/cozinha");
+    revalidatePath("/producoes");
     return { ok: true };
   } catch (e) {
     return erro(e);

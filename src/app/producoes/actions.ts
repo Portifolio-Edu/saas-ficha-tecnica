@@ -10,6 +10,10 @@ import { registrarMovimentacao } from "@/lib/dados/estoque";
 import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
 import { gerarLote } from "@/lib/calculo/lote";
 import type { ProducaoInput, StatusProducao, TipoItemProducao } from "@/lib/dominio/producao";
+import { adicionarAoPlano, tirarDoPlano } from "@/lib/dados/planoProducao";
+import { validarItemPlano } from "@/lib/dominio/planoProducao";
+import { hojeLocalISO } from "@/lib/calculo/dia";
+import { ehGestao } from "@/lib/auth/papeis";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
 
@@ -105,6 +109,50 @@ export async function acaoAtualizarStatusProducao(id: string, status: StatusProd
   try {
     await atualizarStatusProducao(id, status, motivoPerda);
     revalidatePath("/producoes");
+    return { ok: true };
+  } catch (e) {
+    return paraResultado(e);
+  }
+}
+
+// LISTA DE PRODUÇÃO (2026-09-26): dono e gestor montam a lista do dia (ou de
+// amanhã) que aparece embaixo do quadro de Produção no tablet.
+export type ResultadoPlano = { ok: true; aviso?: string } | { ok: false; erro: string };
+
+async function exigirGestaoPlano() {
+  const cliente = await getClienteAtual();
+  if (!cliente) throw new Error("Sessão expirada. Faça login novamente.");
+  if (!ehGestao(cliente.papel)) throw new Error("Só o dono e o gestor montam a lista de produção.");
+  return cliente;
+}
+
+function dataValida(data: string): boolean {
+  const hoje = hojeLocalISO();
+  const amanha = hojeLocalISO(new Date(Date.now() + 86_400_000));
+  return data === hoje || data === amanha;
+}
+
+export async function acaoPlanoAdicionar(data: string, receitaId: string, quantidade: number, observacao: string | null): Promise<ResultadoPlano> {
+  try {
+    const cliente = await exigirGestaoPlano();
+    if (!dataValida(data)) throw new Error("A lista é de hoje ou de amanhã.");
+    const problema = validarItemPlano({ receitaId, quantidade, observacao });
+    if (problema) throw new Error(problema);
+    const { aviso } = await adicionarAoPlano(cliente.id, { data, receitaId, quantidade, observacao, responsavel: cliente.nomeMembro || cliente.nome });
+    revalidatePath("/producoes");
+    revalidatePath("/cozinha");
+    return aviso ? { ok: true, aviso } : { ok: true };
+  } catch (e) {
+    return paraResultado(e);
+  }
+}
+
+export async function acaoPlanoTirar(id: string): Promise<ResultadoPlano> {
+  try {
+    await exigirGestaoPlano();
+    await tirarDoPlano(id);
+    revalidatePath("/producoes");
+    revalidatePath("/cozinha");
     return { ok: true };
   } catch (e) {
     return paraResultado(e);

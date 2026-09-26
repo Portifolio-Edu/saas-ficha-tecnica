@@ -8,10 +8,8 @@
 // registro sai com o nome de quem fez.
 
 import { useEffect, useState, type ReactNode } from "react";
-import {
-  ChefHat, ClipboardCheck, Thermometer, CookingPot, Beef, BookOpen, PackageSearch,
-  Check, ChevronLeft, UserRound, EyeOff, AlertTriangle, CalendarDays, ShoppingBasket,
-} from "lucide-react";
+import { ChefHat, Check, ChevronLeft, UserRound, EyeOff, AlertTriangle } from "lucide-react";
+import { BarraInferiorCozinha, MenuLateralCozinha, type Aba } from "./MenuCozinha";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
 import { QuadroProducaoCozinha } from "./QuadroProducaoCozinha";
 import { FichasCozinha } from "./FichasCozinha";
@@ -26,6 +24,7 @@ import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temp
 import type { FichaCozinha, ItemContagem, LoteProteinaCozinha, NovoLoteProteina, ProducaoCozinha, ProteinaCozinha } from "@/lib/dominio/cozinha";
 import type { Funcionario } from "@/lib/dominio/equipe";
 import type { StatusProducao } from "@/lib/dominio/producao";
+import { progressoDoPlano, resumoDoPlano, type ItemPlano } from "@/lib/dominio/planoProducao";
 
 export type ResultadoCozinha = { ok: true; aviso?: string } | { ok: false; erro: string };
 
@@ -41,23 +40,13 @@ export interface AcoesCozinha {
   /** PEDIDOS DA COZINHA (2026-09-26) */
   pedir: (r: NovaRequisicao, responsavel: string) => Promise<ResultadoCozinha>;
   desistirDoPedido: (id: string) => Promise<ResultadoCozinha>;
+  /** LISTA DE PRODUÇÃO (2026-09-26) */
+  adicionarAoPlano: (receitaId: string, quantidade: number, observacao: string | null, responsavel: string) => Promise<ResultadoCozinha>;
+  tirarDoPlano: (id: string) => Promise<ResultadoCozinha>;
 }
 
-type Aba = "checklists" | "temperatura" | "producao" | "proteinas" | "fichas" | "pedidos" | "contagem" | "escala";
-
-const ABAS: { id: Aba; rotulo: string; icone: typeof ChefHat }[] = [
-  { id: "checklists", rotulo: "Checklists", icone: ClipboardCheck },
-  { id: "temperatura", rotulo: "Temperatura", icone: Thermometer },
-  { id: "producao", rotulo: "Produção", icone: CookingPot },
-  // PROTEÍNAS (2026-09-25): manipulação de proteínas (bruto → limpo) no tablet.
-  { id: "proteinas", rotulo: "Proteínas", icone: Beef },
-  { id: "fichas", rotulo: "Fichas", icone: BookOpen },
-  // PEDIDOS DA COZINHA (2026-09-26): o que precisa comprar, por categoria.
-  { id: "pedidos", rotulo: "Pedidos", icone: ShoppingBasket },
-  { id: "contagem", rotulo: "Contagem", icone: PackageSearch },
-  // ESCALAS (2026-09-26): escala da equipe, só leitura (quem altera é o gestor).
-  { id: "escala", rotulo: "Escala", icone: CalendarDays },
-];
+// MENU DA COZINHA (2026-09-26): seções e menu em MenuCozinha.tsx (lateral
+// recolhível no tablet, barra de baixo no celular). Antes: abas roláveis aqui.
 
 const CHAVE_RESPONSAVEL = "cozinha:responsavel";
 
@@ -85,6 +74,7 @@ export function CozinhaApp({
   escala = null,
   hoje,
   requisicoes = [],
+  plano = [],
   agendaFornecedores = [],
   sugestoesPedido = [],
   agoraInicial,
@@ -108,6 +98,8 @@ export function CozinhaApp({
   hoje: string;
   /** PEDIDOS DA COZINHA (2026-09-26) */
   requisicoes?: Requisicao[];
+  /** LISTA DE PRODUÇÃO (2026-09-26): o que tem que ser produzido hoje. */
+  plano?: ItemPlano[];
   agendaFornecedores?: AgendaFornecedor[];
   sugestoesPedido?: SugestaoPedido[];
   agoraInicial?: Agora;
@@ -126,6 +118,17 @@ export function CozinhaApp({
     } catch {}
   }, []);
 
+  const emUso = Boolean(responsavel) && !trocando;
+  const trocarAba = (a: Aba) => {
+    setAba(a);
+    window.scrollTo({ top: 0 });
+  };
+  const contadores: Partial<Record<Aba, number>> = {
+    checklists: checklists.reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
+    pedidos: requisicoes.filter((r) => r.status === "pendente").length,
+    producao: resumoDoPlano(progressoDoPlano(plano, producoes)).faltam,
+  };
+
   const escolher = (nome: string) => {
     setResponsavel(nome);
     setTrocando(false);
@@ -137,7 +140,7 @@ export function CozinhaApp({
   return (
     <div className="min-h-screen flex flex-col text-[16px]" style={{ background: "var(--fundo)", color: "var(--tinta)" }}>
       <header className="sticky top-0 z-20 border-b" style={{ background: "var(--panel)", borderColor: "var(--linha)" }}>
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center gap-3">
+        <div className="px-4 md:px-5 h-16 flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--tinta)", color: "var(--panel)" }}>
             <ChefHat size={19} />
           </div>
@@ -159,29 +162,14 @@ export function CozinhaApp({
             </button>
           )}
         </div>
-        <nav className="max-w-4xl mx-auto px-2 flex overflow-x-auto" aria-label="Seções da cozinha">
-          {ABAS.map((a) => {
-            const Icone = a.icone;
-            const ativa = aba === a.id;
-            return (
-              <button
-                key={a.id}
-                onClick={() => setAba(a.id)}
-                aria-current={ativa ? "page" : undefined}
-                className="min-h-14 px-4 flex items-center gap-2 text-[15px] font-medium border-b-2 shrink-0"
-                style={{ borderColor: ativa ? "var(--tinta)" : "transparent", color: ativa ? "var(--tinta)" : "var(--tinta-faint)" }}
-              >
-                <Icone size={18} />
-                {a.rotulo}
-              </button>
-            );
-          })}
-        </nav>
       </header>
 
+      <div className="flex-1 flex">
+      {emUso && <MenuLateralCozinha aba={aba} onTrocar={trocarAba} contadores={contadores} />}
+      <div className="flex-1 min-w-0 flex flex-col">
       {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda.
           FICHAS (2026-09-25): Fichas usa 2 colunas (foto e ingredientes | passo a passo). */}
-      <main id="conteudo" className={`flex-1 w-full mx-auto px-4 py-5 ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas" || aba === "escala") ? "max-w-6xl" : aba === "pedidos" ? "max-w-2xl" : "max-w-4xl"}`}>
+      <main id="conteudo" className={`flex-1 w-full mx-auto px-4 md:px-6 py-5 ${emUso ? "pb-24 md:pb-5" : ""} ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas" || aba === "escala") ? "max-w-6xl" : aba === "pedidos" ? "max-w-2xl" : "max-w-4xl"}`}>
         {!responsavel || trocando ? (
           <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
         ) : aba === "checklists" ? (
@@ -189,7 +177,7 @@ export function CozinhaApp({
         ) : aba === "temperatura" ? (
           <SecaoTemperatura locais={locais} temperaturas={temperaturas} responsavel={responsavel} acoes={acoes} />
         ) : aba === "producao" ? (
-          <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} />
+          <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} plano={plano} />
         ) : aba === "proteinas" ? (
           <ProteinasCozinha proteinas={proteinas} lotes={lotesProteina} responsavel={responsavel} acoes={acoes} />
         ) : aba === "fichas" ? (
@@ -211,6 +199,9 @@ export function CozinhaApp({
         )}
       </main>
       {rodape && <footer className="text-center text-[13px] text-[var(--tinta-faint)] pb-5 px-4">{rodape}</footer>}
+      </div>
+      </div>
+      {emUso && <BarraInferiorCozinha aba={aba} onTrocar={trocarAba} contadores={contadores} />}
       <ToastContainer />
     </div>
   );

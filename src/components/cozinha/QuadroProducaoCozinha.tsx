@@ -27,6 +27,8 @@ import { useArrastoToque } from "@/components/producoes/useArrastoToque";
 import type { FichaCozinha, ProducaoCozinha } from "@/lib/dominio/cozinha";
 import type { StatusProducao } from "@/lib/dominio/producao";
 import type { AcoesCozinha } from "./CozinhaApp";
+import { ListaProducaoCozinha } from "./ListaProducaoCozinha";
+import { progressoDoPlano, resumoDoPlano, type ItemPlano } from "@/lib/dominio/planoProducao";
 
 type ColunaId = "fichas" | "em_producao" | "produzido" | "perda";
 type ItemQuadro = { tipo: "ficha"; ficha: FichaCozinha } | { tipo: "lote"; lote: ProducaoCozinha };
@@ -79,17 +81,22 @@ export function QuadroProducaoCozinha({
   producoes: iniciais,
   responsavel,
   acoes,
+  plano = [],
 }: {
   fichas: FichaCozinha[];
   producoes: ProducaoCozinha[];
   responsavel: string;
   acoes: AcoesCozinha;
+  /** LISTA DE PRODUÇÃO (2026-09-26): o que tem que sair hoje (fica embaixo do quadro). */
+  plano?: ItemPlano[];
 }) {
   const { mostrarErro, mostrarInfo } = useToast();
   const [producoes, setProducoes] = useState(iniciais);
   useEffect(() => setProducoes(iniciais), [iniciais]);
   const [busca, setBusca] = useState("");
   const [iniciando, setIniciando] = useState<FichaCozinha | null>(null);
+  const [sugestao, setSugestao] = useState<number | null>(null);
+  const faltamNaLista = resumoDoPlano(progressoDoPlano(plano, producoes)).faltam;
   const [perdendo, setPerdendo] = useState<ProducaoCozinha | null>(null);
   const [desfazer, setDesfazer] = useState<Desfazer | null>(null);
   const [agora, setAgora] = useState(() => Date.now());
@@ -151,7 +158,14 @@ export function QuadroProducaoCozinha({
     <section>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-3">
         <h1 className="text-[22px] font-semibold tracking-tight">Produção de hoje</h1>
-        <p className="text-[14px] text-[var(--tinta-sub)]">Segure um card e arraste pra próxima coluna, ou use os botões.</p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <p className="text-[14px] text-[var(--tinta-sub)]">Segure um card e arraste pra próxima coluna, ou use os botões.</p>
+          {plano.length > 0 && (
+            <a href="#lista-producao" className="min-h-10 px-3 rounded-full inline-flex items-center text-[14px] font-semibold" style={{ background: tint(cor("estoque"), 14), color: corTexto("estoque") }}>
+              {faltamNaLista > 0 ? `Lista do dia: ${faltamNaLista} ${faltamNaLista === 1 ? "falta" : "faltam"} ↓` : "Lista do dia ↓"}
+            </a>
+          )}
+        </div>
       </div>
 
       <div
@@ -262,6 +276,20 @@ export function QuadroProducaoCozinha({
         })}
       </div>
 
+      <ListaProducaoCozinha
+        plano={plano}
+        producoes={producoes}
+        fichas={fichas}
+        responsavel={responsavel}
+        onComecar={(f, qtd) => {
+          setSugestao(qtd);
+          setIniciando(f);
+        }}
+        adicionar={acoes.adicionarAoPlano}
+        tirar={acoes.tirarDoPlano}
+        Folha={Folha}
+      />
+
       {/* Card que segue o dedo */}
       {arrasto && (
         <div
@@ -286,7 +314,11 @@ export function QuadroProducaoCozinha({
       {iniciando && (
         <FolhaIniciar
           ficha={iniciando}
-          aoFechar={() => setIniciando(null)}
+          sugestao={sugestao}
+          aoFechar={() => {
+            setIniciando(null);
+            setSugestao(null);
+          }}
           aoConfirmar={async (qtd) => {
             const r = await acoes.registrarProducao(iniciando.id, qtd, responsavel);
             if (!r.ok) {
@@ -295,6 +327,7 @@ export function QuadroProducaoCozinha({
             }
             if (r.aviso) mostrarInfo(r.aviso);
             setIniciando(null);
+            setSugestao(null);
             return true;
           }}
         />
@@ -504,9 +537,10 @@ function Folha({ titulo, subtitulo, aoFechar, children }: { titulo: string; subt
   );
 }
 
-function FolhaIniciar({ ficha, aoFechar, aoConfirmar }: { ficha: FichaCozinha; aoFechar: () => void; aoConfirmar: (qtd: number) => Promise<boolean> }) {
+function FolhaIniciar({ ficha, sugestao, aoFechar, aoConfirmar }: { ficha: FichaCozinha; sugestao?: number | null; aoFechar: () => void; aoConfirmar: (qtd: number) => Promise<boolean> }) {
   const passo = passoDa(ficha.unidadeRendimento);
-  const [texto, setTexto] = useState(String(ficha.rendimento).replace(".", ","));
+  // Vindo da lista do dia: já abre com o que falta.
+  const [texto, setTexto] = useState(String(sugestao ?? ficha.rendimento).replace(".", ","));
   const [salvando, setSalvando] = useState(false);
   const refSalvando = useRef(false);
   const qtd = Number(texto.replace(",", "."));

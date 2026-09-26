@@ -12,6 +12,8 @@ import { CozinhaApp } from "@/components/cozinha/CozinhaApp";
 import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { PareamentoForm } from "./PareamentoForm";
 import { listarAgendaFornecedores, listarRequisicoes } from "@/lib/dados/requisicoes";
+import { listarPlanoDoDia } from "@/lib/dados/planoProducao";
+import { ehGestao } from "@/lib/auth/papeis";
 import { agoraNoRestaurante, categoriaDoInsumo } from "@/lib/dominio/requisicao";
 import {
   acaoAtualizarProducao,
@@ -23,6 +25,8 @@ import {
   acaoRegistrarLoteProteina,
   acaoCriarRequisicao,
   acaoRemoverRequisicao,
+  acaoAdicionarAoPlano,
+  acaoTirarDoPlano,
 } from "./actions";
 
 // EQUIPE (2026-09-25): modo cozinha. Sem login mostra o pareamento por
@@ -51,7 +55,7 @@ export default async function CozinhaPage() {
 
   const dados = await carregarDadosCozinha();
   const hoje = hojeLocalISO();
-  const [checklists, locais, temperaturas, funcionarios, producoes, lotesProteina, escala, requisicoes, agendaFornecedores] = await Promise.all([
+  const [checklists, locais, temperaturas, funcionarios, producoes, lotesProteina, escala, requisicoes, agendaFornecedores, plano] = await Promise.all([
     listarChecklists(),
     listarLocaisArmazenamento(),
     listarRegistrosTemperatura(40),
@@ -61,6 +65,7 @@ export default async function CozinhaPage() {
     escalaDaCozinha(hoje),
     listarRequisicoes(),
     listarAgendaFornecedores(),
+    listarPlanoDoDia(hoje, cliente.userId, ehGestao(cliente.papel)),
   ]);
 
   return (
@@ -81,6 +86,7 @@ export default async function CozinhaPage() {
         escala={escala}
         hoje={hoje}
         requisicoes={requisicoes}
+        plano={plano}
         agendaFornecedores={agendaFornecedores}
         sugestoesPedido={dados.insumosCalc.map((i) => ({ id: i.id, nome: i.nome, categoria: categoriaDoInsumo(i.categoria) }))}
         agoraInicial={agoraNoRestaurante()}
@@ -94,6 +100,8 @@ export default async function CozinhaPage() {
           registrarLoteProteina: acaoRegistrarLoteProteina,
           pedir: acaoCriarRequisicao,
           desistirDoPedido: acaoRemoverRequisicao,
+          adicionarAoPlano: acaoAdicionarAoPlano,
+          tirarDoPlano: acaoTirarDoPlano,
         }}
       />
     </>

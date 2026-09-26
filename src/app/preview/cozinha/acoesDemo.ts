@@ -34,6 +34,9 @@ import {
 } from "../fixtures";
 import { validarRequisicao, type Requisicao } from "@/lib/dominio/requisicao";
 import { contagensDemo } from "../equipeDemo";
+import { planoDemoInicial, type ItemPlanoDemo } from "@/lib/demo/planoProducao";
+import { validarItemPlano } from "@/lib/dominio/planoProducao";
+import { hojeLocalISO } from "@/lib/calculo/dia";
 
 const receitaPorId = new Map(todasReceitas.map((r) => [r.id, r]));
 const insumoPorId = new Map(insumos.map((i) => [i.id, i]));
@@ -44,6 +47,32 @@ export const lerTemperaturasDemo = () => lerDemo<RegistroTemperatura>(CHAVES_DEM
 export const lerContagensDemo = () => lerDemo<ContagemCega>(CHAVES_DEMO.contagens, contagensDemo);
 export const lerRequisicoesDemo = () => lerDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
 export const lerProcessamentosDemo = () => lerDemo<Processamento>(CHAVES_DEMO.processamentos, processamentosFixture);
+export const lerPlanoDemo = () => lerDemo<ItemPlanoDemo>(CHAVES_DEMO.planoProducao, planoDemoInicial(hojeLocalISO(), todasReceitas));
+
+/** Põe na lista do dia (mesma regra do banco: receita repetida no dia muda a quantidade). */
+export function porNoPlanoDemo(receitaId: string, quantidade: number, observacao: string | null, responsavel: string, origem: "gestao" | "cozinha", data = hojeLocalISO()): { aviso?: string } {
+  const problema = validarItemPlano({ receitaId, quantidade, observacao });
+  if (problema) throw new Error(problema);
+  const lista = lerPlanoDemo();
+  const existente = lista.find((i) => i.data === data && i.receitaId === receitaId);
+  if (existente) {
+    if (origem === "cozinha" && existente.origem !== "cozinha") throw new Error("Essa ficha já está na lista, pedida pelo gestor. Fale com ele pra mudar a quantidade.");
+    gravarDemo(CHAVES_DEMO.planoProducao, lista.map((i) => (i.id === existente.id ? { ...i, quantidade, observacao: observacao?.trim() || i.observacao } : i)));
+    return { aviso: "Já estava na lista: quantidade atualizada." };
+  }
+  const novo: ItemPlanoDemo = { id: id("plano"), data, receitaId, quantidade, observacao: observacao?.trim() || null, responsavel, origem, criadoEm: new Date().toISOString() };
+  gravarDemo(CHAVES_DEMO.planoProducao, [...lista, novo]);
+  return {};
+}
+
+export function tirarDoPlanoDemo(idItem: string, origem: "gestao" | "cozinha") {
+  const lista = lerPlanoDemo();
+  const item = lista.find((i) => i.id === idItem);
+  if (!item) return;
+  if (origem === "cozinha" && item.origem !== "cozinha") throw new Error("Só quem pediu (ou o gestor) tira esse item.");
+  gravarDemo(CHAVES_DEMO.planoProducao, lista.filter((i) => i.id !== idItem));
+}
+
 const lerEstoqueDemo = () => lerDemo<EstoqueLinha>(CHAVES_DEMO.estoque, estoqueFixture);
 const lerMovimentacoesDemo = () => lerDemo<Movimentacao>(CHAVES_DEMO.movimentacoes, movimentacoesFixture);
 
@@ -261,5 +290,25 @@ export const acoesCozinhaDemo: AcoesCozinha = {
     if (!lista.some((r) => r.id === idPedido && r.status === "pendente")) return erro(new Error("Esse item já foi comprado; não dá mais pra tirar do pedido."));
     gravarDemo(CHAVES_DEMO.requisicoes, lista.filter((r) => r.id !== idPedido));
     return { ok: true };
+  },
+  // LISTA DE PRODUÇÃO (2026-09-26)
+  async adicionarAoPlano(receitaId, quantidade, observacao, responsavel) {
+    await pausa();
+    try {
+      exigirNome(responsavel);
+      const { aviso } = porNoPlanoDemo(receitaId, quantidade, observacao, responsavel, "cozinha");
+      return aviso ? { ok: true, aviso } : { ok: true };
+    } catch (e) {
+      return erro(e);
+    }
+  },
+  async tirarDoPlano(idItem) {
+    await pausa();
+    try {
+      tirarDoPlanoDemo(idItem, "cozinha");
+      return { ok: true };
+    } catch (e) {
+      return erro(e);
+    }
   },
 };

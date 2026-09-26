@@ -40,6 +40,7 @@ const TABELAS: Tabela[] = [
   { nome: "precos_canal" },
   { nome: "turnos" },
   { nome: "producoes" },
+  { nome: "plano_producao" },
   { nome: "checklists" },
   { nome: "checklist_areas" },
   { nome: "checklist_itens" },

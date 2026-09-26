@@ -17,16 +17,17 @@ import type { RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { LoteProteinaCozinha, ProducaoCozinha, ProteinaCozinha } from "@/lib/dominio/cozinha";
 import type { Processamento } from "@/lib/dominio/processamento";
 import { acoesCozinhaDemo } from "./acoesDemo";
+import { paraVisao, planoDemoInicial, type ItemPlanoDemo } from "@/lib/demo/planoProducao";
 import { escalasDemoIniciais, pessoasDemoAtuais } from "@/lib/demo/escalas";
 import { hojeLocalISO } from "@/lib/calculo/dia";
 import { paraMotor, type OcorrenciaRegistro, type PessoaEscala } from "@/lib/escalas/cadastro";
 import { montarEscalaPublica, periodoCozinha, recortePublico } from "@/lib/escalas/publica";
 import type { RegrasEscala } from "@/lib/escalas/tipos";
-import { checklists as checklistsFixture, fornecedores as fornecedoresFixture, insumos as insumosFixture, processamentos as processamentosFixture, producoes as producoesFixture, proteinas as proteinasFixture, registrosTemperatura, requisicoesDemo } from "../fixtures";
+import { checklists as checklistsFixture, fornecedores as fornecedoresFixture, insumos as insumosFixture, processamentos as processamentosFixture, producoes as producoesFixture, proteinas as proteinasFixture, registrosTemperatura, requisicoesDemo, todasReceitas } from "../fixtures";
 import { agendaDoFornecedor } from "@/lib/dominio/fornecedor";
 import { categoriaDoInsumo, type Requisicao } from "@/lib/dominio/requisicao";
 
-type Props = Omit<ComponentProps<typeof CozinhaApp>, "acoes" | "rodape" | "producoes" | "checklists" | "temperaturas" | "proteinas" | "lotesProteina" | "escala" | "hoje" | "requisicoes" | "agendaFornecedores" | "sugestoesPedido">;
+type Props = Omit<ComponentProps<typeof CozinhaApp>, "acoes" | "rodape" | "plano" | "producoes" | "checklists" | "temperaturas" | "proteinas" | "lotesProteina" | "escala" | "hoje" | "requisicoes" | "agendaFornecedores" | "sugestoesPedido">;
 
 // PEDIDOS DA COZINHA (2026-09-26): agenda dos fornecedores da demo (sem contato) e sugestões do cadastro.
 const agendaDemo = fornecedoresFixture.map(agendaDoFornecedor).filter((a) => a.diasEntrega.length > 0);
@@ -100,6 +101,9 @@ export function CozinhaDemo(props: Props) {
   }, [hoje, pessoasEscala, ocorrenciasEscala, regrasEscala, iniciaisEscala]);
 
   const [requisicoes] = useDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
+  const planoInicial = useMemo(() => planoDemoInicial(hoje, todasReceitas), [hoje]);
+  const [planoTodo] = useDemo<ItemPlanoDemo>(CHAVES_DEMO.planoProducao, planoInicial);
+  const plano = useMemo(() => paraVisao(planoTodo, hoje, "cozinha"), [planoTodo, hoje]);
 
   const temperaturasRecentes = useMemo(() => [...temperaturas].sort((a, b) => b.registradoEm.localeCompare(a.registradoEm)), [temperaturas]);
 
@@ -114,6 +118,7 @@ export function CozinhaDemo(props: Props) {
       escala={escala}
       hoje={hoje}
       requisicoes={requisicoes}
+      plano={plano}
       agendaFornecedores={agendaDemo}
       sugestoesPedido={sugestoesDemo}
       acoes={acoesCozinhaDemo}

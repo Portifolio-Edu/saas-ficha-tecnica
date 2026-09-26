@@ -183,7 +183,7 @@ test.describe.serial("com login real", () => {
     await entrar(page, gestor.usuario, gestor.senha);
     await expect(page).toHaveURL(/\/visao-geral$/);
     await page.goto("/producoes");
-    await expect(page.getByText(`Massa ${RODADA}`).first()).toBeVisible();
+    await expect(page.getByText(`Massa ${RODADA}`).locator("visible=true").first()).toBeVisible();
     await expect(page.getByText(cozinheiro).first()).toBeVisible();
   });
 
@@ -291,6 +291,61 @@ test.describe.serial("com login real", () => {
     await expect(tablet.getByRole("region", { name: "Comprados nos últimos dias" }).getByText(/Coentro/)).toBeVisible();
     await tablet.context().close();
     await celular.context().close();
+  });
+
+  // LISTA DE PRODUÇÃO (2026-09-26) + menu lateral da cozinha.
+  test("lista de produção: gestor põe no painel; tablet vê embaixo do quadro, começa pela lista; menu lateral recolhe", async ({ browser }) => {
+    const painel = await novaAba(browser);
+    await entrar(painel, gestor.usuario, gestor.senha);
+    await painel.goto("/producoes");
+    const lista = painel.getByRole("region", { name: "Lista de produção" });
+    await lista.getByLabel("Ficha").selectOption({ label: `Massa ${RODADA}` });
+    await lista.getByLabel(/^Quanto/).fill("4");
+    await lista.getByLabel("Observação").fill("Pro almoço");
+    await lista.getByRole("button", { name: "Pôr na lista" }).click();
+    await expect(lista.getByRole("listitem").filter({ hasText: `Massa ${RODADA}` })).toBeVisible();
+    const { data: item } = await admin().from("plano_producao").select("quantidade, observacao, responsavel").eq("cliente_id", clienteId).single();
+    expect(item).toEqual({ quantidade: 4, observacao: "Pro almoço", responsavel: gestor.nome });
+
+    // Tablet novo.
+    const dono3 = await novaAba(browser);
+    await entrar(dono3, dono.email, novaSenhaDono);
+    await dono3.goto("/equipe");
+    await dono3.getByRole("button", { name: "Conectar aparelho" }).click();
+    const codigo = (await dono3.getByText(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/).innerText()).trim();
+    await dono3.context().close();
+    const tablet = await novaAba(browser);
+    await tablet.goto("/cozinha");
+    await tablet.getByPlaceholder("K7M4-9QPX").fill(codigo);
+    await tablet.getByRole("button", { name: "Conectar" }).click();
+    await tablet.getByRole("button", { name: cozinheiro }).click();
+
+    // Menu lateral: nada rola pro lado; recolhe e continua navegável.
+    const menu = tablet.getByRole("navigation", { name: "Seções da cozinha" });
+    expect(await menu.evaluate((n) => n.scrollWidth <= n.clientWidth)).toBe(true);
+    await tablet.getByRole("button", { name: "Recolher menu" }).click();
+    await menu.getByRole("button", { name: /^Produção/ }).click();
+
+    const doDia = tablet.getByRole("region", { name: "O que produzir hoje" });
+    // O tablet já produziu 2 kg dessa massa hoje (teste acima): faltam 2 dos 4.
+    await expect(doDia.getByRole("listitem", { name: `Massa ${RODADA}: Falta` }).getByText("Falta 2 de 4")).toBeVisible();
+    await expect(doDia.getByText("Pro almoço")).toBeVisible();
+    await expect(doDia.getByRole("button", { name: `Tirar Massa ${RODADA} da lista` }), "cozinha não tira o que o gestor pediu").toHaveCount(0);
+    await doDia.getByRole("button", { name: `Começar Massa ${RODADA} da lista` }).click();
+    await expect(tablet.getByLabel("Quantidade produzida"), "abre com o que falta").toHaveValue("2");
+    await tablet.getByRole("button", { name: /Começar produção/ }).click();
+    await expect(doDia.getByRole("listitem", { name: `Massa ${RODADA}: No fogo` })).toBeVisible();
+
+    // A cozinha pede a mesma ficha: o do gestor fica como está.
+    await doDia.getByRole("button", { name: "Pôr na lista" }).click();
+    await tablet.getByRole("button", { name: new RegExp(`^Massa ${RODADA}`) }).last().click();
+    await tablet.getByRole("dialog").getByRole("button", { name: "Pôr na lista" }).click();
+    await expect(tablet.getByText("Essa ficha já está na lista, pedida pelo gestor.", { exact: false })).toBeVisible();
+    await tablet.context().close();
+
+    await painel.reload();
+    await expect(lista.getByText("no fogo")).toBeVisible();
+    await painel.context().close();
   });
 
   test("prontuário e banco de extras gravam no banco", async ({ page }) => {
