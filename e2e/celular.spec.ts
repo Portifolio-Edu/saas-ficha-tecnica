@@ -36,3 +36,20 @@ test("barra de baixo: atalhos do papel e o Menu com o resto", async ({ page }) =
   await barra.getByRole("button", { name: "Menu" }).click();
   await expect(page.getByRole("navigation", { name: "Seções" }).last().getByRole("link", { name: "Manipulação de proteínas" })).toBeVisible();
 });
+
+test("escala no celular: agenda do dia com turno; tocar na pessoa abre o detalhe", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("demo:papel", "gestor"));
+  await page.goto("/preview/escalas");
+  const dias = page.getByRole("tablist", { name: "Dia" });
+  await expect(dias.getByRole("tab", { selected: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: /^Hoje, / })).toBeVisible();
+  const equipe = page.getByRole("region", { name: /Cozinha · Cozinheiro/i }).first();
+  await expect(equipe.getByText(/trabalhando/)).toBeVisible();
+  const pessoa = equipe.getByRole("button").first();
+  await pessoa.click();
+  await expect(pessoa).toHaveAttribute("aria-expanded", "true");
+  const detalhe = equipe.getByRole("region", { name: "Detalhe do dia" });
+  await expect(detalhe.getByRole("button", { name: "Lançar ocorrência" })).toBeInViewport();
+  await detalhe.getByRole("button", { name: "Prontuário" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+});

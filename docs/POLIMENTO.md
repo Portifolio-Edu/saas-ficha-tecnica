@@ -712,3 +712,18 @@ tanto que muitas vezes só a cozinha sabe.
   na tela ao tocar em campo com letra menor.
 - `e2e/celular.spec.ts`: nenhuma das 15 telas rola pro lado no celular (dono e
   estoquista) e a barra de baixo leva aos destinos certos. Entra no CI.
+
+## 27. Celular — Escalas por dia
+
+- No celular, a grade do mês (pessoa × dia, quadradinhos de 30px) vira uma
+  agenda: fita de dias (abre em hoje) e, por equipe, quem trabalha com o
+  horário, quem folga e quem está fora — com "N trabalhando · mín. X" em
+  vermelho quando a equipe fica abaixo do mínimo.
+- Tocar na pessoa abre o detalhe do dia (lançar ocorrência, editar escala,
+  prontuário) logo abaixo dela — antes abria acima da grade, fora da tela.
+- No computador nada muda (grade + legenda). Onde mexer:
+  `src/components/escalas/AgendaDiaEscala.tsx` e `EscalasView.tsx`.
+- `e2e/celular.spec.ts` ganhou o teste da agenda (turno visível, detalhe na tela,
+  prontuário abre).
+
+**Reverter:** `git revert` do commit "celular: escala por dia no celular".

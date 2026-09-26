@@ -24,6 +24,7 @@ import type { NotaInput, NotaPerfil, PerfilInput } from "@/lib/escalas/perfil";
 import type { Extra, ExtraInput } from "@/lib/escalas/extras";
 import type { Alerta, DataISO, RegrasEscala } from "@/lib/escalas/tipos";
 import { GradeEscala, LegendaEscala, resumoRegime } from "./GradeEscala";
+import { AgendaDiaEscala } from "./AgendaDiaEscala";
 import { ContextoExtras, LinhaAlerta, PainelAlertas } from "./PainelAlertas";
 import { EquipePerfis } from "./EquipePerfis";
 import { ProntuarioPessoa } from "./ProntuarioPessoa";
@@ -109,6 +110,43 @@ export function EscalasView({
     setAba("ocorrencias");
   };
 
+  // Detalhe do dia tocado: no computador aparece acima da grade; no celular,
+  // logo abaixo da pessoa tocada na agenda (senão abriria fora da vista).
+  const detalheSel =
+    pessoaSel && diaSel ? (
+                <section aria-label="Detalhe do dia" className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--linha-forte)", background: "var(--panel)" }}>
+                  <div className="px-4 py-3 flex flex-wrap items-center gap-3">
+                    <span className="text-[13px] font-semibold px-2.5 py-1 rounded-md" style={{ background: ESTILO[diaSel.situacao].fundo, color: ESTILO[diaSel.situacao].texto }}>
+                      {ESTILO[diaSel.situacao].rotulo}
+                    </span>
+                    <div className="flex-1 min-w-[200px]">
+                      <div className="text-[15px] font-semibold">
+                        {pessoaSel.nome} · {NOME_DIA_CURTO[diaSemanaDe(diaSel.data)]} {diaMes(diaSel.data)}
+                      </div>
+                      <div className="text-[13px] text-[var(--tinta-sub)]">
+                        {ROTULO_SETOR[pessoaSel.setor]} · {pessoaSel.cargo} · {resumoRegime(pessoaSel)}
+                        {pessoaSel.escala.turno ? ` · ${pessoaSel.escala.turno.inicio}–${pessoaSel.escala.turno.fim}` : ""}
+                      </div>
+                      {diaSel.ajuste && <div className="text-[13px] mt-1" style={{ color: "var(--etapa-producao-texto)" }}>{diaSel.ajuste}</div>}
+                    </div>
+                    <button onClick={() => lancarOcorrencia(pessoaSel.id, diaSel.data)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
+                      <CalendarPlus size={15} /> Lançar ocorrência
+                    </button>
+                    <button onClick={() => setEditando(pessoas.find((p) => p.id === pessoaSel.id) ?? null)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
+                      <Pencil size={14} /> Editar escala
+                    </button>
+                    <button onClick={() => setProntuario(pessoaSel.id)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
+                      <ClipboardList size={14} /> Prontuário
+                    </button>
+                  </div>
+                  {alertasSel.length > 0 && (
+                    <ul className="border-t divide-y" style={{ borderColor: "var(--linha)" }}>
+                      {alertasSel.map((a, i) => <LinhaAlerta key={i} a={a} />)}
+                    </ul>
+                  )}
+                </section>
+    ) : null;
+
   return (
     <ContextoExtras.Provider value={contextoExtras}>
     <div className="space-y-5">
@@ -186,49 +224,32 @@ export function EscalasView({
           ) : (
             <>
               <PainelAlertas alertas={calculo.alertas} hoje={hoje} />
-              {pessoaSel && diaSel && (
-                <section aria-label="Detalhe do dia" className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--linha-forte)", background: "var(--panel)" }}>
-                  <div className="px-4 py-3 flex flex-wrap items-center gap-3">
-                    <span className="text-[13px] font-semibold px-2.5 py-1 rounded-md" style={{ background: ESTILO[diaSel.situacao].fundo, color: ESTILO[diaSel.situacao].texto }}>
-                      {ESTILO[diaSel.situacao].rotulo}
-                    </span>
-                    <div className="flex-1 min-w-[200px]">
-                      <div className="text-[15px] font-semibold">
-                        {pessoaSel.nome} · {NOME_DIA_CURTO[diaSemanaDe(diaSel.data)]} {diaMes(diaSel.data)}
-                      </div>
-                      <div className="text-[13px] text-[var(--tinta-sub)]">
-                        {ROTULO_SETOR[pessoaSel.setor]} · {pessoaSel.cargo} · {resumoRegime(pessoaSel)}
-                        {pessoaSel.escala.turno ? ` · ${pessoaSel.escala.turno.inicio}–${pessoaSel.escala.turno.fim}` : ""}
-                      </div>
-                      {diaSel.ajuste && <div className="text-[13px] mt-1" style={{ color: "var(--etapa-producao-texto)" }}>{diaSel.ajuste}</div>}
-                    </div>
-                    <button onClick={() => lancarOcorrencia(pessoaSel.id, diaSel.data)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
-                      <CalendarPlus size={15} /> Lançar ocorrência
-                    </button>
-                    <button onClick={() => setEditando(pessoas.find((p) => p.id === pessoaSel.id) ?? null)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
-                      <Pencil size={14} /> Editar escala
-                    </button>
-                    <button onClick={() => setProntuario(pessoaSel.id)} className="min-h-10 px-3 rounded-lg border inline-flex items-center gap-2 text-[13px] font-medium" style={{ borderColor: "var(--linha-forte)" }}>
-                      <ClipboardList size={14} /> Prontuário
-                    </button>
-                  </div>
-                  {alertasSel.length > 0 && (
-                    <ul className="border-t divide-y" style={{ borderColor: "var(--linha)" }}>
-                      {alertasSel.map((a, i) => <LinhaAlerta key={i} a={a} />)}
-                    </ul>
-                  )}
-                </section>
-              )}
-              <GradeEscala
-                funcionarios={funcionarios}
-                porFuncionario={calculo.porFuncionario}
-                dias={dias}
-                hoje={hoje}
-                coberturaMinima={regras.coberturaMinima}
-                selecionado={selecionado}
-                onSelecionar={setSelecionado}
-              />
-              <LegendaEscala />
+              {detalheSel && <div className="hidden md:block">{detalheSel}</div>}
+              {/* CELULAR (2026-09-26): no celular, agenda por dia; a grade do mês fica no computador. */}
+              <div className="md:hidden">
+                <AgendaDiaEscala
+                  funcionarios={funcionarios}
+                  porFuncionario={calculo.porFuncionario}
+                  dias={dias}
+                  hoje={hoje}
+                  coberturaMinima={regras.coberturaMinima}
+                  selecionado={selecionado}
+                  detalhe={detalheSel}
+                  onSelecionar={(sel) => setSelecionado(selecionado?.pessoaId === sel.pessoaId && selecionado.data === sel.data ? null : sel)}
+                />
+              </div>
+              <div className="hidden md:block space-y-3">
+                <GradeEscala
+                  funcionarios={funcionarios}
+                  porFuncionario={calculo.porFuncionario}
+                  dias={dias}
+                  hoje={hoje}
+                  coberturaMinima={regras.coberturaMinima}
+                  selecionado={selecionado}
+                  onSelecionar={setSelecionado}
+                />
+                <LegendaEscala />
+              </div>
             </>
           )}
         </>
