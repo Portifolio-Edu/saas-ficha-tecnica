@@ -91,6 +91,12 @@ test("ferramentas: sem passe, com passe falso ou sem a chave do n8n, não entra"
   const vencido = assinarPasse({ u: casas.a.userId, c: casas.a.clienteId, p: "dono", n: "x", r: "x", canal: "web" }, SEGREDO, Date.now() - 3_600_000);
   expect((await request.post("/api/agente/ferramentas", { headers: { authorization: `Bearer ${vencido}` }, data: { ferramenta: "resumo_do_dia" } })).status()).toBe(401);
 
+  // Conferência do passe (o n8n usa antes de gastar IA no chat).
+  expect((await request.post("/api/agente/passe", { headers: { authorization: `Bearer ${falso}` } })).status()).toBe(401);
+  const valido = await request.post("/api/agente/passe", { headers: { authorization: `Bearer ${passeDe("a")}` } });
+  expect(valido.status()).toBe(200);
+  expect(await valido.json()).toMatchObject({ ok: true, canal: "web", papel: "dono" });
+
   expect((await request.get("/api/agente/ferramentas")).status()).toBe(401);
   const catalogo = await request.get("/api/agente/ferramentas", { headers: { "x-ft-chave": CHAVE } });
   expect(catalogo.status()).toBe(200);

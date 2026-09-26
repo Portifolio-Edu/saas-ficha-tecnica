@@ -871,8 +871,11 @@ passo e desenho em `docs/AGENTE_IA.md`.
 - **Quem usa**: dono, gestor e estoquista (o tablet da cozinha não).
 - Banco: `agente_acoes`, `agente_whatsapp` e o balde privado
   `agente-anexos` (migration 20260928170000, aplicada).
-- n8n: workflow **FT — Agente IA** na pasta *FT — Ficha Técnica* (não
-  publicado; falta a credencial da chave e crédito de IA).
+- n8n (pasta *FT — Ficha Técnica*, não publicados): **Núcleo** (Gemini lê
+  os anexos; DeepSeek responde, Gemini de reserva), **Chat do sistema**
+  (confere o passe no app antes de gastar IA) e **WhatsApp** (Evolution só
+  por HTTP Request). Testados no n8n: foto lida, resposta, ferramenta
+  chamada no formato certo, passe forjado recusado.
 - Testes: `supabase/testes/agente.sql` (19) e `e2e/agente.spec.ts` (n8n
   simulado: chave e passe obrigatórios, isolamento entre restaurantes,
   confirmação única, ativação do WhatsApp, chat com foto).

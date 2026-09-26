@@ -66,9 +66,11 @@ usuário logado. Todas são intencionais e conferem restaurante e papel dentro:
   pessoa (link mágico gerado e trocado na hora, sem e-mail), descobrir o dono
   de um número de WhatsApp **ativado** e marcar o número como ativado depois
   do código certo.
-- n8n → app (`/whatsapp/sessao`, `/whatsapp/ativar`, catálogo) e app → n8n
-  (webhook do chat) usam a chave `x-ft-chave` (`AGENTE_CHAVE_N8N`,
-  comparação em tempo constante).
+- n8n → app (`/whatsapp/sessao`, `/whatsapp/ativar`, catálogo) usa a chave
+  `x-ft-chave` (`AGENTE_CHAVE_N8N`, comparação em tempo constante). O
+  webhook do chat no n8n confere o passe no app (`/api/agente/passe`) antes
+  de chamar a IA: sem passe assinado pelo app, 401. O endereço do app vem do
+  Config do workflow, nunca do corpo da mensagem.
 - `agente_acoes`: a pessoa só propõe e decide o que é dela; o conteúdo da
   proposta não muda depois de criada; confirmar é em dois passos
   ("aplicando"), então repetir o "sim" não aplica de novo.
