@@ -9,10 +9,13 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RotateCcw } from "lucide-react";
+import { acaoRegistrarErroNavegador } from "@/lib/monitoramento/acoes";
 
 export default function Erro({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
+    // Erro do servidor já foi gravado lá (tem digest); o do navegador vai agora.
+    if (!error.digest) void acaoRegistrarErroNavegador({ mensagem: error.message, rota: window.location.pathname }).catch(() => {});
   }, [error]);
 
   return (

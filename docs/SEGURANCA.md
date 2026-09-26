@@ -38,6 +38,12 @@ usuário logado. Todas são intencionais e conferem restaurante e papel dentro:
 | `registrar_processamento_cozinha` | tablet | proteína do restaurante; valida pesos |
 | `fechamentos_cmv_estoque` | estoquista | `auth_estoque()`; só colunas sem faturamento |
 
+## Tabelas só do servidor
+
+`erros_sistema` (monitoramento) tem RLS ligada e nenhuma policy de propósito:
+só a service role lê e grava. O verificador do Supabase lista como "RLS sem
+policy" (aviso informativo) — é o esperado.
+
 ## Regras pra código novo
 
 - Policy nova: `interno.auth_cliente_id()`, `interno.auth_gestao()`, `interno.auth_estoque()` (nome completo).

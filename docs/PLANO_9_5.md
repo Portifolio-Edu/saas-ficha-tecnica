@@ -57,7 +57,8 @@ reais (telefone repetido no cadastro; "Link expirado" na recuperação de senha)
 - [x] Acessibilidade (axe) e desempenho (Lighthouse) nas telas principais
       (axe: 60 varreduras sem violação séria; Lighthouse 94–100).
 - [x] LGPD: exportar e excluir os dados do restaurante (Configurações → Seus dados).
-- [ ] Erros de produção registrados (monitoramento).
+- [x] Erros de produção registrados (monitoramento): tabela `erros_sistema`,
+      com o mesmo código que a pessoa vê na tela.
 - [ ] PR #1 integrado na `main` (versão 1.0) com tudo verde.
 
 **Pronto quando:** zero achado crítico aberto, PR integrado.

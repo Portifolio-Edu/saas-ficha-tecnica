@@ -643,3 +643,24 @@ entram mais). Migration `20260928110000_excluir_restaurante.sql` (aplicada).
 
 **Reverter:** `git revert` do commit "LGPD: baixar e excluir" e
 `supabase/reverter/20260928110000_excluir_restaurante.sql`.
+
+## 23. Plano 9,5 — etapa 3: monitoramento de erros
+
+- Todo erro do servidor (página, server action, rota) é gravado em
+  `erros_sistema` (`src/instrumentation.ts` → `onRequestError` →
+  `src/lib/monitoramento`), com o mesmo código (digest) que a pessoa vê na
+  tela de erro. Erro que acontece só no navegador também vai (só de quem está
+  logado). Nova tela `global-error.tsx` pra erro no layout raiz.
+- Antes de gravar, tira do texto token, chave, e-mail e número longo; a rota
+  fica sem a parte `?…` (link de e-mail tem token). Guarda 90 dias.
+- Só a service role lê e grava (nenhum usuário do app). Consultar:
+  `select criado_em, origem, rota, mensagem, digest from erros_sistema order by criado_em desc limit 50;`
+  Alerta no WhatsApp/Telegram: etapa 5 (n8n lê essa tabela).
+- Testes: e2e `monitoramento.spec.ts` (erro real — WhatsApp tomado enquanto a
+  pessoa confirmava o e-mail — aparece com código na tela e a linha com o
+  mesmo código está no banco; visitante não lê a tabela), SQL (logado não lê
+  nem grava), unitário (limpeza do texto). Migration
+  `20260928120000_erros_sistema.sql` (aplicada).
+
+**Reverter:** `git revert` do commit "monitoramento de erros" e
+`supabase/reverter/20260928120000_erros_sistema.sql`.

@@ -116,6 +116,16 @@ do $$ begin
   exception when others then insert into resultado values ('logado ainda usa as funções de papel (policies)','ok','falhou'); end;
 end $$;
 
+-- Erros do sistema (2026-09-28): só a service role lê e grava.
+do $$ begin
+  begin perform count(*) from erros_sistema;
+    insert into resultado values ('logado lê a tabela de erros','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('logado lê a tabela de erros','bloqueado','bloqueado'); end;
+  begin insert into erros_sistema (origem, mensagem) values ('navegador', 'forjado');
+    insert into resultado values ('logado grava erro direto','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('logado grava erro direto','bloqueado','bloqueado'); end;
+end $$;
+
 -- PESSOA NOVA (cadastro): cria o próprio restaurante, sem escolher plano
 select set_config('request.jwt.claims', '{"sub":"d3333333-0000-0000-0000-000000000001","role":"authenticated"}', true);
 do $$ begin
