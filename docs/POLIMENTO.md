@@ -727,3 +727,25 @@ tanto que muitas vezes só a cozinha sabe.
   prontuário abre).
 
 **Reverter:** `git revert` do commit "celular: escala por dia no celular".
+
+## 28. Celular — link só de consulta do pessoal da cozinha
+
+- Equipe e acessos → "Link de consulta no celular": o gestor gera um link por
+  pessoa, manda no WhatsApp (mensagem pronta) ou copia, e desliga quando a
+  pessoa sai. Mostra se a pessoa já abriu. Gerar de novo desliga o anterior.
+- No celular da pessoa, sem login (`/consulta/[código]`): três abas —
+  Escala (hoje em destaque, próxima folga, próximas semanas, só dela),
+  Fichas (as mesmas do tablet, sem custo) e Checklists (feito / falta hoje).
+  Nada grava. Atualiza sozinho a cada minuto e ao voltar pra aba.
+- Link errado, desligado ou de pessoa inativa: "Este link não abre mais".
+- Banco: `links_consulta` (só o hash do código), `consulta_por_link` (só o
+  servidor chama). `dados_cozinha()`/`escala_publica()` passam a usar as
+  mesmas funções internas, com o mesmo resultado pro tablet.
+- Demo: `/preview/consulta` (o que a Juliana vê) e os botões em /preview/equipe.
+- Testes: unitários (escala da pessoa, próxima folga, convite), SQL
+  `link_consulta.sql` 30/30, e2e (gestor gera no celular → pessoa abre sem
+  login, sem R$ nem motivo, sem botão que grave → desliga → não abre),
+  acessibilidade e "sem rolagem lateral" com a tela nova.
+
+**Reverter:** `git revert` do commit e
+`supabase/reverter/20260928140000_link_consulta.sql`.

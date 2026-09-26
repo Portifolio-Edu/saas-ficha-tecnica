@@ -39,6 +39,22 @@ usuário logado. Todas são intencionais e conferem restaurante e papel dentro:
 | `fechamentos_cmv_estoque` | estoquista | `auth_estoque()`; só colunas sem faturamento |
 | `agenda_fornecedores` | tablet | só agenda de entrega (sem telefone, e-mail ou contato) do próprio restaurante |
 
+## Link só de consulta (pessoal da cozinha, sem login)
+
+- `consulta_por_link(código, início, fim)` é `security definer` e só a
+  **service role** executa (logado e visitante recebem "permissão negada").
+  A página pública `/consulta/[código]` chama pelo servidor.
+- O banco guarda só o hash (sha256) do código; o código tem 192 bits
+  aleatórios e aparece uma vez pro gestor. Ninguém lê o hash pela API.
+- Devolve o recorte do tablet (`interno.dados_cozinha_de`,
+  `interno.escala_publica_de`) + checklists do dia: sem R$, saldo, contato ou
+  motivo de ausência. A escala dos outros fica no servidor: o celular recebe
+  só a da pessoa.
+- Link desligado, código errado, pessoa inativa ou desligada: mesma tela
+  "link não abre mais". Desligar é definitivo (gatilho) e com a hora do banco.
+- Página sem referer, sem cache e fora dos buscadores (next.config.ts).
+- Testes: `supabase/testes/link_consulta.sql` (30) e e2e em `papeis.spec.ts`.
+
 ## Tabelas só do servidor
 
 `erros_sistema` (monitoramento) tem RLS ligada e nenhuma policy de propósito:
@@ -51,6 +67,7 @@ policy" (aviso informativo) — é o esperado.
 - Tabela nova que aponta pra item de restaurante: gatilho `garantir_mesmo_restaurante`.
 - Tabela nova com `criado_por`: gatilho `carimbar_criado_por`.
 - Função nova `security definer`: `revoke execute … from public, anon` e conferir restaurante e papel dentro.
+- Função em `interno` que recebe o restaurante por parâmetro: `revoke execute … from public, anon, authenticated` (só roda dentro de outra função).
 - Nada de `NEXT_PUBLIC_` em chave secreta; a service role só no servidor e só depois de conferir quem pediu.
 
 ## Pendências (painel do dono, etapa 4)

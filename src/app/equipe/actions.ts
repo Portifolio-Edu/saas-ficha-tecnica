@@ -6,6 +6,8 @@ import { buscarMembro, criarCodigoCozinha, criarFuncionario, removerFuncionario,
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { ehGestao } from "@/lib/auth/papeis";
 import { emailDoUsuario, normalizarUsuario, usuarioValido } from "@/lib/auth/equipe";
+import { origemDoSite } from "@/lib/auth/origem";
+import { criarLinkConsulta, desligarLinkConsulta } from "@/lib/dados/consulta";
 
 // EQUIPE (2026-09-25): gestão da equipe. Criar login, desativar e trocar senha
 // passam pela service role (Supabase Auth admin); por isso cada ação confere
@@ -171,6 +173,33 @@ export async function acaoRemoverFuncionario(id: string): Promise<Resultado> {
   if ("ok" in cliente) return cliente;
   try {
     await removerFuncionario(id);
+  } catch (e) {
+    return erro(e);
+  }
+  revalidatePath("/equipe");
+  return { ok: true };
+}
+
+// CELULAR (2026-09-26): link só de consulta de cada pessoa da cozinha. Roda
+// com a sessão de quem pede (a RLS só deixa dono e gestor, e só pra gente da
+// própria casa). O link aparece uma vez; gerar de novo desliga o anterior.
+export async function acaoGerarLinkConsulta(funcionarioId: string): Promise<Resultado<{ link: string; criadoEm: string }>> {
+  const cliente = await exigirGestao();
+  if ("ok" in cliente) return cliente;
+  try {
+    const { codigo, criadoEm } = await criarLinkConsulta(cliente.id, funcionarioId);
+    revalidatePath("/equipe");
+    return { ok: true, dados: { link: `${await origemDoSite()}/consulta/${codigo}`, criadoEm } };
+  } catch (e) {
+    return erro(e);
+  }
+}
+
+export async function acaoDesligarLinkConsulta(funcionarioId: string): Promise<Resultado> {
+  const cliente = await exigirGestao();
+  if ("ok" in cliente) return cliente;
+  try {
+    await desligarLinkConsulta(funcionarioId);
   } catch (e) {
     return erro(e);
   }

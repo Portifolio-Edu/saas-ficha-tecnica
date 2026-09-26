@@ -46,7 +46,7 @@ interface InsumoRpc {
   tem_estoque: boolean;
 }
 
-interface DadosRpc {
+export interface DadosRpc {
   receitas: ReceitaRpc[];
   insumos: InsumoRpc[];
   processamentos: { insumo_id: string; peso_bruto_recebido: number; peso_liquido_resultante: number; processado_em: string }[];
@@ -67,7 +67,12 @@ export async function carregarDadosCozinha(): Promise<DadosCozinha> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("dados_cozinha");
   if (error) throw new Error(mensagemErro(error));
-  const dados = data as DadosRpc;
+  return montarDadosCozinha(data as DadosRpc);
+}
+
+/** CELULAR (2026-09-26): o mesmo recorte chega pelo link de consulta
+ * (consulta_por_link devolve o dados_cozinha da casa em `cozinha`). */
+export function montarDadosCozinha(dados: DadosRpc): DadosCozinha {
 
   const nomeInsumo = new Map(dados.insumos.map((i) => [i.id, i.nome]));
   const fcInsumo = new Map(dados.insumos.map((i) => [i.id, Number(i.fator_correcao) || 1]));

@@ -6,6 +6,8 @@
 import { EquipeView, type AcoesEquipe } from "@/components/equipe/EquipeView";
 import { usePapelDemo } from "@/components/ficha/PapelDemo";
 import { funcionariosDemo, membrosDemo, USER_ID_DONO_DEMO } from "../equipeDemo";
+import { NOME_RESTAURANTE } from "../fixtures";
+import type { LinkConsulta } from "@/lib/dominio/consulta";
 
 const espera = () => new Promise((r) => setTimeout(r, 250));
 const ok = async () => {
@@ -32,7 +34,15 @@ const acoesDemo: AcoesEquipe = {
   },
   adicionarFuncionario: ok,
   removerFuncionario: ok,
+  // CELULAR (2026-09-26): na demo o link abre a tela da Juliana.
+  gerarLink: async () => {
+    await espera();
+    return { ok: true, dados: { link: `${window.location.origin}/preview/consulta`, criadoEm: new Date().toISOString() } };
+  },
+  desligarLink: ok,
 };
+
+const linksDemo: LinkConsulta[] = [{ funcionarioId: "f-juliana", criadoEm: "2026-09-20T13:00:00.000Z", ultimoAcessoEm: new Date(Date.now() - 3 * 3_600_000).toISOString() }];
 
 export function EquipeDemo() {
   const { papel } = usePapelDemo();
@@ -41,6 +51,8 @@ export function EquipeDemo() {
     <EquipeView
       membros={membrosDemo}
       funcionarios={funcionariosDemo}
+      links={linksDemo}
+      nomeRestaurante={NOME_RESTAURANTE}
       papelAtual={papel}
       userIdAtual={userId}
       acoes={acoesDemo}

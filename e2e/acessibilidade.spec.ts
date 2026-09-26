@@ -26,6 +26,7 @@ const TELAS = [
   "/preview/nutricional",
   "/preview/integracoes",
   "/preview/configuracoes",
+  "/preview/consulta",
 ];
 
 for (const tema of ["light", "dark"] as const) {

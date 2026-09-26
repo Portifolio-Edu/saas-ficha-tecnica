@@ -50,6 +50,8 @@ const TABELAS: Tabela[] = [
   { nome: "vendas_periodo" },
   { nome: "event_log" },
   { nome: "funcionarios" },
+  // Link de consulta: sem o hash do código.
+  { nome: "links_consulta", colunas: "id, funcionario_id, criado_em, revogado_em, ultimo_acesso_em" },
   { nome: "escalas_regras", ordem: "cliente_id" },
   { nome: "escalas_config" },
   { nome: "prontuario_ocorrencias" },

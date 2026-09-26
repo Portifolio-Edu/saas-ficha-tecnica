@@ -153,11 +153,17 @@ export async function carregarEscalaPublica(inicio: DataISO, fim: DataISO): Prom
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("escala_publica", { p_inicio: inicio, p_fim: fim });
   if (error) throw new Error(mensagemErro(error));
-  const d = data as {
-    intervalo_domingo_semanas: number;
-    funcionarios: (LinhaConfig & { id: string; nome: string; setor: Setor; cargo: string; admitido_em: string; desligado_em: string | null })[];
-    ausencias: { funcionario_id: string; tipo: "ausencia" | "ausencia_prolongada" | "ferias" | "restricao"; inicio: string; fim: string }[];
-  };
+  return paraEntradaEscala(data as EscalaPublicaRpc);
+}
+
+export interface EscalaPublicaRpc {
+  intervalo_domingo_semanas: number;
+  funcionarios: (LinhaConfig & { id: string; nome: string; setor: Setor; cargo: string; admitido_em: string; desligado_em: string | null })[];
+  ausencias: { funcionario_id: string; tipo: "ausencia" | "ausencia_prolongada" | "ferias" | "restricao"; inicio: string; fim: string }[];
+}
+
+/** CELULAR (2026-09-26): também usado pelo link de consulta (mesmo recorte). */
+export function paraEntradaEscala(d: EscalaPublicaRpc): { funcionarios: FuncionarioEscala[]; ocorrencias: Ocorrencia[]; regras: RegrasEscala } {
   return {
     regras: { intervaloDomingoSemanas: d.intervalo_domingo_semanas, coberturaMinima: {} },
     funcionarios: d.funcionarios.map((f) => ({

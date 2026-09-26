@@ -329,6 +329,55 @@ test.describe.serial("com login real", () => {
     expect(extra).toMatchObject({ telefone: "5511987654321", nivel: "senior", pracas: ["Chapa"], aceita_whatsapp: true });
     expect(extra!.consentimento_em, "data do consentimento gravada").toBeTruthy();
   });
+  // CELULAR (2026-09-26): link só de consulta do pessoal da cozinha.
+  test("gestor gera o link no celular; a pessoa abre sem login, sem custo nem motivo; desligado não abre mais", async ({ browser }) => {
+    const opcoesCelular = { baseURL: "http://127.0.0.1:3000", locale: "pt-BR", timezoneId: "America/Sao_Paulo", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+    const celular = await (await browser.newContext(opcoesCelular)).newPage();
+    celular.on("dialog", (d) => d.accept());
+    await entrar(celular, gestor.usuario, gestor.senha);
+    await celular.goto("/equipe");
+    const linha = celular.locator("li").filter({ hasText: "Bruno Chapa" }).filter({ has: celular.getByRole("button", { name: /Gerar/ }) });
+    await linha.getByRole("button", { name: "Gerar link" }).click();
+    const link = await celular.getByRole("textbox", { name: "Link de Bruno Chapa" }).inputValue();
+    expect(link).toMatch(/^http:\/\/127\.0\.0\.1:3000\/consulta\/[A-Za-z0-9_-]{32}$/);
+    await expect(celular.getByRole("link", { name: "Mandar no WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=.*Oi%2C%20Bruno!/);
+    const codigo = link.split("/").pop()!;
+    const { data: guardado } = await admin().from("links_consulta").select("token_hash, revogado_em").eq("cliente_id", clienteId).single();
+    expect(guardado!.token_hash, "banco guarda só o hash").not.toContain(codigo);
+    expect(guardado!.revogado_em).toBeNull();
+
+    // A pessoa, no celular dela, sem login.
+    const pessoa = await (await browser.newContext(opcoesCelular)).newPage();
+    const resposta = await pessoa.goto(link);
+    expect(resposta!.headers()["referrer-policy"]).toBe("no-referrer");
+    expect(resposta!.headers()["cache-control"]).toContain("no-store");
+    await expect(pessoa.getByRole("heading", { name: "Olá, Bruno" })).toBeVisible();
+    await expect(pessoa.getByText(dono.restaurante)).toBeVisible();
+    await expect(pessoa.getByText("Hoje você não está na escala.")).toBeVisible();
+    await pessoa.getByRole("tab", { name: /Fichas/ }).click();
+    await expect(pessoa.getByRole("button", { name: new RegExp(`Massa ${RODADA}`) })).toBeVisible();
+    await pessoa.getByRole("tab", { name: /Checklists/ }).click();
+    const tudo = await pessoa.locator("body").innerText();
+    expect(tudo).not.toMatch(/R\$|Afastamento|Afastado|INSS|Laudo/);
+    expect(await pessoa.getByRole("button", { name: /Salvar|Registrar|Marcar|Pedir/ }).count(), "nada grava").toBe(0);
+    expect(await pessoa.evaluate(() => document.documentElement.scrollWidth), "sem rolagem lateral").toBeLessThanOrEqual(390);
+
+    const { data: acesso } = await admin().from("links_consulta").select("ultimo_acesso_em").eq("cliente_id", clienteId).single();
+    expect(acesso!.ultimo_acesso_em, "gestor vê que a pessoa abriu").toBeTruthy();
+    await celular.reload();
+    await expect(linha.getByText(/abriu hoje/)).toBeVisible();
+
+    // Desligar: para na hora. Código inventado dá a mesma tela.
+    await linha.getByRole("button", { name: "Desligar o link de Bruno Chapa" }).click();
+    await expect(celular.getByText("Link de Bruno Chapa desligado.")).toBeVisible();
+    await pessoa.reload();
+    await expect(pessoa.getByText("Este link não abre mais")).toBeVisible();
+    await pessoa.goto(`/consulta/${"x".repeat(32)}`);
+    await expect(pessoa.getByText("Este link não abre mais")).toBeVisible();
+    await pessoa.context().close();
+    await celular.context().close();
+  });
+
   // PLANO 9,5, etapa 3 (2026-09-26): LGPD — baixar e excluir os dados.
   test("só o dono baixa todos os dados do restaurante, sem segredo técnico", async ({ page }) => {
     await entrar(page, estoquista.usuario, estoquista.senha);

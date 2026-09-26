@@ -17,11 +17,23 @@ const CABECALHOS = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 
+// CELULAR (2026-09-26): o link só de consulta leva o código no endereço.
+// Sem referer (o código não vaza pra site de fora ao abrir uma foto), sem
+// cache e fora dos buscadores.
+const CABECALHOS_CONSULTA = [
+  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "Cache-Control", value: "private, no-store" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+];
+
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: CABECALHOS }];
+    return [
+      { source: "/:path*", headers: CABECALHOS },
+      { source: "/consulta/:path*", headers: CABECALHOS_CONSULTA },
+    ];
   },
 };
 

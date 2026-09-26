@@ -16,10 +16,12 @@ import { useToast } from "@/components/ficha/Toast";
 import { nums } from "@/components/ficha/tema";
 import { ROTULO_PAPEL, type Papel } from "@/lib/auth/papeis";
 import type { CodigoCozinha, Funcionario, Membro, NovoAcessoInput } from "@/lib/dominio/equipe";
+import type { LinkConsulta } from "@/lib/dominio/consulta";
+import { LinksConsulta, type AcoesLinks } from "./LinksConsulta";
 
 export type ResultadoEquipe<T = undefined> = { ok: true; dados?: T } | { ok: false; erro: string };
 
-export interface AcoesEquipe {
+export interface AcoesEquipe extends AcoesLinks {
   criarAcesso: (input: NovoAcessoInput) => Promise<ResultadoEquipe>;
   definirAtivo: (membroId: string, ativo: boolean) => Promise<ResultadoEquipe>;
   trocarSenha: (membroId: string, senha: string) => Promise<ResultadoEquipe>;
@@ -39,9 +41,14 @@ export function EquipeView({
   userIdAtual,
   acoes,
   enderecoCozinha,
+  links,
+  nomeRestaurante,
 }: {
   membros: Membro[];
   funcionarios: Funcionario[];
+  /** CELULAR (2026-09-26): links de consulta ativos, por pessoa. */
+  links: LinkConsulta[];
+  nomeRestaurante: string;
   papelAtual: Papel;
   userIdAtual: string;
   acoes: AcoesEquipe;
@@ -305,6 +312,8 @@ export function EquipeView({
           </div>
         </div>
       </Card>
+
+      <LinksConsulta funcionarios={funcionarios} links={links} nomeRestaurante={nomeRestaurante} acoes={acoes} />
 
       <QuadroAcessos />
     </div>
