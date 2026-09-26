@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { origemDoSite } from "@/lib/auth/origem";
+import { caminhoInterno } from "@/lib/auth/redirecionamento";
 
 // PRODUCAO (2026-09-24): destino dos links que o Supabase manda por e-mail
 // (confirmação de cadastro e recuperação de senha). Antes não existia: o cliente
@@ -14,8 +15,7 @@ export async function GET(request: NextRequest) {
   const tokenHash = url.searchParams.get("token_hash");
   const tipo = url.searchParams.get("type") as EmailOtpType | null;
   // Só caminhos internos, pra o link não virar redirecionamento pra site de fora.
-  const proximoBruto = url.searchParams.get("next") ?? "/visao-geral";
-  const proximo = proximoBruto.startsWith("/") && !proximoBruto.startsWith("//") ? proximoBruto : "/visao-geral";
+  const proximo = caminhoInterno(url.searchParams.get("next"));
 
   const supabase = await createClient();
   let erro: string | null = null;

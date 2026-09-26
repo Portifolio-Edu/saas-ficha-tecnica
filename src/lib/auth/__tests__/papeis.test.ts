@@ -50,6 +50,6 @@ describe("login da equipe", () => {
 
   it("e-mail passa direto; usuário vira e-mail técnico", () => {
     expect(emailDeLogin("dono@restaurante.com")).toBe("dono@restaurante.com");
-    expect(emailDeLogin("Maria.Estoque")).toBe("maria.estoque@equipe.fichatecnica.app");
+    expect(emailDeLogin("Maria.Estoque")).toBe("maria.estoque@equipe.fichatecnica.invalid");
   });
 });

@@ -2,7 +2,7 @@
 -- antes do cadastro. Roda numa transação e desfaz no fim. Toda linha precisa sair OK.
 begin;
 create temp table resultado (teste text, esperado text, obtido text) on commit drop;
-grant all on resultado to authenticated, anon;
+grant all on resultado to authenticated, anon, service_role;
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
 values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'tel@exemplo.invalid', 'x', now(), now(), now(), '{}', '{}');
@@ -18,11 +18,33 @@ do $$ begin
   exception when others then insert into resultado values ('trava: telefone fora do formato','bloqueado','bloqueado'); end;
 end $$;
 
+-- Só o servidor (service role) pergunta se o número está livre (2026-09-28).
+set local role service_role;
+insert into resultado select 'servidor: número já usado (outro formato)', 'false', telefone_disponivel('11987654321')::text;
+insert into resultado select 'servidor: número livre', 'true', telefone_disponivel('(21) 99999-0000')::text;
+reset role;
+
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-insert into resultado select 'visitante: número já usado (outro formato)', 'false', telefone_disponivel('11987654321')::text;
-insert into resultado select 'visitante: número livre', 'true', telefone_disponivel('(21) 99999-0000')::text;
-insert into resultado select 'visitante: não lê clientes', '0', count(*)::text from clientes;
+do $$ begin
+  begin perform telefone_disponivel('11987654321');
+    insert into resultado values ('visitante: não testa número','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante: não testa número','bloqueado','bloqueado'); end;
+end $$;
+do $$ begin
+  begin perform count(*) from (select 1 from clientes) x;
+    insert into resultado values ('visitante: não lê clientes','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante: não lê clientes','bloqueado','bloqueado'); end;
+end $$;
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1","role":"authenticated"}', true);
+do $$ begin
+  begin perform telefone_disponivel('11987654321');
+    insert into resultado values ('logado: não testa número','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('logado: não testa número','bloqueado','bloqueado'); end;
+end $$;
 reset role;
 
 select teste, esperado, obtido, case when esperado = obtido then 'OK' else 'FALHOU' end as status from resultado;

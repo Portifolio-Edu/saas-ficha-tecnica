@@ -115,8 +115,21 @@ insert into resultado select 'apagar pessoa apaga perfil e notas', '0 0',
 reset role;
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-insert into resultado select 'visitante: não vê perfil, notas nem extras', '0 0 0',
-  (select count(*) from perfil_funcionario)::text || ' ' || (select count(*) from perfil_notas)::text || ' ' || (select count(*) from banco_extras)::text;
+do $$ begin
+  begin perform count(*) from (select 1 from perfil_funcionario) x;
+    insert into resultado values ('visitante: não vê perfil','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante: não vê perfil','bloqueado','bloqueado'); end;
+end $$;
+do $$ begin
+  begin perform count(*) from (select 1 from perfil_notas) x;
+    insert into resultado values ('visitante: não vê notas','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante: não vê notas','bloqueado','bloqueado'); end;
+end $$;
+do $$ begin
+  begin perform count(*) from (select 1 from banco_extras) x;
+    insert into resultado values ('visitante: não vê extras','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante: não vê extras','bloqueado','bloqueado'); end;
+end $$;
 reset role;
 
 select teste, esperado, obtido, case when esperado = obtido then 'OK' else 'FALHOU' end as status from resultado;

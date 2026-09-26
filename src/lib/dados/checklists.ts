@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
 import { inicioDoDiaISO } from "@/lib/calculo/dia";
 import type { Checklist, ChecklistArea, ChecklistFoto, ChecklistInput, ChecklistItem, MomentoChecklist } from "@/lib/dominio/checklist";
+import { extensaoDaFoto } from "@/lib/imagem/tipoFoto";
 
 export type { Checklist, ChecklistArea, ChecklistFoto, ChecklistInput, ChecklistItem, MomentoChecklist } from "@/lib/dominio/checklist";
 
@@ -158,9 +159,9 @@ export async function desmarcarItemConcluido(itemId: string): Promise<void> {
  * cliente_id como 1º segmento), e grava a linha em checklist_fotos. */
 export async function adicionarFotoChecklist(clienteId: string, checklistId: string, arquivo: File, legenda: string | null, ordem: number, areaId: string | null = null): Promise<void> {
   const supabase = await createClient();
-  const extensao = arquivo.name.split(".").pop() || "jpg";
+  const extensao = extensaoDaFoto(arquivo.type, arquivo.size);
   const caminho = `${clienteId}/${checklistId}/${crypto.randomUUID()}.${extensao}`;
-  const { error } = await supabase.storage.from(BUCKET_FOTOS_PRACAS).upload(caminho, arquivo, { contentType: arquivo.type || undefined, upsert: false });
+  const { error } = await supabase.storage.from(BUCKET_FOTOS_PRACAS).upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
   if (error) throw new Error(mensagemErro(error));
   const { data } = supabase.storage.from(BUCKET_FOTOS_PRACAS).getPublicUrl(caminho);
   const { error: erroLinha } = await supabase.from("checklist_fotos").insert({ checklist_id: checklistId, url: data.publicUrl, caminho, legenda, ordem, area_id: areaId });

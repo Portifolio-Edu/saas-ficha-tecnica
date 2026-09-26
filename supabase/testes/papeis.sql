@@ -48,7 +48,7 @@ set local role authenticated;
 
 -- DONO
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
-insert into resultado select 'dono: trigger criou o membro dono', 'dono', coalesce(auth_papel(),'(nada)');
+insert into resultado select 'dono: trigger criou o membro dono', 'dono', coalesce(interno.auth_papel(),'(nada)');
 insert into resultado select 'dono: lê receitas', '1', count(*)::text from receitas;
 insert into resultado select 'dono: lê faturamento', '20000', coalesce(max(faturamento)::text,'(nada)') from fechamentos_cmv;
 insert into resultado select 'dono: vê a equipe inteira', '5', count(*)::text from membros;
@@ -160,8 +160,16 @@ insert into resultado select 'baixa não atinge insumo de outro restaurante', '7
 -- Visitante
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-insert into resultado select 'visitante lê membros', '0', count(*)::text from membros;
-insert into resultado select 'visitante lê insumos', '0', count(*)::text from insumos;
+do $$ begin
+  begin perform count(*) from (select 1 from membros) x;
+    insert into resultado values ('visitante lê membros','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante lê membros','bloqueado','bloqueado'); end;
+end $$;
+do $$ begin
+  begin perform count(*) from (select 1 from insumos) x;
+    insert into resultado values ('visitante lê insumos','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante lê insumos','bloqueado','bloqueado'); end;
+end $$;
 reset role;
 
 select teste, esperado, obtido, case when esperado = obtido then 'OK' else 'FALHOU' end as status from resultado;

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { origemDoSite } from "./origem";
 import { VERSAO_TERMOS } from "./termos";
-import { emailDeLogin } from "./equipe";
+import { DOMINIO_EQUIPE, emailDeLogin } from "./equipe";
 import { normalizarTelefone, telefoneValido } from "@/lib/telefone";
 import { criarClienteAdmin, serviceRoleConfigurada } from "@/lib/supabase/admin";
 
@@ -69,10 +69,16 @@ export async function cadastrar(_estado: EstadoAuth, formData: FormData): Promis
 
   const supabase = await createClient();
 
-  const { data: disponivel, error: erroTelefone } = await supabase.rpc("telefone_disponivel", { p_telefone: telefone });
-  if (erroTelefone) return { erro: "Não foi possível conferir o telefone agora. Tente de novo em instantes." };
-  if (disponivel === false) {
-    return { erro: "Esse WhatsApp já está cadastrado em outro restaurante. Entre com a conta dele ou use outro número." };
+  // PLANO 9,5 (2026-09-28): a conferência roda com a service role (só o
+  // servidor pode perguntar se um número é cliente; visitante não). Sem a
+  // chave configurada, pula a conferência e o índice único do banco segura
+  // (a conta recém-criada é desfeita logo abaixo).
+  if (serviceRoleConfigurada()) {
+    const { data: disponivel, error: erroTelefone } = await criarClienteAdmin().rpc("telefone_disponivel", { p_telefone: telefone });
+    if (erroTelefone) return { erro: "Não foi possível conferir o telefone agora. Tente de novo em instantes." };
+    if (disponivel === false) {
+      return { erro: "Esse WhatsApp já está cadastrado em outro restaurante. Entre com a conta dele ou use outro número." };
+    }
   }
 
   // nome/nome_restaurante/telefone vão em user_metadata: se a confirmação de
@@ -128,6 +134,11 @@ export async function sair() {
 export async function recuperarSenha(_estado: EstadoAuth, formData: FormData): Promise<EstadoAuth> {
   const email = String(formData.get("email") ?? "").trim();
   if (!email) return { erro: "Informe o e-mail da conta." };
+  // Gestor e estoquista entram com usuário, sem e-mail de verdade: a senha
+  // nova vem do dono ou do gestor, na tela Equipe.
+  if (!email.includes("@") || email.toLowerCase().endsWith(`@${DOMINIO_EQUIPE}`)) {
+    return { erro: "Quem entra com usuário (gestor ou estoquista) pede a senha nova ao dono ou ao gestor, na tela Equipe." };
+  }
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${await origemDoSite()}/auth/confirmar?next=/nova-senha`,

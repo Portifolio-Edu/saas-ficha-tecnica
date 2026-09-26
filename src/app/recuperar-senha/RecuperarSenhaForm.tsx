@@ -29,7 +29,10 @@ export function RecuperarSenhaForm() {
         <label htmlFor="email" className="block text-[13px] font-medium mb-1.5 text-[var(--sub)]">
           E-mail da conta
         </label>
-        <input id="email" name="email" type="email" required autoComplete="email" className={classeCampo} style={{ borderColor: "var(--linha-forte)" }} />
+        {/* PLANO 9,5 (2026-09-28): texto, não "email": quem digita o usuário
+            (gestor/estoquista) recebe a orientação do servidor em vez da
+            bolha genérica do navegador. */}
+        <input id="email" name="email" type="text" inputMode="email" autoCapitalize="none" spellCheck={false} required autoComplete="email" className={classeCampo} style={{ borderColor: "var(--linha-forte)" }} />
       </div>
       {estado.erro && (
         <div role="alert" className="text-[13px] rounded-lg px-3 py-2.5 flex items-start gap-2" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>

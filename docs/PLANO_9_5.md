@@ -50,8 +50,9 @@ reais (telefone repetido no cadastro; "Link expirado" na recuperação de senha)
 
 ## 3. Endurecimento e integração
 
-- [ ] Revisão de código e de segurança do PR inteiro; corrigir o que aparecer.
-- [ ] Alertas do Supabase: funções `auth_*` sem execução pra visitante; revisar
+- [x] Revisão de código e de segurança do PR inteiro; corrigir o que aparecer
+      (11 achados, todos corrigidos — `docs/SEGURANCA.md`).
+- [x] Alertas do Supabase: funções `auth_*` sem execução pra visitante; revisar
       cada função `security definer`.
 - [ ] Acessibilidade (axe) e desempenho (Lighthouse) nas telas principais.
 - [ ] LGPD: exportar e excluir os dados do restaurante.

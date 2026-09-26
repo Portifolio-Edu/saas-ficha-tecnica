@@ -575,3 +575,23 @@ Testes: 133 unitários, SQL 157/157 (novo `telefone_cliente.sql`), ponta a ponta
 
 **Reverter:** `git revert` do commit "e2e: ponta a ponta com login real" e
 `supabase/reverter/20260927110000_telefone_cliente.sql`.
+
+## 20. Plano 9,5 — etapa 3: revisão de segurança
+
+Revisão do PR inteiro. Detalhe de cada achado em `docs/SEGURANCA.md`.
+- **Banco** (`20260928100000_endurecimento.sql`, aplicada): referência cruzada
+  entre restaurantes bloqueada por gatilho; `clientes` e `producoes` com
+  privilégio por coluna; `criado_por` carimbado pelo banco; funções `auth_*`
+  no schema `interno` (fora da API); visitante sem privilégio de tabela;
+  `telefone_disponivel` só pelo servidor; baldes só com foto até 5 MB.
+- **App:** domínio da equipe `.invalid` e "esqueci a senha" recusa usuário da
+  equipe; `/auth/confirmar` sem redirecionamento pra fora; upload confere o tipo;
+  cabeçalhos de segurança em todas as páginas; cadastro confere o WhatsApp pela
+  service role.
+
+Testes: SQL 186/186 (novo `endurecimento.sql`, 25 tentativas de burlar),
+unitários 137, ponta a ponta 15/15 (novo `seguranca.spec.ts`). Verificador do
+Supabase: sumiu o alerta de função chamável por visitante.
+
+**Reverter:** `git revert` do commit "segurança: revisão do PR inteiro" e
+`supabase/reverter/20260928100000_endurecimento.sql`.

@@ -49,8 +49,16 @@ insert into resultado select 'A ajusta o próprio estoque (5+2)', '7', saldo_atu
 -- Visitante sem login
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-insert into resultado select 'visitante lê insumos', '0', count(*)::text from insumos;
-insert into resultado select 'visitante lê clientes', '0', count(*)::text from clientes;
+do $$ begin
+  begin perform count(*) from (select 1 from insumos) x;
+    insert into resultado values ('visitante lê insumos','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante lê insumos','bloqueado','bloqueado'); end;
+end $$;
+do $$ begin
+  begin perform count(*) from (select 1 from clientes) x;
+    insert into resultado values ('visitante lê clientes','bloqueado','PASSOU (falha)');
+  exception when insufficient_privilege then insert into resultado values ('visitante lê clientes','bloqueado','bloqueado'); end;
+end $$;
 do $$ begin
   begin perform ajustar_saldo_estoque(gen_random_uuid(), 1);
     insert into resultado values ('visitante chama função que altera estoque','bloqueado','PASSOU (falha)');
