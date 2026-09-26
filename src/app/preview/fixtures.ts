@@ -300,7 +300,8 @@ export const receitasPratos: Receita[] = [
     unidadeRendimento: "porção",
     pesoPorcaoG: 400,
     formaFisica: "solido",
-    destinoVenda: "proprio",
+    // RÓTULO PARA VAREJO (2026-09-26): na demo, a lasanha também sai congelada pro supermercado.
+    destinoVenda: "varejo_terceiro",
     margemAlvo: 0.65,
     modoPreparo: "Montar camadas de carne refogada, molho de tomate, molho branco e mussarela; gratinar no forno.",
     fotoUrl: "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=1200&q=80",
@@ -590,17 +591,29 @@ export const overrides: NutricionalOverride[] = [
   },
 ];
 
-export const rotulagens: Rotulagem[] = receitasPratos.map((r) => ({
-  receitaId: r.id,
-  ingredientes: "Ingredientes conforme ficha técnica: " + r.ficha.length + " itens.",
-  alergenos: r.id === "pt-risoto-camarao" ? "Contém crustáceos." : "Contém glúten e lactose.",
-  gluten: r.id === "pt-caprese" || r.id === "pt-risoto-camarao" ? "Não contém glúten" : "Contém glúten",
-  lactose: "Contém lactose",
-  fabricante: NOME_RESTAURANTE + " Ltda.",
-  endereco: "Rua das Cantinas, 123 — São Paulo/SP",
-  pesoLiquido: `${r.pesoPorcaoG ?? 0}g`,
-  conservacao: "Consumir imediatamente após o preparo. Manter refrigerado se não consumido em até 2h.",
-}));
+export const rotulagens: Rotulagem[] = receitasPratos.map((r) => {
+  const lasanha = r.id === "pt-lasanha";
+  return {
+    receitaId: r.id,
+    ingredientes: lasanha ? null : "Ingredientes conforme ficha técnica: " + r.ficha.length + " itens.",
+    alergenos: r.id === "pt-risoto-camarao" ? "Contém crustáceos." : "Contém glúten e lactose.",
+    gluten: r.id === "pt-caprese" || r.id === "pt-risoto-camarao" ? "Não contém glúten" : "Contém glúten",
+    lactose: "Contém lactose",
+    fabricante: NOME_RESTAURANTE + " Ltda. · CNPJ 12.345.678/0001-90",
+    endereco: "Rua das Cantinas, 123 — São Paulo/SP · CEP 01000-000",
+    pesoLiquido: lasanha ? "1,2 kg" : `${r.pesoPorcaoG ?? 0}g`,
+    conservacao: lasanha
+      ? "Manter congelado a -18 °C ou mais frio. Depois de descongelado, não congelar novamente."
+      : "Consumir imediatamente após o preparo. Manter refrigerado se não consumido em até 2h.",
+    // RÓTULO PARA VAREJO (2026-09-26): a lasanha vem com o rótulo de varejo quase pronto
+    // (falta só o laudo); os outros pratos, sem os campos novos.
+    alergenicos: lasanha ? { trigo: "derivados", leite: "contem", ovos: "derivados", soja: "pode_conter" } : null,
+    glutenStatus: lasanha ? "contem" : null,
+    lactoseStatus: lasanha ? "contem" : null,
+    medidaCaseira: lasanha ? "1 pedaço" : null,
+    modoPreparo: lasanha ? "Forno convencional: retire o filme, leve ao forno preaquecido a 200 °C por 45 min. Micro-ondas: 12 min em potência alta, com o filme furado." : null,
+  };
+});
 
 // =========================================================================
 // Segurança Alimentar (locais + registros de temperatura).

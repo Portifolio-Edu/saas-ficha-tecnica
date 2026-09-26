@@ -433,6 +433,55 @@ test.describe.serial("com login real", () => {
     await celular.context().close();
   });
 
+  // RÓTULO PARA VAREJO (2026-09-26): os campos estruturados gravam no banco.
+  test("rótulo para varejo: dono preenche alergênicos, glúten, lactose, porção e conservação; grava no banco", async ({ page }) => {
+    const { data: prato } = await admin()
+      .from("receitas")
+      .insert({ cliente_id: clienteId, nome_prato: `Torta ${RODADA}`, tipo: "prato_final", preco_venda: 32, rendimento: 1, unidade_rendimento: "porção", peso_porcao_g: 120, destino_venda: "varejo_terceiro" })
+      .select("id")
+      .single();
+    await admin().from("receita_insumos").insert({ receita_id: prato!.id, insumo_id: insumoId, peso_liquido: 0.12, unidade: "kg" });
+
+    await entrar(page, dono.email, novaSenhaDono);
+    await page.goto("/nutricional");
+    await page.getByRole("button", { name: `Torta ${RODADA}` }).click();
+    const revisao = page.getByRole("region", { name: "Revisão antes da gráfica" });
+    await expect(revisao.getByText("Alergênicos não revisados")).toBeVisible();
+    await revisao.getByRole("button", { name: "Editar dados do rótulo" }).click();
+    await page.getByRole("button", { name: "Não contém nenhum alergênico" }).click();
+    await page.getByRole("button", { name: "soja: Pode conter" }).click();
+    await page.getByRole("radio", { name: "NÃO CONTÉM GLÚTEN" }).click();
+    await page.getByRole("radio", { name: "Não se aplica" }).click();
+    await page.getByLabel("Medida caseira da porção").fill("1 fatia");
+    await page.getByLabel("Peso líquido da embalagem").fill("480 g");
+    await page.getByRole("button", { name: "+ Manter refrigerado entre 0 °C e 5 °C." }).click();
+    await page.getByLabel("Modo de preparo / aquecimento").fill("Aquecer no forno a 180 °C por 10 min.");
+    await page.getByLabel("Razão social e CNPJ").fill("Bistrô Teste Ltda. CNPJ 00.000.000/0001-00");
+    await page.getByLabel("Endereço completo").fill("Rua Teste, 1 — São Paulo/SP");
+    await page.getByRole("button", { name: "Salvar dados do rótulo" }).click();
+    await expect(page.getByText("Dados do rótulo salvos.")).toBeVisible();
+
+    const { data: rot } = await admin()
+      .from("rotulagem")
+      .select("alergenicos, gluten_status, lactose_status, medida_caseira, peso_liquido, conservacao, modo_preparo, alergenos, gluten")
+      .eq("receita_id", prato!.id)
+      .single();
+    expect(rot).toMatchObject({
+      alergenicos: { soja: "pode_conter" },
+      gluten_status: "nao_contem",
+      lactose_status: "nao_se_aplica",
+      medida_caseira: "1 fatia",
+      peso_liquido: "480 g",
+      conservacao: "Manter refrigerado entre 0 °C e 5 °C.",
+      modo_preparo: "Aquecer no forno a 180 °C por 10 min.",
+      alergenos: "ALÉRGICOS: PODE CONTER SOJA.",
+      gluten: "NÃO CONTÉM GLÚTEN",
+    });
+    const previa = page.getByLabel("Prévia do rótulo para varejo");
+    await expect(previa.getByText("Porções por embalagem: 4", { exact: false })).toBeVisible();
+    await expect(previa.getByText("ALÉRGICOS: PODE CONTER SOJA.")).toBeVisible();
+  });
+
   // PLANO 9,5, etapa 3 (2026-09-26): LGPD — baixar e excluir os dados.
   test("só o dono baixa todos os dados do restaurante, sem segredo técnico", async ({ page }) => {
     await entrar(page, estoquista.usuario, estoquista.senha);

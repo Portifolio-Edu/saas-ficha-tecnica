@@ -9,14 +9,19 @@ import { Badge } from "@/components/ficha/Badge";
 import { inputStyle, nums } from "@/components/ficha/tema";
 import { useToast } from "@/components/ficha/Toast";
 import { InsumoNutricaoForm } from "@/components/nutricional/InsumoNutricaoForm";
-import { RotulagemForm } from "@/components/nutricional/RotulagemForm";
+import { RotuloVarejoForm } from "@/components/nutricional/RotuloVarejoForm";
+import { PreviaRotuloVarejo, RevisaoRotulo, type ConteudoRotuloVarejo } from "@/components/nutricional/RotuloVarejo";
+import {
+  TEXTO_GLUTEN, TEXTO_LACTOSE, gramasDoPesoLiquido, ingredientesDaReceita, linhasTabelaVarejo, pendenciasRotulo,
+  porcoesPorEmbalagem, textoAlergicos, textoIngredientes,
+} from "@/lib/dominio/rotuloVarejo";
 import { LABEL_CAMPO } from "@/components/nutricional/labels";
 import { abrirAgenteIaComFoco } from "@/components/ia/BotaoAgenteIa";
 import type { LinhaRotuloPdf } from "@/lib/pdf/RotuloNutricionalPdf";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
-import type { NutricionalOverride, Rotulagem, ValoresNutricionaisInsumo } from "@/lib/dominio/nutricional";
+import type { NutricionalOverride, Rotulagem, RotulagemInput, ValoresNutricionaisInsumo } from "@/lib/dominio/nutricional";
 import {
   CAMPOS_NUTRICIONAIS,
   calcularNutricaoReceita,
@@ -105,6 +110,24 @@ export function NutricionalClient({
   const [rascunhoOverride, setRascunhoOverride] = useState<Record<CampoNutricional, string>>({} as Record<CampoNutricional, string>);
   const [insumoEditandoId, setInsumoEditandoId] = useState<string | null>(null);
   const [rotulagemAberta, setRotulagemAberta] = useState(false);
+  // RÓTULO PARA VAREJO (2026-09-26): visão "Tabela nutricional" ou "Rótulo para varejo".
+  const [visao, setVisao] = useState<"tabela" | "varejo">(pratos[0]?.destinoVenda === "varejo_terceiro" ? "varejo" : "tabela");
+  const [gerandoVarejo, setGerandoVarejo] = useState(false);
+  const [rotulagensLocal, setRotulagensLocal] = useState<Rotulagem[]>(rotulagens);
+  useEffect(() => setRotulagensLocal(rotulagens), [rotulagens]);
+  useEffect(() => {
+    if (!emModoDemo) return;
+    try {
+      const salvo = JSON.parse(localStorage.getItem("demo_rotulagens") ?? "[]") as Rotulagem[];
+      if (Array.isArray(salvo) && salvo.length) {
+        setRotulagensLocal((atual) => {
+          const mapa = new Map(atual.map((r) => [r.receitaId, r]));
+          for (const r of salvo) mapa.set(r.receitaId, r);
+          return [...mapa.values()];
+        });
+      }
+    } catch {}
+  }, [emModoDemo]);
   const [gerandoRotulo, setGerandoRotulo] = useState(false);
   const { mostrarErro } = useToast();
 
@@ -112,7 +135,41 @@ export function NutricionalClient({
   const receitaPorId = useMemo(() => new Map([...pratos, ...preparos].map((r) => [r.id, r])), [pratos, preparos]);
   const nutriPorInsumoId = useMemo(() => new Map(listaValoresInsumos.map((v) => [v.insumoId, v])), [listaValoresInsumos]);
   const overridePorReceitaId = useMemo(() => new Map(overrides.map((o) => [o.receitaId, o])), [overrides]);
-  const rotulagemPorReceitaId = useMemo(() => new Map(rotulagens.map((r) => [r.receitaId, r])), [rotulagens]);
+  const rotulagemPorReceitaId = useMemo(() => new Map(rotulagensLocal.map((r) => [r.receitaId, r])), [rotulagensLocal]);
+
+  /** Salva o rótulo: na demo, no navegador; no app, no banco (e já mostra na tela). */
+  const salvarRotulagem = async (receitaId: string, input: RotulagemInput): Promise<{ ok: boolean; erro?: string }> => {
+    const nova: Rotulagem = {
+      receitaId,
+      ingredientes: input.ingredientes || null,
+      alergenos: input.alergenos || null,
+      gluten: input.gluten || null,
+      lactose: input.lactose || null,
+      fabricante: input.fabricante || null,
+      endereco: input.endereco || null,
+      pesoLiquido: input.pesoLiquido || null,
+      conservacao: input.conservacao || null,
+      alergenicos: input.alergenicos,
+      glutenStatus: input.glutenStatus,
+      lactoseStatus: input.lactoseStatus,
+      medidaCaseira: input.medidaCaseira.trim() || null,
+      modoPreparo: input.modoPreparo.trim() || null,
+    };
+    if (!emModoDemo) {
+      const r = await acaoSalvarRotulagem(receitaId, input);
+      if (!r.ok) return r;
+    }
+    setRotulagensLocal((atual) => {
+      const lista = [...atual.filter((x) => x.receitaId !== receitaId), nova];
+      if (emModoDemo) {
+        try {
+          localStorage.setItem("demo_rotulagens", JSON.stringify(lista));
+        } catch {}
+      }
+      return lista;
+    });
+    return { ok: true };
+  };
 
   const prato = pratos.find((p) => p.id === pratoSelecionadoId);
 
@@ -180,10 +237,56 @@ export function NutricionalClient({
   const insumosSemDados = [...idsInsumosUsados].map((id) => insumoPorId.get(id)).filter((i): i is Insumo => !!i && !valoresPor100gDoInsumo(nutriPorInsumoId.get(i.id)));
 
   const rotulagem = rotulagemPorReceitaId.get(prato.id);
-  const camposPreenchidos = rotulagem
-    ? [rotulagem.ingredientes, rotulagem.alergenos, rotulagem.gluten, rotulagem.lactose, rotulagem.fabricante, rotulagem.endereco, rotulagem.pesoLiquido, rotulagem.conservacao].filter((v) => v && v.trim()).length
-    : 0;
-  const rotulagemOk = (campo: keyof NonNullable<typeof rotulagem>): boolean => !!(rotulagem && rotulagem[campo] && String(rotulagem[campo]).trim());
+
+  // RÓTULO PARA VAREJO (2026-09-26): conteúdo da prévia/PDF e o que falta.
+  const ingredientesGerados = textoIngredientes(ingredientesDaReceita(prato, insumoPorId, receitaPorId));
+  const unidadeBase = prato.formaFisica === "liquido" ? "mL" : "g";
+  const conteudoVarejo: ConteudoRotuloVarejo = {
+    nomeProduto: prato.nomePrato,
+    pesoLiquido: rotulagem?.pesoLiquido ?? null,
+    unidadeBase,
+    pesoPorcao: prato.pesoPorcaoG,
+    medidaCaseira: rotulagem?.medidaCaseira ?? null,
+    porcoesPorEmbalagem: porcoesPorEmbalagem(gramasDoPesoLiquido(rotulagem?.pesoLiquido ?? null), prato.pesoPorcaoG),
+    ingredientes: rotulagem?.ingredientes?.trim() || ingredientesGerados,
+    alergicos: textoAlergicos(rotulagem?.alergenicos ?? null),
+    gluten: rotulagem?.glutenStatus ? TEXTO_GLUTEN[rotulagem.glutenStatus] : null,
+    lactose: rotulagem?.lactoseStatus ? TEXTO_LACTOSE[rotulagem.lactoseStatus] : null,
+    linhas: linhasTabelaVarejo(n, n100),
+    altoEm: altoEm.map((campo) => LABEL_SELO[campo] ?? campo),
+    conservacao: rotulagem?.conservacao ?? null,
+    modoPreparo: rotulagem?.modoPreparo ?? null,
+    fabricante: rotulagem?.fabricante ?? null,
+    endereco: rotulagem?.endereco ?? null,
+  };
+  const pendencias = pendenciasRotulo(
+    {
+      alergenicos: rotulagem?.alergenicos ?? null,
+      glutenStatus: rotulagem?.glutenStatus ?? null,
+      lactoseStatus: rotulagem?.lactoseStatus ?? null,
+      ingredientes: rotulagem?.ingredientes ?? null,
+      medidaCaseira: rotulagem?.medidaCaseira ?? null,
+      pesoLiquido: rotulagem?.pesoLiquido ?? null,
+      conservacao: rotulagem?.conservacao ?? null,
+      modoPreparo: rotulagem?.modoPreparo ?? null,
+      fabricante: rotulagem?.fabricante ?? null,
+      endereco: rotulagem?.endereco ?? null,
+    },
+    { nutricaoCompleta: nutriCompleta, temLaudo: temOverride, pesoPorcaoG: prato.pesoPorcaoG, ingredientesGerados },
+  );
+  const gerarPdfVarejo = async () => {
+    setGerandoVarejo(true);
+    try {
+      const [{ gerarRotuloVarejoPdfBlob }, { baixarBlob, nomeArquivoSeguro }] = await Promise.all([import("@/lib/pdf/RotuloVarejoPdf"), import("@/lib/pdf/baixar")]);
+      const rascunho = pendencias.some((p) => p.nivel === "bloqueia");
+      const blob = await gerarRotuloVarejoPdfBlob(conteudoVarejo, rascunho);
+      baixarBlob(blob, `rotulo-varejo-${nomeArquivoSeguro(prato.nomePrato)}${rascunho ? "-rascunho" : ""}.pdf`);
+    } catch {
+      mostrarErro("Não foi possível gerar o PDF.");
+    } finally {
+      setGerandoVarejo(false);
+    }
+  };
 
   return (
     <div className="max-w-5xl">
@@ -195,6 +298,7 @@ export function NutricionalClient({
             key={p.id}
             onClick={() => {
               setPratoSelecionadoId(p.id);
+              setVisao(p.destinoVenda === "varejo_terceiro" ? "varejo" : "tabela");
               setEditandoOverride(false);
               setInsumoEditandoId(null);
               setRotulagemAberta(false);
@@ -210,6 +314,27 @@ export function NutricionalClient({
       <div className="text-[12.5px] mb-4" style={{ color: "var(--sub)" }}>
         Destino de venda: <b style={{ color: "var(--text)" }}>{paraVarejo ? "Varejo/mercado de terceiro" : "Próprio estabelecimento"}</b>{" "}
         <span style={{ color: "var(--faint)" }}>(edite em Receitas &amp; Fichas)</span>
+      </div>
+
+      {/* RÓTULO PARA VAREJO (2026-09-26) */}
+      <div role="tablist" aria-label="Visão" className="inline-flex rounded-lg border p-0.5 mb-5" style={{ borderColor: "var(--linha-forte)", background: "var(--panel)" }}>
+        {(
+          [
+            ["tabela", "Tabela nutricional"],
+            ["varejo", "Rótulo para varejo (supermercado)"],
+          ] as const
+        ).map(([id, texto]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={visao === id}
+            onClick={() => setVisao(id)}
+            className="min-h-10 px-3.5 rounded-md text-[13px] font-medium"
+            style={visao === id ? { background: "var(--tinta)", color: "var(--panel)" } : { color: "var(--tinta-sub)" }}
+          >
+            {texto}
+          </button>
+        ))}
       </div>
 
       {paraVarejo ? (
@@ -366,6 +491,8 @@ export function NutricionalClient({
         </Card>
       )}
 
+      {visao === "tabela" ? (
+        <>
       <Card className="p-6 max-w-lg" style={paraVarejo ? { backgroundColor: "#FFFFFF", color: "#000000" } : {}}>
         <div className="mb-2" style={{ borderBottom: `3px solid ${paraVarejo ? "#000" : "var(--accent)"}`, paddingBottom: 6 }}>
           <div className="text-[14px] font-bold" style={paraVarejo ? { color: "#000" } : {}}>INFORMAÇÃO NUTRICIONAL</div>
@@ -419,50 +546,38 @@ export function NutricionalClient({
         <Download size={13} /> {gerandoRotulo ? "Gerando..." : "PDF · Rótulo Nutricional"}
       </button>
 
-      {paraVarejo && (
-        <Card className="mt-4 max-w-lg">
-          <button onClick={() => setRotulagemAberta(!rotulagemAberta)} className="w-full flex items-center justify-between px-3.5 py-2.5 text-left">
-            <div className="flex items-center gap-2">
-              <span className="text-[12.5px] font-medium">Dados de rotulagem</span>
-              <Badge>opcional</Badge>
-            </div>
-            <span className="text-[11px]" style={{ color: "var(--faint)" }}>{camposPreenchidos} de 8 campos preenchidos</span>
-          </button>
-          {rotulagemAberta && (
-            <RotulagemForm
-              rotulagem={rotulagem}
-              onSaved={(campos) => executarAcaoSimples(acaoSalvarRotulagem(prato.id, campos))}
-            />
+        </>
+      ) : (
+        <div className="space-y-5">
+          {!paraVarejo && (
+            <p className="text-[12.5px] text-[var(--tinta-sub)]">Este prato está marcado pra venda no próprio estabelecimento. O rótulo de varejo só é obrigatório se ele for vendido embalado em mercado ou loja de terceiro.</p>
           )}
-        </Card>
-      )}
-
-      {paraVarejo && (
-        <Card className="p-5 mt-4 max-w-lg">
-          <h3 className="text-[13px] font-semibold mb-1">Falta pro rótulo ficar pronto</h3>
-          <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>A tabela acima está no formato da norma, mas rótulo comercial exige mais do que ela. Nenhum destes é gerado pelo sistema.</p>
-          {(
-            [
-              ["Valor nutricional validado", temOverride ? "Valor de laudo informado na ficha nutricional." : 'Os números vêm de cálculo por composição de ingrediente, não de laudo. Use o botão "Editar valores" pra informar o laudo (tolerância de fiscalização é 20%).', temOverride],
-              ["Lista de ingredientes", "Em ordem decrescente de peso, obrigatória. Preenchida acima, em Dados de rotulagem.", rotulagemOk("ingredientes")],
-              ["Alérgenos", "Alerta dos alérgenos obrigatórios (RDC 26/2015) e de lactose quando aplicável (RDC 135/2017).", rotulagemOk("alergenos")],
-              ["Glúten", '"Contém glúten" ou "não contém glúten", obrigatório em todo alimento (Lei 10.674/2003).', rotulagemOk("gluten")],
-              ["Identificação legal", "Fabricante, CNPJ, endereço e peso líquido. Lote e validade saem do quadro de produção.", rotulagemOk("fabricante") && rotulagemOk("endereco") && rotulagemOk("pesoLiquido")],
-              ...(altoEm.length > 0 ? [["Selo de alerta frontal", "Arte vetorial oficial do Anexo XVII, aplicada na face frontal conforme as regras de posição e tamanho do Anexo XVIII.", false] as const] : []),
-              ["Registro sanitário", "Regularização do produto e do estabelecimento na vigilância sanitária (e SIF/SIE/SIM se for produto de origem animal). Fora do sistema.", false],
-            ] as const
-          ).map(([titulo, desc, feito]) => (
-            <div key={titulo} className="flex gap-2.5 py-2" style={{ borderTop: `1px solid ${"var(--border)"}` }}>
-              <div className="w-3.5 h-3.5 rounded shrink-0 mt-0.5 flex items-center justify-center" style={{ border: `1.5px solid ${feito ? "var(--accent)" : "var(--border-strong)"}`, background: feito ? "var(--accent)" : "transparent" }}>
-                {feito && <span style={{ color: "#fff", fontSize: 9, lineHeight: 1 }}>✓</span>}
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-5 items-start">
+            <PreviaRotuloVarejo c={conteudoVarejo} />
+            <RevisaoRotulo pendencias={pendencias} gerando={gerandoVarejo} onPdf={gerarPdfVarejo} onEditar={() => { setRotulagemAberta(true); setTimeout(() => document.getElementById("dados-rotulo")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }} />
+          </div>
+          <Card className="p-0 overflow-hidden">
+            <button
+              id="dados-rotulo"
+              onClick={() => setRotulagemAberta(!rotulagemAberta)}
+              aria-expanded={rotulagemAberta}
+              className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left scroll-mt-20"
+            >
+              <span className="text-[15px] font-semibold text-[var(--tinta)]">Dados do rótulo</span>
+              <span className="text-[12.5px] text-[var(--tinta-sub)]">{rotulagemAberta ? "Fechar" : "Abrir pra editar"}</span>
+            </button>
+            {rotulagemAberta && (
+              <div className="px-5 pb-5 border-t pt-5" style={{ borderColor: "var(--linha)" }}>
+                <RotuloVarejoForm
+                  key={prato.id}
+                  rotulagem={rotulagem}
+                  ingredientesGerados={ingredientesGerados}
+                  salvar={(input) => salvarRotulagem(prato.id, input)}
+                />
               </div>
-              <div>
-                <div className="text-[12.5px] font-medium" style={{ color: feito ? "var(--sub)" : "var(--text)" }}>{titulo}</div>
-                <div className="text-[11.5px]" style={{ color: "var(--sub)" }}>{desc}</div>
-              </div>
-            </div>
-          ))}
-        </Card>
+            )}
+          </Card>
+        </div>
       )}
     </div>
   );

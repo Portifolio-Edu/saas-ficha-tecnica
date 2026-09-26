@@ -801,3 +801,53 @@ tanto que muitas vezes só a cozinha sabe.
 - Onde mexer: `src/components/ia/AgenteIaModal.tsx`.
 
 **Reverter:** `git revert` do commit "agente IA: modal inteiro na tela e fecha".
+
+## 32. Ficha nutricional — rótulo para varejo (supermercado)
+
+Briefing do dono: deixar o produto apto pra grandes redes, seguindo a RDC
+429/2020 e a IN 75/2020.
+
+- **Visão "Rótulo para varejo (supermercado)"** na Ficha nutricional (abre
+  sozinha pros pratos marcados como varejo):
+  - prévia no formato da embalagem, sempre preto no branco, com nome e peso
+    líquido, lupa "ALTO EM" (aviso pra aplicar a arte oficial), ingredientes,
+    alergênicos, glúten/lactose, tabela, conservação, preparo e fabricante;
+  - **revisão antes da gráfica**: o que impede a impressão (vermelho) e o que
+    merece atenção (âmbar), com botão "Editar dados do rótulo";
+  - **PDF · Rótulo para varejo**; faltando dado obrigatório, sai "RASCUNHO".
+- **Tabela no modelo da IN 75**: colunas 100 g/mL | porção | %VD, com
+  "Porções por embalagem" e "Porção: 400 g (1 pedaço)". Energia em kcal e kJ,
+  carboidratos com açúcares totais e adicionados, proteínas, gorduras totais,
+  saturadas e trans, fibras e sódio. Valores arredondados pelo Anexo IV (ex.:
+  trans ≤ 0,1 g por porção sai 0).
+- **Dados estruturados** (antes, textos livres):
+  - alergênicos da RDC 26/2015 item a item (contém / derivados / pode
+    conter), gerando "ALÉRGICOS: CONTÉM … E DERIVADOS DE … PODE CONTER …";
+    "Não contém nenhum alergênico" fica registrado como revisado;
+  - glúten (CONTÉM / NÃO CONTÉM, obrigatório) com aviso quando contradiz os
+    alergênicos (trigo, centeio, cevada, aveia);
+  - lactose (CONTÉM / ZERO / BAIXO TEOR / não se aplica), obrigatória quando
+    tem leite;
+  - medida caseira, peso líquido, conservação (com frases prontas) e modo de
+    preparo/aquecimento.
+- **Lista de ingredientes** gerada da ficha técnica em ordem decrescente de
+  peso, com preparo da casa como ingrediente composto e os dele entre
+  parênteses. Dá pra ajustar à mão (nome comercial).
+- Banco: `rotulagem` ganha `alergenicos` (jsonb com trava dos 21 itens),
+  `gluten_status`, `lactose_status`, `medida_caseira`, `modo_preparo`
+  (migration 20260928160000, aplicada; o glúten escrito antes foi aproveitado).
+- Demo: a Lasanha Bolonhesa virou produto de supermercado com o rótulo
+  completo (só sem laudo). O formulário antigo de texto livre saiu.
+- Testes: unitários (alergênicos, glúten, ingredientes, arredondamento,
+  porções, revisão, tabela), SQL `rotulo_varejo.sql` 11/11, e2e na demo
+  (prévia, conflito de glúten, PDF, acessibilidade claro/escuro com o
+  formulário aberto) e com login (grava no banco).
+- Onde mexer: regras e textos em `src/lib/dominio/rotuloVarejo.ts`; tela em
+  `src/components/nutricional/RotuloVarejo*.tsx`; PDF em
+  `src/lib/pdf/RotuloVarejoPdf.tsx`.
+- Limites: o sistema não gera a arte oficial da lupa (vetor do Anexo XVII) nem
+  confere o tamanho da porção de referência (Anexo V); lote e validade saem na
+  embalagem. A aprovação final é do responsável técnico.
+
+**Reverter:** `git revert` do commit e
+`supabase/reverter/20260928160000_rotulo_varejo.sql`.
