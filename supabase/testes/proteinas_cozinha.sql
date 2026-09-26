@@ -12,8 +12,8 @@ from (values
   ('55555555-5555-5555-5555-555555555555', 'prot-outro@exemplo.invalid')
 ) as u(id, email);
 insert into clientes (id, user_id, nome, nome_restaurante, telefone) values
- ('dddddddd-0000-0000-0000-000000000001','44444444-4444-4444-4444-444444444441','Dona D','Restaurante D','+5500000000041'),
- ('eeeeeeee-0000-0000-0000-000000000002','55555555-5555-5555-5555-555555555555','Dono E','Restaurante E','+5500000000042');
+ ('dddddddd-0000-0000-0000-000000000001','44444444-4444-4444-4444-444444444441','Dona D','Restaurante D','5500000000041'),
+ ('eeeeeeee-0000-0000-0000-000000000002','55555555-5555-5555-5555-555555555555','Dono E','Restaurante E','5500000000042');
 insert into membros (cliente_id, user_id, papel, nome, ativo) values
  ('dddddddd-0000-0000-0000-000000000001','44444444-4444-4444-4444-444444444444','cozinha','Aparelho', true);
 insert into insumos (id, cliente_id, nome, categoria, unidade_medida, tamanho_embalagem, preco_embalagem, fator_correcao) values

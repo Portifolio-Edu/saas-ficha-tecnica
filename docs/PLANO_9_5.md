@@ -32,13 +32,14 @@ Erro proposital num teste SQL: o executor saiu com falha (código 1).
 
 ## 2. Ponta a ponta com login real
 
-- [ ] Supabase local + app de verdade + Playwright, com restaurante de teste
-      criado por script (dono, gestor, estoquista, cozinha).
-- [ ] Fluxos por papel: cadastro/login/recuperar senha; dono cria acessos;
+- [x] Supabase local + app de verdade + Playwright, com restaurante de teste
+      criado pela própria tela de cadastro (dono), acessos pela tela Equipe
+      (gestor, estoquista) e tablet pareado por código (cozinha).
+- [x] Fluxos por papel: cadastro/login/recuperar senha; dono cria acessos;
       pareamento do tablet; cozinha registra produção → estoque baixa; estoquista
       bloqueado fora das telas dele; escala, prontuário e extras gravam no banco;
       cozinha vê a escala sem motivo de ausência.
-- [ ] Os roteiros ficam no repositório e rodam no CI.
+- [x] Os roteiros ficam no repositório (`e2e/`) e rodam no CI (job "Ponta a ponta").
 
 **Pronto quando:** os fluxos críticos de cada papel passam no CI a cada push.
 

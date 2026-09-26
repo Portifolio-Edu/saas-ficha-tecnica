@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
 import { supabaseConfigurado } from "@/lib/supabase/config";
 import type { Papel } from "@/lib/auth/papeis";
+import { normalizarTelefone } from "@/lib/telefone";
 
 // EQUIPE (2026-09-25): além do restaurante, devolve o papel de quem está logado
 // (dono, gestor, estoquista ou cozinha) e o nome dele na equipe. Antes o login
@@ -76,7 +77,7 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
       user_id: user.id,
       nome: meta.nome,
       nome_restaurante: meta.nome_restaurante,
-      telefone: meta.telefone,
+      telefone: normalizarTelefone(meta.telefone),
     })
     .select("id, nome, nome_restaurante, margem_alvo")
     .single();
@@ -84,7 +85,16 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
   // Não retorna null aqui: null significa "sem cadastro pendente" pras
   // páginas que chamam getClienteAtual(), o que causaria um loop silencioso
   // de redirect pro /login em vez de mostrar que o onboarding falhou.
-  if (error) throw new Error(mensagemErro(error));
+  if (error) {
+    // PLANO 9,5 (2026-09-26): o telefone é conferido no cadastro; se mesmo
+    // assim outro restaurante pegou o número entre o cadastro e a confirmação
+    // do e-mail, a mensagem diz o que fazer (a tela de erro mostra).
+    throw new Error(
+      error.code === "23505"
+        ? "Esse WhatsApp foi cadastrado em outro restaurante enquanto você confirmava o e-mail. Fale com o suporte pra concluir o cadastro."
+        : mensagemErro(error),
+    );
+  }
   if (!criado) return null;
 
   return {

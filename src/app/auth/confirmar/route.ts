@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { origemDoSite } from "@/lib/auth/origem";
 
 // PRODUCAO (2026-09-24): destino dos links que o Supabase manda por e-mail
 // (confirmação de cadastro e recuperação de senha). Antes não existia: o cliente
@@ -29,10 +30,16 @@ export async function GET(request: NextRequest) {
     erro = "Link incompleto.";
   }
 
+  // PLANO 9,5 (2026-09-26): volta pro MESMO endereço público do link do
+  // e-mail (origemDoSite), não pro endereço interno da requisição. Achado no
+  // teste de ponta a ponta: a sessão era aberta em 127.0.0.1 e o redirect ia
+  // pra localhost — cookie de outro domínio, e /nova-senha dizia "Link
+  // expirado". O mesmo desvio acontece atrás de proxy ou domínio próprio.
+  const origem = await origemDoSite();
   if (erro) {
-    const destino = new URL("/login", url.origin);
+    const destino = new URL("/login", origem);
     destino.searchParams.set("aviso", "link-invalido");
     return NextResponse.redirect(destino);
   }
-  return NextResponse.redirect(new URL(proximo, url.origin));
+  return NextResponse.redirect(new URL(proximo, origem));
 }

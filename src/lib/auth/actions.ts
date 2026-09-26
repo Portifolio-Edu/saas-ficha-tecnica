@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { origemDoSite } from "./origem";
 import { VERSAO_TERMOS } from "./termos";
 import { emailDeLogin } from "./equipe";
+import { normalizarTelefone, telefoneValido } from "@/lib/telefone";
+import { criarClienteAdmin, serviceRoleConfigurada } from "@/lib/supabase/admin";
 
 // PRODUCAO (2026-09-24): senha mínima de 8 caracteres (antes 6), termos
 // aceitos no cadastro, links dos e-mails apontando pra /auth/confirmar e
@@ -48,19 +50,30 @@ export async function entrar(_estado: EstadoAuth, formData: FormData): Promise<E
 export async function cadastrar(_estado: EstadoAuth, formData: FormData): Promise<EstadoAuth> {
   const nome = String(formData.get("nome") ?? "").trim();
   const nomeRestaurante = String(formData.get("nome_restaurante") ?? "").trim();
-  const telefone = String(formData.get("telefone") ?? "").trim();
+  const telefoneDigitado = String(formData.get("telefone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
 
-  if (!nome || !nomeRestaurante || !telefone || !email || !senha) {
+  if (!nome || !nomeRestaurante || !telefoneDigitado || !email || !senha) {
     return { erro: "Preencha todos os campos." };
   }
+  // PLANO 9,5 (2026-09-26): telefone num formato só (55 + DDD) e conferido
+  // ANTES de criar o login — antes, um telefone já usado criava a conta e
+  // quebrava a tela, deixando a pessoa com login e sem restaurante.
+  if (!telefoneValido(telefoneDigitado)) return { erro: "Informe o WhatsApp com DDD, como (11) 98765-4321." };
+  const telefone = normalizarTelefone(telefoneDigitado);
   if (senha.length < SENHA_MINIMA) return { erro: `A senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.` };
   if (formData.get("aceite_termos") !== "on") {
     return { erro: "Para criar a conta, aceite os Termos de uso e a Política de privacidade." };
   }
 
   const supabase = await createClient();
+
+  const { data: disponivel, error: erroTelefone } = await supabase.rpc("telefone_disponivel", { p_telefone: telefone });
+  if (erroTelefone) return { erro: "Não foi possível conferir o telefone agora. Tente de novo em instantes." };
+  if (disponivel === false) {
+    return { erro: "Esse WhatsApp já está cadastrado em outro restaurante. Entre com a conta dele ou use outro número." };
+  }
 
   // nome/nome_restaurante/telefone vão em user_metadata: se a confirmação de
   // e-mail estiver ligada no projeto, ainda não há sessão pra criar a linha
@@ -90,7 +103,15 @@ export async function cadastrar(_estado: EstadoAuth, formData: FormData): Promis
     telefone,
   });
   if (erroCliente) {
-    return { erro: `Conta criada, mas houve um erro ao registrar o restaurante: ${erroCliente.message}` };
+    // Não deixa login sem restaurante: desfaz a conta recém-criada.
+    await supabase.auth.signOut();
+    if (serviceRoleConfigurada()) await criarClienteAdmin().auth.admin.deleteUser(data.user.id);
+    return {
+      erro:
+        erroCliente.code === "23505"
+          ? "Esse WhatsApp já está cadastrado em outro restaurante. Entre com a conta dele ou use outro número."
+          : "Não foi possível registrar o restaurante. Tente de novo em instantes.",
+    };
   }
 
   redirect("/insumos");

@@ -543,3 +543,35 @@ Plano completo em `docs/PLANO_9_5.md`.
   `papeis.sql` não dava permissão à tabela de resultado pro papel do servidor.
 
 **Reverter:** `git revert` do commit "ci: rede de proteção automática".
+
+## 19. Plano 9,5 — etapa 2: ponta a ponta com login real
+
+- `e2e/papeis.spec.ts` (Playwright): 11 fluxos contra o app de verdade e um
+  Supabase local (login, banco, e-mail de teste no Mailpit), conferindo tela e
+  banco: cadastro do dono, telefone repetido recusado, senha errada, recuperar
+  senha pelo e-mail, dono cria gestor/estoquista e gera código do tablet,
+  estoquista preso ao estoque, tablet registra produção e o estoque baixa pelo
+  servidor (10 kg → 9 kg), gestor vê a produção, escala com afastamento, código
+  do tablet de uso único e escala no tablet sem motivo, prontuário e extras.
+- Rodar local: `supabase start`, `source e2e/ambiente.sh`, `npm run build`,
+  `npm run e2e`. No CI: job "Ponta a ponta".
+
+**Dois bugs reais achados e corrigidos:**
+1. **Telefone repetido no cadastro** criava o login e quebrava a tela ("Application
+   error"), deixando a pessoa com conta e sem restaurante. E o "telefone único"
+   nem funcionava ("(11) 9…" ≠ "119…"). Agora: telefone num formato só (55+DDD,
+   `src/lib/telefone.ts` e `telefone_normalizado()` no banco), conferido antes
+   de criar o login (`telefone_disponivel()`, inclusive com confirmação de
+   e-mail ligada), e se algo falhar a conta recém-criada é desfeita.
+   Migration `20260927110000_telefone_cliente.sql` (aplicada).
+2. **Recuperar senha dava "Link expirado"** quando o endereço interno do
+   servidor era diferente do público: `/auth/confirmar` abria a sessão num
+   domínio e redirecionava pra outro. Agora volta pro mesmo endereço público
+   do link (`origemDoSite`).
+- Tela de erro do sistema (`src/app/error.tsx`) no lugar da tela branca do Next.
+
+Testes: 133 unitários, SQL 157/157 (novo `telefone_cliente.sql`), ponta a ponta
+11/11 (3 rodadas seguidas no mesmo banco).
+
+**Reverter:** `git revert` do commit "e2e: ponta a ponta com login real" e
+`supabase/reverter/20260927110000_telefone_cliente.sql`.

@@ -11,8 +11,8 @@ values
  ('11111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-000000000000','authenticated','authenticated','teste-a@exemplo.invalid','x',now(),now(),now(),'{}','{}'),
  ('22222222-2222-2222-2222-222222222222','00000000-0000-0000-0000-000000000000','authenticated','authenticated','teste-b@exemplo.invalid','x',now(),now(),now(),'{}','{}');
 insert into clientes (id, user_id, nome, nome_restaurante, telefone) values
- ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111','A','Restaurante A','+5500000000001'),
- ('bbbbbbbb-0000-0000-0000-000000000002','22222222-2222-2222-2222-222222222222','B','Restaurante B','+5500000000002');
+ ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111','A','Restaurante A','5500000000001'),
+ ('bbbbbbbb-0000-0000-0000-000000000002','22222222-2222-2222-2222-222222222222','B','Restaurante B','5500000000002');
 insert into insumos (id, cliente_id, nome, unidade_medida, tamanho_embalagem, preco_embalagem) values
  ('aaaaaaaa-1111-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','Tomate A','kg',1,10),
  ('bbbbbbbb-1111-0000-0000-000000000002','bbbbbbbb-0000-0000-0000-000000000002','Camarão B','kg',1,80);

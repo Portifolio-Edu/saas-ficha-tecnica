@@ -7,7 +7,7 @@ grant all on resultado to authenticated;
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
 select u.id::uuid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', u.email, 'x', now(), now(), now(), '{}', '{}'
 from (values ('66666666-6666-6666-6666-666666666661', 'esc-dono@exemplo.invalid'), ('66666666-6666-6666-6666-666666666664', 'esc-cozinha@exemplo.invalid')) as u(id, email);
-insert into clientes (id, user_id, nome, nome_restaurante, telefone) values ('f0000000-0000-0000-0000-000000000001','66666666-6666-6666-6666-666666666661','Dona F','Restaurante F','+5500000000061');
+insert into clientes (id, user_id, nome, nome_restaurante, telefone) values ('f0000000-0000-0000-0000-000000000001','66666666-6666-6666-6666-666666666661','Dona F','Restaurante F','5500000000061');
 insert into membros (cliente_id, user_id, papel, nome, ativo) values ('f0000000-0000-0000-0000-000000000001','66666666-6666-6666-6666-666666666664','cozinha','Tablet F', true);
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"66666666-6666-6666-6666-666666666661","role":"authenticated"}', true);

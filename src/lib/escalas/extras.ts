@@ -12,6 +12,7 @@
 // WhatsApp > nome. O disparo automático (n8n/WhatsApp) é a fase 3; a tela já
 // mostra os compatíveis com ligar/WhatsApp manual.
 import { ORDEM_NIVEL, chaveTag, tagsUnicas } from "./perfil";
+import { telefoneValido } from "@/lib/telefone";
 import type { Nivel, PerfilVaga, Setor } from "./tipos";
 
 export interface Extra {
@@ -65,26 +66,12 @@ export function extrasCompativeis(vaga: PerfilVaga, extras: Extra[]): Candidato[
   );
 }
 
-const TELEFONE = /^\+?\d{10,13}$/;
-
-/** "(11) 98765-4321" → "5511987654321" (padrão pra wa.me e tel:). */
-export function normalizarTelefone(t: string): string {
-  const d = t.replace(/\D/g, "");
-  if (d.length === 10 || d.length === 11) return `55${d}`;
-  return d;
-}
-
-export function formatarTelefone(t: string): string {
-  const d = t.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
-  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return t;
-}
+export { formatarTelefone, normalizarTelefone } from "@/lib/telefone";
 
 export function validarExtra(e: ExtraInput): string | null {
   if (!e.nome.trim()) return "Informe o nome.";
   if (e.nome.trim().length > 80) return "Nome com no máximo 80 caracteres.";
-  if (!TELEFONE.test(normalizarTelefone(e.telefone))) return "Telefone com DDD (ex.: 11 98765-4321).";
+  if (!telefoneValido(e.telefone)) return "Telefone com DDD (ex.: 11 98765-4321).";
   if (!["cozinha", "salao", "bar", "outro"].includes(e.setor)) return "Escolha o setor.";
   if (e.cargos.length === 0) return "Informe pelo menos um cargo que a pessoa cobre.";
   if (e.cargos.length > 10 || e.cargos.some((c) => c.length > 40)) return "Até 10 cargos, com até 40 caracteres cada.";

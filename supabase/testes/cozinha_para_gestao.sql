@@ -16,7 +16,7 @@ from (values
 ) as u(id, email);
 
 insert into clientes (id, user_id, nome, nome_restaurante, telefone) values
- ('cccccccc-0000-0000-0000-000000000001','33333333-3333-3333-3333-333333333331','Dona C','Restaurante C','+5500000000031');
+ ('cccccccc-0000-0000-0000-000000000001','33333333-3333-3333-3333-333333333331','Dona C','Restaurante C','5500000000031');
 insert into membros (cliente_id, user_id, papel, nome, ativo) values
  ('cccccccc-0000-0000-0000-000000000001','33333333-3333-3333-3333-333333333332','gestor','Gestor C', true),
  ('cccccccc-0000-0000-0000-000000000001','33333333-3333-3333-3333-333333333334','cozinha','Aparelho da cozinha 1', true);

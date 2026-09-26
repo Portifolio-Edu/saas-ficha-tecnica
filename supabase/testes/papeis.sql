@@ -19,8 +19,8 @@ from (values
 
 -- O trigger cria o dono de cada restaurante.
 insert into clientes (id, user_id, nome, nome_restaurante, telefone) values
- ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111','Dona A','Restaurante A','+5500000000011'),
- ('bbbbbbbb-0000-0000-0000-000000000002','22222222-2222-2222-2222-222222222222','Dono B','Restaurante B','+5500000000012');
+ ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111','Dona A','Restaurante A','5500000000011'),
+ ('bbbbbbbb-0000-0000-0000-000000000002','22222222-2222-2222-2222-222222222222','Dono B','Restaurante B','5500000000012');
 insert into membros (cliente_id, user_id, papel, nome, ativo) values
  ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111112','gestor','Gestor A', true),
  ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111113','estoquista','Estoquista A', true),

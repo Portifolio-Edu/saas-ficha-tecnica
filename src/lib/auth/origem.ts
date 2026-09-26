@@ -9,6 +9,7 @@ export async function origemDoSite(): Promise<string> {
   if (fixa) return fixa;
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const protocolo = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const local = /^(localhost|127\.0\.0\.1)(:|$)/.test(host);
+  const protocolo = h.get("x-forwarded-proto") ?? (local ? "http" : "https");
   return `${protocolo}://${host}`;
 }

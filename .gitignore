@@ -64,3 +64,8 @@ next-env.d.ts
 .impeccable/live/deferred-svelte-component-accepts.json
 .impeccable/live/*.png
 # impeccable-ignore-end
+
+# PLANO 9,5: saídas dos testes de ponta a ponta
+/test-results/
+/playwright-report/
+/blob-report/
