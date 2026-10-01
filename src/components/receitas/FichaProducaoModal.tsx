@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatQtd } from "@/components/charts/format";
 import { X, Maximize2 } from "lucide-react";
 import { shadow } from "@/components/ficha/tema";
 import type { Insumo } from "@/lib/dominio/insumo";
@@ -83,7 +84,7 @@ export function FichaProducaoModal({
             )}
 
             <div className="mb-5">
-              <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--sub)" }}>
+              <h4 className="text-[13px] font-semibold mb-2" style={{ color: "var(--sub)" }}>
                 Ingredientes
               </h4>
               {receita.ficha.length === 0 ? (
@@ -96,7 +97,7 @@ export function FichaProducaoModal({
                       : receitaPorId.get(linha.subReceitaId!)?.nomePrato;
                     return (
                       <li key={linha.id} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={{ background: "var(--bg)" }}>
-                        {nome ?? "Item removido"} · {linha.pesoLiquido}{linha.unidade}
+                        {nome ?? "Item removido"} · {formatQtd(linha.pesoLiquido)}{linha.unidade}
                       </li>
                     );
                   })}
@@ -105,7 +106,7 @@ export function FichaProducaoModal({
             </div>
 
             <div>
-              <h4 className="text-[12px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--sub)" }}>
+              <h4 className="text-[13px] font-semibold mb-2" style={{ color: "var(--sub)" }}>
                 Passo a passo
               </h4>
               {etapasOrdenadas.length === 0 ? (

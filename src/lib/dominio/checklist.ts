@@ -13,6 +13,29 @@ export interface ChecklistItem {
   texto: string;
   ordem: number;
   concluidoHoje: boolean;
+  /** POLIMENTO pracas-areas: área da praça (null = "Geral" ou checklist de turno). */
+  areaId: string | null;
+}
+
+/** POLIMENTO pracas-areas (2026-09-23): parte de uma praça (pista fria, bancada de
+ * montagem, geladeira de apoio...). Nome livre, definido pelo cliente. */
+export interface ChecklistArea {
+  id: string;
+  checklistId: string;
+  nome: string;
+  ordem: number;
+}
+
+/** POLIMENTO checklists-pracas (2026-09-22): foto de referência de uma praça
+ * montada (checklist com momento "praca"). Uma praça pode ter várias, uma por
+ * elemento (bancada, geladeira de apoio, forno...), descrito na legenda. */
+export interface ChecklistFoto {
+  id: string;
+  checklistId: string;
+  url: string;
+  legenda: string | null;
+  ordem: number;
+  areaId: string | null;
 }
 
 export interface Checklist {
@@ -20,6 +43,8 @@ export interface Checklist {
   nome: string;
   momento: MomentoChecklist;
   itens: ChecklistItem[];
+  fotos: ChecklistFoto[];
+  areas: ChecklistArea[];
 }
 
 export interface ChecklistInput {

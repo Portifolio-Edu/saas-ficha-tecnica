@@ -2,6 +2,7 @@
 // motivo de src/lib/dominio/insumo.ts. Reaproveita os tipos do motor de
 // cálculo (puro, sem I/O), igual dominio/insumo.ts já faz com UnidadeMedida.
 import type { ValoresNutricionais } from "@/lib/calculo/nutricional";
+import type { MapaAlergenicos, StatusGluten, StatusLactose } from "./rotuloVarejo";
 
 export interface ValoresNutricionaisInsumo {
   insumoId: string;
@@ -35,6 +36,12 @@ export interface Rotulagem {
   endereco: string | null;
   pesoLiquido: string | null;
   conservacao: string | null;
+  /** RÓTULO PARA VAREJO (2026-09-26): campos estruturados (rotuloVarejo.ts). */
+  alergenicos: MapaAlergenicos | null;
+  glutenStatus: StatusGluten | null;
+  lactoseStatus: StatusLactose | null;
+  medidaCaseira: string | null;
+  modoPreparo: string | null;
 }
 
 export interface RotulagemInput {
@@ -46,4 +53,9 @@ export interface RotulagemInput {
   endereco: string;
   pesoLiquido: string;
   conservacao: string;
+  alergenicos: MapaAlergenicos | null;
+  glutenStatus: StatusGluten | null;
+  lactoseStatus: StatusLactose | null;
+  medidaCaseira: string;
+  modoPreparo: string;
 }

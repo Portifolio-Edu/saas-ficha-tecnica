@@ -47,30 +47,30 @@ export function InsumoForm({
   };
 
   return (
-    <div className="px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
-      <div className="grid grid-cols-6 gap-2 mb-2">
-        <Input placeholder="Nome do insumo" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <select value={categoria} onChange={(e) => setCategoria(e.target.value as Categoria)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+    <div className="px-4 md:px-5 py-4" style={{ borderTop: `1px solid ${"var(--border)"}`, background: "var(--bg)" }}>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-2">
+        <Input aria-label="Nome do insumo" placeholder="Nome do insumo" value={nome} onChange={(e) => setNome(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <select aria-label="Categoria" value={categoria} onChange={(e) => setCategoria(e.target.value as Categoria)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           {CATEGORIAS.map((c) => (
             <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
-        <select value={unidade} onChange={(e) => setUnidade(e.target.value as UnidadeMedida)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle}>
+        <select aria-label="Unidade" value={unidade} onChange={(e) => setUnidade(e.target.value as UnidadeMedida)} className="text-[12.5px] px-2.5 py-1.5 rounded-md" style={inputStyle}>
           {UNIDADES.map((u) => (
             <option key={u} value={u}>{u}</option>
           ))}
         </select>
-        <Input placeholder="FC" type="number" step="0.01" value={fc} onChange={(e) => setFc(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
+        <Input aria-label="Fator de correção (FC)" placeholder="FC" type="number" inputMode="decimal" step="0.01" value={fc} onChange={(e) => setFc(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
       </div>
-      <div className="grid grid-cols-6 gap-2 mb-3">
-        <Input placeholder="Tamanho embalagem" type="number" value={tamanhoEmbalagem} onChange={(e) => setTamanhoEmbalagem(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <Input placeholder="Preço pago (R$)" type="number" value={precoEmbalagem} onChange={(e) => setPrecoEmbalagem(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-3">
+        <Input aria-label="Tamanho da embalagem" placeholder="Tamanho embalagem" type="number" inputMode="decimal" value={tamanhoEmbalagem} onChange={(e) => setTamanhoEmbalagem(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input aria-label="Preço pago (R$)" placeholder="Preço pago (R$)" type="number" inputMode="decimal" value={precoEmbalagem} onChange={(e) => setPrecoEmbalagem(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
         {unidade === "un" && (
-          <Input placeholder="Peso por unidade (kg)" type="number" value={pesoPorUnidade} onChange={(e) => setPesoPorUnidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+          <Input aria-label="Peso por unidade (kg)" placeholder="Peso por unidade (kg)" type="number" inputMode="decimal" value={pesoPorUnidade} onChange={(e) => setPesoPorUnidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
         )}
       </div>
-      <div className="grid grid-cols-6 gap-2 mb-3">
-        <select value={localArmazenamentoId} onChange={(e) => setLocalArmazenamentoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-3" style={inputStyle}>
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-3">
+        <select aria-label="Local de armazenamento" value={localArmazenamentoId} onChange={(e) => setLocalArmazenamentoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2 md:col-span-3" style={inputStyle}>
           <option value="">Sem local de armazenamento</option>
           {locais.map((l) => (
             <option key={l.id} value={l.id}>{l.nome}</option>

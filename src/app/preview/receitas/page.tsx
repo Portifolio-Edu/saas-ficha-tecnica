@@ -4,7 +4,7 @@ import { NOME_RESTAURANTE, receitas, insumos, preparos, margemAlvoCliente, proce
 
 export default function Page() {
   return (
-    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Receitas & Fichas">
+    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Receitas e fichas">
       <ReceitasClient
         receitas={receitas}
         insumos={insumos}

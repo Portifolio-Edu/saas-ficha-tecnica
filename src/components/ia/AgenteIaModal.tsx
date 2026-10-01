@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X, Send, Mic, Camera, Smartphone,
   Sparkles, CheckCircle2, Play, Square, QrCode,
@@ -73,7 +74,11 @@ export function AgenteIaModal({
   insumoFocoNome,
   onAplicarNutricional,
   onAplicarEstoque,
+  escopo = "completo",
 }: {
+  /** EQUIPE (2026-09-25): "estoque" = versão do estoquista: notas fiscais,
+   * chegadas, perdas e contagens. Sem tabela nutricional (tela da gestão). */
+  escopo?: "completo" | "estoque";
   aberto: boolean;
   onFechar: () => void;
   insumoFocoId?: string | null;
@@ -106,14 +111,16 @@ export function AgenteIaModal({
           remetente: "ia",
           texto: insumoFocoNome
             ? `Olá! Estou pronto para calibrar o insumo **${insumoFocoNome}**. Envie uma foto da embalagem/tabela nutricional ou grave um áudio para eu preencher os dados automaticamente.`
-            : "Olá! Sou o **Agente de IA da Cozinha & Estoque**. Você pode me enviar fotos de rótulos/notas fiscais, gravar áudios da operação ou conectar pelo WhatsApp para lançar tudo no sistema automaticamente.",
+            : escopo === "estoque"
+              ? "Olá! Sou o **Agente de IA do Estoque**. Mande a foto da nota fiscal ou do cupom, grave um áudio da chegada ou da perda, ou conecte o WhatsApp: eu preparo o lançamento no estoque pra você conferir e confirmar."
+              : "Olá! Sou o **Agente de IA da Cozinha & Estoque**. Você pode me enviar fotos de rótulos/notas fiscais, gravar áudios da operação ou conectar pelo WhatsApp para lançar tudo no sistema automaticamente.",
           timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
           origem: "web",
         },
       ];
       setMensagens(msgsIniciais);
     }
-  }, [insumoFocoNome, mensagens.length]);
+  }, [insumoFocoNome, mensagens.length, escopo]);
 
   // Scroll automático para a última mensagem
   useEffect(() => {
@@ -216,13 +223,15 @@ export function AgenteIaModal({
       const promptLower = promptTexto.toLowerCase();
 
       // Caso 1: Rótulo / Dados Nutricionais (Fermento, Farinha, etc.)
+      // No escopo do estoque a foto é de nota fiscal (cai no Caso 2).
       if (
-        imgUrl ||
+        escopo === "completo" &&
+        (imgUrl ||
         promptLower.includes("rótulo") ||
         promptLower.includes("nutricional") ||
         promptLower.includes("caloria") ||
         promptLower.includes("fermento") ||
-        insumoFocoNome
+        insumoFocoNome)
       ) {
         const insumoId = insumoFocoId || "i-fermento";
         const insumoNome = insumoFocoNome || "Fermento Biológico Seco";
@@ -268,7 +277,7 @@ export function AgenteIaModal({
       }
 
       // Caso 2: Entrada de Estoque / Nota Fiscal
-      if (promptLower.includes("peito de frango") || promptLower.includes("chegaram") || promptLower.includes("nota") || promptLower.includes("compra")) {
+      if ((escopo === "estoque" && imgUrl) || promptLower.includes("peito de frango") || promptLower.includes("chegaram") || promptLower.includes("nota") || promptLower.includes("compra")) {
         const respostaIa: MensagemChat = {
           id: `ia-${Date.now()}`,
           remetente: "ia",
@@ -304,7 +313,10 @@ export function AgenteIaModal({
       const respostaIa: MensagemChat = {
         id: `ia-${Date.now()}`,
         remetente: "ia",
-        texto: `Entendido! Posso ajudar a:\n1. 📷 Ler fotos de rótulos e embalagens para preencher tabelas nutricionais.\n2. 📄 Ler notas fiscais ou cupons de fornecedores para dar entrada no estoque.\n3. 🎙️ Ouvir áudios da equipe da cozinha com lotes, perdas ou recebimentos.\n4. 📲 Conectar ao WhatsApp para receber tudo direto do celular da equipe.`,
+        texto:
+          escopo === "estoque"
+            ? `Entendido! No estoque eu posso:\n1. 📄 Ler a foto da nota fiscal ou do cupom e preparar a entrada no estoque.\n2. 🎙️ Ouvir áudios de chegada, perda ou descarte e lançar a movimentação.\n3. 📦 Avisar quando um insumo estiver abaixo do mínimo.\n4. 📲 Receber tudo pelo WhatsApp, direto do celular.`
+            : `Entendido! Posso ajudar a:\n1. 📷 Ler fotos de rótulos e embalagens para preencher tabelas nutricionais.\n2. 📄 Ler notas fiscais ou cupons de fornecedores para dar entrada no estoque.\n3. 🎙️ Ouvir áudios da equipe da cozinha com lotes, perdas ou recebimentos.\n4. 📲 Conectar ao WhatsApp para receber tudo direto do celular da equipe.`,
         timestamp: hora,
         origem: "web",
       };
@@ -416,12 +428,32 @@ export function AgenteIaModal({
     processarComIa(exemplo.texto, undefined, true);
   };
 
+  // AGENTE IA (2026-09-26): Esc fecha (antes, com o modal cortado, não tinha
+  // como fechar).
+  useEffect(() => {
+    if (!aberto) return;
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onFechar();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [aberto, onFechar]);
+
   if (!aberto) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in font-sans">
+  // AGENTE IA (2026-09-26): vai direto pro <body> (portal). O botão fica no
+  // cabeçalho, que tem desfoque (backdrop-filter) — e isso faz o "fixed" do
+  // modal se prender ao cabeçalho: abria espremido, cortado em cima e sem o X.
+  // Altura pela tela visível (dvh), pra caber em notebook baixo e no celular.
+  // Clicar fora também fecha.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in font-sans"
+      onClick={(e) => e.target === e.currentTarget && onFechar()}
+    >
       <div
-        className="w-full max-w-2xl h-[90vh] max-h-[720px] rounded-2xl flex flex-col overflow-hidden border shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Agente IA"
+        className="w-full max-w-2xl h-[calc(100dvh-1.5rem)] sm:h-[calc(100dvh-2rem)] max-h-[720px] rounded-2xl flex flex-col overflow-hidden border shadow-2xl"
         style={{
           backgroundColor: "var(--panel)",
           borderColor: "var(--linha-forte)",
@@ -430,15 +462,17 @@ export function AgenteIaModal({
       >
         {/* Header do Agente */}
         <div
-          className="px-5 py-3.5 border-b flex items-center justify-between"
+          // AGENTE IA (2026-09-26): no celular, título + X na 1ª linha e as abas
+          // na 2ª (antes o título quebrava palavra por palavra e o X sumia).
+          className="px-4 sm:px-5 py-3 sm:py-3.5 border-b flex flex-wrap items-center gap-x-3 gap-y-2.5"
           style={{
             borderColor: "var(--linha)",
             backgroundColor: "var(--panel-elevated)",
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm relative"
+              className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-white shadow-sm relative"
               style={{
                 background: "linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)",
               }}
@@ -446,25 +480,25 @@ export function AgenteIaModal({
               <Bot size={22} strokeWidth={2.2} />
               <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[var(--panel)] animate-pulse" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-[15px] font-black tracking-tight text-[var(--tinta)]">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <h3 className="text-[15px] font-black tracking-tight leading-tight text-[var(--tinta)]">
                   Agente IA de Cozinha &amp; Estoque
                 </h3>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 uppercase tracking-wider">
-                  Multimodal
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
+                  Demonstração
                 </span>
               </div>
-              <p className="text-[11.5px] font-medium text-[var(--tinta-sub)]">
-                Recebe imagens, áudios e integra com WhatsApp
+              <p className="hidden sm:block text-[11.5px] font-medium text-[var(--tinta-sub)]">
+                Simulação de como o agente vai funcionar -- as respostas são de exemplo
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="contents">
             {/* Seletor de Abas */}
             <div
-              className="flex items-center p-0.5 rounded-lg border text-[12px] font-bold"
+              className="order-3 w-full sm:order-none sm:w-auto flex items-center p-0.5 rounded-lg border text-[12px] font-bold"
               style={{
                 backgroundColor: "var(--panel)",
                 borderColor: "var(--linha)",
@@ -472,7 +506,7 @@ export function AgenteIaModal({
             >
               <button
                 onClick={() => setAbaAtiva("chat")}
-                className={`px-3 py-1 rounded-md transition-all ${
+                className={`flex-1 sm:flex-none min-h-10 sm:min-h-0 px-3 py-1 rounded-md transition-all ${
                   abaAtiva === "chat"
                     ? "bg-[var(--tinta)] text-[var(--panel)] shadow-sm"
                     : "text-[var(--tinta-sub)] hover:text-[var(--tinta)]"
@@ -482,7 +516,7 @@ export function AgenteIaModal({
               </button>
               <button
                 onClick={() => setAbaAtiva("whatsapp")}
-                className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                className={`flex-1 sm:flex-none min-h-10 sm:min-h-0 justify-center px-3 py-1 rounded-md transition-all flex items-center gap-1.5 ${
                   abaAtiva === "whatsapp"
                     ? "bg-emerald-600 text-white shadow-sm"
                     : "text-[var(--tinta-sub)] hover:text-emerald-500"
@@ -495,7 +529,8 @@ export function AgenteIaModal({
 
             <button
               onClick={onFechar}
-              className="p-1.5 rounded-xl text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel)] border border-transparent hover:border-[var(--linha)] transition-all"
+              aria-label="Fechar"
+              className="order-2 sm:order-none shrink-0 w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel)] border border-transparent hover:border-[var(--linha)] transition-all"
             >
               <X size={18} />
             </button>
@@ -526,15 +561,14 @@ export function AgenteIaModal({
               <div className="inline-block p-4 rounded-xl bg-white shadow-md border mb-4">
                 <div className="w-44 h-44 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 text-slate-700">
                   <QrCode size={110} strokeWidth={1.5} className="text-slate-800" />
-                  <span className="text-[10px] font-extrabold uppercase mt-2 text-slate-500 tracking-wider">
+                  <span className="text-[10px] font-extrabold mt-2 text-slate-500">
                     Escanear com WhatsApp
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-2 text-[12px] text-emerald-600 font-bold">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                <span>Pronto para parear: +55 (11) 98721-9900</span>
+              <div className="flex items-center justify-center gap-2 text-[12px] font-bold" style={{ color: "var(--tinta-sub)" }}>
+                <span>QR ilustrativo -- a integração com WhatsApp ainda não está ativa.</span>
               </div>
             </div>
 
@@ -555,7 +589,7 @@ export function AgenteIaModal({
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {EXEMPLOS_AUDIO.map((ex, i) => (
+                {EXEMPLOS_AUDIO.filter((ex) => escopo === "completo" || ex.tipo !== "nutricional").map((ex, i) => (
                   <button
                     key={i}
                     onClick={() => {
@@ -595,11 +629,11 @@ export function AgenteIaModal({
                   }`}
                 >
                   <div className="flex items-center gap-1.5 mb-1 px-1">
-                    <span className="text-[10.5px] font-extrabold uppercase text-[var(--tinta-faint)]">
+                    <span className="text-[10.5px] font-extrabold text-[var(--tinta-faint)]">
                       {msg.remetente === "usuario" ? "Você" : "Agente IA"}
                     </span>
                     {msg.origem === "whatsapp" && (
-                      <span className="text-[9.5px] font-black px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase">
+                      <span className="text-[9.5px] font-black px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                         via WhatsApp
                       </span>
                     )}
@@ -680,7 +714,7 @@ export function AgenteIaModal({
                             </span>
                           </div>
                           <span
-                            className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase"
+                            className="text-[10px] font-black px-2 py-0.5 rounded-full"
                             style={{
                               backgroundColor: msg.acaoProposta.executada
                                 ? "rgba(16, 185, 129, 0.15)"
@@ -763,9 +797,10 @@ export function AgenteIaModal({
 
             {/* Barra de Ações Rápidas (Chips de Exemplo) */}
             <div className="px-4 py-2 border-t flex items-center gap-2 overflow-x-auto" style={{ borderColor: "var(--linha)", backgroundColor: "var(--panel)" }}>
-              <span className="text-[11px] font-bold text-[var(--tinta-faint)] shrink-0 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-[var(--tinta-faint)] shrink-0">
                 Exemplos:
               </span>
+              {escopo === "completo" && (
               <button
                 onClick={() => {
                   setTextoEntrada("Ler rótulo do fermento biológico seco");
@@ -776,6 +811,7 @@ export function AgenteIaModal({
               >
                 📷 Rótulo Fermento
               </button>
+              )}
               <button
                 onClick={() => {
                   setTextoEntrada("Chegaram 15kg de peito de frango a R$ 17,90");
@@ -838,6 +874,7 @@ export function AgenteIaModal({
                 <div className="flex items-center gap-2">
                   <input
                     type="file"
+                    aria-label="Imagem pro agente"
                     ref={fileInputRef}
                     onChange={handleSelecionarImagem}
                     accept="image/*"
@@ -848,6 +885,7 @@ export function AgenteIaModal({
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     title="Enviar foto de embalagem ou nota fiscal"
+                    aria-label="Enviar foto"
                     className="p-2.5 rounded-xl border text-[var(--tinta-sub)] hover:text-purple-600 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all shrink-0"
                     style={{
                       backgroundColor: "var(--panel)",
@@ -861,6 +899,7 @@ export function AgenteIaModal({
                   <button
                     onClick={iniciarGravacao}
                     title="Gravar áudio da cozinha"
+                    aria-label="Gravar áudio"
                     className="p-2.5 rounded-xl border text-[var(--tinta-sub)] hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/5 transition-all shrink-0"
                     style={{
                       backgroundColor: "var(--panel)",
@@ -881,7 +920,8 @@ export function AgenteIaModal({
                         ? `Dite ou escreva dados do ${insumoFocoNome}...`
                         : "Digite uma instrução, envie foto ou grave áudio..."
                     }
-                    className="flex-1 px-3.5 py-2.5 rounded-xl text-[13px] border bg-[var(--panel)] focus:outline-none focus:border-purple-500 transition-all font-sans"
+                    aria-label="Mensagem para o agente"
+                    className="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl text-[13px] border bg-[var(--panel)] focus:outline-none focus:border-purple-500 transition-all font-sans"
                     style={{
                       borderColor: "var(--linha)",
                       color: "var(--tinta)",
@@ -892,6 +932,7 @@ export function AgenteIaModal({
                   <button
                     onClick={enviarMensagem}
                     disabled={!textoEntrada.trim() && !imagemSelecionada}
+                    aria-label="Enviar"
                     className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white shadow-sm transition-all shrink-0"
                   >
                     <Send size={16} />
@@ -903,5 +944,7 @@ export function AgenteIaModal({
         )}
       </div>
     </div>
+    ,
+    document.body,
   );
 }

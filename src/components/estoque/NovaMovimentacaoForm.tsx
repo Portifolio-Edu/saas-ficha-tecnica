@@ -1,5 +1,7 @@
 "use client";
 
+// SISTEMA premium (escala do DESIGN.md): aviso de saída para produção usa var(--aviso) em vez de #F59E0B. Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
+
 import { useState } from "react";
 import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
@@ -81,7 +83,7 @@ export function NovaMovimentacaoForm({
         <p className="text-[11.5px] mb-3" style={{ color: "var(--faint)" }}>Ajuste subtrai do saldo atual — serve pra registrar perda ou corrigir contagem pra baixo.</p>
       )}
       {tipo === "saida_producao" && (
-        <p className="text-[11.5px] mb-3" style={{ color: "#F59E0B" }}>Saída para produção subtrai do estoque e registra a destinação de insumos para a cozinha.</p>
+        <p className="text-[11.5px] mb-3" style={{ color: "var(--aviso)" /* SISTEMA premium: antes #F59E0B fixo, ilegível no tema claro */ }}>Saída para produção subtrai do estoque e registra a destinação de insumos para a cozinha.</p>
       )}
       <ErroBanner erro={erro} />
       <div className="flex gap-2">

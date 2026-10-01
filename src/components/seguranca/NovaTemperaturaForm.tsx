@@ -44,22 +44,22 @@ export function NovaTemperaturaForm({
 
   return (
     <div className="px-5 py-4">
-      <div className="grid grid-cols-4 gap-2 mb-2">
-        <select value={localId} onChange={(e) => trocarLocal(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+        <select aria-label="Local" value={localId} onChange={(e) => trocarLocal(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           {locais.map((l) => (
             <option key={l.id} value={l.id}>{l.nome}</option>
           ))}
         </select>
-        <select value={insumoId} onChange={(e) => setInsumoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
+        <select aria-label="Insumo" value={insumoId} onChange={(e) => setInsumoId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
           <option value="">Sem insumo específico (ronda geral)</option>
           {insumosDoLocal.map((i) => (
             <option key={i.id} value={i.id}>{i.nome}</option>
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-4 gap-2 mb-2">
-        <Input placeholder="Temperatura (°C)" type="number" value={temperatura} onChange={(e) => setTemperatura(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <Input placeholder="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+        <Input aria-label="Temperatura (°C)" placeholder="Temperatura (°C)" type="number" inputMode="decimal" value={temperatura} onChange={(e) => setTemperatura(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+        <Input aria-label="Responsável" placeholder="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
       </div>
       {foraDaFaixa && (
         <div className="text-[12px] mb-2" style={{ color: "var(--danger)" }}>

@@ -9,6 +9,7 @@ import type {
   ValoresNutricionaisInsumo,
   ValoresNutricionaisInsumoInput,
 } from "@/lib/dominio/nutricional";
+import type { MapaAlergenicos, StatusGluten, StatusLactose } from "@/lib/dominio/rotuloVarejo";
 
 export type {
   NutricionalOverride,
@@ -109,6 +110,11 @@ interface LinhaRotulagem {
   endereco: string | null;
   peso_liquido: string | null;
   conservacao: string | null;
+  alergenicos: MapaAlergenicos | null;
+  gluten_status: StatusGluten | null;
+  lactose_status: StatusLactose | null;
+  medida_caseira: string | null;
+  modo_preparo: string | null;
 }
 
 function paraRotulagem(l: LinhaRotulagem): Rotulagem {
@@ -122,6 +128,11 @@ function paraRotulagem(l: LinhaRotulagem): Rotulagem {
     endereco: l.endereco,
     pesoLiquido: l.peso_liquido,
     conservacao: l.conservacao,
+    alergenicos: l.alergenicos,
+    glutenStatus: l.gluten_status,
+    lactoseStatus: l.lactose_status,
+    medidaCaseira: l.medida_caseira,
+    modoPreparo: l.modo_preparo,
   };
 }
 
@@ -129,7 +140,7 @@ export async function listarRotulagens(): Promise<Rotulagem[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("rotulagem")
-    .select("receita_id, ingredientes, alergenos, gluten, lactose, fabricante, endereco, peso_liquido, conservacao");
+    .select("receita_id, ingredientes, alergenos, gluten, lactose, fabricante, endereco, peso_liquido, conservacao, alergenicos, gluten_status, lactose_status, medida_caseira, modo_preparo");
   if (error) throw new Error(mensagemErro(error));
   return ((data ?? []) as LinhaRotulagem[]).map(paraRotulagem);
 }
@@ -147,6 +158,11 @@ export async function salvarRotulagem(receitaId: string, input: RotulagemInput):
       endereco: input.endereco || null,
       peso_liquido: input.pesoLiquido || null,
       conservacao: input.conservacao || null,
+      alergenicos: input.alergenicos,
+      gluten_status: input.glutenStatus,
+      lactose_status: input.lactoseStatus,
+      medida_caseira: input.medidaCaseira.trim() || null,
+      modo_preparo: input.modoPreparo.trim() || null,
     },
     { onConflict: "receita_id" },
   );

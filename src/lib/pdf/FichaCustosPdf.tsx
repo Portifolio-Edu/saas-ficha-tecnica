@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, pdf } from "@react-pdf/renderer";
 import { cor, estilosBase } from "./estilos";
+import { formatBRL } from "@/components/charts/format";
 
 export interface LinhaFichaCustosPdf {
   nome: string;
@@ -51,19 +52,19 @@ function FichaCustosDocumento({ dados }: { dados: DadosFichaCustosPdf }) {
             <Text style={estilosBase.colLabel}>{l.nome}{l.ehPreparo ? " (preparo próprio)" : ""}</Text>
             <Text style={estilosBase.colNum}>{l.pesoLiquido}{l.unidade}</Text>
             <Text style={estilosBase.colNum}>{l.fc != null ? l.fc.toFixed(3) : "—"}</Text>
-            <Text style={estilosBase.colNum}>R$ {l.precoUnitario.toFixed(2)}</Text>
-            <Text style={estilosBase.colNum}>R$ {l.custo.toFixed(2)}</Text>
+            <Text style={estilosBase.colNum}>{formatBRL(l.precoUnitario)}</Text>
+            <Text style={estilosBase.colNum}>{formatBRL(l.custo)}</Text>
           </View>
         ))}
         <View style={estilosBase.linhaTotal}>
           <Text style={{ flex: 5, fontFamily: "Helvetica-Bold" }}>CMV total</Text>
-          <Text style={[estilosBase.colNum, { fontFamily: "Helvetica-Bold" }]}>R$ {dados.cmvTotal.toFixed(2)}</Text>
+          <Text style={[estilosBase.colNum, { fontFamily: "Helvetica-Bold" }]}>{formatBRL(dados.cmvTotal)}</Text>
         </View>
 
         <View style={{ marginTop: 24, flexDirection: "row", justifyContent: "space-between" }}>
           <View>
             <Text style={{ fontSize: 8, color: cor.sub, marginBottom: 2 }}>PREÇO DE VENDA</Text>
-            <Text style={{ fontSize: 13, fontFamily: "Helvetica-Bold" }}>R$ {dados.precoVenda.toFixed(2)}</Text>
+            <Text style={{ fontSize: 13, fontFamily: "Helvetica-Bold" }}>{formatBRL(dados.precoVenda)}</Text>
           </View>
           <View>
             <Text style={{ fontSize: 8, color: cor.sub, marginBottom: 2 }}>MARGEM NO PREÇO ATUAL</Text>
@@ -71,7 +72,7 @@ function FichaCustosDocumento({ dados }: { dados: DadosFichaCustosPdf }) {
           </View>
           <View>
             <Text style={{ fontSize: 8, color: cor.sub, marginBottom: 2 }}>PREÇO SUGERIDO (MARGEM {dados.margemAlvoPct.toFixed(0)}%)</Text>
-            <Text style={{ fontSize: 13, fontFamily: "Helvetica-Bold" }}>R$ {dados.precoSugerido.toFixed(2)}</Text>
+            <Text style={{ fontSize: 13, fontFamily: "Helvetica-Bold" }}>{formatBRL(dados.precoSugerido)}</Text>
           </View>
         </View>
 

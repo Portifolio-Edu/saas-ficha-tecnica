@@ -4,7 +4,7 @@ import { NOME_RESTAURANTE, pratos, preparos, insumos, processamentos, valoresIns
 
 export default function Page() {
   return (
-    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Ficha Nutricional">
+    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Ficha nutricional">
       <NutricionalClient
         pratos={pratos}
         preparos={preparos}

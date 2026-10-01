@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getClienteAtual } from "@/lib/dados/cliente";
+import { exigirAcesso } from "@/lib/auth/acesso";
 import { listarInsumos } from "@/lib/dados/insumos";
 import { listarReceitas } from "@/lib/dados/receitas";
 import { listarProcessamentos } from "@/lib/dados/processamentos";
@@ -7,11 +6,11 @@ import { listarProducoes } from "@/lib/dados/producoes";
 import { listarFechamentos } from "@/lib/dados/fechamentosCmv";
 import { listarLocaisArmazenamento, listarRegistrosTemperatura } from "@/lib/dados/temperatura";
 import { AppShell } from "@/components/ficha/AppShell";
+import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { RelatoriosClient } from "./RelatoriosClient";
 
 export default async function RelatoriosPage() {
-  const cliente = await getClienteAtual();
-  if (!cliente) redirect("/login");
+  const cliente = await exigirAcesso("/relatorios");
 
   const [insumos, receitas, processamentos, producoes, fechamentos, locais, registrosTemperatura] = await Promise.all([
     listarInsumos(),
@@ -24,7 +23,9 @@ export default async function RelatoriosPage() {
   ]);
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Relatórios">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Relatórios">
+      {/* EQUIPE (2026-09-25): mostra o que a cozinha registrou sem precisar recarregar. */}
+      <AtualizacaoAutomatica />
       <RelatoriosClient
         insumos={insumos}
         receitas={receitas}
@@ -34,6 +35,7 @@ export default async function RelatoriosPage() {
         locais={locais}
         registrosTemperatura={registrosTemperatura}
         margemAlvoCliente={cliente.margemAlvo}
+        nomeRestaurante={cliente.nomeRestaurante}
       />
     </AppShell>
   );

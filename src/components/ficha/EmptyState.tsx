@@ -18,10 +18,12 @@ export function EmptyState({
   return (
     <Card className={`p-8 text-center flex flex-col items-center justify-center border-dashed ${className}`}>
       <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
+        // SISTEMA premium: ícone em quadro neutro de 10px (antes rounded-2xl).
+        className="w-11 h-11 rounded-[10px] flex items-center justify-center mb-3 border"
         style={{
-          backgroundColor: "var(--accent-soft)",
-          color: "var(--accent)",
+          backgroundColor: "var(--panel-elevated)",
+          borderColor: "var(--linha)",
+          color: "var(--tinta-sub)",
         }}
       >
         {icone || <FolderOpen size={24} />}

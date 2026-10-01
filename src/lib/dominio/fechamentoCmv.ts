@@ -25,3 +25,14 @@ export interface NovoFechamentoInput {
   faturamento: number;
   vendas: { receitaId: string; quantidade: number }[];
 }
+
+// EQUIPE (2026-09-25): o que o estoquista vê do fechamento — o lado do
+// estoque, sem faturamento (vem de fechamentos_cmv_estoque() no banco).
+export interface FechamentoEstoque {
+  id: string;
+  periodoInicio: string;
+  periodoFim: string;
+  estoqueInicial: number;
+  compras: number;
+  estoqueFinal: number;
+}

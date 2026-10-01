@@ -1,0 +1,85 @@
+# PLANO 9,5 (2026-09-26): rede de proteção automática. Roda em todo push.
+#  - app: tipos, lint (sem avisos), testes unitários e build de produção;
+#  - banco: recria o banco do zero com TODAS as migrations (Supabase local)
+#    e roda os testes SQL de supabase/testes (papéis, isolamento, escalas…);
+#  - ponta a ponta: app de verdade + Supabase local (login, banco, e-mail) e
+#    os fluxos de cada papel pelo navegador (e2e/, Playwright).
+# Qualquer falha deixa o check vermelho no PR.
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App (tipos, lint, testes, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tipos
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npx eslint src --max-warnings=0
+      - name: Testes unitários
+        run: npx vitest run
+      - name: Build de produção
+        run: npm run build
+
+  banco:
+    name: Banco (migrations do zero + testes SQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Banco do zero com todas as migrations
+        run: supabase db start
+      - name: Testes SQL
+        run: supabase/testes/rodar.sh
+
+  ponta-a-ponta:
+    name: Ponta a ponta (login real, cada papel)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: npm ci
+      - name: Supabase local (login, banco e e-mail de teste)
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - name: Build apontando pro Supabase local
+        shell: bash
+        run: source e2e/ambiente.sh && npm run build
+      - name: Navegador
+        run: npx playwright install --with-deps chromium
+      - name: Testes ponta a ponta
+        shell: bash
+        run: source e2e/ambiente.sh && npx playwright test
+      - name: Relatório (se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-ponta-a-ponta
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -19,8 +19,10 @@ export function Card({
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl transition-all duration-200 ${
-        hover ? "hover:-translate-y-0.5 hover:shadow-lg cursor-pointer" : ""
+      // SISTEMA premium: canto de 12px (antes rounded-2xl, 16px) e hover só com borda
+      // mais forte (antes subia 2px com sombra grande -- gesto de landing page).
+      className={`rounded-xl transition-colors duration-150 ${
+        hover ? "hover:border-[var(--linha-forte)] cursor-pointer" : ""
       } ${animate ? "animate-fade-in" : ""} ${className}`}
       style={{
         backgroundColor: "var(--panel)",

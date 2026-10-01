@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getClienteAtual } from "@/lib/dados/cliente";
+import { exigirAcesso } from "@/lib/auth/acesso";
 import { listarInsumos } from "@/lib/dados/insumos";
 import { listarReceitas } from "@/lib/dados/receitas";
 import { listarProcessamentos } from "@/lib/dados/processamentos";
@@ -8,8 +7,7 @@ import { AppShell } from "@/components/ficha/AppShell";
 import { NutricionalClient } from "./NutricionalClient";
 
 export default async function NutricionalPage() {
-  const cliente = await getClienteAtual();
-  if (!cliente) redirect("/login");
+  const cliente = await exigirAcesso("/nutricional");
 
   const [insumos, todasReceitas, processamentos, valoresInsumos, overrides, rotulagens] = await Promise.all([
     listarInsumos(),
@@ -23,7 +21,7 @@ export default async function NutricionalPage() {
   const preparos = todasReceitas.filter((r) => r.tipo === "preparo_base");
 
   return (
-    <AppShell nomeRestaurante={cliente.nomeRestaurante} tituloPagina="Ficha Nutricional">
+    <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Ficha nutricional">
       <NutricionalClient
         pratos={pratos}
         preparos={preparos}

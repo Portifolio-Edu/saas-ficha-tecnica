@@ -1,10 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { getClienteAtual } from "@/lib/dados/cliente";
 import { criarProducaoComLoteAutomatico, criarProducao, atualizarStatusProducao } from "@/lib/dados/producoes";
+import { listarInsumos } from "@/lib/dados/insumos";
+import { listarReceitas } from "@/lib/dados/receitas";
+import { listarProcessamentos } from "@/lib/dados/processamentos";
+import { registrarMovimentacao } from "@/lib/dados/estoque";
+import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
+import { gerarLote } from "@/lib/calculo/lote";
 import type { ProducaoInput, StatusProducao, TipoItemProducao } from "@/lib/dominio/producao";
+import { adicionarAoPlano, tirarDoPlano } from "@/lib/dados/planoProducao";
+import { validarItemPlano } from "@/lib/dominio/planoProducao";
+import { hojeLocalISO } from "@/lib/calculo/dia";
+import { ehGestao } from "@/lib/auth/papeis";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
 
@@ -12,101 +21,37 @@ function paraResultado(e: unknown): Resultado {
   return { ok: false, erro: e instanceof Error ? e.message : "Erro desconhecido." };
 }
 
-async function isRequisicaoPreview(): Promise<boolean> {
-  try {
-    const h = await headers();
-    const referer = h.get("referer") || "";
-    return referer.includes("/preview");
-  } catch {
-    return false;
-  }
-}
+/**
+ * Baixa do estoque o que o lote consome (peso bruto, sub-receitas na proporção
+ * usada). Só mexe em insumo com estoque rastreado -- os outros não têm saldo
+ * pra abater. Devolve os insumos cuja baixa falhou, pra a ação avisar em vez
+ * de fingir sucesso: a produção já foi gravada, e o gerente precisa saber que
+ * o saldo ficou desatualizado.
+ */
+async function baixarEstoqueDaProducao(receitaId: string, quantidade: number, lote: string): Promise<string[]> {
+  const [insumos, receitas, processamentos] = await Promise.all([listarInsumos(), listarReceitas(), listarProcessamentos()]);
+  const receitaPorId = new Map(receitas.map((r) => [r.id, r]));
+  const insumoPorId = new Map(insumos.map((i) => [i.id, i]));
+  const receita = receitaPorId.get(receitaId);
+  if (!receita) return [];
 
-function gerarLote(nome: string, sequencia: number): string {
-  const agora = new Date();
-  const dd = String(agora.getDate()).padStart(2, "0");
-  const mm = String(agora.getMonth() + 1).padStart(2, "0");
-  const sigla = nome
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  const seq = String(sequencia).padStart(2, "0");
-  return `${sigla}-${dd}${mm}-${seq}`;
-}
+  const consumos = consumoDeInsumosDaProducao(receita, quantidade, receitaPorId, insumoPorId, processamentos)
+    .filter((c) => insumoPorId.get(c.insumoId)?.estoque);
 
-import { createClient } from "@/lib/supabase/server";
-
-async function registrarSaidaEstoqueProducao(
-  clienteId: string,
-  receitaId: string,
-  lote: string,
-  nomeReceita: string,
-): Promise<void> {
-  try {
-    const supabase = await createClient();
-
-    const { data: itensFicha } = await supabase
-      .from("receita_insumos")
-      .select("insumo_id, sub_receita_id, peso_liquido")
-      .eq("receita_id", receitaId);
-
-    if (!itensFicha || itensFicha.length === 0) return;
-
-    for (const item of itensFicha) {
-      if (item.insumo_id) {
-        const qtd = Number(item.peso_liquido);
-        if (qtd > 0) {
-          try {
-            await supabase.rpc("ajustar_saldo_estoque", {
-              p_insumo_id: item.insumo_id,
-              p_delta: -qtd,
-            });
-            await supabase.from("movimentacoes_estoque").insert({
-              insumo_id: item.insumo_id,
-              tipo: "ajuste",
-              quantidade: qtd,
-              origem: `Produção — lote ${lote} (${nomeReceita})`,
-            });
-          } catch (eRpc) {
-            console.error("Erro ao registrar saída de estoque para insumo:", item.insumo_id, eRpc);
-          }
-        }
-      } else if (item.sub_receita_id) {
-        try {
-          const { data: subItens } = await supabase
-            .from("receita_insumos")
-            .select("insumo_id, peso_liquido")
-            .eq("receita_id", item.sub_receita_id);
-
-          if (subItens) {
-            for (const subItem of subItens) {
-              if (subItem.insumo_id) {
-                const qtdSub = Number(subItem.peso_liquido);
-                if (qtdSub > 0) {
-                  await supabase.rpc("ajustar_saldo_estoque", {
-                    p_insumo_id: subItem.insumo_id,
-                    p_delta: -qtdSub,
-                  });
-                  await supabase.from("movimentacoes_estoque").insert({
-                    insumo_id: subItem.insumo_id,
-                    tipo: "ajuste",
-                    quantidade: qtdSub,
-                    origem: `Produção — lote ${lote} (${nomeReceita})`,
-                  });
-                }
-              }
-            }
-          }
-        } catch (eSub) {
-          console.error("Erro ao registrar saída de sub-receita:", eSub);
-        }
-      }
+  const falhas: string[] = [];
+  for (const c of consumos) {
+    try {
+      await registrarMovimentacao(c.insumoId, "saida_producao", c.quantidade, `Produção — lote ${lote} (${receita.nomePrato})`);
+    } catch (e) {
+      falhas.push(`${c.nome}: ${e instanceof Error ? e.message : "erro desconhecido"}`);
     }
-  } catch (err) {
-    console.error("Erro ao registrar saída de estoque para produção:", err);
   }
+  return falhas;
+}
+
+function resultadoComBaixa(falhas: string[]): Resultado {
+  if (falhas.length === 0) return { ok: true };
+  return { ok: false, erro: `Produção registrada, mas a baixa de estoque falhou em ${falhas.length} insumo(s): ${falhas.join("; ")}` };
 }
 
 /** "Iniciar produção" a partir de um card de capacidade do quadro (clique ou
@@ -120,17 +65,13 @@ export async function acaoIniciarProducao(
   chefeTurno: string | null,
 ): Promise<Resultado> {
   const cliente = await getClienteAtual();
-  if (!cliente) {
-    if (await isRequisicaoPreview()) return { ok: true };
-    return { ok: false, erro: "Sessão expirada. Faça login novamente." };
-  }
+  if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
   try {
     let loteCriado = "";
     await criarProducaoComLoteAutomatico(cliente.id, receitaId, (sequencia): ProducaoInput => {
-      const lote = gerarLote(nomeReceita, sequencia);
-      loteCriado = lote;
+      loteCriado = gerarLote(nomeReceita, sequencia);
       return {
-        lote,
+        lote: loteCriado,
         tipo,
         receitaId,
         quantidade: rendimento,
@@ -141,13 +82,10 @@ export async function acaoIniciarProducao(
       };
     });
 
-    if (loteCriado) {
-      await registrarSaidaEstoqueProducao(cliente.id, receitaId, loteCriado, nomeReceita);
-    }
-
+    const falhas = await baixarEstoqueDaProducao(receitaId, rendimento, loteCriado);
     revalidatePath("/producoes");
     revalidatePath("/estoque");
-    return { ok: true };
+    return resultadoComBaixa(falhas);
   } catch (e) {
     return paraResultado(e);
   }
@@ -155,28 +93,66 @@ export async function acaoIniciarProducao(
 
 export async function acaoRegistrarProducao(input: ProducaoInput): Promise<Resultado> {
   const cliente = await getClienteAtual();
-  if (!cliente) {
-    if (await isRequisicaoPreview()) return { ok: true };
-    return { ok: false, erro: "Sessão expirada. Faça login novamente." };
-  }
+  if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
   try {
     await criarProducao(cliente.id, input);
-    await registrarSaidaEstoqueProducao(cliente.id, input.receitaId, input.lote, "Produção manual");
+    const falhas = await baixarEstoqueDaProducao(input.receitaId, input.quantidade, input.lote);
     revalidatePath("/producoes");
     revalidatePath("/estoque");
-    return { ok: true };
+    return resultadoComBaixa(falhas);
   } catch (e) {
     return paraResultado(e);
   }
 }
 
 export async function acaoAtualizarStatusProducao(id: string, status: StatusProducao, motivoPerda: string | null = null): Promise<Resultado> {
-  if (id.startsWith("demo-") || (await isRequisicaoPreview())) {
-    return { ok: true };
-  }
   try {
     await atualizarStatusProducao(id, status, motivoPerda);
     revalidatePath("/producoes");
+    return { ok: true };
+  } catch (e) {
+    return paraResultado(e);
+  }
+}
+
+// LISTA DE PRODUÇÃO (2026-09-26): dono e gestor montam a lista do dia (ou de
+// amanhã) que aparece embaixo do quadro de Produção no tablet.
+export type ResultadoPlano = { ok: true; aviso?: string } | { ok: false; erro: string };
+
+async function exigirGestaoPlano() {
+  const cliente = await getClienteAtual();
+  if (!cliente) throw new Error("Sessão expirada. Faça login novamente.");
+  if (!ehGestao(cliente.papel)) throw new Error("Só o dono e o gestor montam a lista de produção.");
+  return cliente;
+}
+
+function dataValida(data: string): boolean {
+  const hoje = hojeLocalISO();
+  const amanha = hojeLocalISO(new Date(Date.now() + 86_400_000));
+  return data === hoje || data === amanha;
+}
+
+export async function acaoPlanoAdicionar(data: string, receitaId: string, quantidade: number, observacao: string | null): Promise<ResultadoPlano> {
+  try {
+    const cliente = await exigirGestaoPlano();
+    if (!dataValida(data)) throw new Error("A lista é de hoje ou de amanhã.");
+    const problema = validarItemPlano({ receitaId, quantidade, observacao });
+    if (problema) throw new Error(problema);
+    const { aviso } = await adicionarAoPlano(cliente.id, { data, receitaId, quantidade, observacao, responsavel: cliente.nomeMembro || cliente.nome });
+    revalidatePath("/producoes");
+    revalidatePath("/cozinha");
+    return aviso ? { ok: true, aviso } : { ok: true };
+  } catch (e) {
+    return paraResultado(e);
+  }
+}
+
+export async function acaoPlanoTirar(id: string): Promise<ResultadoPlano> {
+  try {
+    await exigirGestaoPlano();
+    await tirarDoPlano(id);
+    revalidatePath("/producoes");
+    revalidatePath("/cozinha");
     return { ok: true };
   } catch (e) {
     return paraResultado(e);

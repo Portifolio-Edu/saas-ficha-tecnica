@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
 import type { Fornecedor, FornecedorInput } from "@/lib/dominio/fornecedor";
+import type { CategoriaPedido } from "@/lib/dominio/requisicao";
 
 export type { Fornecedor, FornecedorInput } from "@/lib/dominio/fornecedor";
 
@@ -11,7 +12,10 @@ interface LinhaFornecedor {
   telefone: string;
   email: string | null;
   fornece: string | null;
-  dias_entrega: string | null;
+  entrega_dias: number[];
+  pedido_ate: string | null;
+  pedido_antecedencia: number;
+  categorias_pedido: CategoriaPedido[];
   horario_entrega: string | null;
   prazo_urgencia: string | null;
 }
@@ -24,7 +28,10 @@ function paraFornecedor(f: LinhaFornecedor): Fornecedor {
     telefone: f.telefone,
     email: f.email,
     fornece: f.fornece,
-    diasEntrega: f.dias_entrega,
+    entregaDias: f.entrega_dias ?? [],
+    pedidoAte: f.pedido_ate ? f.pedido_ate.slice(0, 5) : null,
+    pedidoAntecedencia: f.pedido_antecedencia ?? 1,
+    categoriasPedido: f.categorias_pedido ?? [],
     horarioEntrega: f.horario_entrega,
     prazoUrgencia: f.prazo_urgencia,
   };
@@ -32,23 +39,25 @@ function paraFornecedor(f: LinhaFornecedor): Fornecedor {
 
 function paraLinha(input: FornecedorInput) {
   return {
-    empresa: input.empresa,
+    empresa: input.empresa.trim(),
     contato: input.contato || null,
     telefone: input.telefone,
     email: input.email || null,
     fornece: input.fornece || null,
-    dias_entrega: input.diasEntrega || null,
+    entrega_dias: [...new Set(input.entregaDias)].sort((a, b) => a - b),
+    pedido_ate: input.pedidoAte || null,
+    pedido_antecedencia: input.pedidoAntecedencia,
+    categorias_pedido: [...new Set(input.categoriasPedido)],
     horario_entrega: input.horarioEntrega || null,
     prazo_urgencia: input.prazoUrgencia || null,
   };
 }
 
+const COLUNAS = "id, empresa, contato, telefone, email, fornece, entrega_dias, pedido_ate, pedido_antecedencia, categorias_pedido, horario_entrega, prazo_urgencia";
+
 export async function listarFornecedores(): Promise<Fornecedor[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("fornecedores")
-    .select("id, empresa, contato, telefone, email, fornece, dias_entrega, horario_entrega, prazo_urgencia")
-    .order("empresa");
+  const { data, error } = await supabase.from("fornecedores").select(COLUNAS).order("empresa");
   if (error) throw new Error(mensagemErro(error));
   return ((data ?? []) as LinhaFornecedor[]).map(paraFornecedor);
 }
