@@ -407,16 +407,23 @@ export function VisaoGeralClient({
                         {deltaPp(delta)}
                       </span>
                     </div>
-                    {/* Trilho de 40% a 85% de margem; o traço é o alvo. */}
-                    <div className="w-full h-1.5 rounded-full relative" style={{ background: "var(--panel-elevated)" }}>
-                      <div
-                        className="absolute -top-1 -bottom-1 w-[2px] rounded-full -translate-x-1/2"
-                        style={{ left: `${Math.min(100, Math.max(0, ((item.margemAlvoPct - 40) / 45) * 100))}%`, background: "var(--tinta-faint)" }}
-                        title={`Alvo: ${item.margemAlvoPct}%`}
-                      />
+                    {/* Trilho de 40% a 85% de margem; a bolinha é o alvo.
+                        VISÃO GERAL (2026-10-01): mesmo desenho da régua "Meta de margem"
+                        (trilho fino, preenchido na cor da marca, bolinha vazada).
+                        Antes: traço cinza de 2px no alvo e preenchimento na cor do texto. */}
+                    <div className="w-full h-1 rounded-full relative" style={{ background: "var(--linha-forte)" }}>
                       <div
                         className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, Math.max(0, ((item.margemPct - 40) / 45) * 100))}%`, background: sobRisco ? "var(--sinal)" : "var(--tinta)" }}
+                        style={{ width: `${Math.min(100, Math.max(0, ((item.margemPct - 40) / 45) * 100))}%`, background: sobRisco ? "var(--sinal)" : "var(--marca)" }}
+                      />
+                      <div
+                        className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                          left: `${Math.min(100, Math.max(0, ((item.margemAlvoPct - 40) / 45) * 100))}%`,
+                          background: "var(--panel)",
+                          border: `2px solid ${sobRisco ? "var(--sinal)" : "var(--marca)"}`,
+                        }}
+                        title={`Alvo: ${item.margemAlvoPct}%`}
                       />
                     </div>
                   </div>
