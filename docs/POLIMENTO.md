@@ -879,3 +879,25 @@ passo e desenho em `docs/AGENTE_IA.md`.
 - Testes: `supabase/testes/agente.sql` (19) e `e2e/agente.spec.ts` (n8n
   simulado: chave e passe obrigatórios, isolamento entre restaurantes,
   confirmação única, ativação do WhatsApp, chat com foto).
+
+## 34. Configurações completas (2026-10-01)
+
+Antes: só tema e LGPD. Agora a tela tem seções, cada papel vê as suas:
+
+| Seção | Dono | Gestor | Estoquista |
+|---|---|---|---|
+| Restaurante (logo, nome, razão social, CNPJ conferido, IE, contato, endereço com CEP) | ✓ | ✓ | — |
+| Minha conta (nome, senha pedindo a atual, sair de todos os aparelhos) | ✓ | ✓ | ✓ |
+| WhatsApp do cadastro e e-mail de login (com link de confirmação) | ✓ | — | — |
+| Aparência: tema (do aparelho) | ✓ | ✓ | ✓ |
+| Aparência: cor de destaque e meta de margem (do restaurante) | ✓ | ✓ | — |
+| Plano (só leitura) e Seus dados (LGPD) | ✓ | — | — |
+
+- **Menu da conta** no topo (também no celular): Minha conta, Configurações, Sair.
+- **Logo** no menu lateral no lugar das iniciais. Balde `marcas`, público, só PNG/JPG/WebP até 2 MB; o servidor confere o tipo pelo conteúdo do arquivo.
+- **Cor de destaque**: só 6 opções, cada uma com versão clara e escura, todas ≥ 4,5:1 no painel, no fundo e no fundo tingido do item ativo (teste `src/lib/empresa/__tests__/cores.test.ts`; o azul padrão do Tailwind foi recusado pelo teste e trocado por um mais escuro). Vermelho, laranja e verde ficam de fora (risco, aviso, acerto). O `<style>` sai só da lista, nunca do texto do banco.
+- **CEP** consultado no servidor (ViaCEP, 4 s de limite); sem resposta, a pessoa preenche à mão.
+- Formulários controlados: erro de validação não apaga o que foi digitado e o foco vai pro primeiro campo errado. "Salvar" só acende quando algo mudou.
+- Demo (`/preview/configuracoes`): a mesma tela, gravando no navegador.
+
+Banco: `supabase/migrations/20261001100000_configuracoes_empresa.sql` (reverter em `supabase/reverter/`). Testes: `supabase/testes/configuracoes_empresa.sql`, `e2e/papeis.spec.ts` (dois testes "configurações:"), axe em cada seção.
