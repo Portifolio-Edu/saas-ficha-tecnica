@@ -222,7 +222,9 @@ export function VisaoGeralClient({
 
         <div className="flex items-center gap-3 px-3 min-h-[var(--alvo-toque)] rounded-lg border self-start lg:self-auto" style={{ background: "var(--panel)", borderColor: "var(--linha)" }}>
           <label htmlFor="meta-casa" className="text-[13px] text-[var(--tinta-sub)] whitespace-nowrap">Meta de margem</label>
-          <span className="text-[15px] font-semibold text-[var(--tinta)] w-10 text-right">{alvoManualPct}%</span>
+          {/* VISÃO GERAL (2026-10-01): régua com estilo próprio (.faixa-meta em
+              globals.css), valor depois da régua e o "voltar" só aparece quando a
+              meta foi mexida. Antes: range nativo com accentColor e valor à esquerda. */}
           <input
             id="meta-casa"
             type="range"
@@ -231,12 +233,14 @@ export function VisaoGeralClient({
             step="1"
             value={alvoManualPct}
             onChange={(e) => setAlvoManualPct(Number(e.target.value))}
-            className="w-28 h-10 cursor-pointer"
-            style={{ accentColor: "var(--marca)" }}
+            className="faixa-meta w-32"
+            style={{ "--p": `${((alvoManualPct - 45) / (80 - 45)) * 100}%` } as React.CSSProperties}
           />
+          <span className="text-[15px] font-semibold tabular-nums text-[var(--tinta)] w-10">{alvoManualPct}%</span>
           <button
             onClick={() => setAlvoManualPct(Math.round(margemAlvoCliente * 100))}
-            className="w-10 h-10 -mr-2 flex items-center justify-center rounded-md text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
+            disabled={alvoManualPct === Math.round(margemAlvoCliente * 100)}
+            className="w-10 h-10 -mr-2 -ml-1 flex items-center justify-center rounded-md text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)] disabled:opacity-0 disabled:pointer-events-none transition-opacity"
             title="Voltar à meta cadastrada"
             aria-label="Voltar à meta cadastrada"
           >
