@@ -473,3 +473,8 @@ input::-webkit-date-and-time-value {
 @media (prefers-reduced-motion: reduce) {
   .faixa-meta::-webkit-slider-thumb { transition: none; }
 }
+
+/* CONFIGURAÇÕES (2026-10-01): amostra da cor de destaque, na versão do tema
+   aberto (cada opção tem a cor do claro e a do escuro). Reverter: apagar. */
+.amostra-cor { background: var(--amostra-claro); }
+[data-theme="dark"] .amostra-cor { background: var(--amostra-escuro); }
