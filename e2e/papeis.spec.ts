@@ -489,7 +489,7 @@ test.describe.serial("com login real", () => {
     await page.context().clearCookies();
 
     await entrar(page, dono.email, novaSenhaDono);
-    await page.goto("/configuracoes");
+    await page.goto("/configuracoes?secao=dados");
     const [arquivo] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Baixar todos os dados" }).click()]);
     expect(arquivo.suggestedFilename()).toMatch(/^ficha-tecnica-bistro-.*\.json$/);
     const texto = await readFile((await arquivo.path())!, "utf8");
@@ -505,6 +505,95 @@ test.describe.serial("com login real", () => {
     expect(texto).not.toContain("user_id");
   });
 
+  // CONFIGURAÇÕES (2026-10-01): dados da empresa, logo, cor, conta e sessão.
+  test("configurações: dono completa a empresa com CNPJ conferido, logo e cor; troca a senha pedindo a atual", async ({ page }) => {
+    await entrar(page, dono.email, novaSenhaDono);
+    await page.goto("/configuracoes");
+    await expect(page.getByRole("heading", { name: "Dados do restaurante" })).toBeVisible();
+    const salvar = page.getByRole("button", { name: "Salvar", exact: true });
+    await expect(salvar, "sem mudança, nada a salvar").toBeDisabled();
+
+    await page.getByLabel("Razão social").fill(`${dono.restaurante} Ltda`);
+    await page.getByLabel("CNPJ").fill("11.222.333/0001-82");
+    await salvar.click();
+    await expect(page.getByText("CNPJ inválido. Confira os 14 números.")).toBeVisible();
+    await expect(page.getByLabel("CNPJ"), "o foco vai pro campo errado").toBeFocused();
+    await expect(page.getByLabel("Razão social"), "o que foi digitado continua lá").toHaveValue(`${dono.restaurante} Ltda`);
+
+    await page.getByLabel("CNPJ").fill("11222333000181");
+    await page.getByLabel("Número").fill("100");
+    await page.getByLabel("Cidade").fill("São Paulo");
+    await page.getByLabel("UF").selectOption("SP");
+    await salvar.click();
+    await expect(page.getByText("Dados do restaurante salvos.")).toBeVisible();
+    await expect(salvar).toBeDisabled();
+    const { data: c } = await admin().from("clientes").select("razao_social, cnpj, uf, numero").eq("id", clienteId).single();
+    expect(c).toEqual({ razao_social: `${dono.restaurante} Ltda`, cnpj: "11222333000181", uf: "SP", numero: "100" });
+
+    const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+    await page.locator("input[name=logo]").setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
+    await expect(page.getByText("Logo atualizado.")).toBeVisible();
+    await expect(page.locator("aside img").first(), "logo no menu no lugar das iniciais").toBeAttached();
+    const { data: comLogo } = await admin().from("clientes").select("logo_path").eq("id", clienteId).single();
+    expect(comLogo!.logo_path).toMatch(new RegExp(`^${clienteId}/logo-\\d+\\.png$`));
+    // Texto fingindo ser imagem é recusado pelo conteúdo, não pela extensão.
+    await page.locator("input[name=logo]").setInputFiles({ name: "falso.png", mimeType: "image/png", buffer: Buffer.from("<script>alert(1)</script>") });
+    await expect(page.getByText("Use PNG, JPG ou WebP.")).toBeVisible();
+
+    await page.goto("/configuracoes?secao=aparencia");
+    await page.getByRole("radio", { name: "Roxo" }).click();
+    await expect(page.getByText("Cor de destaque: roxo.")).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--marca").trim().toLowerCase()))
+      .toBe("#7e22ce");
+    await page.goto("/insumos");
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--marca").trim().toLowerCase()), { message: "a cor vale em todas as telas" })
+      .toBe("#7e22ce");
+
+    await page.goto("/configuracoes?secao=conta");
+    const trocarSenha = async (atual: string, nova: string) => {
+      await page.getByLabel("Senha atual").fill(atual);
+      await page.getByLabel("Nova senha", { exact: true }).fill(nova);
+      await page.getByLabel("Repita a nova senha").fill(nova);
+      await page.getByRole("button", { name: "Trocar senha" }).click();
+    };
+    await trocarSenha("senha-errada", "temporaria-789");
+    await expect(page.getByText("Senha atual incorreta.")).toBeVisible();
+    await trocarSenha(novaSenhaDono, "temporaria-789");
+    await expect(page.getByText("Senha trocada.")).toBeVisible();
+    await trocarSenha("temporaria-789", novaSenhaDono);
+    // Deu certo quando os campos limpam (no erro eles ficam preenchidos).
+    await expect(page.getByLabel("Senha atual")).toHaveValue("");
+
+    // Sair pelo menu da conta, no topo (também no celular).
+    await page.getByRole("button", { name: `Conta de ${dono.nome}` }).click();
+    await page.getByRole("menuitem", { name: "Sair" }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await entrar(page, dono.email, novaSenhaDono);
+  });
+
+  test("configurações: estoquista só vê a própria conta e a aparência; troca o próprio nome", async ({ page }) => {
+    await entrar(page, estoquista.usuario, estoquista.senha);
+    await page.goto("/configuracoes");
+    await expect(page).toHaveURL(/\/configuracoes/);
+    await expect(page.getByRole("heading", { name: "Perfil" })).toBeVisible();
+    await expect(page.getByText(estoquista.usuario)).toBeVisible();
+    const secoes = page.getByRole("navigation", { name: "Seções das configurações" });
+    await expect(secoes.getByRole("link")).toHaveText(["Minha conta", "Aparência"]);
+    await page.goto("/configuracoes?secao=restaurante");
+    await expect(page.getByRole("heading", { name: "Dados do restaurante" })).toHaveCount(0);
+
+    await page.getByLabel("Seu nome").fill("Ester E. Estoque");
+    await page.getByRole("button", { name: "Salvar", exact: true }).click();
+    await expect(page.getByText("Nome salvo.")).toBeVisible();
+    const { data: m } = await admin().from("membros").select("nome").eq("cliente_id", clienteId).eq("papel", "estoquista").single();
+    expect(m!.nome).toBe("Ester E. Estoque");
+    // A empresa continua igual: o nome do estoquista não vai pro cadastro do restaurante.
+    const { data: c } = await admin().from("clientes").select("nome").eq("id", clienteId).single();
+    expect(c!.nome).toBe(dono.nome);
+  });
+
   test("dono exclui o restaurante: dados, fotos e acessos da equipe somem", async ({ page }) => {
     const foto = `${clienteId}/teste-exclusao.png`;
     const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
@@ -512,13 +601,18 @@ test.describe.serial("com login real", () => {
     expect(erroFoto).toBeNull();
 
     await entrar(page, gestor.usuario, gestor.senha);
-    await page.goto("/configuracoes");
+    await page.goto("/configuracoes?secao=aparencia");
     await expect(page.getByText("Tema", { exact: true })).toBeVisible();
+    // CONFIGURAÇÕES (2026-10-01): o gestor não vê Plano nem Seus dados, nem pelo endereço.
+    const secoes = page.getByRole("navigation", { name: "Seções das configurações" });
+    await expect(secoes.getByRole("link", { name: "Seus dados" })).toHaveCount(0);
+    await expect(secoes.getByRole("link", { name: "Plano" })).toHaveCount(0);
+    await page.goto("/configuracoes?secao=dados");
     await expect(page.getByRole("button", { name: /Excluir restaurante/ })).toHaveCount(0);
     await page.context().clearCookies();
 
     await entrar(page, dono.email, novaSenhaDono);
-    await page.goto("/configuracoes");
+    await page.goto("/configuracoes?secao=dados");
     await page.getByRole("button", { name: /Excluir restaurante/ }).click();
     await page.getByLabel(/digite o nome do restaurante/).fill("outro nome");
     await page.getByRole("button", { name: "Excluir para sempre" }).click();
@@ -537,6 +631,9 @@ test.describe.serial("com login real", () => {
     }
     const { data: restantes } = await admin().storage.from("receitas-fotos").list(clienteId);
     expect(restantes ?? []).toHaveLength(0);
+    // CONFIGURAÇÕES (2026-10-01): o logo sai junto.
+    const { data: logos } = await admin().storage.from("marcas").list(clienteId);
+    expect(logos ?? []).toHaveLength(0);
 
     await entrar(page, gestor.usuario, gestor.senha, { esperaEntrar: false });
     await expect(page.getByText("Usuário, e-mail ou senha incorretos.")).toBeVisible();
