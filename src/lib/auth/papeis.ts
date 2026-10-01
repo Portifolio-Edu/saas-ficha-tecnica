@@ -21,8 +21,10 @@ export const DESCRICAO_PAPEL: Record<Papel, string> = {
   cozinha: "Aparelho da cozinha, sem senha: checklists, temperaturas, produção, fichas sem custo e contagem cega.",
 };
 
-/** Compras e estoque, e o CMV do lado do estoque (sem faturamento). */
-export const ROTAS_ESTOQUISTA = ["/estoque", "/insumos", "/proteinas", "/cmv"];
+/** Compras e estoque, e o CMV do lado do estoque (sem faturamento).
+ * CONFIGURAÇÕES (2026-10-01): + /configuracoes (só Minha conta e Aparência;
+ * a tela esconde o resto e o banco não deixa o estoquista gravar a empresa). */
+export const ROTAS_ESTOQUISTA = ["/estoque", "/insumos", "/proteinas", "/cmv", "/configuracoes"];
 
 export function ehGestao(papel: Papel): boolean {
   return papel === "dono" || papel === "gestor";

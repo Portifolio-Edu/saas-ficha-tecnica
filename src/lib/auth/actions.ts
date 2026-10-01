@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { origemDoSite } from "./origem";
+import { traduzirErroAuth } from "./erros";
 import { VERSAO_TERMOS } from "./termos";
 import { DOMINIO_EQUIPE, emailDeLogin } from "./equipe";
 import { normalizarTelefone, telefoneValido } from "@/lib/telefone";
@@ -18,18 +19,6 @@ export interface EstadoAuth {
   sucesso?: string;
 }
 
-function traduzirErroAuth(mensagem: string): string {
-  const mapa: Record<string, string> = {
-    "Invalid login credentials": "Usuário, e-mail ou senha incorretos.",
-    "User already registered": "Já existe uma conta com esse e-mail.",
-    "Email not confirmed": "Confirme seu e-mail antes de entrar.",
-    "Password should be at least 6 characters": "A senha precisa ter pelo menos 8 caracteres.",
-    "New password should be different from the old password.": "A nova senha precisa ser diferente da anterior.",
-    "Email rate limit exceeded": "Muitos e-mails enviados em pouco tempo. Espere alguns minutos e tente de novo.",
-    "email rate limit exceeded": "Muitos e-mails enviados em pouco tempo. Espere alguns minutos e tente de novo.",
-  };
-  return mapa[mensagem] ?? mensagem;
-}
 
 export async function entrar(_estado: EstadoAuth, formData: FormData): Promise<EstadoAuth> {
   // EQUIPE (2026-09-25): o campo aceita e-mail (dono) ou usuário (gestor e

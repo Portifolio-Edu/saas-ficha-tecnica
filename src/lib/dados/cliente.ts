@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
 import { supabaseConfigurado } from "@/lib/supabase/config";
@@ -16,6 +17,17 @@ export interface ClienteAtual {
   nomeMembro: string;
   /** auth.users.id de quem está logado. */
   userId: string;
+  /** CONFIGURAÇÕES (2026-10-01): marca do restaurante no menu (logo) e no acento (cor). */
+  logoUrl: string | null;
+  corDestaque: string | null;
+}
+
+// CONFIGURAÇÕES (2026-10-01): colunas que o shell precisa em toda tela.
+const COLUNAS = "id, nome, nome_restaurante, margem_alvo, logo_path, cor_destaque";
+
+/** Endereço público do logo (balde "marcas" é público; ver a migration 20261001100000). */
+export function urlDoLogo(supabase: Awaited<ReturnType<typeof createClient>>, caminho: string | null): string | null {
+  return caminho ? supabase.storage.from("marcas").getPublicUrl(caminho).data.publicUrl : null;
 }
 
 interface MetadadosCadastro {
@@ -32,7 +44,11 @@ interface MetadadosCadastro {
  * Retorna null quando não há usuário logado ou quando os metadados do
  * cadastro nunca chegaram a ser salvos.
  */
-export async function getClienteAtual(): Promise<ClienteAtual | null> {
+// CONFIGURAÇÕES (2026-10-01): cache() por requisição — a página (exigirAcesso)
+// e o AppShell (logo e cor) leem o mesmo cliente sem ir duas vezes ao banco.
+export const getClienteAtual = cache(lerClienteAtual);
+
+async function lerClienteAtual(): Promise<ClienteAtual | null> {
   if (!supabaseConfigurado()) {
     return null;
   }
@@ -45,7 +61,7 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
 
   const { data: existente } = await supabase
     .from("clientes")
-    .select("id, nome, nome_restaurante, margem_alvo")
+    .select(COLUNAS)
     .maybeSingle();
 
   if (existente) {
@@ -65,6 +81,8 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
       papel: (membro?.papel as Papel | undefined) ?? "dono",
       nomeMembro: membro?.nome ?? existente.nome,
       userId: user.id,
+      logoUrl: urlDoLogo(supabase, existente.logo_path),
+      corDestaque: existente.cor_destaque,
     };
   }
 
@@ -79,7 +97,7 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
       nome_restaurante: meta.nome_restaurante,
       telefone: normalizarTelefone(meta.telefone),
     })
-    .select("id, nome, nome_restaurante, margem_alvo")
+    .select(COLUNAS)
     .single();
 
   // Não retorna null aqui: null significa "sem cadastro pendente" pras
@@ -105,5 +123,7 @@ export async function getClienteAtual(): Promise<ClienteAtual | null> {
     papel: "dono",
     nomeMembro: criado.nome,
     userId: user.id,
+    logoUrl: null,
+    corDestaque: null,
   };
 }

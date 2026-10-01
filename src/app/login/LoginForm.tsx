@@ -12,7 +12,16 @@ import { ChefHat, AlertCircle, ArrowRight } from "lucide-react";
 
 const estadoInicial: EstadoAuth = {};
 
-export function LoginForm({ linkInvalido = false, contaExcluida = false }: { linkInvalido?: boolean; contaExcluida?: boolean }) {
+export function LoginForm({
+  linkInvalido = false,
+  contaExcluida = false,
+  saiuDeTodos = false,
+}: {
+  linkInvalido?: boolean;
+  contaExcluida?: boolean;
+  /** CONFIGURAÇÕES (2026-10-01): volta do "Sair de todos os aparelhos". */
+  saiuDeTodos?: boolean;
+}) {
   const [estado, formAction, pendente] = useActionState(entrar, estadoInicial);
 
   return (
@@ -48,6 +57,12 @@ export function LoginForm({ linkInvalido = false, contaExcluida = false }: { lin
           <div role="status" className="text-[13px] rounded-lg px-3 py-2.5 mb-4" style={{ background: "color-mix(in srgb, var(--sucesso) 10%, transparent)", color: "var(--tinta)" }}>
             {/* PLANO 9,5 (2026-09-26): volta da exclusão da conta (LGPD). */}
             Restaurante excluído. Os dados, as fotos e os acessos da equipe foram apagados.
+          </div>
+        )}
+
+        {saiuDeTodos && (
+          <div role="status" className="text-[13px] rounded-lg px-3 py-2.5 mb-4" style={{ background: "color-mix(in srgb, var(--sucesso) 10%, transparent)", color: "var(--tinta)" }}>
+            Você saiu de todos os aparelhos. Quem estava com a conta aberta em outro lugar vai precisar entrar de novo.
           </div>
         )}
 
