@@ -4,6 +4,7 @@
 // "quem está usando" tinha nome falado diferente do texto escrito.
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { esperarHidratado } from "./apoio";
 
 test.describe("modo cozinha com alguém usando", () => {
   test.beforeEach(async ({ page }) => {
@@ -78,6 +79,7 @@ test.describe("navegação e régua da meta", () => {
   test("a régua responde na hora e a tela acompanha", async ({ page }) => {
     await page.goto("/preview/visao-geral");
     const regua = page.locator("#meta-casa");
+    await esperarHidratado(regua);
     const inicial = Number(await regua.inputValue());
     await regua.focus();
     await page.keyboard.press("ArrowRight");
@@ -106,6 +108,7 @@ test.describe("seções das configurações", () => {
     await page.waitForLoadState("networkidle");
     const menu = page.getByRole("navigation", { name: "Seções das configurações" });
     const nome = page.getByRole("textbox", { name: "Nome do restaurante" });
+    await esperarHidratado(nome);
     await nome.fill("Cantina Nova");
     for (const secao of ["Avisos no WhatsApp", "Minha conta", "Aparência", "Plano", "Restaurante"]) {
       await menu.getByRole("link", { name: secao }).click();
@@ -136,5 +139,56 @@ test.describe("cozinha: preparação em segundo plano", () => {
     // Parou: as pesadas são preparadas (Produção primeiro); as leves não.
     await expect(page.locator('[data-secao="producao"]')).toBeAttached({ timeout: 8000 });
     await expect(page.locator('[data-secao="temperatura"]')).toHaveCount(0);
+  });
+});
+
+// DESEMPENHO (2026-10-02): toque lento em produção vira linha no log do
+// servidor, dizendo qual script segurou (MedidorToque + /api/desempenho).
+test.describe("medidor de toque lento", () => {
+  test("toque que trava a tela é relatado ao trocar de aba, com o script culpado", async ({ page }) => {
+    // O Playwright não lê o corpo de um sendBeacon: guarda uma cópia antes de mandar.
+    await page.addInitScript(() => {
+      const original = navigator.sendBeacon.bind(navigator);
+      navigator.sendBeacon = (url, dados) => {
+        (window as unknown as { __beacon: unknown }).__beacon = dados;
+        return original(url, dados);
+      };
+    });
+    await page.goto("/preview/visao-geral");
+    await page.waitForLoadState("networkidle");
+    // Um clique que segura a tela por 350 ms (simula código pesado no toque).
+    await page.evaluate(() =>
+      document.querySelector("main")!.addEventListener("click", () => {
+        const fim = performance.now() + 350;
+        while (performance.now() < fim);
+      }),
+    );
+    await page.mouse.click(700, 500);
+    await page.waitForTimeout(300);
+    const resposta = page.waitForResponse((r) => r.url().endsWith("/api/desempenho"));
+    // Esconder a aba é quando o navegador manda (o mesmo de trocar de app no celular).
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect((await resposta).status()).toBe(204);
+    const relato = JSON.parse(await page.evaluate(() => ((window as unknown as { __beacon: Blob }).__beacon).text())) as {
+      rota: string;
+      totalMs: number;
+      processamentoMs: number;
+      scripts: { origem: string; chamada: string }[];
+    };
+    expect(relato.rota).toBe("/preview/visao-geral");
+    expect(relato.totalMs).toBeGreaterThanOrEqual(300);
+    expect(relato.processamentoMs).toBeGreaterThanOrEqual(300);
+    expect(relato.scripts[0]).toMatchObject({ chamada: expect.stringMatching(/click/) });
+  });
+
+  test("servidor só aceita relato do próprio site e bem formado", async ({ request }) => {
+    const valido = { rota: "/visao-geral", evento: "click", alvo: "div", atrasoMs: 300, processamentoMs: 10, apresentacaoMs: 5, totalMs: 315, segundosDesdeAbertura: 1, scripts: [] };
+    expect((await request.post("/api/desempenho", { data: valido, headers: { origin: "https://outro.site" } })).status()).toBe(403);
+    expect((await request.post("/api/desempenho", { data: { ...valido, totalMs: 50 } })).status()).toBe(400);
+    expect((await request.post("/api/desempenho", { data: "x".repeat(5000) })).status()).toBe(400);
+    expect((await request.post("/api/desempenho", { data: valido })).status()).toBe(204);
   });
 });
