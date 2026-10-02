@@ -6,8 +6,14 @@
 // pra o link do e-mail e o menu da conta abrirem direto nela.
 // No computador as seções ficam numa coluna à esquerda; no celular, num
 // seletor no topo. Versão anterior: `git show 4edfd3f:src/components/configuracoes/ConfiguracoesClient.tsx`.
+// DESEMPENHO (2026-10-02): trocar de seção travava o toque (580 ms na barra
+// da Vercel): a seção nova era montada dentro do clique. Agora o menu marca a
+// seção na hora e o conteúdo vem logo depois (useDeferredValue); seção já
+// aberta fica montada e guardada (content-visibility, como no modo cozinha),
+// então voltar a ela é instantâneo e o que foi digitado não se perde.
+// Pra voltar: um só <div key={secao.id}> com a seção escolhida.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { BellRing, Building2, CreditCard, Database, Palette, UserRound } from "lucide-react";
 import { Contexto, type ContextoConfiguracoes } from "./contexto";
 import { acoesApp } from "./acoesApp";
@@ -58,6 +64,9 @@ export function ConfiguracoesClient({
   const visiveis = SECOES.filter((s) => s.pode(papel));
   const [escolhida, setEscolhida] = useState<string | undefined>(secaoInicial);
   const secao = visiveis.find((s) => s.id === escolhida) ?? visiveis[0];
+  const conteudo = useDeferredValue(secao.id);
+  const [montadas, setMontadas] = useState<IdSecao[]>([secao.id]);
+  if (!montadas.includes(conteudo)) setMontadas([...montadas, conteudo]);
 
   const abrir = (id: IdSecao) => {
     setEscolhida(id);
@@ -121,20 +130,33 @@ export function ConfiguracoesClient({
           </ul>
         </nav>
 
-        <div className="min-w-0 max-w-2xl" key={secao.id}>
-          {secao.id === "restaurante" && <SecaoRestaurante />}
-          {secao.id === "avisos" && <SecaoAvisos />}
-          {secao.id === "conta" && <SecaoConta />}
-          {secao.id === "aparencia" && <SecaoAparencia />}
-          {secao.id === "plano" && <SecaoPlano />}
-          {secao.id === "dados" &&
-            (demo ? (
-              <p className="text-[13.5px] text-[var(--tinta-sub)]">Na demonstração não há dados para baixar nem excluir.</p>
-            ) : (
-              <DadosDaConta nomeRestaurante={contexto.dados.empresa.nomeRestaurante} />
-            ))}
+        <div className="min-w-0 max-w-2xl" aria-busy={conteudo !== secao.id || undefined}>
+          {montadas
+            .filter((id) => visiveis.some((v) => v.id === id))
+            .map((id) => {
+              const aberta = id === conteudo;
+              return (
+                <div key={id} className={aberta ? undefined : "secao-guardada"} aria-hidden={aberta ? undefined : true} inert={!aberta}>
+                  <ConteudoSecao id={id} demo={demo} nomeRestaurante={contexto.dados.empresa.nomeRestaurante} />
+                </div>
+              );
+            })}
         </div>
       </div>
     </Contexto.Provider>
   );
 }
+
+/** Memo: marcar a seção no menu não redesenha as seções montadas. */
+const ConteudoSecao = memo(function ConteudoSecao({ id, demo, nomeRestaurante }: { id: IdSecao; demo: boolean; nomeRestaurante: string }) {
+  if (id === "restaurante") return <SecaoRestaurante />;
+  if (id === "avisos") return <SecaoAvisos />;
+  if (id === "conta") return <SecaoConta />;
+  if (id === "aparencia") return <SecaoAparencia />;
+  if (id === "plano") return <SecaoPlano />;
+  return demo ? (
+    <p className="text-[13.5px] text-[var(--tinta-sub)]">Na demonstração não há dados para baixar nem excluir.</p>
+  ) : (
+    <DadosDaConta nomeRestaurante={nomeRestaurante} />
+  );
+});

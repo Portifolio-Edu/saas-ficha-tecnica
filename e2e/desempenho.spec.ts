@@ -88,3 +88,32 @@ test.describe("navegação e régua da meta", () => {
     await expect(page.getByText(`alvo ${inicial}% ·`)).toBeVisible();
   });
 });
+
+// DESEMPENHO (2026-10-02): trocar de seção em Configurações travava o toque
+// (580 ms na barra da Vercel; 656 ms aqui com CPU 4x no primeiro clique).
+test.describe("seções das configurações", () => {
+  test("trocar de seção responde rápido e não perde o que foi digitado", async ({ page, context }) => {
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+    await page.addInitScript(() => {
+      const w = window as unknown as { __cliques: number[] };
+      w.__cliques = [];
+      new PerformanceObserver((l) => {
+        for (const e of l.getEntries()) if (e.name === "click") w.__cliques.push(e.duration);
+      }).observe({ type: "event", durationThreshold: 16, buffered: true } as PerformanceObserverInit);
+    });
+    await page.goto("/preview/configuracoes");
+    await page.waitForLoadState("networkidle");
+    const menu = page.getByRole("navigation", { name: "Seções das configurações" });
+    const nome = page.getByRole("textbox", { name: "Nome do restaurante" });
+    await nome.fill("Cantina Nova");
+    for (const secao of ["Avisos no WhatsApp", "Minha conta", "Aparência", "Plano", "Restaurante"]) {
+      await menu.getByRole("link", { name: secao }).click();
+      await expect(menu.getByRole("link", { name: secao })).toHaveAttribute("aria-current", "page");
+    }
+    await expect(nome).toHaveValue("Cantina Nova");
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+    const pior = Math.max(...(await page.evaluate(() => (window as unknown as { __cliques: number[] }).__cliques)));
+    expect(pior, "pior clique entre seções (ms)").toBeLessThan(200);
+  });
+});
