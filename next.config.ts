@@ -29,6 +29,12 @@ const CABECALHOS_CONSULTA = [
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
   poweredByHeader: false,
+  // DESEMPENHO (2026-10-02): sem isto o Next desliga/religa o scroll suave no
+  // <html> em toda navegação, e cada troca recalcula o estilo da página
+  // inteira (2 recálculos extras, ~120 ms com CPU 4x, travando o primeiro
+  // toque na tela nova). Vira o padrão no Next 16. Não usamos scroll suave no
+  // html (globals.css). Reverter: tirar esta linha.
+  experimental: { optimizeRouterScrolling: true },
   async headers() {
     return [
       { source: "/:path*", headers: CABECALHOS },

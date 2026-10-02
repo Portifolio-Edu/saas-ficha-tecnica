@@ -193,9 +193,10 @@
   * {
     border-color: var(--border);
   }
-  html {
-    scroll-behavior: smooth;
-  }
+  /* DESEMPENHO (2026-10-02): sem scroll-behavior: smooth no html. Com ele, o
+     Next desliga e religa o smooth no <html> a cada navegação, e cada troca
+     recalcula o estilo da página inteira (~165 ms com CPU 4x, travando o
+     primeiro toque na tela nova). Pra voltar: html { scroll-behavior: smooth; } */
   body {
     background: var(--fundo);
     color: var(--tinta);

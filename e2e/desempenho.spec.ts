@@ -58,3 +58,33 @@ test.describe("modo cozinha com alguém usando", () => {
     expect(r.violations.map((v) => v.nodes.map((n) => n.target.join(" ")).join(", "))).toEqual([]);
   });
 });
+
+// DESEMPENHO (2026-10-02): a barra da Vercel apontou 263 ms de espera no
+// primeiro toque depois de abrir Configurações e 150 ms na régua da meta.
+test.describe("navegação e régua da meta", () => {
+  test("trocar de tela não mexe no estilo do <html> (recalcularia a página inteira)", async ({ page }) => {
+    await page.goto("/preview/visao-geral");
+    await page.waitForLoadState("networkidle");
+    await page.evaluate(() => {
+      const w = window as unknown as { __mexidas: number };
+      w.__mexidas = 0;
+      new MutationObserver((m) => (w.__mexidas += m.length)).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
+    });
+    await page.getByRole("link", { name: "Configurações" }).first().click();
+    await expect(page.getByRole("button", { name: /Enviar logo|Trocar logo/ })).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { __mexidas: number }).__mexidas)).toBe(0);
+  });
+
+  test("a régua responde na hora e a tela acompanha", async ({ page }) => {
+    await page.goto("/preview/visao-geral");
+    const regua = page.locator("#meta-casa");
+    const inicial = Number(await regua.inputValue());
+    await regua.focus();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByText(`${inicial + 2}%`, { exact: true })).toBeVisible();
+    await expect(page.getByText(`alvo ${inicial + 2}% ·`)).toBeVisible();
+    await page.getByRole("button", { name: "Voltar à meta cadastrada" }).click();
+    await expect(page.getByText(`alvo ${inicial}% ·`)).toBeVisible();
+  });
+});

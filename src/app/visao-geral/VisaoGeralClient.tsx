@@ -19,7 +19,7 @@
 // (o componente ReguaCalibrada foi removido na limpeza de produção; recuperar com
 // `git show a57efba:src/components/instrumentos/ReguaCalibrada.tsx`).
 
-import { useMemo, useState } from "react";
+import { startTransition, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { construirContexto, linhasCustoDetalhado } from "@/lib/dados/adaptadores";
@@ -221,31 +221,7 @@ export function VisaoGeralClient({
         </div>
 
         <div className="flex items-center gap-3 px-3 min-h-[var(--alvo-toque)] rounded-lg border self-start lg:self-auto" style={{ background: "var(--panel)", borderColor: "var(--linha)" }}>
-          <label htmlFor="meta-casa" className="text-[13px] text-[var(--tinta-sub)] whitespace-nowrap">Meta de margem</label>
-          {/* VISÃO GERAL (2026-10-01): régua com estilo próprio (.faixa-meta em
-              globals.css), valor depois da régua e o "voltar" só aparece quando a
-              meta foi mexida. Antes: range nativo com accentColor e valor à esquerda. */}
-          <input
-            id="meta-casa"
-            type="range"
-            min="45"
-            max="80"
-            step="1"
-            value={alvoManualPct}
-            onChange={(e) => setAlvoManualPct(Number(e.target.value))}
-            className="faixa-meta w-32"
-            style={{ "--p": `${((alvoManualPct - 45) / (80 - 45)) * 100}%` } as React.CSSProperties}
-          />
-          <span className="text-[15px] font-semibold tabular-nums text-[var(--tinta)] w-10">{alvoManualPct}%</span>
-          <button
-            onClick={() => setAlvoManualPct(Math.round(margemAlvoCliente * 100))}
-            disabled={alvoManualPct === Math.round(margemAlvoCliente * 100)}
-            className="w-10 h-10 -mr-2 -ml-1 flex items-center justify-center rounded-md text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)] disabled:opacity-0 disabled:pointer-events-none transition-opacity"
-            title="Voltar à meta cadastrada"
-            aria-label="Voltar à meta cadastrada"
-          >
-            <RotateCcw size={14} />
-          </button>
+          <ReguaMeta valor={alvoManualPct} padrao={Math.round(margemAlvoCliente * 100)} aoMudar={setAlvoManualPct} />
         </div>
       </div>
 
@@ -528,5 +504,51 @@ export function VisaoGeralClient({
         </div>
       </section>
     </div>
+  );
+}
+
+/**
+ * DESEMPENHO (2026-10-02): a régua tem estado próprio e responde na hora; o
+ * recálculo da tela inteira (margens, métricas, vazamentos) vai como
+ * transição, que o React interrompe se a pessoa continuar arrastando. Antes
+ * cada passo da régua redesenhava tudo (~150 ms na barra da Vercel). Pra
+ * voltar: setAlvoManualPct direto no onChange, sem startTransition.
+ */
+function ReguaMeta({ valor, padrao, aoMudar }: { valor: number; padrao: number; aoMudar: (v: number) => void }) {
+  // Só esta régua muda a meta: o estado local é a fonte (sem sincronizar de
+  // volta, que faria a régua pular pra um valor antigo no meio do arraste).
+  const [local, setLocal] = useState(valor);
+  const mudar = (v: number) => {
+    setLocal(v);
+    startTransition(() => aoMudar(v));
+  };
+  return (
+    <>
+      <label htmlFor="meta-casa" className="text-[13px] text-[var(--tinta-sub)] whitespace-nowrap">Meta de margem</label>
+      {/* VISÃO GERAL (2026-10-01): régua com estilo próprio (.faixa-meta em
+          globals.css), valor depois da régua e o "voltar" só aparece quando a
+          meta foi mexida. Antes: range nativo com accentColor e valor à esquerda. */}
+      <input
+        id="meta-casa"
+        type="range"
+        min="45"
+        max="80"
+        step="1"
+        value={local}
+        onChange={(e) => mudar(Number(e.target.value))}
+        className="faixa-meta w-32"
+        style={{ "--p": `${((local - 45) / (80 - 45)) * 100}%` } as React.CSSProperties}
+      />
+      <span className="text-[15px] font-semibold tabular-nums text-[var(--tinta)] w-10">{local}%</span>
+      <button
+        onClick={() => mudar(padrao)}
+        disabled={local === padrao}
+        className="w-10 h-10 -mr-2 -ml-1 flex items-center justify-center rounded-md text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)] disabled:opacity-0 disabled:pointer-events-none transition-opacity"
+        title="Voltar à meta cadastrada"
+        aria-label="Voltar à meta cadastrada"
+      >
+        <RotateCcw size={14} />
+      </button>
+    </>
   );
 }
