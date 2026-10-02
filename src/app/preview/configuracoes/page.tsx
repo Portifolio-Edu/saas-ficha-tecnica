@@ -38,8 +38,10 @@ const DADOS: Configuracoes = {
       { nome: "Marco Bianchi", papel: "gestor", whatsapp: null },
     ],
     historico: [
+      { id: "d5", tipo: "compras_prazo", para: "Giulia Rossi", criadoEm: horasAtras(1), enviadoEm: horasAtras(1), status: "enviado", erro: null },
       { id: "d1", tipo: "resumo_diario", para: "Giulia Rossi", criadoEm: horasAtras(2), enviadoEm: horasAtras(2), status: "enviado", erro: null },
-      { id: "d2", tipo: "temperatura", para: "Giulia Rossi", criadoEm: horasAtras(20), enviadoEm: horasAtras(20), status: "enviado", erro: null },
+      { id: "d4", tipo: "estoque_baixo", para: "Giulia Rossi", criadoEm: horasAtras(5), enviadoEm: horasAtras(5), status: "enviado", erro: null },
+      { id: "d2", tipo: "desperdicio", para: "Giulia Rossi", criadoEm: horasAtras(20), enviadoEm: horasAtras(20), status: "enviado", erro: null },
       { id: "d3", tipo: "checklist_abertura", para: "Giulia Rossi", criadoEm: horasAtras(26), enviadoEm: null, status: "falhou", erro: "WhatsApp do agente desconectado" },
     ],
   },

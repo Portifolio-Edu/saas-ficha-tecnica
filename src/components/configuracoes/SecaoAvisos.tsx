@@ -3,9 +3,11 @@
 // AVISOS NO WHATSAPP (2026-10-02): o que o sistema avisa sozinho pelo
 // WhatsApp (via n8n) e pra quem. Só gestão. As regras ficam em
 // src/lib/automacoes; aqui só liga, desliga e escolhe horário.
+// AVISOS PRA GESTÃO (2026-10-02): opções por assunto do gestor (problemas
+// pra resolver e relatórios). Temperatura saiu: é cobrança da nutricionista.
 
-import { useActionState, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, ClipboardList, Clock, Sun, Thermometer } from "lucide-react";
+import { useActionState, useEffect, useState, type ReactNode } from "react";
+import { AlertTriangle, Beef, ChartColumn, CheckCircle2, ClipboardList, Clock, Package, ShoppingCart, Sun, Trash2, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { Bloco, Campo, Interruptor, RodapeSalvar, useAvisoDaAcao } from "./campos";
 import { useConfiguracoes } from "./contexto";
 import { formatarTelefone } from "@/lib/telefone";
@@ -14,11 +16,61 @@ import type { ConfigAvisos, TipoAviso } from "@/lib/automacoes/avisos";
 import type { AvisoEnviado } from "@/lib/dados/avisos";
 import type { EstadoForm } from "@/app/configuracoes/actions";
 
-const ROTULO_TIPO: Record<TipoAviso, { rotulo: string; icone: typeof Thermometer }> = {
-  temperatura: { rotulo: "Temperatura fora da faixa", icone: Thermometer },
+const ROTULO_TIPO: Record<TipoAviso, { rotulo: string; icone: LucideIcon }> = {
+  estoque_baixo: { rotulo: "Insumo abaixo do mínimo", icone: Package },
+  compras_prazo: { rotulo: "Pedido do fornecedor fechando", icone: ShoppingCart },
+  preco_subiu: { rotulo: "Fornecedor subiu o preço", icone: TrendingUp },
+  rendimento_baixo: { rotulo: "Carne rendendo menos", icone: Beef },
+  equipe: { rotulo: "Falta gente na equipe", icone: Users },
+  desperdicio: { rotulo: "Produção perdida", icone: Trash2 },
+  vendas: { rotulo: "Fechamento de vendas", icone: ChartColumn },
   checklist_abertura: { rotulo: "Abertura atrasada", icone: ClipboardList },
   resumo_diario: { rotulo: "Resumo de ontem", icone: Sun },
 };
+
+type Liga = "estoqueBaixo" | "fornecedor" | "equipe" | "desperdicio" | "vendas" | "checklistAbertura" | "resumoDiario";
+type Hora = "equipeHora" | "checklistAberturaAte" | "resumoHora";
+
+interface Opcao {
+  nome: Liga;
+  rotulo: string;
+  descricao: string;
+  hora?: { nome: Hora; rotulo: string };
+}
+
+/** Problemas: chegam na hora em que acontecem (fora do silêncio), juntos num aviso só. */
+const PROBLEMAS: Opcao[] = [
+  { nome: "estoqueBaixo", rotulo: "Falta de insumo", descricao: "Quando um insumo fica abaixo do mínimo, com o prazo do fornecedor pra repor." },
+  {
+    nome: "fornecedor",
+    rotulo: "Problema com fornecedor",
+    descricao: "Pedido do fornecedor fechando com pedido da cozinha esperando, preço que subiu 10% ou mais e carne rendendo menos que a ficha.",
+  },
+  {
+    nome: "equipe",
+    rotulo: "Falta de funcionário",
+    descricao: "Falta, atestado e equipe abaixo do mínimo hoje ou amanhã.",
+    hora: { nome: "equipeHora", rotulo: "Avisar a partir de" },
+  },
+  { nome: "desperdicio", rotulo: "Desperdício", descricao: "Produção perdida, com o motivo e quem registrou." },
+];
+
+/** Relatórios: em horário marcado ou quando fecha o período. */
+const RELATORIOS: Opcao[] = [
+  { nome: "vendas", rotulo: "Relatório de vendas", descricao: "Quando um fechamento é feito: faturamento, CMV e os pratos mais vendidos." },
+  {
+    nome: "resumoDiario",
+    rotulo: "Resumo de ontem",
+    descricao: "Produções, perdas, checklists, insumos abaixo do mínimo e pedidos esperando compra.",
+    hora: { nome: "resumoHora", rotulo: "Mandar às" },
+  },
+  {
+    nome: "checklistAbertura",
+    rotulo: "Abertura atrasada",
+    descricao: "Se o checklist de abertura não terminar até o horário.",
+    hora: { nome: "checklistAberturaAte", rotulo: "Avisar a partir de" },
+  },
+];
 
 export function SecaoAvisos() {
   const { dados } = useConfiguracoes();
@@ -103,65 +155,22 @@ function BlocoOQueAvisar() {
   return (
     <form action={salvar} noValidate>
       <Bloco titulo="O que avisar" descricao="O sistema confere a cada 5 minutos e manda uma vez só cada aviso." rodape={<RodapeSalvar alterado={alterado} pendente={pendente} />}>
-        <div className="space-y-5">
-          <Interruptor
-            nome="temperatura"
-            rotulo="Temperatura fora da faixa"
-            descricao="Na hora em que alguém registra, a qualquer horário: é segurança do alimento."
-            ligado={c.temperatura}
-            aoMudar={(v) => muda("temperatura", v)}
-          />
-          <div className="border-t pt-5" style={{ borderColor: "var(--linha)" }}>
-            <Interruptor
-              nome="checklistAbertura"
-              rotulo="Abertura atrasada"
-              descricao="Se o checklist de abertura não terminar até o horário."
-              ligado={c.checklistAbertura}
-              aoMudar={(v) => muda("checklistAbertura", v)}
-            />
-            {c.checklistAbertura ? (
-              <Campo
-                rotulo="Avisar a partir de"
-                name="checklistAberturaAte"
-                type="time"
-                required
-                className="max-w-[10rem] mt-3"
-                value={c.checklistAberturaAte}
-                onChange={(e) => muda("checklistAberturaAte", e.target.value)}
-                erro={erros.checklistAberturaAte}
-              />
-            ) : (
-              <input type="hidden" name="checklistAberturaAte" value={c.checklistAberturaAte} />
-            )}
-          </div>
-          <div className="border-t pt-5" style={{ borderColor: "var(--linha)" }}>
-            <Interruptor
-              nome="resumoDiario"
-              rotulo="Resumo de ontem"
-              descricao="Produções, perdas, temperaturas, checklists e pedidos esperando compra."
-              ligado={c.resumoDiario}
-              aoMudar={(v) => muda("resumoDiario", v)}
-            />
-            {c.resumoDiario ? (
-              <Campo
-                rotulo="Mandar às"
-                name="resumoHora"
-                type="time"
-                required
-                className="max-w-[10rem] mt-3"
-                value={c.resumoHora}
-                onChange={(e) => muda("resumoHora", e.target.value)}
-                erro={erros.resumoHora}
-              />
-            ) : (
-              <input type="hidden" name="resumoHora" value={c.resumoHora} />
-            )}
-          </div>
+        <div className="space-y-6">
+          <Grupo titulo="Problemas pra resolver" descricao="Chegam na hora em que acontecem; vários juntos viram um aviso só.">
+            {PROBLEMAS.map((o) => (
+              <LinhaOpcao key={o.nome} opcao={o} c={c} muda={muda} erros={erros} />
+            ))}
+          </Grupo>
+          <Grupo titulo="Relatórios">
+            {RELATORIOS.map((o) => (
+              <LinhaOpcao key={o.nome} opcao={o} c={c} muda={muda} erros={erros} />
+            ))}
+          </Grupo>
           <div className="border-t pt-5" style={{ borderColor: "var(--linha)" }}>
             <Interruptor
               nome="silencio"
               rotulo="Horário de silêncio"
-              descricao="Abertura e resumo esperam passar. Temperatura avisa mesmo assim."
+              descricao="Nenhum aviso sai nesse horário; o que acontecer chega junto quando terminar."
               ligado={silencio}
               aoMudar={(v) => {
                 setSilencio(v);
@@ -193,9 +202,58 @@ function BlocoOQueAvisar() {
               </div>
             )}
           </div>
+          <p className="text-[12.5px] text-[var(--tinta-faint)] border-t pt-4" style={{ borderColor: "var(--linha)" }}>
+            Temperatura e higiene não entram aqui: quem cobra é a nutricionista.
+          </p>
         </div>
       </Bloco>
     </form>
+  );
+}
+
+function Grupo({ titulo, descricao, children }: { titulo: string; descricao?: string; children: ReactNode }) {
+  return (
+    <fieldset>
+      <legend className="text-[13px] font-semibold text-[var(--tinta)]">{titulo}</legend>
+      {descricao && <p className="text-[12.5px] text-[var(--tinta-faint)] mt-0.5">{descricao}</p>}
+      <div className="mt-3 rounded-xl border divide-y" style={{ borderColor: "var(--linha)" }}>
+        {children}
+      </div>
+    </fieldset>
+  );
+}
+
+function LinhaOpcao({
+  opcao: o,
+  c,
+  muda,
+  erros,
+}: {
+  opcao: Opcao;
+  c: ConfigAvisos;
+  muda: <K extends keyof ConfigAvisos>(k: K, v: ConfigAvisos[K]) => void;
+  erros: Record<string, string>;
+}) {
+  const ligado = c[o.nome];
+  return (
+    <div className="px-4 py-3.5" style={{ borderColor: "var(--linha)" }}>
+      <Interruptor nome={o.nome} rotulo={o.rotulo} descricao={o.descricao} ligado={ligado} aoMudar={(v) => muda(o.nome, v)} />
+      {o.hora &&
+        (ligado ? (
+          <Campo
+            rotulo={o.hora.rotulo}
+            name={o.hora.nome}
+            type="time"
+            required
+            className="max-w-[10rem] mt-3"
+            value={c[o.hora.nome]}
+            onChange={(e) => muda(o.hora!.nome, e.target.value)}
+            erro={erros[o.hora.nome]}
+          />
+        ) : (
+          <input type="hidden" name={o.hora.nome} value={c[o.hora.nome]} />
+        ))}
+    </div>
   );
 }
 
