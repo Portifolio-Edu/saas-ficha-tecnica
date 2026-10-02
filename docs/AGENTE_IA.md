@@ -55,6 +55,12 @@ Modelos: DeepSeek (*DeepSeek account 3*) pra testes, Gemini (*Google
 Gemini(PaLM) Api account*) de reserva e na leitura dos anexos. Trocar = nós
 "DeepSeek (principal)" e "Gemini (reserva)" do Núcleo.
 
+## Avisos automáticos
+
+O mesmo WhatsApp do agente manda avisos sozinho (temperatura, abertura
+atrasada, resumo de ontem): workflow **FT — Avisos (WhatsApp)**. Ver
+docs/AVISOS_WHATSAPP.md.
+
 ## Onde mexer
 
 | O quê | Onde |
