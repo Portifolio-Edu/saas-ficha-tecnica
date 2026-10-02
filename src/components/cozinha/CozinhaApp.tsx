@@ -7,9 +7,9 @@
 // (dados_cozinha). A faixa "Quem está fazendo" fica sempre à vista: cada
 // registro sai com o nome de quem fez.
 
-import { useEffect, useState, type ReactNode } from "react";
+import { memo, useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { ChefHat, Check, ChevronLeft, UserRound, EyeOff, AlertTriangle } from "lucide-react";
-import { BarraInferiorCozinha, MenuLateralCozinha, type Aba } from "./MenuCozinha";
+import { BarraInferiorCozinha, CHAVE_RECOLHIDO, MenuLateralCozinha, type Aba } from "./MenuCozinha";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
 import { QuadroProducaoCozinha } from "./QuadroProducaoCozinha";
 import { FichasCozinha } from "./FichasCozinha";
@@ -49,6 +49,8 @@ export interface AcoesCozinha {
 // recolhível no tablet, barra de baixo no celular). Antes: abas roláveis aqui.
 
 const CHAVE_RESPONSAVEL = "cozinha:responsavel";
+// Lista vazia fixa: um `= []` novo a cada render quebraria o memo do conteúdo.
+const SEM_ITENS: never[] = [];
 
 // Foto que não carrega (link quebrado, sem internet na cozinha) some em vez
 // de deixar um quadro vazio no meio da ficha.
@@ -69,14 +71,14 @@ export function CozinhaApp({
   fichas,
   itensContagem,
   producoes,
-  proteinas = [],
-  lotesProteina = [],
+  proteinas = SEM_ITENS,
+  lotesProteina = SEM_ITENS,
   escala = null,
   hoje,
-  requisicoes = [],
-  plano = [],
-  agendaFornecedores = [],
-  sugestoesPedido = [],
+  requisicoes = SEM_ITENS,
+  plano = SEM_ITENS,
+  agendaFornecedores = SEM_ITENS,
+  sugestoesPedido = SEM_ITENS,
   agoraInicial,
   acoes,
   rodape,
@@ -108,14 +110,28 @@ export function CozinhaApp({
   rodape?: ReactNode;
 }) {
   const [aba, setAba] = useState<Aba>("checklists");
+  // DESEMPENHO (2026-10-02): o menu marca a seção na hora; o conteúdo novo
+  // (Produção, Proteínas...) desenha depois, sem travar o toque. Medido com a
+  // CPU 4x mais lenta (tablet barato): trocar pra Produção levava 352 ms até a
+  // tela responder; a barra da Vercel mostrou 928 ms no aparelho do dono.
+  // Reverter: usar `aba` no lugar de `abaConteudo`.
+  const abaConteudo = useDeferredValue(aba);
   const [responsavel, setResponsavel] = useState<string | null>(null);
   const [trocando, setTrocando] = useState(false);
+  // DESEMPENHO (2026-10-02): quem está usando e o menu recolhido só se sabem
+  // depois de ler o aparelho. Antes a tela aparecia em "Quem está usando?" e
+  // pulava pro menu + conteúdo (CLS 0,14 na carga). Agora o miolo fica
+  // invisível até ler; o cabeçalho aparece na hora.
+  const [pronto, setPronto] = useState(false);
+  const [menuRecolhido, setMenuRecolhido] = useState(false);
 
   useEffect(() => {
     try {
       const salvo = localStorage.getItem(CHAVE_RESPONSAVEL);
       if (salvo) setResponsavel(salvo);
+      setMenuRecolhido(localStorage.getItem(CHAVE_RECOLHIDO) === "1");
     } catch {}
+    setPronto(true);
   }, []);
 
   const emUso = Boolean(responsavel) && !trocando;
@@ -149,53 +165,58 @@ export function CozinhaApp({
             <div className="text-[13px] text-[var(--tinta-faint)]">Modo cozinha</div>
           </div>
           {responsavel && (
+            // ACESSIBILIDADE (2026-10-02): o nome falado começa pelo que está
+            // escrito no botão (axe label-content-name-mismatch). Antes:
+            // aria-label "Ana está usando. Trocar pessoa" num botão que mostra
+            // "A Ana" — quem usa comando de voz diz "Ana" e não achava.
             <button
               onClick={() => setTrocando(true)}
               className="min-h-11 pl-2 pr-3.5 rounded-full border inline-flex items-center gap-2 text-[15px] font-medium"
               style={{ borderColor: "var(--linha-forte)", background: "var(--panel-elevated)" }}
-              aria-label={`${responsavel} está usando. Trocar pessoa`}
             >
-              <span className="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold" style={{ background: "var(--tinta)", color: "var(--panel)" }}>
+              <span aria-hidden className="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold" style={{ background: "var(--tinta)", color: "var(--panel)" }}>
                 {responsavel.slice(0, 1).toUpperCase()}
               </span>
               {responsavel}
+              <span className="sr-only">, trocar pessoa</span>
             </button>
           )}
         </div>
       </header>
 
-      <div className="flex-1 flex">
-      {emUso && <MenuLateralCozinha aba={aba} onTrocar={trocarAba} contadores={contadores} />}
+      <div className="flex-1 flex" style={pronto ? undefined : { visibility: "hidden" }}>
+      {emUso && <MenuLateralCozinha aba={aba} onTrocar={trocarAba} contadores={contadores} recolhidoInicial={menuRecolhido} />}
       <div className="flex-1 min-w-0 flex flex-col">
       {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda.
           FICHAS (2026-09-25): Fichas usa 2 colunas (foto e ingredientes | passo a passo). */}
-      <main id="conteudo" className={`flex-1 w-full mx-auto px-4 md:px-6 py-5 ${emUso ? "pb-24 md:pb-5" : ""} ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas" || aba === "escala") ? "max-w-6xl" : aba === "pedidos" ? "max-w-2xl" : "max-w-4xl"}`}>
+      <main
+        id="conteudo"
+        aria-busy={aba !== abaConteudo || undefined}
+        className={`flex-1 w-full mx-auto px-4 md:px-6 py-5 transition-opacity duration-150 ${aba !== abaConteudo ? "opacity-60" : ""} ${emUso ? "pb-24 md:pb-5" : ""} ${emUso && abaConteudo === "producao" ? "max-w-[1440px]" : emUso && (abaConteudo === "fichas" || abaConteudo === "proteinas" || abaConteudo === "escala") ? "max-w-6xl" : abaConteudo === "pedidos" ? "max-w-2xl" : "max-w-4xl"}`}
+      >
         {!responsavel || trocando ? (
           <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
-        ) : aba === "checklists" ? (
-          <SecaoChecklists checklists={checklists} responsavel={responsavel} acoes={acoes} />
-        ) : aba === "temperatura" ? (
-          <SecaoTemperatura locais={locais} temperaturas={temperaturas} responsavel={responsavel} acoes={acoes} />
-        ) : aba === "producao" ? (
-          <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} plano={plano} />
-        ) : aba === "proteinas" ? (
-          <ProteinasCozinha proteinas={proteinas} lotes={lotesProteina} responsavel={responsavel} acoes={acoes} />
-        ) : aba === "fichas" ? (
-          <FichasCozinha fichas={fichas} />
-        ) : aba === "escala" ? (
-          <EscalaCozinha escala={escala} hoje={hoje} />
-        ) : aba === "pedidos" ? (
-          <PedidosCozinha
-            requisicoes={requisicoes}
-            agenda={agendaFornecedores}
-            sugestoes={sugestoesPedido}
-            responsavel={responsavel}
-            agoraInicial={agoraInicial ?? agoraNoRestaurante()}
-            pedir={acoes.pedir}
-            desistir={acoes.desistirDoPedido}
-          />
         ) : (
-          <SecaoContagem itens={itensContagem} responsavel={responsavel} acoes={acoes} />
+          <ConteudoCozinha
+            aba={abaConteudo}
+            responsavel={responsavel}
+            checklists={checklists}
+            locais={locais}
+            temperaturas={temperaturas}
+            fichas={fichas}
+            itensContagem={itensContagem}
+            producoes={producoes}
+            proteinas={proteinas}
+            lotesProteina={lotesProteina}
+            escala={escala}
+            hoje={hoje}
+            requisicoes={requisicoes}
+            plano={plano}
+            agendaFornecedores={agendaFornecedores}
+            sugestoesPedido={sugestoesPedido}
+            agoraInicial={agoraInicial}
+            acoes={acoes}
+          />
         )}
       </main>
       {rodape && <footer className="text-center text-[13px] text-[var(--tinta-faint)] pb-5 px-4">{rodape}</footer>}
@@ -206,6 +227,74 @@ export function CozinhaApp({
     </div>
   );
 }
+
+// DESEMPENHO (2026-10-02): memo — quando só o menu muda (toque numa seção),
+// o conteúdo antigo não é redesenhado; o novo vem pelo useDeferredValue.
+const ConteudoCozinha = memo(function ConteudoCozinha({
+  aba,
+  responsavel,
+  checklists,
+  locais,
+  temperaturas,
+  fichas,
+  itensContagem,
+  producoes,
+  proteinas,
+  lotesProteina,
+  escala,
+  hoje,
+  requisicoes,
+  plano,
+  agendaFornecedores,
+  sugestoesPedido,
+  agoraInicial,
+  acoes,
+}: {
+  aba: Aba;
+  responsavel: string;
+  checklists: Checklist[];
+  locais: LocalArmazenamento[];
+  temperaturas: RegistroTemperatura[];
+  fichas: FichaCozinha[];
+  itensContagem: ItemContagem[];
+  producoes: ProducaoCozinha[];
+  proteinas: ProteinaCozinha[];
+  lotesProteina: LoteProteinaCozinha[];
+  escala: EscalaPublica | null;
+  hoje: string;
+  requisicoes: Requisicao[];
+  plano: ItemPlano[];
+  agendaFornecedores: AgendaFornecedor[];
+  sugestoesPedido: SugestaoPedido[];
+  agoraInicial?: Agora;
+  acoes: AcoesCozinha;
+}) {
+  return aba === "checklists" ? (
+    <SecaoChecklists checklists={checklists} responsavel={responsavel} acoes={acoes} />
+  ) : aba === "temperatura" ? (
+    <SecaoTemperatura locais={locais} temperaturas={temperaturas} responsavel={responsavel} acoes={acoes} />
+  ) : aba === "producao" ? (
+    <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} plano={plano} />
+  ) : aba === "proteinas" ? (
+    <ProteinasCozinha proteinas={proteinas} lotes={lotesProteina} responsavel={responsavel} acoes={acoes} />
+  ) : aba === "fichas" ? (
+    <FichasCozinha fichas={fichas} />
+  ) : aba === "escala" ? (
+    <EscalaCozinha escala={escala} hoje={hoje} />
+  ) : aba === "pedidos" ? (
+    <PedidosCozinha
+      requisicoes={requisicoes}
+      agenda={agendaFornecedores}
+      sugestoes={sugestoesPedido}
+      responsavel={responsavel}
+      agoraInicial={agoraInicial ?? agoraNoRestaurante()}
+      pedir={acoes.pedir}
+      desistir={acoes.desistirDoPedido}
+    />
+  ) : (
+    <SecaoContagem itens={itensContagem} responsavel={responsavel} acoes={acoes} />
+  );
+});
 
 function QuemEsta({ funcionarios, atual, onEscolher, onCancelar }: { funcionarios: Funcionario[]; atual: string | null; onEscolher: (nome: string) => void; onCancelar?: () => void }) {
   const [outro, setOutro] = useState("");

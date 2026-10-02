@@ -10,7 +10,7 @@
 // Antes: <nav> com abas roláveis no cabeçalho de CozinhaApp.tsx.
 // Reverter: git revert do commit "cozinha: menu lateral".
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ChefHat, ClipboardCheck, Thermometer, CookingPot, Beef, BookOpen, PackageSearch, CalendarDays, ShoppingBasket,
   PanelLeftClose, PanelLeftOpen, MoreHorizontal, X,
@@ -54,7 +54,7 @@ const TODOS = GRUPOS.flatMap((g) => g.itens);
 /** Celular: as 4 que a cozinha mais usa ficam na barra; o resto vai pro "Mais". */
 const NA_BARRA: Aba[] = ["checklists", "producao", "fichas", "pedidos"];
 
-const CHAVE_RECOLHIDO = "cozinha:menu-recolhido";
+export const CHAVE_RECOLHIDO = "cozinha:menu-recolhido";
 
 function Contador({ n, escuro }: { n?: number; escuro?: boolean }) {
   if (!n) return null;
@@ -68,13 +68,21 @@ function Contador({ n, escuro }: { n?: number; escuro?: boolean }) {
   );
 }
 
-export function MenuLateralCozinha({ aba, onTrocar, contadores }: { aba: Aba; onTrocar: (a: Aba) => void; contadores: Partial<Record<Aba, number>> }) {
-  const [recolhido, setRecolhido] = useState(false);
-  useEffect(() => {
-    try {
-      setRecolhido(localStorage.getItem(CHAVE_RECOLHIDO) === "1");
-    } catch {}
-  }, []);
+// DESEMPENHO (2026-10-02): o estado inicial (recolhido ou não) vem de quem já
+// leu o aparelho (CozinhaApp). Antes o menu abria largo e encolhia depois de
+// ler — empurrava a tela inteira (CLS).
+export function MenuLateralCozinha({
+  aba,
+  onTrocar,
+  contadores,
+  recolhidoInicial = false,
+}: {
+  aba: Aba;
+  onTrocar: (a: Aba) => void;
+  contadores: Partial<Record<Aba, number>>;
+  recolhidoInicial?: boolean;
+}) {
+  const [recolhido, setRecolhido] = useState(recolhidoInicial);
   const alternar = () => {
     setRecolhido((r) => {
       try {
