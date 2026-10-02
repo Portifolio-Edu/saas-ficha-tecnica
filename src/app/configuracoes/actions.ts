@@ -11,7 +11,7 @@ import { origemDoSite } from "@/lib/auth/origem";
 import { traduzirErroAuth } from "@/lib/auth/erros";
 import { lerEmpresa } from "@/lib/empresa/empresa";
 import { CORES_DESTAQUE } from "@/lib/empresa/cores";
-import { lerConfigAvisos } from "@/lib/automacoes/avisos";
+import { lerConfigAvisos, linhaDaConfig } from "@/lib/automacoes/avisos";
 import { normalizarTelefone, telefoneValido } from "@/lib/telefone";
 
 // PLANO 9,5, etapa 3 (2026-09-26): LGPD — o dono apaga o restaurante e tudo o
@@ -280,15 +280,7 @@ export async function acaoSalvarAvisos(_estado: EstadoForm, form: FormData): Pro
   const { config, erros } = lerConfigAvisos(form);
   if (Object.keys(erros).length) return { erros, erro: "Confira os horários marcados." };
   const supabase = await createClient();
-  const valores = {
-    temperatura: config.temperatura,
-    checklist_abertura: config.checklistAbertura,
-    checklist_abertura_ate: config.checklistAberturaAte,
-    resumo_diario: config.resumoDiario,
-    resumo_hora: config.resumoHora,
-    silencio_inicio: config.silencioInicio,
-    silencio_fim: config.silencioFim,
-  };
+  const valores = linhaDaConfig(config);
   // Atualiza; se o restaurante ainda não tem linha (padrão), cria. Upsert não
   // serve: ele regrava cliente_id, que o app não pode mudar (grant por coluna).
   const atualizada = await supabase.from("avisos_config").update(valores).eq("cliente_id", cliente.id).select("cliente_id");

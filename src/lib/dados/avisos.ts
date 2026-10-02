@@ -4,7 +4,7 @@
 // WhatsApp da equipe e histórico só pra gestão).
 
 import { createClient } from "@/lib/supabase/server";
-import { CONFIG_PADRAO, type ConfigAvisos, type TipoAviso } from "@/lib/automacoes/avisos";
+import { configDaLinha, type ConfigAvisos, type TipoAviso } from "@/lib/automacoes/avisos";
 import type { Papel } from "@/lib/auth/papeis";
 
 export interface DestinatarioAviso {
@@ -30,8 +30,6 @@ export interface DadosAvisos {
   historico: AvisoEnviado[];
 }
 
-const hhmm = (t: string | null) => (t ? t.slice(0, 5) : null);
-
 export async function getAvisos(): Promise<DadosAvisos> {
   const supabase = await createClient();
   const [{ data: cfg }, { data: membros }, { data: zaps }, { data: avisos }] = await Promise.all([
@@ -48,17 +46,7 @@ export async function getAvisos(): Promise<DadosAvisos> {
   const nomeDe = new Map(listaMembros.map((m) => [m.user_id, m.nome]));
 
   return {
-    config: cfg
-      ? {
-          temperatura: cfg.temperatura,
-          checklistAbertura: cfg.checklist_abertura,
-          checklistAberturaAte: hhmm(cfg.checklist_abertura_ate)!,
-          resumoDiario: cfg.resumo_diario,
-          resumoHora: hhmm(cfg.resumo_hora)!,
-          silencioInicio: hhmm(cfg.silencio_inicio),
-          silencioFim: hhmm(cfg.silencio_fim),
-        }
-      : CONFIG_PADRAO,
+    config: configDaLinha(cfg),
     destinatarios: listaMembros.map((m) => ({ nome: m.nome, papel: m.papel, whatsapp: zapDe.get(m.user_id) ?? null })),
     historico: ((avisos ?? []) as Linha[]).map((a) => ({
       id: a.id,

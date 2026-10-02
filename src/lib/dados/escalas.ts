@@ -19,7 +19,7 @@ interface LinhaFuncionario {
   desligado_em: string | null;
 }
 
-interface LinhaConfig {
+export interface LinhaConfig {
   funcionario_id: string;
   tipo: TipoEscala;
   ancora: string;
@@ -31,7 +31,8 @@ interface LinhaConfig {
 
 const hhmm = (t: string | null) => (t ? t.slice(0, 5) : null);
 
-function paraConfig(c: LinhaConfig) {
+// AVISOS PRA GESTÃO (2026-10-02): exportado pro aviso de equipe (automacoes/gerar.ts).
+export function paraConfig(c: LinhaConfig) {
   const inicio = hhmm(c.turno_inicio);
   const fim = hhmm(c.turno_fim);
   return {
