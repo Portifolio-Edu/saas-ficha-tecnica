@@ -65,7 +65,15 @@ const LARGURA: Record<Aba, string> = {
   contagem: "max-w-4xl",
   escala: "max-w-6xl",
 };
-const ORDEM_PREPARO: Aba[] = ["producao", "pracas", "fichas", "temperatura", "proteinas", "pedidos", "contagem", "escala"];
+// DESEMPENHO (2026-10-02, 3ª rodada): a barra da Vercel mostrou 450 ms de
+// espera num toque logo depois de abrir a cozinha: as 8 seções eram preparadas
+// em sequência e o toque caía no meio de uma. Agora só as pesadas são
+// preparadas (medido com CPU 4x: Produção ~100 ms, Fichas, Proteínas e Escala
+// 55-80 ms; as outras montam rápido na hora do toque) e só com a pessoa
+// parada (QUIETO_MS sem toque nem tecla). Antes: as 8, logo depois de abrir.
+const ORDEM_PREPARO: Aba[] = ["producao", "fichas", "proteinas", "escala"];
+/** Preparar só depois de tanto tempo sem toque nem tecla (e de tela aberta). */
+const QUIETO_MS = 1500;
 
 // Foto que não carrega (link quebrado, sem internet na cozinha) some em vez
 // de deixar um quadro vazio no meio da ficha.
@@ -77,25 +85,42 @@ const botaoGrande = "min-h-14 px-5 rounded-xl text-[16px] font-semibold inline-f
 const campoGrande = "min-h-14 px-4 rounded-xl text-[18px] outline-none w-full focus:ring-2 focus:ring-[var(--marca-suave)] focus:border-[var(--marca)]";
 const estiloCampo = { border: "1px solid var(--linha-forte)", background: "var(--panel)", color: "var(--tinta)" } as const;
 
+/**
+ * DESEMPENHO (2026-10-02): a cozinha se atualiza sozinha (AtualizacaoAutomatica
+ * a cada 30 s e ao voltar pra janela) e o servidor manda listas novas mesmo sem
+ * nada ter mudado — aí todas as seções guardadas se redesenhavam juntas e o
+ * toque seguinte esperava. Com isto a lista só vira "nova" quando o conteúdo
+ * muda, e as seções que não mudaram não redesenham (memo).
+ * Pra voltar: usar as props direto.
+ */
+function useMesmoConteudo<T>(valor: T): T {
+  const [s, setS] = useState<{ ref: T; chave: string | null; estavel: T }>({ ref: valor, chave: null, estavel: valor });
+  if (s.ref === valor) return s.estavel;
+  const chave = JSON.stringify(valor);
+  const estavel = chave === (s.chave ?? JSON.stringify(s.ref)) ? s.estavel : valor;
+  setS({ ref: valor, chave, estavel });
+  return estavel;
+}
+
 export function CozinhaApp({
   nomeRestaurante,
   funcionarios,
-  checklists,
-  locais,
-  temperaturas,
-  fichas,
-  itensContagem,
-  producoes,
-  proteinas = SEM_ITENS,
-  lotesProteina = SEM_ITENS,
-  escala = null,
+  checklists: checklistsServidor,
+  locais: locaisServidor,
+  temperaturas: temperaturasServidor,
+  fichas: fichasServidor,
+  itensContagem: itensContagemServidor,
+  producoes: producoesServidor,
+  proteinas: proteinasServidor = SEM_ITENS,
+  lotesProteina: lotesProteinaServidor = SEM_ITENS,
+  escala: escalaServidor = null,
   hoje,
-  requisicoes = SEM_ITENS,
-  plano = SEM_ITENS,
-  agendaFornecedores = SEM_ITENS,
-  sugestoesPedido = SEM_ITENS,
-  agoraInicial,
-  acoes,
+  requisicoes: requisicoesServidor = SEM_ITENS,
+  plano: planoServidor = SEM_ITENS,
+  agendaFornecedores: agendaServidor = SEM_ITENS,
+  sugestoesPedido: sugestoesServidor = SEM_ITENS,
+  agoraInicial: agoraInicialServidor,
+  acoes: acoesServidor,
   rodape,
 }: {
   nomeRestaurante: string;
@@ -124,6 +149,23 @@ export function CozinhaApp({
   /** Linha no pé da tela (ex.: aviso de demonstração). */
   rodape?: ReactNode;
 }) {
+  const checklists = useMesmoConteudo(checklistsServidor);
+  const locais = useMesmoConteudo(locaisServidor);
+  const temperaturas = useMesmoConteudo(temperaturasServidor);
+  const fichas = useMesmoConteudo(fichasServidor);
+  const itensContagem = useMesmoConteudo(itensContagemServidor);
+  const producoes = useMesmoConteudo(producoesServidor);
+  const proteinas = useMesmoConteudo(proteinasServidor);
+  const lotesProteina = useMesmoConteudo(lotesProteinaServidor);
+  const escala = useMesmoConteudo(escalaServidor);
+  const requisicoes = useMesmoConteudo(requisicoesServidor);
+  const plano = useMesmoConteudo(planoServidor);
+  const agendaFornecedores = useMesmoConteudo(agendaServidor);
+  const sugestoesPedido = useMesmoConteudo(sugestoesServidor);
+  // As ações do servidor não mudam entre atualizações (o objeto é que vem
+  // novo); o relógio inicial só serve pra começar. Ficam os da abertura.
+  const [acoes] = useState(acoesServidor);
+  const [agoraInicial] = useState(agoraInicialServidor);
   const [aba, setAba] = useState<Aba>("checklists");
   // DESEMPENHO (2026-10-02): o menu marca a seção na hora; o conteúdo novo
   // (Produção, Proteínas...) desenha depois, sem travar o toque. Medido com a
@@ -206,21 +248,48 @@ export function CozinhaApp({
     return () => cancelAnimationFrame(quadro);
   }, [montadas, comLayout]);
 
-  // As outras, com o aparelho parado: uma por vez, na ordem de uso.
+  // Último toque/tecla (e a abertura da tela conta como um): a preparação
+  // espera a pessoa ficar parada.
+  const ultimoToque = useRef(0);
+  useEffect(() => {
+    ultimoToque.current = performance.now();
+    const marcar = () => (ultimoToque.current = performance.now());
+    const opcoes = { capture: true, passive: true } as const;
+    for (const t of ["pointerdown", "keydown", "wheel", "touchstart"] as const) window.addEventListener(t, marcar, opcoes);
+    return () => {
+      for (const t of ["pointerdown", "keydown", "wheel", "touchstart"] as const) window.removeEventListener(t, marcar, opcoes);
+    };
+  }, []);
+
+  // As pesadas, com a pessoa parada: uma por vez, na ordem de uso.
   useEffect(() => {
     if (!pronto || !emUso) return;
     if (montadas.some((a) => !comLayout.includes(a))) return; // uma de cada vez
     const proxima = ORDEM_PREPARO.find((a) => !montadas.includes(a));
     if (!proxima) return;
-    const preparar = () => startTransition(() => setMontadas((m) => (m.includes(proxima) ? m : [...m, proxima])));
     const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
-    if (w.requestIdleCallback) {
-      const id = w.requestIdleCallback(preparar, { timeout: 3000 });
-      return () => w.cancelIdleCallback?.(id);
-    }
-    // Safari (iPad) não tem requestIdleCallback.
-    const id = window.setTimeout(preparar, 400);
-    return () => window.clearTimeout(id);
+    let espera = 0;
+    let ocioso = 0;
+    const tentar = () => {
+      const falta = QUIETO_MS - (performance.now() - ultimoToque.current);
+      if (falta > 0) {
+        espera = window.setTimeout(tentar, falta + 50);
+        return;
+      }
+      const preparar = () => {
+        // Tocou enquanto esperava o navegador ficar livre: espera de novo.
+        if (performance.now() - ultimoToque.current < QUIETO_MS) return tentar();
+        startTransition(() => setMontadas((m) => (m.includes(proxima) ? m : [...m, proxima])));
+      };
+      // Safari (iPad) não tem requestIdleCallback.
+      if (w.requestIdleCallback) ocioso = w.requestIdleCallback(preparar, { timeout: 2000 });
+      else espera = window.setTimeout(preparar, 50);
+    };
+    tentar();
+    return () => {
+      window.clearTimeout(espera);
+      if (ocioso) w.cancelIdleCallback?.(ocioso);
+    };
   }, [pronto, emUso, montadas, comLayout]);
   const trocarAba = useCallback((a: Aba) => {
     setAba(a);
@@ -296,6 +365,7 @@ export function CozinhaApp({
             return (
             <div
               key={a}
+              data-secao={a}
               className={`mx-auto w-full ${LARGURA[a]} ${visivel ? "" : comLayout.includes(a) ? "secao-guardada" : "secao-preparando"}`}
               aria-hidden={visivel ? undefined : true}
               inert={!visivel}

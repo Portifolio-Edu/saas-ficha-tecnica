@@ -117,3 +117,24 @@ test.describe("seções das configurações", () => {
     expect(pior, "pior clique entre seções (ms)").toBeLessThan(200);
   });
 });
+
+// DESEMPENHO (2026-10-02): a barra da Vercel mostrou 450 ms de espera num
+// toque logo depois de abrir a cozinha: as seções eram preparadas em
+// sequência e o toque caía no meio de uma. Agora a preparação espera a pessoa
+// ficar parada e só prepara as pesadas.
+test.describe("cozinha: preparação em segundo plano", () => {
+  test("não prepara seção enquanto a pessoa toca; prepara quando ela para", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("cozinha:responsavel", "Ana"));
+    await page.goto("/preview/cozinha");
+    await expect(page.locator('[data-secao="checklists"]')).toBeAttached();
+    // Toca na tela (num canto vazio do cabeçalho) a cada 400 ms por 4 s.
+    for (let i = 0; i < 10; i++) {
+      await page.mouse.click(600, 30);
+      await page.waitForTimeout(400);
+    }
+    await expect(page.locator("[data-secao]")).toHaveCount(1);
+    // Parou: as pesadas são preparadas (Produção primeiro); as leves não.
+    await expect(page.locator('[data-secao="producao"]')).toBeAttached({ timeout: 8000 });
+    await expect(page.locator('[data-secao="temperatura"]')).toHaveCount(0);
+  });
+});
