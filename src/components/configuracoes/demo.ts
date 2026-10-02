@@ -7,6 +7,7 @@ import type { Configuracoes } from "@/lib/dados/configuracoes";
 import { lerEmpresa } from "@/lib/empresa/empresa";
 import { CORES_DESTAQUE } from "@/lib/empresa/cores";
 import { normalizarTelefone, telefoneValido } from "@/lib/telefone";
+import { lerConfigAvisos } from "@/lib/automacoes/avisos";
 import type { AcoesConfiguracoes } from "./contexto";
 
 const CHAVE = "demo:configuracoes";
@@ -35,7 +36,13 @@ function gravar(mudanca: Salvo): boolean {
 /** Dados da demo com o que a pessoa mudou por cima. */
 export function configuracoesDemo(base: Configuracoes): Configuracoes {
   const s = ler();
-  return { ...base, ...s, empresa: { ...base.empresa, ...s.empresa }, conta: { ...base.conta, ...s.conta } };
+  return {
+    ...base,
+    ...s,
+    empresa: { ...base.empresa, ...s.empresa },
+    conta: { ...base.conta, ...s.conta },
+    avisos: base.avisos && s.avisos ? { ...base.avisos, config: s.avisos.config } : base.avisos,
+  };
 }
 
 /** Logo e cor da demo, pro menu. */
@@ -132,5 +139,12 @@ export const acoesDemo: AcoesConfiguracoes = {
   },
   async sairDeTodos() {
     window.location.href = "/preview";
+  },
+  async salvarAvisos(_e, form) {
+    await espera();
+    const { config, erros } = lerConfigAvisos(form);
+    if (Object.keys(erros).length) return { erros, erro: "Confira os horários marcados." };
+    // Só a config vai pro navegador; quem recebe e o histórico são da demo.
+    return gravar({ avisos: { config, destinatarios: [], historico: [] } }) ? ok("Avisos salvos.") : SEM_ESPACO;
   },
 };

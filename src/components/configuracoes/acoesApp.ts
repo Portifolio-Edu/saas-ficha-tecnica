@@ -4,6 +4,7 @@ import {
   acaoEnviarLogo,
   acaoRemoverLogo,
   acaoSairDeTodos,
+  acaoSalvarAvisos,
   acaoSalvarCor,
   acaoSalvarEmpresa,
   acaoSalvarMeta,
@@ -26,4 +27,5 @@ export const acoesApp: AcoesConfiguracoes = {
   trocarEmail: acaoTrocarEmail,
   trocarSenha: acaoTrocarSenha,
   sairDeTodos: acaoSairDeTodos,
+  salvarAvisos: acaoSalvarAvisos,
 };

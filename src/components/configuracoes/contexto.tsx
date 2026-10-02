@@ -26,6 +26,7 @@ export interface AcoesConfiguracoes {
   trocarEmail: AcaoForm;
   trocarSenha: AcaoForm;
   sairDeTodos: () => Promise<void>;
+  salvarAvisos: AcaoForm;
 }
 
 export interface ContextoConfiguracoes {

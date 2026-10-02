@@ -128,3 +128,28 @@ export function textoResumo(r: DadosResumo): string {
   linhas.push(`${r.app}/visao-geral`);
   return linhas.join("\n");
 }
+
+const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Lê o formulário da tela (checkbox "on" = ligado). Erros por campo. */
+export function lerConfigAvisos(form: FormData): { config: ConfigAvisos; erros: Record<string, string> } {
+  const erros: Record<string, string> = {};
+  const ligado = (n: string) => form.get(n) === "on";
+  const hora = (n: string, padrao: string) => {
+    const v = String(form.get(n) ?? "").trim().slice(0, 5) || padrao;
+    if (!HORA.test(v)) erros[n] = "Horário inválido (ex.: 08:30).";
+    return v;
+  };
+  const silencio = ligado("silencio");
+  const config: ConfigAvisos = {
+    temperatura: ligado("temperatura"),
+    checklistAbertura: ligado("checklistAbertura"),
+    checklistAberturaAte: hora("checklistAberturaAte", CONFIG_PADRAO.checklistAberturaAte),
+    resumoDiario: ligado("resumoDiario"),
+    resumoHora: hora("resumoHora", CONFIG_PADRAO.resumoHora),
+    silencioInicio: silencio ? hora("silencioInicio", "23:00") : null,
+    silencioFim: silencio ? hora("silencioFim", "06:00") : null,
+  };
+  if (silencio && config.silencioInicio === config.silencioFim) erros.silencioFim = "O fim precisa ser diferente do início.";
+  return { config, erros };
+}

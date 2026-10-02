@@ -11,6 +11,7 @@ import { origemDoSite } from "@/lib/auth/origem";
 import { traduzirErroAuth } from "@/lib/auth/erros";
 import { lerEmpresa } from "@/lib/empresa/empresa";
 import { CORES_DESTAQUE } from "@/lib/empresa/cores";
+import { lerConfigAvisos } from "@/lib/automacoes/avisos";
 import { normalizarTelefone, telefoneValido } from "@/lib/telefone";
 
 // PLANO 9,5, etapa 3 (2026-09-26): LGPD — o dono apaga o restaurante e tudo o
@@ -270,4 +271,30 @@ export async function acaoSair(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
+}
+
+/** AVISOS NO WHATSAPP (2026-10-02): o que avisar e quando (dono e gestor). */
+export async function acaoSalvarAvisos(_estado: EstadoForm, form: FormData): Promise<EstadoForm> {
+  const cliente = await exigirGestao();
+  if (typeof cliente === "string") return { erro: cliente };
+  const { config, erros } = lerConfigAvisos(form);
+  if (Object.keys(erros).length) return { erros, erro: "Confira os horários marcados." };
+  const supabase = await createClient();
+  const valores = {
+    temperatura: config.temperatura,
+    checklist_abertura: config.checklistAbertura,
+    checklist_abertura_ate: config.checklistAberturaAte,
+    resumo_diario: config.resumoDiario,
+    resumo_hora: config.resumoHora,
+    silencio_inicio: config.silencioInicio,
+    silencio_fim: config.silencioFim,
+  };
+  // Atualiza; se o restaurante ainda não tem linha (padrão), cria. Upsert não
+  // serve: ele regrava cliente_id, que o app não pode mudar (grant por coluna).
+  const atualizada = await supabase.from("avisos_config").update(valores).eq("cliente_id", cliente.id).select("cliente_id");
+  let error = atualizada.error;
+  if (!error && !atualizada.data?.length) error = (await supabase.from("avisos_config").insert({ cliente_id: cliente.id, ...valores })).error;
+  if (error) return { erro: "Não foi possível salvar os avisos. Tente de novo." };
+  revalidatePath("/configuracoes");
+  return { ok: Date.now(), sucesso: "Avisos salvos." };
 }

@@ -3,7 +3,7 @@
 // Confere: só dono/gestor com WhatsApp verificado recebe; outra casa não
 // recebe nada; o mesmo aviso não sai duas vezes; falha volta pra fila.
 import { test, expect } from "@playwright/test";
-import { RODADA, admin } from "./apoio";
+import { RODADA, admin, entrar } from "./apoio";
 
 const CHAVE = process.env.AGENTE_CHAVE_N8N ?? "";
 const APP = "http://127.0.0.1:3000";
@@ -119,5 +119,23 @@ test.describe.serial("avisos no WhatsApp", () => {
     await admin().from("registros_temperatura").insert({ local_armazenamento_id: local!.id, temperatura_c: 12, responsavel: "Ana" });
     const { corpo } = await pendentes();
     expect(corpo.avisos.filter((a) => a.telefone === dono.telefone && a.tipo === "temperatura")).toHaveLength(0);
+  });
+
+  test("tela: gestão vê quem recebe e o histórico, e desliga o resumo", async ({ page }) => {
+    await entrar(page, `avisos-dono.${RODADA}@exemplo.com`, "avisos-senha-123");
+    await page.goto("/configuracoes?secao=avisos");
+    await expect(page.getByRole("heading", { name: "Quem recebe" })).toBeVisible();
+    await expect(page.getByText(`(11) ${dono.telefone.slice(4, 9)}-${dono.telefone.slice(9)}`)).toBeVisible();
+    await expect(page.getByText("Temperatura fora da faixa").last()).toBeVisible();
+    await expect(page.getByText("Enviado").first()).toBeVisible();
+
+    const resumo = page.getByRole("switch", { name: "Resumo de ontem" });
+    await expect(resumo).toBeChecked();
+    await resumo.uncheck();
+    await page.getByRole("switch", { name: "Horário de silêncio" }).check();
+    await page.getByRole("button", { name: "Salvar", exact: true }).click();
+    await expect(page.getByText("Avisos salvos.")).toBeVisible();
+    const { data } = await admin().from("avisos_config").select("resumo_diario, silencio_inicio, silencio_fim, temperatura").eq("cliente_id", clienteA).single();
+    expect(data).toEqual({ resumo_diario: false, silencio_inicio: "23:00:00", silencio_fim: "06:00:00", temperatura: false });
   });
 });

@@ -73,3 +73,22 @@ describe("texto dos avisos", () => {
     expect(c).toContain("esperando compra: 2");
   });
 });
+
+describe("formulário dos avisos", () => {
+  const form = (c: Record<string, string>) => {
+    const f = new FormData();
+    for (const [k, v] of Object.entries(c)) f.set(k, v);
+    return f;
+  };
+  it("checkbox desmarcado = desligado; silêncio desligado não guarda horário", async () => {
+    const { lerConfigAvisos } = await import("../avisos");
+    const { config, erros } = lerConfigAvisos(form({ temperatura: "on", checklistAberturaAte: "10:30", resumoHora: "07:00", silencioInicio: "22:00", silencioFim: "06:00" }));
+    expect(erros).toEqual({});
+    expect(config).toEqual({ temperatura: true, checklistAbertura: false, checklistAberturaAte: "10:30", resumoDiario: false, resumoHora: "07:00", silencioInicio: null, silencioFim: null });
+  });
+  it("horário inválido e silêncio sem duração", async () => {
+    const { lerConfigAvisos } = await import("../avisos");
+    const { erros } = lerConfigAvisos(form({ resumoHora: "25:00", silencio: "on", silencioInicio: "22:00", silencioFim: "22:00" }));
+    expect(Object.keys(erros).sort()).toEqual(["resumoHora", "silencioFim"]);
+  });
+});

@@ -27,6 +27,7 @@ const TELAS = [
   "/preview/integracoes",
   // CONFIGURAÇÕES (2026-10-01): cada seção é uma tela.
   "/preview/configuracoes?secao=restaurante",
+  "/preview/configuracoes?secao=avisos",
   "/preview/configuracoes?secao=conta",
   "/preview/configuracoes?secao=aparencia",
   "/preview/configuracoes?secao=plano",

@@ -7,6 +7,7 @@ import type { ClienteAtual } from "./cliente";
 import { urlDoLogo } from "./cliente";
 import type { DadosEmpresa } from "@/lib/empresa/empresa";
 import { DOMINIO_EQUIPE } from "@/lib/auth/equipe";
+import type { DadosAvisos } from "./avisos";
 
 export interface Configuracoes {
   empresa: DadosEmpresa;
@@ -25,9 +26,11 @@ export interface Configuracoes {
     /** Troca de e-mail aguardando confirmação. */
     emailPendente: string | null;
   };
+  /** AVISOS (2026-10-02): só pra gestão (null pros outros papéis). */
+  avisos: DadosAvisos | null;
 }
 
-export async function getConfiguracoes(cliente: ClienteAtual): Promise<Configuracoes> {
+export async function getConfiguracoes(cliente: ClienteAtual, avisos: DadosAvisos | null = null): Promise<Configuracoes> {
   const supabase = await createClient();
   const [{ data: c, error }, { data: auth }] = await Promise.all([
     supabase
@@ -71,5 +74,6 @@ export async function getConfiguracoes(cliente: ClienteAtual): Promise<Configura
       usuario: daEquipe && email ? email.split("@")[0] : null,
       emailPendente: auth.user?.new_email ?? null,
     },
+    avisos,
   };
 }

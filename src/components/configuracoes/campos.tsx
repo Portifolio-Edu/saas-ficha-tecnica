@@ -182,3 +182,56 @@ export function RodapeSalvar({ alterado, pendente, rotulo = "Salvar" }: { altera
     </>
   );
 }
+
+/** Liga/desliga acessível: checkbox nativo (teclado, leitor de tela e formulário) com cara de chave. */
+export function Interruptor({
+  nome,
+  rotulo,
+  descricao,
+  ligado,
+  aoMudar,
+}: {
+  nome: string;
+  rotulo: string;
+  descricao?: ReactNode;
+  ligado: boolean;
+  aoMudar: (v: boolean) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <label htmlFor={id} className="text-[14px] font-medium text-[var(--tinta)] cursor-pointer">
+          {rotulo}
+        </label>
+        {descricao && (
+          <p id={`${id}-desc`} className="text-[12.5px] text-[var(--tinta-faint)] mt-0.5">
+            {descricao}
+          </p>
+        )}
+      </div>
+      <span className="relative inline-flex shrink-0 mt-0.5">
+        <input
+          id={id}
+          name={nome}
+          type="checkbox"
+          role="switch"
+          checked={ligado}
+          onChange={(e) => aoMudar(e.target.checked)}
+          aria-describedby={descricao ? `${id}-desc` : undefined}
+          className="peer absolute inset-0 w-full h-full opacity-0 cursor-pointer m-0"
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none w-11 h-6 rounded-full transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--marca)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--panel)]"
+          style={{ background: ligado ? "var(--marca)" : "var(--linha-forte)" }}
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform motion-reduce:transition-none"
+          style={{ background: "var(--panel)", transform: ligado ? "translateX(20px)" : "none", boxShadow: "0 1px 2px rgba(0,0,0,0.25)" }}
+        />
+      </span>
+    </div>
+  );
+}

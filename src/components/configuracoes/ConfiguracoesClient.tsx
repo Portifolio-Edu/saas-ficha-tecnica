@@ -8,7 +8,7 @@
 // seletor no topo. Versão anterior: `git show 4edfd3f:src/components/configuracoes/ConfiguracoesClient.tsx`.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Building2, CreditCard, Database, Palette, UserRound } from "lucide-react";
+import { BellRing, Building2, CreditCard, Database, Palette, UserRound } from "lucide-react";
 import { Contexto, type ContextoConfiguracoes } from "./contexto";
 import { acoesApp } from "./acoesApp";
 import { acoesDemo, configuracoesDemo } from "./demo";
@@ -16,15 +16,18 @@ import { SecaoRestaurante } from "./SecaoRestaurante";
 import { SecaoConta } from "./SecaoConta";
 import { SecaoAparencia } from "./SecaoAparencia";
 import { SecaoPlano } from "./SecaoPlano";
+import { SecaoAvisos } from "./SecaoAvisos";
 import { DadosDaConta } from "./DadosDaConta";
 import { usePapelDemo } from "@/components/ficha/PapelDemo";
 import { ehGestao, type Papel } from "@/lib/auth/papeis";
 import type { Configuracoes } from "@/lib/dados/configuracoes";
 
-export type IdSecao = "restaurante" | "conta" | "aparencia" | "plano" | "dados";
+export type IdSecao = "restaurante" | "avisos" | "conta" | "aparencia" | "plano" | "dados";
 
 const SECOES: { id: IdSecao; rotulo: string; icone: typeof Building2; pode: (p: Papel) => boolean }[] = [
   { id: "restaurante", rotulo: "Restaurante", icone: Building2, pode: ehGestao },
+  // AVISOS NO WHATSAPP (2026-10-02)
+  { id: "avisos", rotulo: "Avisos no WhatsApp", icone: BellRing, pode: ehGestao },
   { id: "conta", rotulo: "Minha conta", icone: UserRound, pode: () => true },
   { id: "aparencia", rotulo: "Aparência", icone: Palette, pode: () => true },
   { id: "plano", rotulo: "Plano", icone: CreditCard, pode: (p) => p === "dono" },
@@ -120,6 +123,7 @@ export function ConfiguracoesClient({
 
         <div className="min-w-0 max-w-2xl" key={secao.id}>
           {secao.id === "restaurante" && <SecaoRestaurante />}
+          {secao.id === "avisos" && <SecaoAvisos />}
           {secao.id === "conta" && <SecaoConta />}
           {secao.id === "aparencia" && <SecaoAparencia />}
           {secao.id === "plano" && <SecaoPlano />}
