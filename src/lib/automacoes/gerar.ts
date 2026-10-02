@@ -220,7 +220,7 @@ export async function montarAvisos(admin: SupabaseClient, app: string, agora = n
             saldo: Number(e.saldo_atual),
             minimo: Number(e.estoque_minimo),
             unidade: e.insumos.unidade_medida,
-            prazo: p ? `${frasePrazo(p, relogio)} (${p.empresa})` : null,
+            prazo: p ? `${p.empresa}: ${frasePrazo(p, relogio).replace(/^Peça/, "peça")}` : null,
           };
         });
       lote(cliente, "estoque_baixo", itens, (n) => textoEstoqueBaixo({ restaurante: nomeDe(cliente), itens: n, app }));

@@ -70,11 +70,11 @@ describe("texto dos avisos", () => {
   it("insumo abaixo do mínimo diz quanto tem, o mínimo e quando pedir", () => {
     const t = textoEstoqueBaixo({
       restaurante: "Cantina",
-      itens: [{ nome: "Arroz", saldo: 2.5, minimo: 10, unidade: "kg", prazo: "Peça até hoje às 18h pra chegar amanhã. (Atacadão)" }],
+      itens: [{ nome: "Arroz", saldo: 2.5, minimo: 10, unidade: "kg", prazo: "Atacadão: peça até hoje às 18h pra chegar amanhã." }],
       app,
     });
     expect(t).toContain("*Cantina: insumo abaixo do mínimo*");
-    expect(t).toContain("• Arroz: 2,5 kg (mínimo 10 kg). Peça até hoje às 18h pra chegar amanhã. (Atacadão)");
+    expect(t).toContain("• Arroz: 2,5 kg (mínimo 10 kg). Atacadão: peça até hoje às 18h pra chegar amanhã.");
     expect(t.endsWith(`${app}/estoque`)).toBe(true);
     const muitos = textoEstoqueBaixo({ restaurante: "C", itens: Array.from({ length: 20 }, (_, i) => ({ nome: `I${i}`, saldo: 0, minimo: 1, unidade: "un", prazo: null })), app });
     expect(muitos).toContain("insumos abaixo do mínimo");
