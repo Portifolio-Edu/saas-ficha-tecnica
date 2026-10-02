@@ -21,6 +21,7 @@ import { tint } from "@/components/producoes/formato";
 import { fmt } from "./bancada";
 import type { LoteProteinaCozinha, ProteinaCozinha } from "@/lib/dominio/cozinha";
 import type { AcoesCozinha } from "./CozinhaApp";
+import { dataBR } from "@/lib/formato";
 
 const MOTIVOS = ["Peça com muita gordura", "Peça fora do padrão do fornecedor", "Descongelou errado", "Corte diferente do padrão"];
 
@@ -351,7 +352,7 @@ export function ProteinasCozinha({
                       <div className="flex-1 min-w-0">
                         <div className="text-[16px] font-medium truncate">{p?.nome ?? "Proteína"}</div>
                         <div className="text-[13px] text-[var(--tinta-sub)]" style={nums}>
-                          {new Date(lote.processadoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {lote.responsavel}
+                          {dataBR(lote.processadoEm, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {lote.responsavel}
                         </div>
                       </div>
                       <div className="text-right shrink-0">

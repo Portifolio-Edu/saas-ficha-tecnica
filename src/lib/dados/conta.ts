@@ -15,7 +15,12 @@ type Tabela = { nome: string; colunas?: string; ordem?: string };
 const TABELAS: Tabela[] = [
   // Colunas escolhidas onde há dado técnico que não é do restaurante
   // (id de login, código do tablet em hash).
-  { nome: "clientes", colunas: "id, nome, nome_restaurante, telefone, cnpj, plano, status_assinatura, margem_alvo, criado_em" },
+  // CONFIGURAÇÕES (2026-10-01): + dados da empresa, logo e cor.
+  {
+    nome: "clientes",
+    colunas:
+      "id, nome, nome_restaurante, telefone, cnpj, razao_social, inscricao_estadual, email_contato, telefone_contato, cep, logradouro, numero, complemento, bairro, cidade, uf, logo_path, cor_destaque, plano, status_assinatura, margem_alvo, criado_em, atualizado_em",
+  },
   { nome: "membros", colunas: "id, papel, nome, usuario, ativo, criado_em" },
   { nome: "pareamentos_cozinha", colunas: "id, expira_em, usado_em, criado_em" },
   { nome: "locais_armazenamento" },
@@ -65,7 +70,8 @@ const TABELAS: Tabela[] = [
 export const TABELAS_EXPORTADAS = TABELAS.map((t) => t.nome);
 
 const PAGINA = 1000;
-const BALDES_FOTOS = ["receitas-fotos", "pracas-fotos"];
+// CONFIGURAÇÕES (2026-10-01): + "marcas" (logo do restaurante).
+const BALDES_FOTOS = ["receitas-fotos", "pracas-fotos", "marcas"];
 
 /** Todas as linhas do restaurante, tabela por tabela (paginado de 1000 em 1000). */
 export async function exportarDadosRestaurante(): Promise<Record<string, unknown[]>> {

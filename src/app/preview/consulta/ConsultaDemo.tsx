@@ -18,6 +18,7 @@ import type { Checklist } from "@/lib/dominio/checklist";
 import { minhaEscala, type ConsultaFuncionario } from "@/lib/dominio/consulta";
 import { checklists as checklistsFixture, NOME_RESTAURANTE } from "../fixtures";
 import { fichasCozinhaDemo } from "../equipeDemo";
+import { dataBR } from "@/lib/formato";
 
 const PESSOA = { id: "f-juliana", nome: "Juliana Costa", cargo: "Cozinheira" };
 
@@ -42,7 +43,7 @@ export function ConsultaDemo() {
   }, [hoje, pessoas, ocorrencias, regras, iniciais, checklists]);
 
   const [hora, setHora] = useState("");
-  useEffect(() => setHora(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })), []);
+  useEffect(() => setHora(dataBR(new Date(), { hour: "2-digit", minute: "2-digit" })), []);
 
   return (
     <>

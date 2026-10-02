@@ -20,6 +20,7 @@ import type { LinhaFichaOperacionalPdf } from "@/lib/pdf/FichaOperacionalPdf";
 import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirReceita } from "./actions";
 import { formatBRL, formatNumero, formatQtd } from "@/components/charts/format";
+import { dataBR } from "@/lib/formato";
 
 export function ReceitasClient({
   receitas,
@@ -94,7 +95,7 @@ export function ReceitasClient({
         margemPct,
         margemAlvoPct: margemAlvo * 100,
         precoSugerido: calcularPrecoSugerido(custoPorPorcao, p.margemAlvo, margemAlvoCliente),
-        geradoEm: new Date().toLocaleDateString("pt-BR"),
+        geradoEm: dataBR(new Date()),
       });
       baixarBlob(blob, `ficha-de-custos-${nomeArquivoSeguro(p.nomePrato)}.pdf`);
     } finally {
@@ -127,7 +128,7 @@ export function ReceitasClient({
         pesoPorcaoG: p.pesoPorcaoG,
         linhas,
         modoPreparo: p.modoPreparo,
-        geradoEm: new Date().toLocaleDateString("pt-BR"),
+        geradoEm: dataBR(new Date()),
       });
       baixarBlob(blob, `ficha-operacional-${nomeArquivoSeguro(p.nomePrato)}.pdf`);
     } finally {

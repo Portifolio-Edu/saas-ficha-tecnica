@@ -3,18 +3,19 @@
 // SISTEMA premium (escala do DESIGN.md): cabeçalho da tabela de lotes saiu de 10px caixa alta para 12px normal. Reverter: git revert do commit "polimento(sistema): tamanhos e cores na escala".
 
 import { Fragment, useState } from "react";
-import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
+import dynamic from "next/dynamic";
 import { Card } from "@/components/ficha/Card";
 import { Kpi } from "@/components/ficha/Kpi";
 import { nums } from "@/components/ficha/tema";
 import { NovoProcessamentoForm } from "@/components/proteinas/NovoProcessamentoForm";
-import { ChartFrame } from "@/components/charts/ChartFrame";
-import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
-import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
+import { EspacoDoGrafico } from "@/components/charts/EspacoDoGrafico";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Processamento } from "@/lib/dominio/processamento";
-import { formatBRL, formatNumero, formatQtd } from "@/components/charts/format";
+import { formatBRL, formatNumero } from "@/components/charts/format";
 import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
+
+// DESEMPENHO (2026-10-02): gráfico (Recharts) sob demanda. Reverter: ver GraficoFcLotes.tsx.
+const GraficoFcLotes = dynamic(() => import("./GraficoFcLotes").then((m) => m.GraficoFcLotes), { ssr: false, loading: () => <EspacoDoGrafico /> });
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -102,50 +103,7 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
           <Card className="p-6 mb-5">
             <h2 className="text-[16px] font-semibold text-[var(--tinta)] mb-1">FC observado por lote</h2>
             <p className="text-[12px] mb-4" style={{ color: "var(--sub)" }}>Linha tracejada é o FC cadastrado. Quanto mais alto acima dela, pior o rendimento real do lote.</p>
-            <ChartFrame
-              vazio={false}
-              tituloVazio="Nenhum lote registrado ainda."
-              dicaVazio="Registre um lote de processamento pra esse gráfico aparecer aqui."
-            >
-              <LineChart data={lotes.map((l) => ({ ...l, dataLabel: formatarData(l.processadoEm) }))} margin={CHART_MARGIN}>
-                <CartesianGrid {...chartGridProps} />
-                <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
-                {/* SISTEMA premium: o eixo inclui o FC cadastrado, senão a linha tracejada de referência
-                    ficava fora do gráfico (ex.: cadastrado 1,12 com lotes entre 1,16 e 1,22).
-                    Antes: domain={["dataMin - 0.03", "dataMax + 0.03"]}. */}
-                <YAxis
-                  domain={[
-                    (min: number) => Math.min(min, insumo.fatorCorrecao) - 0.03,
-                    (max: number) => Math.max(max, insumo.fatorCorrecao) + 0.03,
-                  ]} tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={40} tickFormatter={(v: number) => formatNumero(v, 2)} />
-                <ReferenceLine y={insumo.fatorCorrecao} stroke={"var(--tinta-faint)"} strokeDasharray="4 4" label={{ value: "FC cadastrado", position: "insideTopRight", fontSize: 10, fill: "var(--sub)" }} />
-                <Tooltip
-                  content={({ payload }) => {
-                    if (!payload || !payload.length) return null;
-                    const p = payload[0].payload as Processamento & { dataLabel: string };
-                    return (
-                      <ChartTooltipCard
-                        titulo={`${p.dataLabel} · ${p.responsavel}`}
-                        linhas={[
-                          { rotulo: "FC do lote", valor: formatNumero(p.fcObservado, 3) },
-                          { rotulo: "Bruto → líquido", valor: `${formatQtd(p.pesoBrutoRecebido)}kg → ${formatQtd(p.pesoLiquidoResultante)}kg` },
-                        ]}
-                      />
-                    );
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="fcObservado"
-                  stroke={"var(--text)"}
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: "var(--text)" }}
-                  isAnimationActive
-                  animationDuration={CHART_ANIMATION_DURATION}
-                  animationEasing={CHART_ANIMATION_EASING}
-                />
-              </LineChart>
-            </ChartFrame>
+            <GraficoFcLotes lotes={lotes.map((l) => ({ ...l, dataLabel: formatarData(l.processadoEm) }))} fatorCorrecao={insumo.fatorCorrecao} />
           </Card>
 
           <Card>

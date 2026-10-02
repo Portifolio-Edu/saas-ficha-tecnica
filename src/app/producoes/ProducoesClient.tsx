@@ -26,10 +26,10 @@ import type { Processamento } from "@/lib/dominio/processamento";
 import type { Movimentacao, EstoqueLinha } from "@/lib/dominio/estoque";
 import { calcularCapacidadeProducao, linhasCapacidadeDaReceita, type SaldoEstoque } from "@/lib/calculo/capacidadeProducao";
 import { consumoDeInsumosDaProducao } from "@/lib/calculo/consumoProducao";
-import { movimentacoes as fixturesMovimentacoes } from "@/app/preview/fixtures";
 import { acaoIniciarProducao, acaoAtualizarStatusProducao } from "./actions";
 import { tint, unidadeNoPlural } from "@/components/producoes/formato";
 import { useArrastoToque } from "@/components/producoes/useArrastoToque";
+import { numeroBR } from "@/lib/formato";
 
 type ColunaId = "estoque" | "em_producao" | "produzido" | "perda";
 
@@ -329,10 +329,6 @@ export function ProducoesClient({
                 movsAtuais = parsed;
               }
             }
-            if (movsAtuais.length === 0) {
-              movsAtuais = [...fixturesMovimentacoes];
-            }
-
             const novasMovs: Movimentacao[] = consumos.map((c, idx) => ({
               id: `demo-mov-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
               insumoId: c.insumoId,
@@ -344,8 +340,13 @@ export function ProducoesClient({
               criadoEm: agora.toISOString(),
             }));
 
-            const todasMovs = [...novasMovs, ...movsAtuais];
-            localStorage.setItem("demo_movimentacoes", JSON.stringify(todasMovs));
+            const gravar = (base: Movimentacao[]) => localStorage.setItem("demo_movimentacoes", JSON.stringify([...novasMovs, ...base]));
+            // DESEMPENHO (2026-10-02): os dados de exemplo da demo só são
+            // carregados aqui, quando faltam. Antes eram importados no topo e
+            // iam junto (37 KB) pra tela Produções do app de verdade.
+            // Reverter: voltar o import de "@/app/preview/fixtures" no topo.
+            if (movsAtuais.length > 0) gravar(movsAtuais);
+            else void import("@/app/preview/fixtures").then((f) => gravar([...f.movimentacoes]), () => {});
           } catch {}
 
           // 2. Abater saldo no armazenamento (demo_estoque)
@@ -698,7 +699,7 @@ export function ProducoesClient({
                         <div className="text-[15px] font-black text-[var(--tinta)] leading-snug mt-1">{pr.nomeReceita}</div>
                         <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-1">
                           <strong className="text-[var(--tinta)] font-black">
-                            {pr.quantidade.toLocaleString("pt-BR")} {unidadeNoPlural(pr.quantidade, pr.unidadeRendimento)}
+                            {numeroBR(pr.quantidade)} {unidadeNoPlural(pr.quantidade, pr.unidadeRendimento)}
                           </strong>
                           {" · "}
                           {pr.responsavel}
@@ -780,7 +781,7 @@ export function ProducoesClient({
               <div className="text-[12px] font-medium text-[var(--tinta-sub)]">{arrasto.item.lote}</div>
               <div className="text-[15px] font-black text-[var(--tinta)] leading-snug mt-1">{arrasto.item.nomeReceita}</div>
               <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-1">
-                {arrasto.item.quantidade.toLocaleString("pt-BR")} {unidadeNoPlural(arrasto.item.quantidade, arrasto.item.unidadeRendimento)} · {arrasto.item.responsavel}
+                {numeroBR(arrasto.item.quantidade)} {unidadeNoPlural(arrasto.item.quantidade, arrasto.item.unidadeRendimento)} · {arrasto.item.responsavel}
               </div>
             </>
           ) : (

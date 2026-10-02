@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
+import { MedidorToque } from "@/components/ficha/MedidorToque";
 
 // SISTEMA premium (2026-09-22): Hanken Grotesk, grotesca neutra no tom do painel
 // Stripe, com algarismos tabulares por padrão (todos os dígitos têm a mesma
@@ -60,6 +61,8 @@ export default function RootLayout({
       <body className="antialiased">
         <a href="#conteudo" className="pular-para-conteudo">Pular para o conteúdo</a>
         {children}
+        {/* DESEMPENHO (2026-10-02): toque lento em produção vai pro log (docs/DESEMPENHO.md). */}
+        <MedidorToque />
       </body>
     </html>
   );

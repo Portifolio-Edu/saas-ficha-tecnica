@@ -6,16 +6,15 @@
 // cliente: trocar FUSO_RESTAURANTE por um campo em `clientes`.
 // Reverter: voltar os chamadores pra `d.setHours(0, 0, 0, 0)` e apagar este arquivo.
 
+import { formatadorData } from "@/lib/formato";
+
 export const FUSO_RESTAURANTE = "America/Sao_Paulo";
 
+// DESEMPENHO (2026-10-02): formatador reaproveitado (src/lib/formato.ts).
+// Antes era `new Intl.DateTimeFormat(...)` a cada chamada: 85 ms (CPU 4x) só
+// pra abrir Escalas, que pergunta "que dia é" centenas de vezes.
 function partes(agora: Date, fuso: string) {
-  const f = new Intl.DateTimeFormat("en-US", {
-    timeZone: fuso,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZoneName: "longOffset",
-  });
+  const f = formatadorData({ timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit", timeZoneName: "longOffset" }, "en-US");
   const p = Object.fromEntries(f.formatToParts(agora).map((x) => [x.type, x.value]));
   const offset = p.timeZoneName === "GMT" ? "+00:00" : p.timeZoneName.replace("GMT", "");
   return { ano: p.year, mes: p.month, dia: p.day, offset };

@@ -35,6 +35,7 @@ import {
   type ValoresNutricionais,
 } from "@/lib/calculo/nutricional";
 import { acaoSalvarOverride, acaoRemoverOverride, acaoSalvarRotulagem } from "./actions";
+import { dataBR } from "@/lib/formato";
 
 const LABEL_SELO: Partial<Record<CampoNutricional, string>> = {
   gordurasSaturadasG: "gordura saturada",
@@ -225,7 +226,7 @@ export function NutricionalClient({
         linhas,
         nutrientesComSelo: altoEm.map((campo) => LABEL_SELO[campo] ?? campo),
         nutriCompleta,
-        geradoEm: new Date().toLocaleDateString("pt-BR"),
+        geradoEm: dataBR(new Date()),
       });
       baixarBlob(blob, `rotulo-nutricional-${nomeArquivoSeguro(prato.nomePrato)}.pdf`);
     } finally {

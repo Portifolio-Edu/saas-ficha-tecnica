@@ -18,6 +18,7 @@ import { ROTULO_PAPEL, type Papel } from "@/lib/auth/papeis";
 import type { CodigoCozinha, Funcionario, Membro, NovoAcessoInput } from "@/lib/dominio/equipe";
 import type { LinkConsulta } from "@/lib/dominio/consulta";
 import { LinksConsulta, type AcoesLinks } from "./LinksConsulta";
+import { dataBR } from "@/lib/formato";
 
 export type ResultadoEquipe<T = undefined> = { ok: true; dados?: T } | { ok: false; erro: string };
 
@@ -267,7 +268,7 @@ export function EquipeView({
               <li>
                 No aparelho da cozinha, abra <b className="text-[var(--tinta)]">{enderecoCozinha}</b>
               </li>
-              <li>Digite este código. Ele vale uma vez só, até {new Date(codigo.expiraEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.</li>
+              <li>Digite este código. Ele vale uma vez só, até {dataBR(codigo.expiraEm, { hour: "2-digit", minute: "2-digit" })}.</li>
             </ol>
           </div>
         )}
@@ -279,7 +280,7 @@ export function EquipeView({
               <MonitorSmartphone size={16} className="text-[var(--tinta-faint)] shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[14px] font-medium text-[var(--tinta)]">{m.nome}</div>
-                <div className="text-[12px] text-[var(--tinta-faint)]">conectado em {new Date(m.criadoEm).toLocaleDateString("pt-BR")}</div>
+                <div className="text-[12px] text-[var(--tinta-faint)]">conectado em {dataBR(m.criadoEm)}</div>
               </div>
               <button onClick={() => removerAparelho(m)} className={botaoSecundario} style={{ borderColor: "var(--linha-forte)", color: "var(--danger)" }}>
                 Desconectar

@@ -193,9 +193,10 @@
   * {
     border-color: var(--border);
   }
-  html {
-    scroll-behavior: smooth;
-  }
+  /* DESEMPENHO (2026-10-02): sem scroll-behavior: smooth no html. Com ele, o
+     Next desliga e religa o smooth no <html> a cada navegação, e cada troca
+     recalcula o estilo da página inteira (~165 ms com CPU 4x, travando o
+     primeiro toque na tela nova). Pra voltar: html { scroll-behavior: smooth; } */
   body {
     background: var(--fundo);
     color: var(--tinta);
@@ -408,4 +409,85 @@ input[type="month"] {
 }
 input::-webkit-date-and-time-value {
   text-align: left;
+}
+
+/* VISÃO GERAL (2026-10-01): régua da "Meta de margem". O range nativo
+   aparecia como barra branca grossa com um quadrado escuro no tema escuro.
+   Agora: trilho fino, parte preenchida na cor da marca (até --p) e bolinha
+   redonda; o anel de foco fica na bolinha. Reverter: apagar este bloco e
+   voltar a classe/estilo antigos do input em VisaoGeralClient.tsx. */
+.faixa-meta {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 24px;
+  cursor: pointer;
+}
+.faixa-meta:focus-visible {
+  box-shadow: none;
+}
+.faixa-meta::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--marca) 0 var(--p, 50%), var(--linha-forte) var(--p, 50%) 100%);
+}
+.faixa-meta::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--linha-forte);
+}
+.faixa-meta::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--marca);
+}
+.faixa-meta::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 2px solid var(--marca);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 120ms ease;
+}
+.faixa-meta::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 2px solid var(--marca);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.faixa-meta:hover::-webkit-slider-thumb,
+.faixa-meta:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.faixa-meta:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--marca);
+}
+.faixa-meta:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--marca);
+}
+@media (prefers-reduced-motion: reduce) {
+  .faixa-meta::-webkit-slider-thumb { transition: none; }
+}
+
+/* CONFIGURAÇÕES (2026-10-01): amostra da cor de destaque, na versão do tema
+   aberto (cada opção tem a cor do claro e a do escuro). Reverter: apagar. */
+.amostra-cor { background: var(--amostra-claro); }
+[data-theme="dark"] .amostra-cor { background: var(--amostra-escuro); }
+
+/* DESEMPENHO (2026-10-02): seção do modo cozinha guardada (montada, fora da
+   vista). content-visibility guarda o layout pronto — mostrar de novo não
+   refaz tudo. Navegador sem suporte (iPad antes do iOS 18) cai no
+   display:none, que funciona igual, só que mais lento ao trocar. */
+.secao-guardada { content-visibility: hidden; height: 0; overflow: hidden; }
+/* Sendo preparada com o aparelho parado: faz o layout uma vez, invisível,
+   sem ocupar espaço nem receber toque. Depois vira secao-guardada. */
+.secao-preparando { position: absolute; inset-inline: 0; top: 0; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+@supports not (content-visibility: hidden) {
+  .secao-guardada { display: none; }
 }

@@ -20,7 +20,10 @@ export const NIVEIS: { id: Nivel; rotulo: string; descricao: string }[] = [
 export const ORDEM_NIVEL: Record<Nivel, number> = { junior: 1, pleno: 2, senior: 3, especialista: 4 };
 export const rotuloNivel = (n: Nivel | null | undefined) => (n ? (NIVEIS.find((x) => x.id === n)?.rotulo ?? n) : null);
 
-/** Praças de domínio sugeridas por setor. Dá pra acrescentar outras. */
+/** Praças de domínio sugeridas por setor (genéricas). Dá pra acrescentar outras.
+ * PRAÇAS DA CASA (2026-10-02): na cozinha valem as praças cadastradas em
+ * Checklists → Praças (sugestoesDePraca); esta lista só entra se a casa ainda
+ * não cadastrou nenhuma. */
 export const PRACAS: Record<Setor, string[]> = {
   cozinha: [
     "Cozinha quente", "Cozinha fria", "Grelha", "Chapa", "Fritura", "Forno a lenha", "Massas", "Molhos e fundos",
@@ -30,6 +33,27 @@ export const PRACAS: Record<Setor, string[]> = {
   bar: ["Coquetelaria", "Drinks clássicos", "Café / barista", "Chope", "Vinhos"],
   outro: ["Limpeza", "Lavagem (copa)", "Segurança", "Manutenção", "Estoque", "Recebimento"],
 };
+
+/**
+ * PRAÇAS DA CASA (2026-10-02): pedido do dono: "as praças têm que ser as
+ * mesmas cadastradas no sistema de gestão". Na cozinha, quem domina qual praça
+ * (equipe e extras) usa as praças cadastradas em Checklists → Praças — as
+ * mesmas da montagem no modo cozinha. Sem praça cadastrada, cai na lista
+ * genérica. Salão, bar e outros seguem com a lista do setor.
+ * Antes: sempre PRACAS[setor].
+ */
+export function sugestoesDePraca(setor: Setor, pracasCasa: readonly string[]): string[] {
+  if (setor === "cozinha" && pracasCasa.length > 0) return tagsUnicas([...pracasCasa]);
+  return PRACAS[setor];
+}
+
+/** Complemento da ajuda das praças: de onde vêm as opções da cozinha. */
+export function ajudaPracas(setor: Setor, pracasCasa: readonly string[]): string {
+  if (setor !== "cozinha") return "";
+  return pracasCasa.length > 0
+    ? " Na cozinha, as opções são as praças cadastradas em Checklists → Praças."
+    : " Cadastre as praças da casa em Checklists → Praças pra elas aparecerem aqui.";
+}
 
 export const PONTOS_FORTES = [
   "Agilidade sob pressão",

@@ -7,15 +7,16 @@
 // (dados_cozinha). A faixa "Quem está fazendo" fica sempre à vista: cada
 // registro sai com o nome de quem fez.
 
-import { useEffect, useState, type ReactNode } from "react";
-import { ChefHat, Check, ChevronLeft, UserRound, EyeOff, AlertTriangle } from "lucide-react";
-import { BarraInferiorCozinha, MenuLateralCozinha, type Aba } from "./MenuCozinha";
+import { memo, startTransition, useCallback, useDeferredValue, useEffect, useRef, useState, type ReactNode } from "react";
+import { ChefHat, Check, ChevronLeft, ChevronRight, LayoutGrid, UserRound, EyeOff, AlertTriangle } from "lucide-react";
+import { BarraInferiorCozinha, CHAVE_RECOLHIDO, MenuLateralCozinha, type Aba } from "./MenuCozinha";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
 import { QuadroProducaoCozinha } from "./QuadroProducaoCozinha";
 import { FichasCozinha } from "./FichasCozinha";
 import { ProteinasCozinha } from "./ProteinasCozinha";
 import { EscalaCozinha } from "./EscalaCozinha";
 import { PedidosCozinha, type SugestaoPedido } from "./PedidosCozinha";
+import { PracasCozinha } from "./PracasCozinha";
 import { agoraNoRestaurante, type AgendaFornecedor, type Agora, type NovaRequisicao, type Requisicao } from "@/lib/dominio/requisicao";
 import type { EscalaPublica } from "@/lib/escalas/publica";
 import { nums } from "@/components/ficha/tema";
@@ -25,6 +26,7 @@ import type { FichaCozinha, ItemContagem, LoteProteinaCozinha, NovoLoteProteina,
 import type { Funcionario } from "@/lib/dominio/equipe";
 import type { StatusProducao } from "@/lib/dominio/producao";
 import { progressoDoPlano, resumoDoPlano, type ItemPlano } from "@/lib/dominio/planoProducao";
+import { dataBR } from "@/lib/formato";
 
 export type ResultadoCozinha = { ok: true; aviso?: string } | { ok: false; erro: string };
 
@@ -49,6 +51,30 @@ export interface AcoesCozinha {
 // recolhível no tablet, barra de baixo no celular). Antes: abas roláveis aqui.
 
 const CHAVE_RESPONSAVEL = "cozinha:responsavel";
+// Lista vazia fixa: um `= []` novo a cada render quebraria o memo do conteúdo.
+const SEM_ITENS: never[] = [];
+/** Ordem em que as seções não abertas são preparadas (as mais usadas primeiro). */
+/** Largura de cada seção. TOQUE (2026-09-25): Produção é um quadro de 4 colunas e usa a largura toda; FICHAS: 2 colunas. */
+const LARGURA: Record<Aba, string> = {
+  checklists: "max-w-4xl",
+  pracas: "max-w-6xl",
+  temperatura: "max-w-4xl",
+  producao: "max-w-[1440px]",
+  proteinas: "max-w-6xl",
+  fichas: "max-w-6xl",
+  pedidos: "max-w-2xl",
+  contagem: "max-w-4xl",
+  escala: "max-w-6xl",
+};
+// DESEMPENHO (2026-10-02, 3ª rodada): a barra da Vercel mostrou 450 ms de
+// espera num toque logo depois de abrir a cozinha: as 8 seções eram preparadas
+// em sequência e o toque caía no meio de uma. Agora só as pesadas são
+// preparadas (medido com CPU 4x: Produção ~100 ms, Fichas, Proteínas e Escala
+// 55-80 ms; as outras montam rápido na hora do toque) e só com a pessoa
+// parada (QUIETO_MS sem toque nem tecla). Antes: as 8, logo depois de abrir.
+const ORDEM_PREPARO: Aba[] = ["producao", "fichas", "proteinas", "escala"];
+/** Preparar só depois de tanto tempo sem toque nem tecla (e de tela aberta). */
+const QUIETO_MS = 1500;
 
 // Foto que não carrega (link quebrado, sem internet na cozinha) some em vez
 // de deixar um quadro vazio no meio da ficha.
@@ -60,25 +86,42 @@ const botaoGrande = "min-h-14 px-5 rounded-xl text-[16px] font-semibold inline-f
 const campoGrande = "min-h-14 px-4 rounded-xl text-[18px] outline-none w-full focus:ring-2 focus:ring-[var(--marca-suave)] focus:border-[var(--marca)]";
 const estiloCampo = { border: "1px solid var(--linha-forte)", background: "var(--panel)", color: "var(--tinta)" } as const;
 
+/**
+ * DESEMPENHO (2026-10-02): a cozinha se atualiza sozinha (AtualizacaoAutomatica
+ * a cada 30 s e ao voltar pra janela) e o servidor manda listas novas mesmo sem
+ * nada ter mudado — aí todas as seções guardadas se redesenhavam juntas e o
+ * toque seguinte esperava. Com isto a lista só vira "nova" quando o conteúdo
+ * muda, e as seções que não mudaram não redesenham (memo).
+ * Pra voltar: usar as props direto.
+ */
+function useMesmoConteudo<T>(valor: T): T {
+  const [s, setS] = useState<{ ref: T; chave: string | null; estavel: T }>({ ref: valor, chave: null, estavel: valor });
+  if (s.ref === valor) return s.estavel;
+  const chave = JSON.stringify(valor);
+  const estavel = chave === (s.chave ?? JSON.stringify(s.ref)) ? s.estavel : valor;
+  setS({ ref: valor, chave, estavel });
+  return estavel;
+}
+
 export function CozinhaApp({
   nomeRestaurante,
   funcionarios,
-  checklists,
-  locais,
-  temperaturas,
-  fichas,
-  itensContagem,
-  producoes,
-  proteinas = [],
-  lotesProteina = [],
-  escala = null,
+  checklists: checklistsServidor,
+  locais: locaisServidor,
+  temperaturas: temperaturasServidor,
+  fichas: fichasServidor,
+  itensContagem: itensContagemServidor,
+  producoes: producoesServidor,
+  proteinas: proteinasServidor = SEM_ITENS,
+  lotesProteina: lotesProteinaServidor = SEM_ITENS,
+  escala: escalaServidor = null,
   hoje,
-  requisicoes = [],
-  plano = [],
-  agendaFornecedores = [],
-  sugestoesPedido = [],
-  agoraInicial,
-  acoes,
+  requisicoes: requisicoesServidor = SEM_ITENS,
+  plano: planoServidor = SEM_ITENS,
+  agendaFornecedores: agendaServidor = SEM_ITENS,
+  sugestoesPedido: sugestoesServidor = SEM_ITENS,
+  agoraInicial: agoraInicialServidor,
+  acoes: acoesServidor,
   rodape,
 }: {
   nomeRestaurante: string;
@@ -107,24 +150,156 @@ export function CozinhaApp({
   /** Linha no pé da tela (ex.: aviso de demonstração). */
   rodape?: ReactNode;
 }) {
+  const checklists = useMesmoConteudo(checklistsServidor);
+  const locais = useMesmoConteudo(locaisServidor);
+  const temperaturas = useMesmoConteudo(temperaturasServidor);
+  const fichas = useMesmoConteudo(fichasServidor);
+  const itensContagem = useMesmoConteudo(itensContagemServidor);
+  const producoes = useMesmoConteudo(producoesServidor);
+  const proteinas = useMesmoConteudo(proteinasServidor);
+  const lotesProteina = useMesmoConteudo(lotesProteinaServidor);
+  const escala = useMesmoConteudo(escalaServidor);
+  const requisicoes = useMesmoConteudo(requisicoesServidor);
+  const plano = useMesmoConteudo(planoServidor);
+  const agendaFornecedores = useMesmoConteudo(agendaServidor);
+  const sugestoesPedido = useMesmoConteudo(sugestoesServidor);
+  // As ações do servidor não mudam entre atualizações (o objeto é que vem
+  // novo); o relógio inicial só serve pra começar. Ficam os da abertura.
+  const [acoes] = useState(acoesServidor);
+  const [agoraInicial] = useState(agoraInicialServidor);
   const [aba, setAba] = useState<Aba>("checklists");
+  // DESEMPENHO (2026-10-02): o menu marca a seção na hora; o conteúdo novo
+  // (Produção, Proteínas...) desenha depois, sem travar o toque. Medido com a
+  // CPU 4x mais lenta (tablet barato): trocar pra Produção levava 352 ms até a
+  // tela responder; a barra da Vercel mostrou 928 ms no aparelho do dono.
+  // Reverter: usar `aba` no lugar de `abaConteudo`.
+  const abaConteudo = useDeferredValue(aba);
   const [responsavel, setResponsavel] = useState<string | null>(null);
   const [trocando, setTrocando] = useState(false);
+  // DESEMPENHO (2026-10-02): quem está usando e o menu recolhido só se sabem
+  // depois de ler o aparelho. Antes a tela aparecia em "Quem está usando?" e
+  // pulava pro menu + conteúdo (CLS 0,14 na carga). Agora o miolo fica
+  // invisível até ler; o cabeçalho aparece na hora.
+  const [pronto, setPronto] = useState(false);
+  const [menuRecolhido, setMenuRecolhido] = useState(false);
+  // DESEMPENHO (2026-10-02, 2ª rodada): a barra da Vercel ainda mostrou toque
+  // esperando até 504 ms — o tablet estava ocupado desenhando a seção
+  // anterior. Agora cada seção é montada uma vez só e fica guardada
+  // (escondida); trocar de seção é só mostrar/esconder. As que a pessoa ainda
+  // não abriu são preparadas com o aparelho parado, uma por vez e sem travar
+  // (startTransition). Bônus pra cozinha: o que foi digitado numa seção
+  // (temperatura, contagem) continua lá ao voltar.
+  // Reverter: renderizar só <ConteudoCozinha aba={abaConteudo} />.
+  const [montadas, setMontadas] = useState<Aba[]>(["checklists"]);
+  // Seções que já passaram por um layout (à vista ou preparadas fora da vista).
+  // Só essas podem ser guardadas com content-visibility: quem nunca teve
+  // layout teria que fazer tudo na hora do toque.
+  const [comLayout, setComLayout] = useState<Aba[]>([]);
+
+  // PRAÇAS NA COZINHA (2026-10-02): os checklists ficam aqui, não em cada
+  // seção, porque Checklists e Praças conferem os mesmos itens: marcar numa
+  // aparece na outra e no número do menu. Antes: estado só em SecaoChecklists.
+  const [listas, setListas] = useState(checklists);
+  useEffect(() => setListas(checklists), [checklists]);
+  const { mostrarErro } = useToast();
+  const marcarNaTela = (itemId: string, feito: boolean) =>
+    setListas((atual) =>
+      atual.map((c) => (c.itens.some((i) => i.id === itemId) ? { ...c, itens: c.itens.map((i) => (i.id === itemId ? { ...i, concluidoHoje: feito } : i)) } : c)),
+    );
+  const alternarAgora = useRef<(itemId: string, feito: boolean) => Promise<void>>(async () => {});
+  useEffect(() => {
+    alternarAgora.current = async (itemId, feito) => {
+      marcarNaTela(itemId, !feito);
+      const r = feito ? await acoes.desmarcarItem(itemId) : await acoes.marcarItem(itemId, responsavel ?? "");
+      if (!r.ok) {
+        mostrarErro(r.erro);
+        marcarNaTela(itemId, feito);
+      }
+    };
+  });
+  // Estável: tocar no menu não redesenha as seções guardadas (memo).
+  const alternarItem = useCallback((itemId: string, feito: boolean) => void alternarAgora.current(itemId, feito), []);
 
   useEffect(() => {
     try {
       const salvo = localStorage.getItem(CHAVE_RESPONSAVEL);
       if (salvo) setResponsavel(salvo);
+      setMenuRecolhido(localStorage.getItem(CHAVE_RECOLHIDO) === "1");
     } catch {}
+    setPronto(true);
   }, []);
 
   const emUso = Boolean(responsavel) && !trocando;
-  const trocarAba = (a: Aba) => {
+
+  // A seção aberta entra na hora (se ainda não estava montada) e, à vista,
+  // ganha layout.
+  useEffect(() => {
+    setMontadas((m) => (m.includes(abaConteudo) ? m : [...m, abaConteudo]));
+    if (emUso) setComLayout((m) => (m.includes(abaConteudo) ? m : [...m, abaConteudo]));
+  }, [abaConteudo, emUso]);
+
+  // Preparada fora da vista: depois de um quadro desenhado o layout existe;
+  // aí ela pode ser guardada.
+  useEffect(() => {
+    const pendente = montadas.find((a) => !comLayout.includes(a));
+    if (!pendente) return;
+    let quadro = requestAnimationFrame(() => {
+      quadro = requestAnimationFrame(() => setComLayout((m) => (m.includes(pendente) ? m : [...m, pendente])));
+    });
+    return () => cancelAnimationFrame(quadro);
+  }, [montadas, comLayout]);
+
+  // Último toque/tecla (e a abertura da tela conta como um): a preparação
+  // espera a pessoa ficar parada.
+  const ultimoToque = useRef(0);
+  useEffect(() => {
+    ultimoToque.current = performance.now();
+    const marcar = () => (ultimoToque.current = performance.now());
+    const opcoes = { capture: true, passive: true } as const;
+    for (const t of ["pointerdown", "keydown", "wheel", "touchstart"] as const) window.addEventListener(t, marcar, opcoes);
+    return () => {
+      for (const t of ["pointerdown", "keydown", "wheel", "touchstart"] as const) window.removeEventListener(t, marcar, opcoes);
+    };
+  }, []);
+
+  // As pesadas, com a pessoa parada: uma por vez, na ordem de uso.
+  useEffect(() => {
+    if (!pronto || !emUso) return;
+    if (montadas.some((a) => !comLayout.includes(a))) return; // uma de cada vez
+    const proxima = ORDEM_PREPARO.find((a) => !montadas.includes(a));
+    if (!proxima) return;
+    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    let espera = 0;
+    let ocioso = 0;
+    const tentar = () => {
+      const falta = QUIETO_MS - (performance.now() - ultimoToque.current);
+      if (falta > 0) {
+        espera = window.setTimeout(tentar, falta + 50);
+        return;
+      }
+      const preparar = () => {
+        // Tocou enquanto esperava o navegador ficar livre: espera de novo.
+        if (performance.now() - ultimoToque.current < QUIETO_MS) return tentar();
+        startTransition(() => setMontadas((m) => (m.includes(proxima) ? m : [...m, proxima])));
+      };
+      // Safari (iPad) não tem requestIdleCallback.
+      if (w.requestIdleCallback) ocioso = w.requestIdleCallback(preparar, { timeout: 2000 });
+      else espera = window.setTimeout(preparar, 50);
+    };
+    tentar();
+    return () => {
+      window.clearTimeout(espera);
+      if (ocioso) w.cancelIdleCallback?.(ocioso);
+    };
+  }, [pronto, emUso, montadas, comLayout]);
+  const trocarAba = useCallback((a: Aba) => {
     setAba(a);
     window.scrollTo({ top: 0 });
-  };
+  }, []);
+  const abrirPracas = useCallback(() => trocarAba("pracas"), [trocarAba]);
   const contadores: Partial<Record<Aba, number>> = {
-    checklists: checklists.reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
+    checklists: listas.filter((c) => c.momento !== "praca").reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
+    pracas: listas.filter((c) => c.momento === "praca").reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
     pedidos: requisicoes.filter((r) => r.status === "pendente").length,
     producao: resumoDoPlano(progressoDoPlano(plano, producoes)).faltam,
   };
@@ -149,54 +324,80 @@ export function CozinhaApp({
             <div className="text-[13px] text-[var(--tinta-faint)]">Modo cozinha</div>
           </div>
           {responsavel && (
+            // ACESSIBILIDADE (2026-10-02): o nome falado começa pelo que está
+            // escrito no botão (axe label-content-name-mismatch). Antes:
+            // aria-label "Ana está usando. Trocar pessoa" num botão que mostra
+            // "A Ana" — quem usa comando de voz diz "Ana" e não achava.
             <button
               onClick={() => setTrocando(true)}
               className="min-h-11 pl-2 pr-3.5 rounded-full border inline-flex items-center gap-2 text-[15px] font-medium"
               style={{ borderColor: "var(--linha-forte)", background: "var(--panel-elevated)" }}
-              aria-label={`${responsavel} está usando. Trocar pessoa`}
             >
-              <span className="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold" style={{ background: "var(--tinta)", color: "var(--panel)" }}>
+              <span aria-hidden className="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold" style={{ background: "var(--tinta)", color: "var(--panel)" }}>
                 {responsavel.slice(0, 1).toUpperCase()}
               </span>
               {responsavel}
+              <span className="sr-only">, trocar pessoa</span>
             </button>
           )}
         </div>
       </header>
 
-      <div className="flex-1 flex">
-      {emUso && <MenuLateralCozinha aba={aba} onTrocar={trocarAba} contadores={contadores} />}
+      <div className="flex-1 flex" style={pronto ? undefined : { visibility: "hidden" }}>
+      {emUso && <MenuLateralCozinha aba={aba} onTrocar={trocarAba} contadores={contadores} recolhidoInicial={menuRecolhido} />}
       <div className="flex-1 min-w-0 flex flex-col">
-      {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda.
-          FICHAS (2026-09-25): Fichas usa 2 colunas (foto e ingredientes | passo a passo). */}
-      <main id="conteudo" className={`flex-1 w-full mx-auto px-4 md:px-6 py-5 ${emUso ? "pb-24 md:pb-5" : ""} ${responsavel && !trocando && aba === "producao" ? "max-w-[1440px]" : responsavel && !trocando && (aba === "fichas" || aba === "proteinas" || aba === "escala") ? "max-w-6xl" : aba === "pedidos" ? "max-w-2xl" : "max-w-4xl"}`}>
-        {!responsavel || trocando ? (
-          <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
-        ) : aba === "checklists" ? (
-          <SecaoChecklists checklists={checklists} responsavel={responsavel} acoes={acoes} />
-        ) : aba === "temperatura" ? (
-          <SecaoTemperatura locais={locais} temperaturas={temperaturas} responsavel={responsavel} acoes={acoes} />
-        ) : aba === "producao" ? (
-          <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} plano={plano} />
-        ) : aba === "proteinas" ? (
-          <ProteinasCozinha proteinas={proteinas} lotes={lotesProteina} responsavel={responsavel} acoes={acoes} />
-        ) : aba === "fichas" ? (
-          <FichasCozinha fichas={fichas} />
-        ) : aba === "escala" ? (
-          <EscalaCozinha escala={escala} hoje={hoje} />
-        ) : aba === "pedidos" ? (
-          <PedidosCozinha
-            requisicoes={requisicoes}
-            agenda={agendaFornecedores}
-            sugestoes={sugestoesPedido}
-            responsavel={responsavel}
-            agoraInicial={agoraInicial ?? agoraNoRestaurante()}
-            pedir={acoes.pedir}
-            desistir={acoes.desistirDoPedido}
-          />
-        ) : (
-          <SecaoContagem itens={itensContagem} responsavel={responsavel} acoes={acoes} />
+      <main id="conteudo" aria-busy={aba !== abaConteudo || undefined} className={`flex-1 w-full px-4 md:px-6 py-5 ${emUso ? "pb-24 md:pb-5" : ""}`}>
+        {(!responsavel || trocando) && (
+          <div className="mx-auto max-w-4xl">
+            <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
+          </div>
         )}
+        {/* relative: a seção sendo preparada fica por cima, invisível, na mesma largura. */}
+        <div className="relative">
+        {responsavel &&
+          montadas.map((a) => {
+            const visivel = !trocando && a === abaConteudo;
+            // DESEMPENHO (2026-10-02): escondida com content-visibility (classe
+            // secao-guardada em globals.css), não display:none — o navegador
+            // guarda o layout pronto e mostrar de novo é quase de graça. Antes
+            // mostrar Produção refazia o layout inteiro (163 ms com CPU 6x).
+            // A largura é da própria seção (não do <main>), senão mudar de
+            // largura ao trocar invalidaria o layout guardado.
+            return (
+            <div
+              key={a}
+              data-secao={a}
+              className={`mx-auto w-full ${LARGURA[a]} ${visivel ? "" : comLayout.includes(a) ? "secao-guardada" : "secao-preparando"}`}
+              aria-hidden={visivel ? undefined : true}
+              inert={!visivel}
+            >
+              <ConteudoCozinha
+                aba={a}
+                telaAcesa={a === "fichas" && abaConteudo === "fichas" && !trocando}
+                responsavel={responsavel}
+                checklists={a === "checklists" || a === "pracas" ? listas : SEM_ITENS}
+                alternarItem={alternarItem}
+                abrirPracas={abrirPracas}
+                locais={locais}
+                temperaturas={temperaturas}
+                fichas={fichas}
+                itensContagem={itensContagem}
+                producoes={producoes}
+                proteinas={proteinas}
+                lotesProteina={lotesProteina}
+                escala={escala}
+                hoje={hoje}
+                requisicoes={requisicoes}
+                plano={plano}
+                agendaFornecedores={agendaFornecedores}
+                sugestoesPedido={sugestoesPedido}
+                agoraInicial={agoraInicial}
+                acoes={acoes}
+              />
+            </div>
+            );
+          })}
+        </div>
       </main>
       {rodape && <footer className="text-center text-[13px] text-[var(--tinta-faint)] pb-5 px-4">{rodape}</footer>}
       </div>
@@ -206,6 +407,83 @@ export function CozinhaApp({
     </div>
   );
 }
+
+// DESEMPENHO (2026-10-02): memo — quando só o menu muda (toque numa seção),
+// o conteúdo antigo não é redesenhado; o novo vem pelo useDeferredValue.
+const ConteudoCozinha = memo(function ConteudoCozinha({
+  aba,
+  telaAcesa,
+  responsavel,
+  checklists,
+  alternarItem,
+  abrirPracas,
+  locais,
+  temperaturas,
+  fichas,
+  itensContagem,
+  producoes,
+  proteinas,
+  lotesProteina,
+  escala,
+  hoje,
+  requisicoes,
+  plano,
+  agendaFornecedores,
+  sugestoesPedido,
+  agoraInicial,
+  acoes,
+}: {
+  aba: Aba;
+  /** Fichas: mantém a tela acesa só enquanto a seção está à vista. */
+  telaAcesa: boolean;
+  responsavel: string;
+  checklists: Checklist[];
+  alternarItem: (itemId: string, feito: boolean) => void;
+  abrirPracas: () => void;
+  locais: LocalArmazenamento[];
+  temperaturas: RegistroTemperatura[];
+  fichas: FichaCozinha[];
+  itensContagem: ItemContagem[];
+  producoes: ProducaoCozinha[];
+  proteinas: ProteinaCozinha[];
+  lotesProteina: LoteProteinaCozinha[];
+  escala: EscalaPublica | null;
+  hoje: string;
+  requisicoes: Requisicao[];
+  plano: ItemPlano[];
+  agendaFornecedores: AgendaFornecedor[];
+  sugestoesPedido: SugestaoPedido[];
+  agoraInicial?: Agora;
+  acoes: AcoesCozinha;
+}) {
+  return aba === "checklists" ? (
+    <SecaoChecklists checklists={checklists} alternarItem={alternarItem} abrirPracas={abrirPracas} />
+  ) : aba === "pracas" ? (
+    <PracasCozinha pracas={checklists.filter((c) => c.momento === "praca")} alternarItem={alternarItem} />
+  ) : aba === "temperatura" ? (
+    <SecaoTemperatura locais={locais} temperaturas={temperaturas} responsavel={responsavel} acoes={acoes} />
+  ) : aba === "producao" ? (
+    <QuadroProducaoCozinha fichas={fichas} producoes={producoes} responsavel={responsavel} acoes={acoes} plano={plano} />
+  ) : aba === "proteinas" ? (
+    <ProteinasCozinha proteinas={proteinas} lotes={lotesProteina} responsavel={responsavel} acoes={acoes} />
+  ) : aba === "fichas" ? (
+    <FichasCozinha fichas={fichas} telaAcesa={telaAcesa} />
+  ) : aba === "escala" ? (
+    <EscalaCozinha escala={escala} hoje={hoje} />
+  ) : aba === "pedidos" ? (
+    <PedidosCozinha
+      requisicoes={requisicoes}
+      agenda={agendaFornecedores}
+      sugestoes={sugestoesPedido}
+      responsavel={responsavel}
+      agoraInicial={agoraInicial ?? agoraNoRestaurante()}
+      pedir={acoes.pedir}
+      desistir={acoes.desistirDoPedido}
+    />
+  ) : (
+    <SecaoContagem itens={itensContagem} responsavel={responsavel} acoes={acoes} />
+  );
+});
 
 function QuemEsta({ funcionarios, atual, onEscolher, onCancelar }: { funcionarios: Funcionario[]; atual: string | null; onEscolher: (nome: string) => void; onCancelar?: () => void }) {
   const [outro, setOutro] = useState("");
@@ -249,26 +527,16 @@ function Cartao({ children, className = "" }: { children: ReactNode; className?:
   );
 }
 
-function SecaoChecklists({ checklists: iniciais, responsavel, acoes }: { checklists: Checklist[]; responsavel: string; acoes: AcoesCozinha }) {
-  const { mostrarErro } = useToast();
-  const [checklists, setChecklists] = useState(iniciais);
-  useEffect(() => setChecklists(iniciais), [iniciais]);
+// PRAÇAS NA COZINHA (2026-10-02): as praças saíram daqui pra seção Praças
+// (foto grande de cada área); aqui fica o atalho. Marcar item agora vem de
+// CozinhaApp (alternarItem), que é o mesmo estado da seção Praças.
+function SecaoChecklists({ checklists: todos, alternarItem, abrirPracas }: { checklists: Checklist[]; alternarItem: (itemId: string, feito: boolean) => void; abrirPracas: () => void }) {
   const [aberto, setAberto] = useState<string | null>(null);
+  const checklists = todos.filter((c) => c.momento !== "praca");
+  const pracas = todos.filter((c) => c.momento === "praca");
+  const pracasFaltam = pracas.reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0);
 
-  const alternar = async (checklistId: string, itemId: string, feito: boolean) => {
-    setChecklists((atual) =>
-      atual.map((c) => (c.id !== checklistId ? c : { ...c, itens: c.itens.map((i) => (i.id === itemId ? { ...i, concluidoHoje: !feito } : i)) })),
-    );
-    const r = feito ? await acoes.desmarcarItem(itemId) : await acoes.marcarItem(itemId, responsavel);
-    if (!r.ok) {
-      mostrarErro(r.erro);
-      setChecklists((atual) =>
-        atual.map((c) => (c.id !== checklistId ? c : { ...c, itens: c.itens.map((i) => (i.id === itemId ? { ...i, concluidoHoje: feito } : i)) })),
-      );
-    }
-  };
-
-  if (checklists.length === 0) return <Vazio texto="Nenhum checklist cadastrado. O gestor monta na tela Checklists." />;
+  if (checklists.length === 0 && pracas.length === 0) return <Vazio texto="Nenhum checklist cadastrado. O gestor monta na tela Checklists." />;
 
   const atual = checklists.find((c) => c.id === aberto);
   if (atual) {
@@ -303,7 +571,7 @@ function SecaoChecklists({ checklists: iniciais, responsavel, acoes }: { checkli
                   {itens.map((i, n) => (
                     <button
                       key={i.id}
-                      onClick={() => alternar(atual.id, i.id, i.concluidoHoje)}
+                      onClick={() => alternarItem(i.id, i.concluidoHoje)}
                       className={`w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left ${n > 0 ? "border-t" : ""}`}
                       style={{ borderColor: "var(--linha)" }}
                       aria-pressed={i.concluidoHoje}
@@ -330,7 +598,23 @@ function SecaoChecklists({ checklists: iniciais, responsavel, acoes }: { checkli
 
   return (
     <section className="space-y-6">
-      {MOMENTOS.map((m) => {
+      {pracas.length > 0 && (
+        <button
+          onClick={abrirPracas}
+          className="w-full text-left rounded-xl border p-4 min-h-20 flex items-center gap-4"
+          style={{ background: "var(--panel)", borderColor: pracasFaltam ? "var(--linha)" : "var(--sucesso)" }}
+        >
+          <LayoutGrid size={22} className="shrink-0 text-[var(--tinta-faint)]" aria-hidden />
+          <span className="flex-1 min-w-0">
+            <span className="block text-[17px] font-semibold">Montagem das praças</span>
+            <span className="block text-[14px] mt-0.5" style={{ color: pracasFaltam ? "var(--tinta-sub)" : "var(--sucesso)" }}>
+              {pracasFaltam ? `${pracasFaltam} ${pracasFaltam === 1 ? "item" : "itens"} pra conferir, com a foto de cada área` : "Todas montadas no padrão hoje"}
+            </span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-[var(--tinta-faint)]" aria-hidden />
+        </button>
+      )}
+      {MOMENTOS.filter((m) => m.id !== "praca").map((m) => {
         const doMomento = checklists.filter((c) => c.momento === m.id);
         if (doMomento.length === 0) return null;
         return (
@@ -409,7 +693,7 @@ function SecaoTemperatura({ locais, temperaturas: iniciais, responsavel, acoes }
                 <div className="text-right">
                   <div className="text-[20px] font-semibold" style={{ ...nums, color: alerta ? "var(--danger)" : "var(--tinta)" }}>{ultimo.temperaturaC} °C</div>
                   <div className="text-[12px] text-[var(--tinta-faint)]">
-                    {new Date(ultimo.registradoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {ultimo.responsavel}
+                    {dataBR(ultimo.registradoEm, { hour: "2-digit", minute: "2-digit" })} · {ultimo.responsavel}
                   </div>
                 </div>
               )}

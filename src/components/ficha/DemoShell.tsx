@@ -12,9 +12,13 @@
 // vez do conteúdo — a mesma regra do app (src/lib/auth/papeis.ts).
 // Versão anterior: `git show c966f91:src/components/ficha/DemoShell.tsx`.
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Lock, Settings, UserRound } from "lucide-react";
+import { MenuConta } from "./MenuConta";
+import { EVENTO_MARCA_DEMO, marcaDemo } from "@/components/configuracoes/demo";
+import { cssDaCor } from "@/lib/empresa/cores";
 import { BotaoAgenteIa } from "@/components/ia/BotaoAgenteIa";
 import { ShellPremium } from "./ShellPremium";
 import { Card } from "./Card";
@@ -41,32 +45,61 @@ function DemoShellComPapel({ nomeRestaurante, tituloPagina, children }: Props) {
   const rota = (usePathname() ?? "").replace(/^\/preview/, "") || "/";
   const liberado = papel !== "cozinha" && podeAcessar(papel, rota);
 
+  // CONFIGURAÇÕES (2026-10-01): logo e cor escolhidos na demo (guardados no
+  // navegador), no menu de todas as telas da demo.
+  const [marca, setMarca] = useState<{ logoUrl: string | null; corDestaque: string | null }>({ logoUrl: null, corDestaque: null });
+  useEffect(() => {
+    const ler = () => setMarca(marcaDemo());
+    ler();
+    window.addEventListener(EVENTO_MARCA_DEMO, ler);
+    return () => window.removeEventListener(EVENTO_MARCA_DEMO, ler);
+  }, []);
+  const css = cssDaCor(marca.corDestaque);
+
   return (
-    <ShellPremium
-      prefixoRotas="/preview"
-      papel={papel}
-      nomeRestaurante={nomeRestaurante}
-      subtituloRestaurante={
-        <span className="inline-flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--aviso)" }} />
-          Demonstração · {ROTULO_PAPEL[papel]}
-        </span>
-      }
-      tituloPagina={tituloPagina}
-      acaoRodape={{ rotulo: "Voltar ao índice da demonstração", icone: <ArrowLeft size={16} />, onClick: () => router.push("/preview") }}
-      extrasCabecalho={
-        <>
-          <SeletorPapelDemo />
-          {/* EQUIPE (2026-09-25): o estoquista também usa o agente, na versão do estoque
-              (notas, chegadas, perdas). Antes: só dono e gestor. */}
-          {papel !== "cozinha" && <BotaoAgenteIa variante="cabecalho" escopo={papel === "estoquista" ? "estoque" : "completo"} />}
-        </>
-      }
-    >
-      {liberado ? children : <SemAcesso papel={papel} />}
-    </ShellPremium>
+    <>
+      {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
+      <ShellPremium
+        prefixoRotas="/preview"
+        logoUrl={marca.logoUrl}
+        menuConta={
+          <MenuConta
+            nome={NOME_DEMO[papel]}
+            detalhe={`${ROTULO_PAPEL[papel]} · demonstração`}
+            itens={[
+              { rotulo: "Minha conta", icone: <UserRound size={16} />, href: "/preview/configuracoes?secao=conta" },
+              { rotulo: "Configurações", icone: <Settings size={16} />, href: "/preview/configuracoes" },
+              { rotulo: "Sair da demonstração", icone: <ArrowLeft size={16} />, onClick: () => router.push("/preview"), separado: true },
+            ]}
+          />
+        }
+        papel={papel}
+        nomeRestaurante={nomeRestaurante}
+        subtituloRestaurante={
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--aviso)" }} />
+            Demonstração · {ROTULO_PAPEL[papel]}
+          </span>
+        }
+        tituloPagina={tituloPagina}
+        acaoRodape={{ rotulo: "Voltar ao índice da demonstração", icone: <ArrowLeft size={16} />, onClick: () => router.push("/preview") }}
+        extrasCabecalho={
+          <>
+            <SeletorPapelDemo />
+            {/* EQUIPE (2026-09-25): o estoquista também usa o agente, na versão do estoque
+                (notas, chegadas, perdas). Antes: só dono e gestor. */}
+            {papel !== "cozinha" && <BotaoAgenteIa variante="cabecalho" escopo={papel === "estoquista" ? "estoque" : "completo"} />}
+          </>
+        }
+      >
+        {liberado ? children : <SemAcesso papel={papel} />}
+      </ShellPremium>
+    </>
   );
 }
+
+// CONFIGURAÇÕES (2026-10-01): quem "está logado" na demo, por papel.
+const NOME_DEMO: Record<Papel, string> = { dono: "Giulia Rossi", gestor: "Marco Bianchi", estoquista: "Paulo Lima", cozinha: "Cozinha" };
 
 function SemAcesso({ papel }: { papel: Papel }) {
   const destino = `/preview${rotaInicial(papel)}`;

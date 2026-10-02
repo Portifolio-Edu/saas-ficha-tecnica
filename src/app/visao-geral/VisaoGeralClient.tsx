@@ -19,7 +19,7 @@
 // (o componente ReguaCalibrada foi removido na limpeza de produção; recuperar com
 // `git show a57efba:src/components/instrumentos/ReguaCalibrada.tsx`).
 
-import { useMemo, useState } from "react";
+import { startTransition, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { construirContexto, linhasCustoDetalhado } from "@/lib/dados/adaptadores";
@@ -32,6 +32,7 @@ import type { Processamento } from "@/lib/dominio/processamento";
 import type { Producao } from "@/lib/dominio/producao";
 import type { FechamentoCmv } from "@/lib/dominio/fechamentoCmv";
 import { AlertTriangle, ChevronDown, ChevronUp, RotateCcw, CheckCircle, ArrowRight } from "lucide-react";
+import { dataBR as dataPtBR, numeroBR } from "@/lib/formato";
 
 // POLIMENTO visao-geral: datas do fechamento em dd/mm/aaaa. Antes apareciam
 // cruas em ISO ("2026-08-01 até 2026-08-31").
@@ -43,7 +44,7 @@ function dataBR(iso: string): string {
 // POLIMENTO visao-geral: diferença entre porcentagens em pontos percentuais,
 // com vírgula. Antes: `+${delta.toFixed(1)}%` ("+13.8%").
 function deltaPp(delta: number): string {
-  return `${delta >= 0 ? "+" : "−"}${Math.abs(delta).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
+  return `${delta >= 0 ? "+" : "−"}${numeroBR(Math.abs(delta), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
 }
 
 // POLIMENTO visao-geral: tints seguem o tema. Antes: rgba(255, 59, 48, …) e
@@ -129,7 +130,7 @@ export function VisaoGeralClient({
   const inicioMes = new Date();
   inicioMes.setDate(1);
   const prefixoMes = inicioMes.toISOString().slice(0, 7);
-  const nomeMes = inicioMes.toLocaleDateString("pt-BR", { month: "long" });
+  const nomeMes = dataPtBR(inicioMes, { month: "long" });
 
   const perdasDoMes = useMemo(
     () => producoes.filter((p) => p.status === "perda" && p.criadoEm.startsWith(prefixoMes)),
@@ -221,27 +222,7 @@ export function VisaoGeralClient({
         </div>
 
         <div className="flex items-center gap-3 px-3 min-h-[var(--alvo-toque)] rounded-lg border self-start lg:self-auto" style={{ background: "var(--panel)", borderColor: "var(--linha)" }}>
-          <label htmlFor="meta-casa" className="text-[13px] text-[var(--tinta-sub)] whitespace-nowrap">Meta de margem</label>
-          <span className="text-[15px] font-semibold text-[var(--tinta)] w-10 text-right">{alvoManualPct}%</span>
-          <input
-            id="meta-casa"
-            type="range"
-            min="45"
-            max="80"
-            step="1"
-            value={alvoManualPct}
-            onChange={(e) => setAlvoManualPct(Number(e.target.value))}
-            className="w-28 h-10 cursor-pointer"
-            style={{ accentColor: "var(--marca)" }}
-          />
-          <button
-            onClick={() => setAlvoManualPct(Math.round(margemAlvoCliente * 100))}
-            className="w-10 h-10 -mr-2 flex items-center justify-center rounded-md text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
-            title="Voltar à meta cadastrada"
-            aria-label="Voltar à meta cadastrada"
-          >
-            <RotateCcw size={14} />
-          </button>
+          <ReguaMeta valor={alvoManualPct} padrao={Math.round(margemAlvoCliente * 100)} aoMudar={setAlvoManualPct} />
         </div>
       </div>
 
@@ -305,8 +286,8 @@ export function VisaoGeralClient({
                 <div className="min-w-0">
                   <div className="text-[14px] font-medium text-[var(--tinta)]">{receitaDominioPorId.get(p.receitaId)?.nomePrato ?? p.nomeReceita}</div>
                   <div className="text-[12px] text-[var(--tinta-faint)]">
-                    Perda · {p.quantidade.toLocaleString("pt-BR")} {p.quantidade !== 1 && p.unidadeRendimento === "porção" ? "porções" : p.unidadeRendimento} ·{" "}
-                    {new Date(p.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                    Perda · {numeroBR(p.quantidade)} {p.quantidade !== 1 && p.unidadeRendimento === "porção" ? "porções" : p.unidadeRendimento} ·{" "}
+                    {dataPtBR(p.criadoEm, { day: "2-digit", month: "2-digit" })}
                   </div>
                 </div>
                 <div className="col-span-2 md:col-span-1 order-3 md:order-none text-[13px] text-[var(--tinta-sub)]">{p.motivoPerda || "Sem motivo registrado"}</div>
@@ -403,16 +384,23 @@ export function VisaoGeralClient({
                         {deltaPp(delta)}
                       </span>
                     </div>
-                    {/* Trilho de 40% a 85% de margem; o traço é o alvo. */}
-                    <div className="w-full h-1.5 rounded-full relative" style={{ background: "var(--panel-elevated)" }}>
-                      <div
-                        className="absolute -top-1 -bottom-1 w-[2px] rounded-full -translate-x-1/2"
-                        style={{ left: `${Math.min(100, Math.max(0, ((item.margemAlvoPct - 40) / 45) * 100))}%`, background: "var(--tinta-faint)" }}
-                        title={`Alvo: ${item.margemAlvoPct}%`}
-                      />
+                    {/* Trilho de 40% a 85% de margem; a bolinha é o alvo.
+                        VISÃO GERAL (2026-10-01): mesmo desenho da régua "Meta de margem"
+                        (trilho fino, preenchido na cor da marca, bolinha vazada).
+                        Antes: traço cinza de 2px no alvo e preenchimento na cor do texto. */}
+                    <div className="w-full h-1 rounded-full relative" style={{ background: "var(--linha-forte)" }}>
                       <div
                         className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, Math.max(0, ((item.margemPct - 40) / 45) * 100))}%`, background: sobRisco ? "var(--sinal)" : "var(--tinta)" }}
+                        style={{ width: `${Math.min(100, Math.max(0, ((item.margemPct - 40) / 45) * 100))}%`, background: sobRisco ? "var(--sinal)" : "var(--marca)" }}
+                      />
+                      <div
+                        className="absolute top-1/2 w-2.5 h-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                          left: `${Math.min(100, Math.max(0, ((item.margemAlvoPct - 40) / 45) * 100))}%`,
+                          background: "var(--panel)",
+                          border: `2px solid ${sobRisco ? "var(--sinal)" : "var(--marca)"}`,
+                        }}
+                        title={`Alvo: ${item.margemAlvoPct}%`}
                       />
                     </div>
                   </div>
@@ -468,7 +456,7 @@ export function VisaoGeralClient({
                             <span className="text-[var(--tinta)]">{linha.nome}</span>
                             <div className="flex items-center gap-5 text-[var(--tinta-sub)]">
                               <span className="whitespace-nowrap">
-                                {linha.pesoLiquido.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} {linha.unidade}
+                                {numeroBR(linha.pesoLiquido, { maximumFractionDigits: 3 })} {linha.unidade}
                               </span>
                               <span className="font-medium text-[var(--tinta)] whitespace-nowrap">{formatBRL(linha.custo)}</span>
                             </div>
@@ -517,5 +505,51 @@ export function VisaoGeralClient({
         </div>
       </section>
     </div>
+  );
+}
+
+/**
+ * DESEMPENHO (2026-10-02): a régua tem estado próprio e responde na hora; o
+ * recálculo da tela inteira (margens, métricas, vazamentos) vai como
+ * transição, que o React interrompe se a pessoa continuar arrastando. Antes
+ * cada passo da régua redesenhava tudo (~150 ms na barra da Vercel). Pra
+ * voltar: setAlvoManualPct direto no onChange, sem startTransition.
+ */
+function ReguaMeta({ valor, padrao, aoMudar }: { valor: number; padrao: number; aoMudar: (v: number) => void }) {
+  // Só esta régua muda a meta: o estado local é a fonte (sem sincronizar de
+  // volta, que faria a régua pular pra um valor antigo no meio do arraste).
+  const [local, setLocal] = useState(valor);
+  const mudar = (v: number) => {
+    setLocal(v);
+    startTransition(() => aoMudar(v));
+  };
+  return (
+    <>
+      <label htmlFor="meta-casa" className="text-[13px] text-[var(--tinta-sub)] whitespace-nowrap">Meta de margem</label>
+      {/* VISÃO GERAL (2026-10-01): régua com estilo próprio (.faixa-meta em
+          globals.css), valor depois da régua e o "voltar" só aparece quando a
+          meta foi mexida. Antes: range nativo com accentColor e valor à esquerda. */}
+      <input
+        id="meta-casa"
+        type="range"
+        min="45"
+        max="80"
+        step="1"
+        value={local}
+        onChange={(e) => mudar(Number(e.target.value))}
+        className="faixa-meta w-32"
+        style={{ "--p": `${((local - 45) / (80 - 45)) * 100}%` } as React.CSSProperties}
+      />
+      <span className="text-[15px] font-semibold tabular-nums text-[var(--tinta)] w-10">{local}%</span>
+      <button
+        onClick={() => mudar(padrao)}
+        disabled={local === padrao}
+        className="w-10 h-10 -mr-2 -ml-1 flex items-center justify-center rounded-md text-[var(--tinta-sub)] hover:text-[var(--tinta)] hover:bg-[var(--panel-hover)] disabled:opacity-0 disabled:pointer-events-none transition-opacity"
+        title="Voltar à meta cadastrada"
+        aria-label="Voltar à meta cadastrada"
+      >
+        <RotateCcw size={14} />
+      </button>
+    </>
   );
 }

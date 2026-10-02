@@ -22,6 +22,11 @@ describe("podeAcessar", () => {
     expect(podeAcessar("estoquista", "/estoque-falso")).toBe(false);
   });
 
+  it("todo mundo com login abre a própria conta em Configurações, menos o tablet da cozinha", () => {
+    expect(podeAcessar("estoquista", "/configuracoes")).toBe(true);
+    expect(podeAcessar("cozinha", "/configuracoes")).toBe(false);
+  });
+
   it("cozinha só abre o modo cozinha", () => {
     expect(podeAcessar("cozinha", "/cozinha")).toBe(true);
     expect(podeAcessar("cozinha", "/cozinha/fichas")).toBe(true);

@@ -4,7 +4,7 @@
 //  - ultimoLink(): lê o último e-mail enviado pro endereço no Mailpit local;
 //  - entrar(): login pela tela, igual a uma pessoa.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /** Sufixo único por rodada: dá pra rodar várias vezes no mesmo banco. */
 export const RODADA = Date.now().toString(36);
@@ -54,4 +54,16 @@ export async function clienteDoDono(email: string): Promise<string> {
   const { data: c, error } = await admin().from("clientes").select("id").eq("user_id", user!.id).single();
   expect(error).toBeNull();
   return c!.id as string;
+}
+
+/**
+ * DESEMPENHO (2026-10-02): espera o React "ligar" (hidratar) o elemento.
+ * Antes disso, digitar ou apertar tecla muda só o HTML e o React não fica
+ * sabendo; com CPU 4x a rede assenta antes da hidratação e o teste falhava à
+ * toa (régua da meta, campos de Configurações). O React grava __reactProps$…
+ * no elemento quando ele passa a responder.
+ */
+export async function esperarHidratado(alvo: Locator) {
+  await alvo.waitFor();
+  await expect.poll(() => alvo.evaluate((el) => Object.keys(el).some((k) => k.startsWith("__reactProps$")))).toBe(true);
 }

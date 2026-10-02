@@ -16,6 +16,7 @@ import type { Insumo } from "./insumo";
 import type { LinhaFicha, Receita } from "./receita";
 import { converterParaUnidadeDoInsumo } from "@/lib/calculo/conversaoUnidade";
 import { VDR, pesoBrutoEmGramas, type CampoNutricional, type ValoresNutricionais } from "@/lib/calculo/nutricional";
+import { numeroBR } from "@/lib/formato";
 
 // ---------------------------------------------------------------------------
 // Alergênicos (RDC 26/2015, Anexo)
@@ -192,7 +193,7 @@ export function valorDeclarado(campo: CampoNutricional, valor: number, zeroPelaP
 }
 
 export function formatarDeclarado(valor: number): string {
-  return valor.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  return numeroBR(valor, { maximumFractionDigits: 1 });
 }
 
 export const kcalParaKj = (kcal: number) => Math.round(kcal * 4.184);

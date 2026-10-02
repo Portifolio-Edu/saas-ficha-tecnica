@@ -16,6 +16,7 @@ import {
   type Agora, type AgendaFornecedor, type CategoriaPedido, type NovaRequisicao, type Requisicao, type UnidadePedido,
 } from "@/lib/dominio/requisicao";
 import type { ResultadoCozinha } from "./CozinhaApp";
+import { numeroBR } from "@/lib/formato";
 
 export interface SugestaoPedido {
   id: string;
@@ -45,7 +46,7 @@ function faltam(min: number): string {
 
 export function quantidadeTexto(r: { quantidade: number | null; unidade: string | null }): string {
   if (r.quantidade === null) return "";
-  return `${r.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} ${r.unidade ?? ""}`.trim();
+  return `${numeroBR(r.quantidade, { maximumFractionDigits: 3 })} ${r.unidade ?? ""}`.trim();
 }
 
 export function PedidosCozinha({

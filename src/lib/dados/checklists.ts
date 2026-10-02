@@ -27,6 +27,14 @@ interface LinhaItem {
   area_id: string | null;
 }
 
+/** PRAÇAS DA CASA (2026-10-02): nomes das praças cadastradas (Checklists → Praças), referência de Equipe e Escalas. */
+export async function listarNomesPracas(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("checklists").select("nome").eq("momento", "praca").order("nome");
+  if (error) throw new Error(mensagemErro(error));
+  return ((data ?? []) as { nome: string }[]).map((c) => c.nome);
+}
+
 export async function listarChecklists(): Promise<Checklist[]> {
   const supabase = await createClient();
   const { data: checklists, error } = await supabase.from("checklists").select("id, nome, momento").order("nome");

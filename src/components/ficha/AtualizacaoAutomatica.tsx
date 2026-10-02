@@ -13,24 +13,50 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+// DESEMPENHO (2026-10-02): a atualização redesenha a tela; se cair junto com
+// um toque, o toque espera (a barra da Vercel mostrou 450 ms no modo cozinha
+// logo depois de voltar pra janela). Agora ela espera a pessoa ficar parada
+// (PARADO_MS sem toque, tecla ou rolagem), inclusive ao voltar pra aba.
+// Antes: router.refresh() na hora do foco e a cada intervalo, mesmo tocando.
+const PARADO_MS = 2_000;
+
 export function AtualizacaoAutomatica({ intervaloMs = 30_000 }: { intervaloMs?: number }) {
   const router = useRouter();
   useEffect(() => {
     let ultima = Date.now();
+    let ultimoToque = 0;
+    let adiada = 0;
+    const marcar = () => (ultimoToque = Date.now());
     const atualizar = () => {
       if (document.visibilityState !== "visible") return;
       // Evita duas atualizações seguidas (foco + visibilidade disparam juntos).
       if (Date.now() - ultima < 2_000) return;
+      const falta = PARADO_MS - (Date.now() - ultimoToque);
+      if (falta > 0) {
+        window.clearTimeout(adiada);
+        adiada = window.setTimeout(atualizar, falta + 50);
+        return;
+      }
       ultima = Date.now();
       router.refresh();
     };
+    // Voltou pra aba/janela: atualiza quando a pessoa parar (o primeiro toque
+    // depois de voltar não fica preso na atualização).
+    const voltou = () => {
+      marcar();
+      atualizar();
+    };
+    const opcoes = { capture: true, passive: true } as const;
+    for (const t of ["pointerdown", "keydown", "wheel", "touchstart"] as const) window.addEventListener(t, marcar, opcoes);
     const timer = window.setInterval(atualizar, intervaloMs);
-    document.addEventListener("visibilitychange", atualizar);
-    window.addEventListener("focus", atualizar);
+    document.addEventListener("visibilitychange", voltou);
+    window.addEventListener("focus", voltou);
     return () => {
       window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", atualizar);
-      window.removeEventListener("focus", atualizar);
+      window.clearTimeout(adiada);
+      document.removeEventListener("visibilitychange", voltou);
+      window.removeEventListener("focus", voltou);
+      for (const t of ["pointerdown", "keydown", "wheel", "touchstart"] as const) window.removeEventListener(t, marcar, opcoes);
     };
   }, [router, intervaloMs]);
   return null;

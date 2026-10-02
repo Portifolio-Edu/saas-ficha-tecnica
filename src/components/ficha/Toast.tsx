@@ -42,10 +42,16 @@ export function useToast() {
 
 export function ToastContainer() {
   const lista = useSyncExternalStore(inscrever, () => toasts, () => SEM_TOASTS);
-  if (lista.length === 0) return null;
 
+  // ACESSIBILIDADE (2026-10-02): região "ao vivo" sempre presente — o leitor
+  // de tela lê cada aviso que entra ("Avisos salvos.", erro ao salvar).
+  // Antes os avisos só apareciam na tela, sem papel nenhum.
   return (
-    <div className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-5 right-5 z-50 flex flex-col gap-2.5 w-[min(360px,calc(100vw-2.5rem))]">
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-5 right-5 z-50 flex flex-col gap-2.5 w-[min(360px,calc(100vw-2.5rem))] empty:pointer-events-none"
+    >
       {lista.map((t) => {
         const isSuccess = t.tipo === "sucesso";
         const isInfo = t.tipo === "info";

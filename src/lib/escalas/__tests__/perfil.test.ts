@@ -127,3 +127,16 @@ describe("extras: telefone e convite", () => {
     );
   });
 });
+
+// PRAÇAS DA CASA (2026-10-02): na cozinha valem as praças de Checklists → Praças.
+describe("praças da casa", () => {
+  it("cozinha usa as praças cadastradas (sem repetir); sem cadastro, a lista genérica", async () => {
+    const { sugestoesDePraca, ajudaPracas, PRACAS } = await import("../perfil");
+    expect(sugestoesDePraca("cozinha", ["Praça de pizza", "Garde manger", "praça de pizza"])).toEqual(["Praça de pizza", "Garde manger"]);
+    expect(sugestoesDePraca("cozinha", [])).toEqual(PRACAS.cozinha);
+    expect(sugestoesDePraca("salao", ["Praça de pizza"])).toEqual(PRACAS.salao);
+    expect(ajudaPracas("cozinha", ["Praça de pizza"])).toContain("cadastradas em Checklists → Praças");
+    expect(ajudaPracas("cozinha", [])).toContain("Cadastre as praças");
+    expect(ajudaPracas("bar", ["Praça de pizza"])).toBe("");
+  });
+});

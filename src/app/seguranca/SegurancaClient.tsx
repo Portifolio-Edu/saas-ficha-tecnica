@@ -4,15 +4,14 @@
 
 import { useState } from "react";
 import { formatQtd } from "@/components/charts/format";
-import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
+import dynamic from "next/dynamic";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { nums } from "@/components/ficha/tema";
 import { NovoLocalForm } from "@/components/seguranca/NovoLocalForm";
 import { NovaTemperaturaForm } from "@/components/seguranca/NovaTemperaturaForm";
-import { ChartFrame } from "@/components/charts/ChartFrame";
-import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
-import { CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
+import { EspacoDoGrafico } from "@/components/charts/EspacoDoGrafico";
+import { foraDaFaixaDoLocal } from "./faixa";
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { Insumo } from "@/lib/dominio/insumo";
 import { useToast } from "@/components/ficha/Toast";
@@ -24,9 +23,8 @@ function formatarDataHora(iso: string): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-function foraDaFaixaDoLocal(local: LocalArmazenamento | null | undefined, temperaturaC: number): boolean {
-  return !!local && ((local.temperaturaMinC != null && temperaturaC < local.temperaturaMinC) || (local.temperaturaMaxC != null && temperaturaC > local.temperaturaMaxC));
-}
+// DESEMPENHO (2026-10-02): gráfico (Recharts) sob demanda. Reverter: ver GraficoTemperatura.tsx.
+const GraficoTemperatura = dynamic(() => import("./GraficoTemperatura").then((m) => m.GraficoTemperatura), { ssr: false, loading: () => <EspacoDoGrafico /> });
 
 export function SegurancaClient({ locais, registros, insumos }: { locais: LocalArmazenamento[]; registros: RegistroTemperatura[]; insumos: Insumo[] }) {
   const [showNovoLocal, setShowNovoLocal] = useState(false);
@@ -172,53 +170,7 @@ export function SegurancaClient({ locais, registros, insumos }: { locais: LocalA
           <p className="text-[12px] mb-4" style={{ color: "var(--sub)" }}>
             Linhas tracejadas marcam os limites cadastrados pro local. Ponto maior e vermelho é leitura fora da faixa.
           </p>
-          <ChartFrame
-            vazio={leiturasLocal.length === 0}
-            tituloVazio="Nenhuma leitura registrada para este local ainda."
-            dicaVazio="Registre uma leitura pra esse gráfico aparecer aqui."
-          >
-            <LineChart data={leiturasLocal} margin={CHART_MARGIN}>
-              <CartesianGrid {...chartGridProps} />
-              <XAxis dataKey="dataLabel" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
-              <YAxis tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} width={44} tickFormatter={(v: number) => `${formatQtd(v)}°`} />
-              {localSelecionado?.temperaturaMinC != null && (
-                <ReferenceLine y={localSelecionado.temperaturaMinC} stroke="var(--border-strong)" strokeDasharray="4 4" label={{ value: "mín.", position: "insideBottomRight", fontSize: 10, fill: "var(--sub)" }} />
-              )}
-              {localSelecionado?.temperaturaMaxC != null && (
-                <ReferenceLine y={localSelecionado.temperaturaMaxC} stroke="var(--border-strong)" strokeDasharray="4 4" label={{ value: "máx.", position: "insideTopRight", fontSize: 10, fill: "var(--sub)" }} />
-              )}
-              <Tooltip
-                content={({ payload }) => {
-                  if (!payload || !payload.length) return null;
-                  const p = payload[0].payload as RegistroTemperatura & { dataLabel: string };
-                  const fora = foraDaFaixaDoLocal(localSelecionado, p.temperaturaC);
-                  return (
-                    <ChartTooltipCard
-                      titulo={`${p.dataLabel} · ${p.responsavel}`}
-                      linhas={[
-                        { rotulo: "Temperatura", valor: `${formatQtd(p.temperaturaC)}°C`, destaque: fora },
-                        ...(p.nomeInsumo ? [{ rotulo: "Motivo", valor: p.nomeInsumo }] : []),
-                      ]}
-                    />
-                  );
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="temperaturaC"
-                stroke="var(--text)"
-                strokeWidth={2}
-                isAnimationActive
-                animationDuration={CHART_ANIMATION_DURATION}
-                animationEasing={CHART_ANIMATION_EASING}
-                dot={(props) => {
-                  const { cx, cy, payload, index } = props as unknown as { cx: number; cy: number; payload: RegistroTemperatura; index: number };
-                  const fora = foraDaFaixaDoLocal(localSelecionado, payload.temperaturaC);
-                  return <circle key={index} cx={cx} cy={cy} r={fora ? 6 : 3.5} fill={fora ? "var(--danger)" : "var(--text)"} />;
-                }}
-              />
-            </LineChart>
-          </ChartFrame>
+          <GraficoTemperatura leituras={leiturasLocal} local={localSelecionado} />
         </Card>
 
         <Card>

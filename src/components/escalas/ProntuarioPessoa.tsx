@@ -14,7 +14,8 @@ import {
   LIMITES,
   NIVEIS,
   PONTOS_FORTES,
-  PRACAS,
+  ajudaPracas,
+  sugestoesDePraca,
   TIPOS_NOTA,
   normalizarPerfil,
   resumoAssiduidade,
@@ -76,6 +77,7 @@ export function ProntuarioPessoa({
   ocorrencias,
   notas,
   extras,
+  pracasCasa = [],
   hoje,
   aoSalvarPerfil,
   aoCriarNota,
@@ -87,6 +89,7 @@ export function ProntuarioPessoa({
   ocorrencias: OcorrenciaRegistro[];
   notas: NotaPerfil[];
   extras: Extra[];
+  pracasCasa?: string[];
   hoje: DataISO;
   aoSalvarPerfil: (funcionarioId: string, p: PerfilInput) => Promise<Resultado>;
   aoCriarNota: (n: NotaInput) => Promise<Resultado>;
@@ -187,8 +190,8 @@ export function ProntuarioPessoa({
           </div>
         </Secao>
 
-        <Secao titulo="Praças de domínio" ajuda="O que a pessoa segura sozinha. É isso que a busca de extra cruza quando ela falta.">
-          <SeletorTags rotulo="Praças de domínio" tom="praca" sugestoes={PRACAS[setor]} valor={p.pracas} onChange={(pracas) => atualizar({ pracas })} placeholder="Outra praça…" />
+        <Secao titulo="Praças de domínio" ajuda={`O que a pessoa segura sozinha. É isso que a busca de extra cruza quando ela falta.${ajudaPracas(setor, pracasCasa)}`}>
+          <SeletorTags rotulo="Praças de domínio" tom="praca" sugestoes={sugestoesDePraca(setor, pracasCasa)} valor={p.pracas} onChange={(pracas) => atualizar({ pracas })} placeholder="Outra praça…" />
           <div className="rounded-lg border px-3 py-2.5 flex gap-2.5 text-[13px]" style={{ borderColor: "var(--linha)", background: "var(--panel-elevated)" }}>
             <UserSearch size={16} className="shrink-0 mt-0.5 text-[var(--tinta-faint)]" />
             <p className="text-[var(--tinta-sub)]">

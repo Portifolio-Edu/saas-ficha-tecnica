@@ -29,6 +29,7 @@ import type { StatusProducao } from "@/lib/dominio/producao";
 import type { AcoesCozinha } from "./CozinhaApp";
 import { ListaProducaoCozinha } from "./ListaProducaoCozinha";
 import { progressoDoPlano, resumoDoPlano, type ItemPlano } from "@/lib/dominio/planoProducao";
+import { dataBR } from "@/lib/formato";
 
 type ColunaId = "fichas" | "em_producao" | "produzido" | "perda";
 type ItemQuadro = { tipo: "ficha"; ficha: FichaCozinha } | { tipo: "lote"; lote: ProducaoCozinha };
@@ -53,7 +54,7 @@ const cor = (etapa: string) => `var(--etapa-${etapa})`;
 const corTexto = (etapa: string) => `var(--etapa-${etapa}-texto)`;
 
 function hora(iso: string) {
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return dataBR(iso, { hour: "2-digit", minute: "2-digit" });
 }
 
 function haQuantoTempo(iso: string, agora: number) {

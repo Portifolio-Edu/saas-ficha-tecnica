@@ -32,6 +32,7 @@ import {
 } from "./propostas";
 import type { PasseAgente } from "./passe";
 import { ErroFerramenta } from "./erro";
+import { dataBR } from "@/lib/formato";
 
 type Args = Record<string, unknown>;
 
@@ -120,7 +121,7 @@ export const FERRAMENTAS: Record<string, Ferramenta> = {
         restaurante: passe.r,
         pessoa: passe.n,
         papel: passe.p,
-        agora: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+        agora: dataBR(new Date(), { timeZone: "America/Sao_Paulo", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" }),
         estoque_abaixo_do_minimo: baixo.slice(0, 10).map((i) => ({ nome: i.nome, saldo: i.estoque!.saldoAtual, minimo: i.estoque!.estoqueMinimo, unidade: i.unidadeMedida })),
         total_abaixo_do_minimo: baixo.length,
         pedidos_da_cozinha_pendentes: requisicoes.filter((r) => r.status === "pendente").length,

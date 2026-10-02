@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { nums } from "@/components/ficha/tema";
 import { useToast } from "@/components/ficha/Toast";
+import { dataBR } from "@/lib/formato";
 
 export interface AcaoPropostaIA {
   tipo: "nutricional" | "entrada_estoque" | "saida_perda" | "cadastro_insumo";
@@ -114,7 +115,7 @@ export function AgenteIaModal({
             : escopo === "estoque"
               ? "Olá! Sou o **Agente de IA do Estoque**. Mande a foto da nota fiscal ou do cupom, grave um áudio da chegada ou da perda, ou conecte o WhatsApp: eu preparo o lançamento no estoque pra você conferir e confirmar."
               : "Olá! Sou o **Agente de IA da Cozinha & Estoque**. Você pode me enviar fotos de rótulos/notas fiscais, gravar áudios da operação ou conectar pelo WhatsApp para lançar tudo no sistema automaticamente.",
-          timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          timestamp: dataBR(new Date(), { hour: "2-digit", minute: "2-digit" }),
           origem: "web",
         },
       ];
@@ -180,7 +181,7 @@ export function AgenteIaModal({
 
   const processarAudioGravado = (segundos: number) => {
     // Simular transcrição inteligente de áudio da cozinha
-    const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const hora = dataBR(new Date(), { hour: "2-digit", minute: "2-digit" });
 
     let transcricao = "Informações nutricionais: 392 calorias, 40g carboidratos, 45g proteínas, 60mg sódio.";
     if (!insumoFocoNome) {
@@ -219,7 +220,7 @@ export function AgenteIaModal({
     setProcessando(true);
 
     setTimeout(() => {
-      const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const hora = dataBR(new Date(), { hour: "2-digit", minute: "2-digit" });
       const promptLower = promptTexto.toLowerCase();
 
       // Caso 1: Rótulo / Dados Nutricionais (Fermento, Farinha, etc.)
@@ -331,7 +332,7 @@ export function AgenteIaModal({
   const enviarMensagem = () => {
     if (!textoEntrada.trim() && !imagemSelecionada) return;
 
-    const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const hora = dataBR(new Date(), { hour: "2-digit", minute: "2-digit" });
     const texto = textoEntrada.trim();
     const img = imagemSelecionada;
 
@@ -415,7 +416,7 @@ export function AgenteIaModal({
   };
 
   const dispararExemploAudio = (exemplo: typeof EXEMPLOS_AUDIO[0]) => {
-    const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    const hora = dataBR(new Date(), { hour: "2-digit", minute: "2-digit" });
     const novaMsg: MensagemChat = {
       id: `usr-aud-${Date.now()}`,
       remetente: "usuario",

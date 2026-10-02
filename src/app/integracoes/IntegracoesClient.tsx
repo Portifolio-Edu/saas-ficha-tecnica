@@ -20,6 +20,7 @@ import { Check, Plug, Sparkles } from "lucide-react";
 import { CANAIS, CANAIS_EM_BREVE, CANAIS_PRIORIDADE, type PedidoRecebido } from "@/lib/integracoes/pdvs";
 import { ImportadorVendas } from "@/components/integracoes/ImportadorVendas";
 import { formatBRL } from "@/components/charts/format";
+import { dataBR } from "@/lib/formato";
 
 const painel = { background: "var(--panel)", borderColor: "var(--linha)", boxShadow: "var(--shadow-card)" } as const;
 
@@ -33,7 +34,7 @@ function SeloDemo() {
 
 function hora(iso: string): string {
   // Fuso fixo: servidor e navegador precisam mostrar a mesma hora (senão o React acusa diferença na hidratação).
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+  return dataBR(iso, { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 }
 
 export function IntegracoesClient({

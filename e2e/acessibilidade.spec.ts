@@ -25,7 +25,12 @@ const TELAS = [
   "/preview/proteinas",
   "/preview/nutricional",
   "/preview/integracoes",
-  "/preview/configuracoes",
+  // CONFIGURAÇÕES (2026-10-01): cada seção é uma tela.
+  "/preview/configuracoes?secao=restaurante",
+  "/preview/configuracoes?secao=avisos",
+  "/preview/configuracoes?secao=conta",
+  "/preview/configuracoes?secao=aparencia",
+  "/preview/configuracoes?secao=plano",
   "/preview/consulta",
 ];
 
@@ -57,3 +62,24 @@ test.describe("celular", () => {
     });
   }
 });
+
+// CONFIGURAÇÕES (2026-10-01): menu da conta aberto, com cor de destaque trocada, nos dois temas.
+for (const tema of ["light", "dark"] as const) {
+  test(`menu da conta aberto e cor roxa (${tema === "light" ? "claro" : "escuro"}) sem violação séria`, async ({ page }) => {
+    await page.addInitScript((t) => {
+      localStorage.setItem("tema", t);
+      localStorage.setItem("demo:configuracoes", JSON.stringify({ corDestaque: "#7e22ce" }));
+    }, tema);
+    await page.goto("/preview/configuracoes?secao=aparencia");
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: /^Conta de/ }).click();
+    await expect(page.getByRole("menu")).toBeVisible();
+    const resultado = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    const graves = resultado.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+    const resumo = graves.map((v) => `${v.id} (${v.impact}): ${v.nodes.length}× — ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`);
+    expect(resumo, resumo.join("\n")).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Conta de/ }), "Esc devolve o foco ao botão").toBeFocused();
+  });
+}

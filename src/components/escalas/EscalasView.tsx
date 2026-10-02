@@ -64,6 +64,7 @@ export function EscalasView({
   regras,
   notas,
   extras,
+  pracasCasa = [],
   nomeRestaurante,
   hoje,
   acoes,
@@ -73,6 +74,8 @@ export function EscalasView({
   regras: RegrasEscala;
   notas: NotaPerfil[];
   extras: Extra[];
+  /** PRAÇAS DA CASA (2026-10-02): nomes das praças de Checklists → Praças. */
+  pracasCasa?: string[];
   nomeRestaurante: string;
   hoje: DataISO;
   acoes: AcoesEscalas;
@@ -266,7 +269,7 @@ export function EscalasView({
         />
       )}
 
-      {aba === "extras" && <ExtrasView extras={extras} pessoas={pessoas} aoSalvar={acoes.salvarExtra} aoRemover={acoes.removerExtra} />}
+      {aba === "extras" && <ExtrasView extras={extras} pessoas={pessoas} pracasCasa={pracasCasa} aoSalvar={acoes.salvarExtra} aoRemover={acoes.removerExtra} />}
 
       {aba === "ocorrencias" && (
         <ProntuarioView
@@ -293,6 +296,7 @@ export function EscalasView({
           ocorrencias={ocorrencias}
           notas={notas}
           extras={extras}
+          pracasCasa={pracasCasa}
           hoje={hoje}
           aoSalvarPerfil={acoes.salvarPerfil}
           aoCriarNota={acoes.criarNota}

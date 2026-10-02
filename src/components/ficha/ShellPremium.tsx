@@ -105,6 +105,8 @@ export function ShellPremium({
   tituloPagina,
   acaoRodape,
   extrasCabecalho,
+  logoUrl,
+  menuConta,
   children,
 }: {
   prefixoRotas?: string;
@@ -118,6 +120,10 @@ export function ShellPremium({
   acaoRodape: { rotulo: string; icone: ReactNode; onClick: () => void };
   /** Itens extras à direita da barra superior (ex.: botão do agente IA na demo). */
   extrasCabecalho?: ReactNode;
+  /** CONFIGURAÇÕES (2026-10-01): logo do restaurante no lugar das iniciais. */
+  logoUrl?: string | null;
+  /** CONFIGURAÇÕES (2026-10-01): menu da conta, último item da barra superior (também no celular). */
+  menuConta?: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePathname() ?? "";
@@ -221,10 +227,12 @@ export function ShellPremium({
       {/* Restaurante */}
       <div className="p-3 border-t flex items-center gap-2.5" style={{ borderColor: "var(--linha)" }}>
         <div
-          className="w-8 h-8 rounded-md flex items-center justify-center text-[12px] font-semibold shrink-0 border"
+          className="w-8 h-8 rounded-md flex items-center justify-center text-[12px] font-semibold shrink-0 border overflow-hidden"
           style={{ borderColor: "var(--linha-forte)", background: "var(--panel-elevated)", color: "var(--tinta)" }}
         >
-          {iniciais}
+          {/* O nome do restaurante está ao lado: o logo é decorativo aqui (alt vazio). */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {logoUrl ? <img src={logoUrl} alt="" className="w-full h-full object-contain" /> : iniciais}
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-medium text-[var(--tinta)] leading-tight line-clamp-2">{nomeRestaurante}</div>
@@ -283,6 +291,7 @@ export function ShellPremium({
             >
               {tema === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
+            {menuConta}
           </div>
         </header>
         <div className="p-4 pb-[calc(96px+env(safe-area-inset-bottom))] md:p-8 print:p-0 flex-1 animate-fade-in">{children}</div>

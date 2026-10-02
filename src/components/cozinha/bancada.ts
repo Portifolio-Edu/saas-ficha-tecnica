@@ -2,8 +2,9 @@
 // Fichas do modo cozinha (FichasCozinha.tsx). Testes: __tests__/bancada.test.ts.
 
 import { unidadeNoPlural } from "@/components/producoes/formato";
+import { numeroBR } from "@/lib/formato";
 
-export const fmt = (n: number, casas: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: casas });
+export const fmt = (n: number, casas: number) => numeroBR(n, { maximumFractionDigits: casas });
 
 /** "discos" com 1 → "disco"; com 3 → "discos". kg, g, l, ml e un não mudam. */
 export function unidadeCerta(qtd: number, unidade: string): string {

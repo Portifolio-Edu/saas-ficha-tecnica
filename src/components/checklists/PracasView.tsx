@@ -14,7 +14,9 @@
 // Pra tirar a visão inteira: remover a aba "Praças" em ChecklistsClient.tsx.
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Camera, Check, ChevronLeft, ChevronRight, ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, Camera, Check, ImagePlus, Plus, Trash2, X } from "lucide-react";
+// PRAÇAS NA COZINHA (2026-10-02): a foto ampliada virou FotoAmpliada.tsx (a mesma da cozinha).
+import { FotoAmpliada } from "./FotoAmpliada";
 import { reduzirImagem } from "@/lib/imagem/reduzirImagem";
 import type { Checklist, ChecklistArea, ChecklistFoto, ChecklistItem } from "@/lib/dominio/checklist";
 
@@ -547,54 +549,7 @@ function BlocoArea({
         </div>
       </div>
 
-      {ampliada !== null && fotos[ampliada] && <Ampliada titulo={nomeArea} fotos={fotos} indice={ampliada} onTrocar={setAmpliada} onFechar={() => setAmpliada(null)} />}
+      {ampliada !== null && fotos[ampliada] && <FotoAmpliada titulo={nomeArea} fotos={fotos} indice={ampliada} onTrocar={setAmpliada} onFechar={() => setAmpliada(null)} />}
     </section>
-  );
-}
-
-function Ampliada({ titulo, fotos, indice, onTrocar, onFechar }: { titulo: string; fotos: ChecklistFoto[]; indice: number; onTrocar: (i: number) => void; onFechar: () => void }) {
-  const foto = fotos[indice];
-  const anterior = () => onTrocar((indice - 1 + fotos.length) % fotos.length);
-  const proxima = () => onTrocar((indice + 1) % fotos.length);
-
-  useEffect(() => {
-    const tecla = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onFechar();
-      if (e.key === "ArrowLeft") anterior();
-      if (e.key === "ArrowRight") proxima();
-    };
-    window.addEventListener("keydown", tecla);
-    return () => window.removeEventListener("keydown", tecla);
-  });
-
-  const rotulo = foto.legenda ? `${titulo} · ${foto.legenda}` : titulo;
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "rgba(0,0,0,0.88)" }} role="dialog" aria-modal="true" aria-label={rotulo}>
-      <div className="flex items-center justify-between gap-3 px-4 h-16 shrink-0 text-white">
-        <span className="text-[15px] truncate">
-          {rotulo}
-          <span className="text-white/60 ml-2">
-            {indice + 1} de {fotos.length}
-          </span>
-        </span>
-        <button onClick={onFechar} className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-white/10" aria-label="Fechar">
-          <X size={22} />
-        </button>
-      </div>
-      <div className="flex-1 min-h-0 flex items-center justify-center gap-2 px-2 pb-6">
-        {fotos.length > 1 && (
-          <button onClick={anterior} className="w-12 h-12 flex items-center justify-center rounded-lg text-white hover:bg-white/10 shrink-0" aria-label="Foto anterior">
-            <ChevronLeft size={26} />
-          </button>
-        )}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={foto.url} alt={rotulo} className="max-h-full max-w-full object-contain rounded-md" />
-        {fotos.length > 1 && (
-          <button onClick={proxima} className="w-12 h-12 flex items-center justify-center rounded-lg text-white hover:bg-white/10 shrink-0" aria-label="Próxima foto">
-            <ChevronRight size={26} />
-          </button>
-        )}
-      </div>
-    </div>
   );
 }

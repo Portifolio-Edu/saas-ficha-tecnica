@@ -6,6 +6,7 @@
 // do servidor ou do aparelho.
 
 import type { Categoria } from "./insumo";
+import { formatadorData } from "@/lib/formato";
 
 export type CategoriaPedido = "hortifruti" | "proteinas" | "secos" | "laticinios" | "outros";
 
@@ -88,7 +89,8 @@ export interface Agora {
 
 export function agoraNoRestaurante(d: Date = new Date(), fuso = "America/Sao_Paulo"): Agora {
   const p = Object.fromEntries(
-    new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    // DESEMPENHO (2026-10-02): formatador reaproveitado (antes: new Intl.DateTimeFormat a cada chamada).
+    formatadorData({ timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }, "en-CA")
       .formatToParts(d)
       .map((x) => [x.type, x.value]),
   );

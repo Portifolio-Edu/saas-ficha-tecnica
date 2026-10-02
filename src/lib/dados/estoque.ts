@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { mensagemErro } from "./erros";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { ContagemCega, EstoqueLinha, Movimentacao, TipoMovimentacao } from "@/lib/dominio/estoque";
+import { dataBR } from "@/lib/formato";
 
 export type { EstoqueLinha, Movimentacao, TipoMovimentacao } from "@/lib/dominio/estoque";
 
@@ -177,7 +178,7 @@ export async function aplicarContagem(contagemId: string, userId: string): Promi
   if (!contagem) throw new Error("Contagem não encontrada.");
   if (contagem.aplicadaEm) throw new Error("Essa contagem já foi aplicada.");
 
-  const dia = new Date(contagem.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  const dia = dataBR(contagem.criadoEm, { day: "2-digit", month: "2-digit" });
   for (const item of contagem.itens) {
     const diferenca = Number((item.contada - item.sistema).toFixed(3));
     if (diferenca === 0) continue;
