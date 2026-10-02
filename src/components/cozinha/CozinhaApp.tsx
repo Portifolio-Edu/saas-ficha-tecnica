@@ -7,7 +7,7 @@
 // (dados_cozinha). A faixa "Quem está fazendo" fica sempre à vista: cada
 // registro sai com o nome de quem fez.
 
-import { memo, useDeferredValue, useEffect, useState, type ReactNode } from "react";
+import { memo, startTransition, useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { ChefHat, Check, ChevronLeft, UserRound, EyeOff, AlertTriangle } from "lucide-react";
 import { BarraInferiorCozinha, CHAVE_RECOLHIDO, MenuLateralCozinha, type Aba } from "./MenuCozinha";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
@@ -51,6 +51,19 @@ export interface AcoesCozinha {
 const CHAVE_RESPONSAVEL = "cozinha:responsavel";
 // Lista vazia fixa: um `= []` novo a cada render quebraria o memo do conteúdo.
 const SEM_ITENS: never[] = [];
+/** Ordem em que as seções não abertas são preparadas (as mais usadas primeiro). */
+/** Largura de cada seção. TOQUE (2026-09-25): Produção é um quadro de 4 colunas e usa a largura toda; FICHAS: 2 colunas. */
+const LARGURA: Record<Aba, string> = {
+  checklists: "max-w-4xl",
+  temperatura: "max-w-4xl",
+  producao: "max-w-[1440px]",
+  proteinas: "max-w-6xl",
+  fichas: "max-w-6xl",
+  pedidos: "max-w-2xl",
+  contagem: "max-w-4xl",
+  escala: "max-w-6xl",
+};
+const ORDEM_PREPARO: Aba[] = ["producao", "fichas", "temperatura", "proteinas", "pedidos", "contagem", "escala"];
 
 // Foto que não carrega (link quebrado, sem internet na cozinha) some em vez
 // de deixar um quadro vazio no meio da ficha.
@@ -124,6 +137,19 @@ export function CozinhaApp({
   // invisível até ler; o cabeçalho aparece na hora.
   const [pronto, setPronto] = useState(false);
   const [menuRecolhido, setMenuRecolhido] = useState(false);
+  // DESEMPENHO (2026-10-02, 2ª rodada): a barra da Vercel ainda mostrou toque
+  // esperando até 504 ms — o tablet estava ocupado desenhando a seção
+  // anterior. Agora cada seção é montada uma vez só e fica guardada
+  // (escondida); trocar de seção é só mostrar/esconder. As que a pessoa ainda
+  // não abriu são preparadas com o aparelho parado, uma por vez e sem travar
+  // (startTransition). Bônus pra cozinha: o que foi digitado numa seção
+  // (temperatura, contagem) continua lá ao voltar.
+  // Reverter: renderizar só <ConteudoCozinha aba={abaConteudo} />.
+  const [montadas, setMontadas] = useState<Aba[]>(["checklists"]);
+  // Seções que já passaram por um layout (à vista ou preparadas fora da vista).
+  // Só essas podem ser guardadas com content-visibility: quem nunca teve
+  // layout teria que fazer tudo na hora do toque.
+  const [comLayout, setComLayout] = useState<Aba[]>([]);
 
   useEffect(() => {
     try {
@@ -135,6 +161,41 @@ export function CozinhaApp({
   }, []);
 
   const emUso = Boolean(responsavel) && !trocando;
+
+  // A seção aberta entra na hora (se ainda não estava montada) e, à vista,
+  // ganha layout.
+  useEffect(() => {
+    setMontadas((m) => (m.includes(abaConteudo) ? m : [...m, abaConteudo]));
+    if (emUso) setComLayout((m) => (m.includes(abaConteudo) ? m : [...m, abaConteudo]));
+  }, [abaConteudo, emUso]);
+
+  // Preparada fora da vista: depois de um quadro desenhado o layout existe;
+  // aí ela pode ser guardada.
+  useEffect(() => {
+    const pendente = montadas.find((a) => !comLayout.includes(a));
+    if (!pendente) return;
+    let quadro = requestAnimationFrame(() => {
+      quadro = requestAnimationFrame(() => setComLayout((m) => (m.includes(pendente) ? m : [...m, pendente])));
+    });
+    return () => cancelAnimationFrame(quadro);
+  }, [montadas, comLayout]);
+
+  // As outras, com o aparelho parado: uma por vez, na ordem de uso.
+  useEffect(() => {
+    if (!pronto || !emUso) return;
+    if (montadas.some((a) => !comLayout.includes(a))) return; // uma de cada vez
+    const proxima = ORDEM_PREPARO.find((a) => !montadas.includes(a));
+    if (!proxima) return;
+    const preparar = () => startTransition(() => setMontadas((m) => (m.includes(proxima) ? m : [...m, proxima])));
+    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(preparar, { timeout: 3000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    // Safari (iPad) não tem requestIdleCallback.
+    const id = window.setTimeout(preparar, 400);
+    return () => window.clearTimeout(id);
+  }, [pronto, emUso, montadas, comLayout]);
   const trocarAba = (a: Aba) => {
     setAba(a);
     window.scrollTo({ top: 0 });
@@ -187,37 +248,55 @@ export function CozinhaApp({
       <div className="flex-1 flex" style={pronto ? undefined : { visibility: "hidden" }}>
       {emUso && <MenuLateralCozinha aba={aba} onTrocar={trocarAba} contadores={contadores} recolhidoInicial={menuRecolhido} />}
       <div className="flex-1 min-w-0 flex flex-col">
-      {/* TOQUE (2026-09-25): a aba Produção é um quadro de 4 colunas e usa a largura toda.
-          FICHAS (2026-09-25): Fichas usa 2 colunas (foto e ingredientes | passo a passo). */}
-      <main
-        id="conteudo"
-        aria-busy={aba !== abaConteudo || undefined}
-        className={`flex-1 w-full mx-auto px-4 md:px-6 py-5 transition-opacity duration-150 ${aba !== abaConteudo ? "opacity-60" : ""} ${emUso ? "pb-24 md:pb-5" : ""} ${emUso && abaConteudo === "producao" ? "max-w-[1440px]" : emUso && (abaConteudo === "fichas" || abaConteudo === "proteinas" || abaConteudo === "escala") ? "max-w-6xl" : abaConteudo === "pedidos" ? "max-w-2xl" : "max-w-4xl"}`}
-      >
-        {!responsavel || trocando ? (
-          <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
-        ) : (
-          <ConteudoCozinha
-            aba={abaConteudo}
-            responsavel={responsavel}
-            checklists={checklists}
-            locais={locais}
-            temperaturas={temperaturas}
-            fichas={fichas}
-            itensContagem={itensContagem}
-            producoes={producoes}
-            proteinas={proteinas}
-            lotesProteina={lotesProteina}
-            escala={escala}
-            hoje={hoje}
-            requisicoes={requisicoes}
-            plano={plano}
-            agendaFornecedores={agendaFornecedores}
-            sugestoesPedido={sugestoesPedido}
-            agoraInicial={agoraInicial}
-            acoes={acoes}
-          />
+      <main id="conteudo" aria-busy={aba !== abaConteudo || undefined} className={`flex-1 w-full px-4 md:px-6 py-5 ${emUso ? "pb-24 md:pb-5" : ""}`}>
+        {(!responsavel || trocando) && (
+          <div className="mx-auto max-w-4xl">
+            <QuemEsta funcionarios={funcionarios} atual={responsavel} onEscolher={escolher} onCancelar={responsavel ? () => setTrocando(false) : undefined} />
+          </div>
         )}
+        {/* relative: a seção sendo preparada fica por cima, invisível, na mesma largura. */}
+        <div className="relative">
+        {responsavel &&
+          montadas.map((a) => {
+            const visivel = !trocando && a === abaConteudo;
+            // DESEMPENHO (2026-10-02): escondida com content-visibility (classe
+            // secao-guardada em globals.css), não display:none — o navegador
+            // guarda o layout pronto e mostrar de novo é quase de graça. Antes
+            // mostrar Produção refazia o layout inteiro (163 ms com CPU 6x).
+            // A largura é da própria seção (não do <main>), senão mudar de
+            // largura ao trocar invalidaria o layout guardado.
+            return (
+            <div
+              key={a}
+              className={`mx-auto w-full ${LARGURA[a]} ${visivel ? "" : comLayout.includes(a) ? "secao-guardada" : "secao-preparando"}`}
+              aria-hidden={visivel ? undefined : true}
+              inert={!visivel}
+            >
+              <ConteudoCozinha
+                aba={a}
+                telaAcesa={a === "fichas" && abaConteudo === "fichas" && !trocando}
+                responsavel={responsavel}
+                checklists={checklists}
+                locais={locais}
+                temperaturas={temperaturas}
+                fichas={fichas}
+                itensContagem={itensContagem}
+                producoes={producoes}
+                proteinas={proteinas}
+                lotesProteina={lotesProteina}
+                escala={escala}
+                hoje={hoje}
+                requisicoes={requisicoes}
+                plano={plano}
+                agendaFornecedores={agendaFornecedores}
+                sugestoesPedido={sugestoesPedido}
+                agoraInicial={agoraInicial}
+                acoes={acoes}
+              />
+            </div>
+            );
+          })}
+        </div>
       </main>
       {rodape && <footer className="text-center text-[13px] text-[var(--tinta-faint)] pb-5 px-4">{rodape}</footer>}
       </div>
@@ -232,6 +311,7 @@ export function CozinhaApp({
 // o conteúdo antigo não é redesenhado; o novo vem pelo useDeferredValue.
 const ConteudoCozinha = memo(function ConteudoCozinha({
   aba,
+  telaAcesa,
   responsavel,
   checklists,
   locais,
@@ -251,6 +331,8 @@ const ConteudoCozinha = memo(function ConteudoCozinha({
   acoes,
 }: {
   aba: Aba;
+  /** Fichas: mantém a tela acesa só enquanto a seção está à vista. */
+  telaAcesa: boolean;
   responsavel: string;
   checklists: Checklist[];
   locais: LocalArmazenamento[];
@@ -278,7 +360,7 @@ const ConteudoCozinha = memo(function ConteudoCozinha({
   ) : aba === "proteinas" ? (
     <ProteinasCozinha proteinas={proteinas} lotes={lotesProteina} responsavel={responsavel} acoes={acoes} />
   ) : aba === "fichas" ? (
-    <FichasCozinha fichas={fichas} />
+    <FichasCozinha fichas={fichas} telaAcesa={telaAcesa} />
   ) : aba === "escala" ? (
     <EscalaCozinha escala={escala} hoje={hoje} />
   ) : aba === "pedidos" ? (

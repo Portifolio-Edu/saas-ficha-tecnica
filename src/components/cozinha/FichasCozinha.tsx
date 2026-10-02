@@ -17,7 +17,7 @@
 // Antes: SecaoFichas em CozinhaApp.tsx (lista simples e texto corrido).
 // Reverter: git revert do commit "Fichas técnicas no tablet".
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, X, ChevronLeft, ChevronRight, Check, Camera, Minus, Plus, RotateCcw, UtensilsCrossed, CookingPot, Expand, Scale,
 } from "lucide-react";
@@ -47,13 +47,21 @@ interface Aberta {
   usadoEm?: { nomePrato: string; quantidade: string };
 }
 
-export function FichasCozinha({ fichas }: { fichas: FichaCozinha[] }) {
+// DESEMPENHO (2026-10-02): a seção fica montada escondida (CozinhaApp). Por
+// isso a rolagem pro topo não roda ao montar (seria preparada com a pessoa em
+// outra seção) e a tela acesa só vale com Fichas à vista (`telaAcesa`).
+export function FichasCozinha({ fichas, telaAcesa = true }: { fichas: FichaCozinha[]; telaAcesa?: boolean }) {
   const [pilha, setPilha] = useState<Aberta[]>([]);
   const porId = useMemo(() => new Map(fichas.map((f) => [f.id, f])), [fichas]);
   const atual = pilha.length ? porId.get(pilha[pilha.length - 1].id) : undefined;
 
   // Abrir/voltar sempre começa do topo da página.
+  const montou = useRef(false);
   useEffect(() => {
+    if (!montou.current) {
+      montou.current = true;
+      return;
+    }
     window.scrollTo({ top: 0 });
   }, [pilha.length]);
 
@@ -69,6 +77,7 @@ export function FichasCozinha({ fichas }: { fichas: FichaCozinha[] }) {
         aoVoltar={() => setPilha((p) => p.slice(0, -1))}
         aoIrPara={(nivel) => setPilha((p) => p.slice(0, nivel))}
         aoAbrirPreparo={(id, usadoEm) => setPilha((p) => [...p, { id, usadoEm }])}
+        telaAcesa={telaAcesa}
       />
     );
   }
@@ -176,6 +185,7 @@ function FichaAberta({
   aoVoltar,
   aoIrPara,
   aoAbrirPreparo,
+  telaAcesa,
 }: {
   ficha: FichaCozinha;
   porId: Map<string, FichaCozinha>;
@@ -184,6 +194,7 @@ function FichaAberta({
   aoVoltar: () => void;
   aoIrPara: (nivel: number) => void;
   aoAbrirPreparo: (id: string, usadoEm: Aberta["usadoEm"]) => void;
+  telaAcesa: boolean;
 }) {
   const [quanto, setQuanto] = useState(ficha.rendimento);
   const [separados, setSeparados] = useState<Set<string>>(new Set());
@@ -193,7 +204,7 @@ function FichaAberta({
   const escalada = Math.abs(fator - 1) > 1e-9;
   const passo = passoDa(ficha.unidadeRendimento);
 
-  useTelaAcesa();
+  useTelaAcesa(telaAcesa);
 
   const etapas = ficha.etapas.length
     ? [...ficha.etapas].sort((a, b) => a.ordem - b.ordem).map((e, i) => ({ n: i + 1, titulo: e.titulo, texto: e.texto, fotoUrl: e.fotoUrl }))
@@ -538,8 +549,9 @@ function FotoAmpliada({ url, legenda, aoFechar }: { url: string; legenda: string
 }
 
 /** Mantém a tela do tablet acesa enquanto a ficha está aberta (onde o navegador deixa). */
-function useTelaAcesa() {
+function useTelaAcesa(ligada: boolean) {
   useEffect(() => {
+    if (!ligada) return;
     type Trava = { release: () => Promise<void> };
     const nav = navigator as Navigator & { wakeLock?: { request: (tipo: "screen") => Promise<Trava> } };
     if (!nav.wakeLock) return;
@@ -562,5 +574,5 @@ function useTelaAcesa() {
       document.removeEventListener("visibilitychange", pedir);
       void trava?.release().catch(() => {});
     };
-  }, []);
+  }, [ligada]);
 }

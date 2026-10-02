@@ -478,3 +478,15 @@ input::-webkit-date-and-time-value {
    aberto (cada opção tem a cor do claro e a do escuro). Reverter: apagar. */
 .amostra-cor { background: var(--amostra-claro); }
 [data-theme="dark"] .amostra-cor { background: var(--amostra-escuro); }
+
+/* DESEMPENHO (2026-10-02): seção do modo cozinha guardada (montada, fora da
+   vista). content-visibility guarda o layout pronto — mostrar de novo não
+   refaz tudo. Navegador sem suporte (iPad antes do iOS 18) cai no
+   display:none, que funciona igual, só que mais lento ao trocar. */
+.secao-guardada { content-visibility: hidden; height: 0; overflow: hidden; }
+/* Sendo preparada com o aparelho parado: faz o layout uma vez, invisível,
+   sem ocupar espaço nem receber toque. Depois vira secao-guardada. */
+.secao-preparando { position: absolute; inset-inline: 0; top: 0; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+@supports not (content-visibility: hidden) {
+  .secao-guardada { display: none; }
+}
