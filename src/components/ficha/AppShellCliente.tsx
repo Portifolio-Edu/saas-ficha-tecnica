@@ -11,7 +11,6 @@
 
 import { useRouter } from "next/navigation";
 import { LogOut, Settings, UserRound } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { ShellPremium } from "./ShellPremium";
 import { BotaoAgente } from "@/components/ia/BotaoAgente";
 import { MenuConta } from "./MenuConta";
@@ -35,7 +34,13 @@ export function AppShellCliente({
 }) {
   const router = useRouter();
 
+  // DESEMPENHO (2026-10-02): o cliente do Supabase no navegador (~190 KB:
+  // login, tempo real, arquivos) só serve pra sair da conta. Antes vinha no
+  // topo e era baixado e executado na abertura de TODA tela do app, segurando
+  // o primeiro toque. Agora só carrega ao clicar em Sair.
+  // Reverter: voltar `import { createClient } from "@/lib/supabase/client"` no topo.
   const sair = async () => {
+    const { createClient } = await import("@/lib/supabase/client");
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");

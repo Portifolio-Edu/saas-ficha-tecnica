@@ -10,11 +10,12 @@ import { Kpi } from "@/components/ficha/Kpi";
 import { EmptyState } from "@/components/ficha/EmptyState";
 import { nums } from "@/components/ficha/tema";
 import type { FechamentoEstoque } from "@/lib/dominio/fechamentoCmv";
+import { dataBR, numeroBR } from "@/lib/formato";
 
-const reais = (v: number) => `R$ ${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+const reais = (v: number) => `R$ ${numeroBR(v, { maximumFractionDigits: 0 })}`;
 
 const periodo = (f: FechamentoEstoque) => {
-  const d = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  const d = (iso: string) => dataBR(`${iso}T12:00:00`, { day: "2-digit", month: "short" });
   return `${d(f.periodoInicio)} a ${d(f.periodoFim)}`;
 };
 

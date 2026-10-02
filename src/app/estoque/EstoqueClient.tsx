@@ -25,6 +25,7 @@ import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
 import { CATEGORIAS_PEDIDO, diasDeEntregaTexto } from "@/lib/dominio/requisicao";
 import { PedidosDaCozinha } from "@/components/estoque/PedidosDaCozinha";
 import type { Requisicao, StatusRequisicao } from "@/lib/dominio/requisicao";
+import { numeroBR } from "@/lib/formato";
 
 function formatarData(iso: string): string {
   const d = new Date(iso);
@@ -205,9 +206,9 @@ export function EstoqueClient({
                   key={e.insumoId}
                   titulo={e.nome}
                   subtitulo={CATEGORIAS.find((c) => c.id === e.categoria)?.label ?? e.categoria}
-                  valor={`${e.saldoAtual.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} ${e.unidadeMedida}`}
+                  valor={`${numeroBR(e.saldoAtual, { maximumFractionDigits: 3 })} ${e.unidadeMedida}`}
                   corValor={abaixo ? "var(--danger)" : undefined}
-                  detalhe={abaixo ? `repor · mín. ${e.estoqueMinimo.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} ${e.unidadeMedida}` : `${formatBRL(e.saldoAtual * e.precoUnitario)} parado`}
+                  detalhe={abaixo ? `repor · mín. ${numeroBR(e.estoqueMinimo, { maximumFractionDigits: 3 })} ${e.unidadeMedida}` : `${formatBRL(e.saldoAtual * e.precoUnitario)} parado`}
                   aberto={aberto}
                   aoTocar={() => setEditandoInsumoId(aberto ? null : e.insumoId)}
                 >
@@ -244,9 +245,9 @@ export function EstoqueClient({
                       <td className="py-2.5 px-5 font-medium">{e.nome}</td>
                       <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === e.categoria)?.label ?? e.categoria}</td>
                       <td className="py-2.5 px-3 text-right font-semibold" style={{ ...nums, color: abaixo ? "var(--danger)" : "var(--text)" }}>
-                        {e.saldoAtual.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}{e.unidadeMedida}{abaixo && " · repor"}
+                        {numeroBR(e.saldoAtual, { maximumFractionDigits: 3 })}{e.unidadeMedida}{abaixo && " · repor"}
                       </td>
-                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{e.estoqueMinimo.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}{e.unidadeMedida}</td>
+                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{numeroBR(e.estoqueMinimo, { maximumFractionDigits: 3 })}{e.unidadeMedida}</td>
                       <td className="py-2.5 px-5 text-right" style={nums}>{formatBRL(e.saldoAtual * e.precoUnitario)}</td>
                     </tr>
                     {editandoEsteAqui && (

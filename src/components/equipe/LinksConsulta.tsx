@@ -12,6 +12,7 @@ import { Card } from "@/components/ficha/Card";
 import { useToast } from "@/components/ficha/Toast";
 import { linkWhatsAppConvite, type LinkConsulta } from "@/lib/dominio/consulta";
 import type { Funcionario } from "@/lib/dominio/equipe";
+import { dataBR } from "@/lib/formato";
 
 type Resultado<T = undefined> = { ok: true; dados?: T } | { ok: false; erro: string };
 
@@ -26,10 +27,10 @@ function quando(iso: string): string {
   const d = new Date(iso);
   const hoje = new Date();
   const ontem = new Date(hoje.getTime() - 86_400_000);
-  const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const hora = dataBR(d, { hour: "2-digit", minute: "2-digit" });
   if (d.toDateString() === hoje.toDateString()) return `hoje às ${hora}`;
   if (d.toDateString() === ontem.toDateString()) return `ontem às ${hora}`;
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return dataBR(d, { day: "2-digit", month: "2-digit" });
 }
 
 export function LinksConsulta({

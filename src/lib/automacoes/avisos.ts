@@ -8,6 +8,7 @@
 // agir (insumo, fornecedor, equipe, desperdício, vendas). Temperatura saiu:
 // é cobrança da nutricionista (vai ter canal próprio). Pra voltar ao formato
 // anterior: supabase/reverter/20261002120000_avisos_gestao.sql + git revert.
+import { formatadorData, numeroBR } from "@/lib/formato";
 export type TipoAviso =
   | "estoque_baixo"
   | "compras_prazo"
@@ -143,7 +144,8 @@ export function emMinutos(hhmm: string): number {
 /** Minutos desde a meia-noite no fuso do restaurante. */
 export function minutoLocal(agora: Date, fuso = "America/Sao_Paulo"): number {
   const p = Object.fromEntries(
-    new Intl.DateTimeFormat("en-GB", { timeZone: fuso, hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    // DESEMPENHO (2026-10-02): formatador reaproveitado (antes: new Intl.DateTimeFormat a cada chamada).
+    formatadorData({ timeZone: fuso, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }, "en-GB")
       .formatToParts(agora)
       .map((x) => [x.type, x.value]),
   );
@@ -164,8 +166,8 @@ export function naJanela(minuto: number, inicio: string, duracaoMin: number): bo
   return minuto >= ini && minuto < Math.min(ini + duracaoMin, 24 * 60);
 }
 
-const fmt = (n: number, casas = 2) => n.toLocaleString("pt-BR", { maximumFractionDigits: casas });
-const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(/\u00a0/g, " ");
+const fmt = (n: number, casas = 2) => numeroBR(n, { maximumFractionDigits: casas });
+const reais = (n: number) => numeroBR(n, { style: "currency", currency: "BRL" }).replace(/\u00a0/g, " ");
 const ddmm = (data: string) => `${data.slice(8, 10)}/${data.slice(5, 7)}`;
 const plural = (n: number, um: string, varios: string) => (n === 1 ? um : varios);
 

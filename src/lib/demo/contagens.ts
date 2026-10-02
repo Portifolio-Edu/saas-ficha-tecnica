@@ -10,9 +10,10 @@
 
 import { CHAVES_DEMO, gravarDemo, lerDemo } from "./armazem";
 import type { ContagemCega, EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
+import { dataBR } from "@/lib/formato";
 
 export function aplicarContagemDemo(contagem: ContagemCega, atuais: ContagemCega[]): void {
-  const dia = new Date(contagem.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  const dia = dataBR(contagem.criadoEm, { day: "2-digit", month: "2-digit" });
   const agora = new Date().toISOString();
   const diferencas = contagem.itens
     .map((i) => ({ ...i, diferenca: Number((i.contada - i.sistema).toFixed(3)) }))

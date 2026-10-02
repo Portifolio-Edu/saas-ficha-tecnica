@@ -15,6 +15,7 @@ import { ROTULO_PAPEL } from "@/lib/auth/papeis";
 import type { ConfigAvisos, TipoAviso } from "@/lib/automacoes/avisos";
 import type { AvisoEnviado } from "@/lib/dados/avisos";
 import type { EstadoForm } from "@/app/configuracoes/actions";
+import { dataBR } from "@/lib/formato";
 
 const ROTULO_TIPO: Record<TipoAviso, { rotulo: string; icone: LucideIcon }> = {
   estoque_baixo: { rotulo: "Insumo abaixo do mínimo", icone: Package },
@@ -268,8 +269,8 @@ function quando(iso: string): string {
   const d = new Date(iso);
   const hoje = new Date();
   const mesmoDia = d.toDateString() === hoje.toDateString();
-  const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  return mesmoDia ? `hoje, ${hora}` : `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}, ${hora}`;
+  const hora = dataBR(d, { hour: "2-digit", minute: "2-digit" });
+  return mesmoDia ? `hoje, ${hora}` : `${dataBR(d, { day: "2-digit", month: "2-digit" })}, ${hora}`;
 }
 
 function BlocoHistorico() {

@@ -2,21 +2,25 @@
 // grafico deve formatar R$/% na mao, pra nao divergir do padrao (milhar,
 // casas decimais, sinal de porcentagem).
 
+// DESEMPENHO (2026-10-02): com formatador reaproveitado (src/lib/formato.ts).
+// Antes: valor.toLocaleString("pt-BR", {…}) em cada função.
+import { numeroBR } from "@/lib/formato";
+
 export function formatBRLEixo(valor: number): string {
-  return `R$\u00A0${valor.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+  return `R$\u00A0${numeroBR(valor, { maximumFractionDigits: 0 })}`;
 }
 
 export function formatBRL(valor: number): string {
   // Espaço não-quebrável: "R$" nunca fica numa linha e o número na outra.
-  return `R$\u00A0${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `R$\u00A0${numeroBR(valor, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function formatPercentEixo(valor: number): string {
-  return `${valor.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%`;
+  return `${numeroBR(valor, { maximumFractionDigits: 0 })}%`;
 }
 
 export function formatPercent(valor: number, casasDecimais = 1): string {
-  return `${valor.toLocaleString("pt-BR", { minimumFractionDigits: casasDecimais, maximumFractionDigits: casasDecimais })}%`;
+  return `${numeroBR(valor, { minimumFractionDigits: casasDecimais, maximumFractionDigits: casasDecimais })}%`;
 }
 
 // SISTEMA premium (2026-09-22): número em pt-BR com casas fixas ("1,12", "18,2").
@@ -24,11 +28,11 @@ export function formatPercent(valor: number, casasDecimais = 1): string {
 // decimal ("FC 1.12", "margem 81.8%"). Não usar em value de <input type="number">,
 // que exige ponto.
 export function formatNumero(valor: number, casas = 1): string {
-  return valor.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  return numeroBR(valor, { minimumFractionDigits: casas, maximumFractionDigits: casas });
 }
 
 // SISTEMA premium: quantidade (peso, volume, unidade) em pt-BR, até 3 casas e sem
 // zeros sobrando ("0,15", "1,2", "18"). Antes as telas imprimiam o número cru ("0.15").
 export function formatQtd(valor: number): string {
-  return valor.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+  return numeroBR(valor, { maximumFractionDigits: 3 });
 }

@@ -26,6 +26,7 @@ import type { FichaCozinha, ItemContagem, LoteProteinaCozinha, NovoLoteProteina,
 import type { Funcionario } from "@/lib/dominio/equipe";
 import type { StatusProducao } from "@/lib/dominio/producao";
 import { progressoDoPlano, resumoDoPlano, type ItemPlano } from "@/lib/dominio/planoProducao";
+import { dataBR } from "@/lib/formato";
 
 export type ResultadoCozinha = { ok: true; aviso?: string } | { ok: false; erro: string };
 
@@ -692,7 +693,7 @@ function SecaoTemperatura({ locais, temperaturas: iniciais, responsavel, acoes }
                 <div className="text-right">
                   <div className="text-[20px] font-semibold" style={{ ...nums, color: alerta ? "var(--danger)" : "var(--tinta)" }}>{ultimo.temperaturaC} °C</div>
                   <div className="text-[12px] text-[var(--tinta-faint)]">
-                    {new Date(ultimo.registradoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · {ultimo.responsavel}
+                    {dataBR(ultimo.registradoEm, { hour: "2-digit", minute: "2-digit" })} · {ultimo.responsavel}
                   </div>
                 </div>
               )}

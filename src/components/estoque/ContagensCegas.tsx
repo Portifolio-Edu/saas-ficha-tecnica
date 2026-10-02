@@ -17,6 +17,7 @@ import { formatBRL, formatQtd } from "@/components/charts/format";
 import type { ContagemCega } from "@/lib/dominio/estoque";
 import { acaoAplicarContagem, acaoDescartarContagem } from "@/app/estoque/actions";
 import { aplicarContagemDemo, descartarContagemDemo } from "@/lib/demo/contagens";
+import { dataBR } from "@/lib/formato";
 
 const valorDaDiferenca = (c: ContagemCega) =>
   c.itens.reduce((soma, i) => soma + (i.contada - i.sistema) * i.precoUnitario, 0);
@@ -78,7 +79,7 @@ export function ContagensCegas({ contagens: iniciais }: { contagens: ContagemCeg
                 {expandida ? <ChevronDown size={16} className="text-[var(--tinta-faint)]" /> : <ChevronRight size={16} className="text-[var(--tinta-faint)]" />}
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] font-medium text-[var(--tinta)]">
-                    {new Date(c.criadoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {c.responsavel}
+                    {dataBR(c.criadoEm, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {c.responsavel}
                   </div>
                   <div className="text-[12px] text-[var(--tinta-faint)]">
                     {c.itens.length} itens contados · {comDiferenca.length} com diferença

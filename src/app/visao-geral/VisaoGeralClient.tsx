@@ -32,6 +32,7 @@ import type { Processamento } from "@/lib/dominio/processamento";
 import type { Producao } from "@/lib/dominio/producao";
 import type { FechamentoCmv } from "@/lib/dominio/fechamentoCmv";
 import { AlertTriangle, ChevronDown, ChevronUp, RotateCcw, CheckCircle, ArrowRight } from "lucide-react";
+import { dataBR as dataPtBR, numeroBR } from "@/lib/formato";
 
 // POLIMENTO visao-geral: datas do fechamento em dd/mm/aaaa. Antes apareciam
 // cruas em ISO ("2026-08-01 até 2026-08-31").
@@ -43,7 +44,7 @@ function dataBR(iso: string): string {
 // POLIMENTO visao-geral: diferença entre porcentagens em pontos percentuais,
 // com vírgula. Antes: `+${delta.toFixed(1)}%` ("+13.8%").
 function deltaPp(delta: number): string {
-  return `${delta >= 0 ? "+" : "−"}${Math.abs(delta).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
+  return `${delta >= 0 ? "+" : "−"}${numeroBR(Math.abs(delta), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} p.p.`;
 }
 
 // POLIMENTO visao-geral: tints seguem o tema. Antes: rgba(255, 59, 48, …) e
@@ -129,7 +130,7 @@ export function VisaoGeralClient({
   const inicioMes = new Date();
   inicioMes.setDate(1);
   const prefixoMes = inicioMes.toISOString().slice(0, 7);
-  const nomeMes = inicioMes.toLocaleDateString("pt-BR", { month: "long" });
+  const nomeMes = dataPtBR(inicioMes, { month: "long" });
 
   const perdasDoMes = useMemo(
     () => producoes.filter((p) => p.status === "perda" && p.criadoEm.startsWith(prefixoMes)),
@@ -285,8 +286,8 @@ export function VisaoGeralClient({
                 <div className="min-w-0">
                   <div className="text-[14px] font-medium text-[var(--tinta)]">{receitaDominioPorId.get(p.receitaId)?.nomePrato ?? p.nomeReceita}</div>
                   <div className="text-[12px] text-[var(--tinta-faint)]">
-                    Perda · {p.quantidade.toLocaleString("pt-BR")} {p.quantidade !== 1 && p.unidadeRendimento === "porção" ? "porções" : p.unidadeRendimento} ·{" "}
-                    {new Date(p.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                    Perda · {numeroBR(p.quantidade)} {p.quantidade !== 1 && p.unidadeRendimento === "porção" ? "porções" : p.unidadeRendimento} ·{" "}
+                    {dataPtBR(p.criadoEm, { day: "2-digit", month: "2-digit" })}
                   </div>
                 </div>
                 <div className="col-span-2 md:col-span-1 order-3 md:order-none text-[13px] text-[var(--tinta-sub)]">{p.motivoPerda || "Sem motivo registrado"}</div>
@@ -455,7 +456,7 @@ export function VisaoGeralClient({
                             <span className="text-[var(--tinta)]">{linha.nome}</span>
                             <div className="flex items-center gap-5 text-[var(--tinta-sub)]">
                               <span className="whitespace-nowrap">
-                                {linha.pesoLiquido.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} {linha.unidade}
+                                {numeroBR(linha.pesoLiquido, { maximumFractionDigits: 3 })} {linha.unidade}
                               </span>
                               <span className="font-medium text-[var(--tinta)] whitespace-nowrap">{formatBRL(linha.custo)}</span>
                             </div>

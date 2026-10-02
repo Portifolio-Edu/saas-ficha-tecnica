@@ -34,6 +34,7 @@ import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temp
 import { construirContexto } from "@/lib/dados/adaptadores";
 import { calcularCustoPorPorcao } from "@/lib/calculo/cmv";
 import { calcularFechamentoCmv } from "@/lib/calculo/fechamentoCmv";
+import { dataBR as dataPtBR, numeroBR } from "@/lib/formato";
 
 // Gap de 1 a 3 p.p. é ruído normal de operação (lib/calculo/fechamentoCmv.ts).
 const GAP_ALERTA_PP = 3;
@@ -70,7 +71,7 @@ function rotuloPeriodo(f: FechamentoCmv): string {
   const fim = new Date(`${f.periodoFim.slice(0, 10)}T12:00:00`);
   const ultimoDiaDoMes = new Date(fim.getFullYear(), fim.getMonth() + 1, 0).getDate();
   const mesCheio = inicio.getDate() === 1 && fim.getDate() === ultimoDiaDoMes && inicio.getMonth() === fim.getMonth() && inicio.getFullYear() === fim.getFullYear();
-  if (mesCheio) return inicio.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  if (mesCheio) return dataPtBR(inicio, { month: "long", year: "numeric" });
   return `${dataBR(f.periodoInicio, false)} a ${dataBR(f.periodoFim)}`;
 }
 
@@ -84,7 +85,7 @@ function pp(valor: number): string {
 }
 
 function plural(n: number, um: string, varios: string): string {
-  return `${n.toLocaleString("pt-BR")} ${n === 1 ? um : varios}`;
+  return `${numeroBR(n)} ${n === 1 ? um : varios}`;
 }
 
 type TipoPendencia = "Temperatura" | "CMV" | "Margem" | "Estoque" | "Rendimento";
@@ -635,7 +636,7 @@ export function RelatoriosClient({
                       return (
                         <tr key={p.receitaId} className="border-t" style={{ borderColor: "var(--linha)" }}>
                           <td className="py-3 px-5 font-medium text-[var(--tinta)]">{p.nome}</td>
-                          <td className="py-3 px-3 text-right text-[var(--tinta-sub)]">{p.vendidos.toLocaleString("pt-BR")}</td>
+                          <td className="py-3 px-3 text-right text-[var(--tinta-sub)]">{numeroBR(p.vendidos)}</td>
                           <td className="py-3 px-3 text-right">{p.faturamentoPrato !== null ? formatBRL(p.faturamentoPrato) : "sem preço"}</td>
                           <td className="py-3 px-3 text-right font-medium" style={{ color: abaixo ? "var(--sinal)" : "var(--tinta)" }}>
                             {p.margemPct !== null ? formatPercent(p.margemPct) : "—"}

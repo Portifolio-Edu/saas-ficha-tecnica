@@ -4,16 +4,15 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
+import dynamic from "next/dynamic";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { Kpi } from "@/components/ficha/Kpi";
 import { inputStyle, nums } from "@/components/ficha/tema";
-import { ChartFrame } from "@/components/charts/ChartFrame";
-import { ChartTooltipCard } from "@/components/charts/ChartTooltipCard";
-import { Donut, type FatiaDonut } from "@/components/charts/Donut";
-import { formatBRL, formatBRLEixo, formatPercent, formatPercentEixo, formatNumero } from "@/components/charts/format";
-import { CATEGORICAL_PALETTE, CHART_ANIMATION_DURATION, CHART_ANIMATION_EASING, CHART_MARGIN, CHART_MIN_HEIGHT, axisLineStyle, axisTickStyle, chartGridProps } from "@/components/charts/theme";
+import { EspacoDoGrafico } from "@/components/charts/EspacoDoGrafico";
+import type { FatiaDonut } from "@/components/charts/Donut";
+import { formatBRL, formatBRLEixo, formatNumero } from "@/components/charts/format";
+import { CHART_MIN_HEIGHT } from "@/components/charts/theme";
 import type { Insumo } from "@/lib/dominio/insumo";
 import type { Receita } from "@/lib/dominio/receita";
 import type { Processamento } from "@/lib/dominio/processamento";
@@ -24,16 +23,17 @@ import { calcularFechamentoCmv } from "@/lib/calculo/fechamentoCmv";
 import { acaoCriarFechamento } from "./actions";
 import { CHAVE_VENDAS_IMPORTADAS, type VendasImportadas } from "@/components/integracoes/ImportadorVendas";
 import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
+import { numeroBR } from "@/lib/formato";
 
 const TOP_DONUT = 5;
 
 const GAP_ALERTA_PP = 3;
 
-// CMV real x teorico e uma comparacao de identidade (2 series), nao de
-// status -- verde do accent fica proximo demais do preto do texto pra
-// distinguir num grafico pequeno, entao usa o primeiro tom categorico
-// (mesma paleta validada do donut) pro "real", mantendo o teorico em "var(--text)".
-const COR_CMV_REAL = CATEGORICAL_PALETTE[0];
+// DESEMPENHO (2026-10-02): gráficos (Recharts, ~290 KB) sob demanda — a
+// tela abre e responde ao toque antes deles. Reverter: importar Donut de
+// "@/components/charts/Donut" e colar o JSX de GraficoEvolucaoCmv.tsx de volta.
+const GraficoEvolucaoCmv = dynamic(() => import("./GraficoEvolucaoCmv").then((m) => m.GraficoEvolucaoCmv), { ssr: false, loading: () => <EspacoDoGrafico /> });
+const Donut = dynamic(() => import("@/components/charts/Donut").then((m) => m.Donut), { ssr: false, loading: () => <EspacoDoGrafico /> });
 
 function primeiroDiaDoMes(): string {
   const d = new Date();
@@ -346,7 +346,7 @@ export function CmvClient({
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-          <Kpi label="Faturamento do período" value={`R$ ${faturamentoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
+          <Kpi label="Faturamento do período" value={`R$ ${numeroBR(faturamentoPeriodo, { maximumFractionDigits: 0 })}`} sub={`${linhasCmv.reduce((s, l) => s + l.qtdVendida, 0)} pratos vendidos`} />
           <Kpi label="CMV teórico (fichas)" value={`${formatNumero(cmvTeoricoPct, 1)}%`} sub={formatBRLEixo(custoTeoricoPeriodo)} />
           {/* SISTEMA premium: sem base de estoque preenchida, CMV real e gap mostram "—"
               em vez de "0,0%" e "-21,8 p.p." (número inventado; PRODUCT.md, princípio 2).
@@ -356,7 +356,7 @@ export function CmvClient({
             label="Gap não explicado"
             value={semBaseReal ? "—" : `${gapPct > 0 ? "+" : ""}${formatNumero(gapPct, 1)} p.p.`}
             alerta={!semBaseReal && gapPct > GAP_ALERTA_PP}
-            sub={semBaseReal ? "aparece com o estoque contado" : `R$ ${Math.abs(gapReais).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} ${gapReais > 0 ? "a mais que o previsto" : "abaixo do previsto"}`}
+            sub={semBaseReal ? "aparece com o estoque contado" : `R$ ${numeroBR(Math.abs(gapReais), { maximumFractionDigits: 0 })} ${gapReais > 0 ? "a mais que o previsto" : "abaixo do previsto"}`}
           />
         </div>
 
@@ -385,13 +385,13 @@ export function CmvClient({
             ))}
           </div>
           <div className="text-[11.5px] mt-3 pt-3" style={{ color: "var(--sub)", borderTop: `1px solid ${"var(--border)"}` }}>
-            Consumo real = {numEstoqueInicial.toLocaleString("pt-BR")} + {numCompras.toLocaleString("pt-BR")} − {numEstoqueFinal.toLocaleString("pt-BR")} = <b style={{ color: "var(--text)" }}>R$ {consumoReal.toLocaleString("pt-BR")}</b>
+            Consumo real = {numeroBR(numEstoqueInicial)} + {numeroBR(numCompras)} − {numeroBR(numEstoqueFinal)} = <b style={{ color: "var(--text)" }}>R$ {numeroBR(consumoReal)}</b>
           </div>
         </Card>
 
         {gapPct > GAP_ALERTA_PP && (
           <div className="rounded-lg p-4 mt-3 text-[12.5px]" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
-            <b>Gap de {formatNumero(gapPct, 1)} pontos percentuais.</b> Saiu R$ {gapReais.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} a mais de insumo do que as fichas previam. As causas prováveis, em ordem: porção maior que a ficha manda, perda não registrada, rendimento de proteína pior que o cadastrado, ou desvio. As telas de Manipulação de Proteínas e Produções ajudam a isolar qual é.
+            <b>Gap de {formatNumero(gapPct, 1)} pontos percentuais.</b> Saiu R$ {numeroBR(gapReais, { maximumFractionDigits: 0 })} a mais de insumo do que as fichas previam. As causas prováveis, em ordem: porção maior que a ficha manda, perda não registrada, rendimento de proteína pior que o cadastrado, ou desvio. As telas de Manipulação de Proteínas e Produções ajudam a isolar qual é.
           </div>
         )}
 
@@ -426,7 +426,7 @@ export function CmvClient({
                   key={l.receita.id}
                   titulo={l.receita.nomePrato}
                   subtitulo={`${l.qtdVendida} vendidos · custo ${formatBRL(l.custoPorPorcao)} de ${formatBRL(l.receita.precoVenda ?? 0)}`}
-                  valor={`R$ ${l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`}
+                  valor={`R$ ${numeroBR(l.lucroPrato, { maximumFractionDigits: 0 })}`}
                   detalhe="lucro bruto"
                   selo={l.qtdVendida === 0 ? <Badge acao>sem vendas cadastradas</Badge> : undefined}
                   aberto={aberto}
@@ -440,7 +440,7 @@ export function CmvClient({
             {linhasCmv.length > 0 && (
               <li className="px-4 py-3 border-t flex justify-between text-[14px] font-semibold" style={{ borderColor: "var(--border-strong)", ...nums }}>
                 <span>Lucro bruto do período</span>
-                <span>R$ {(faturamentoDasFichas - custoTeoricoPeriodo).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                <span>R$ {numeroBR(faturamentoDasFichas - custoTeoricoPeriodo, { maximumFractionDigits: 0 })}</span>
               </li>
             )}
           </ListaMovel>
@@ -478,9 +478,9 @@ export function CmvClient({
                       <td className="py-2.5 px-3 text-right" style={nums}>{l.qtdVendida}</td>
                       <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL((l.receita.precoVenda ?? 0))}</td>
                       <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatBRL(l.custoPorPorcao)}</td>
-                      <td className="py-2.5 px-3 text-right" style={nums}>R$ {l.faturamentoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoTeoricoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                      <td className="py-2.5 px-5 text-right font-medium" style={nums}>R$ {l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                      <td className="py-2.5 px-3 text-right" style={nums}>R$ {numeroBR(l.faturamentoPrato, { maximumFractionDigits: 0 })}</td>
+                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {numeroBR(l.custoTeoricoPrato, { maximumFractionDigits: 0 })}</td>
+                      <td className="py-2.5 px-5 text-right font-medium" style={nums}>R$ {numeroBR(l.lucroPrato, { maximumFractionDigits: 0 })}</td>
                     </tr>
                     {aberto && (
                       <tr style={{ background: "var(--bg)" }}>
@@ -500,9 +500,9 @@ export function CmvClient({
               {linhasCmv.length > 0 && (
                 <tr style={{ borderTop: `1.5px solid ${"var(--border-strong)"}` }}>
                   <td className="py-2.5 px-5 font-semibold" colSpan={4}>Total do período</td>
-                  <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {faturamentoDasFichas.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {custoTeoricoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-5 text-right font-semibold" style={nums}>R$ {(faturamentoDasFichas - custoTeoricoPeriodo).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                  <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {numeroBR(faturamentoDasFichas, { maximumFractionDigits: 0 })}</td>
+                  <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {numeroBR(custoTeoricoPeriodo, { maximumFractionDigits: 0 })}</td>
+                  <td className="py-2.5 px-5 text-right font-semibold" style={nums}>R$ {numeroBR(faturamentoDasFichas - custoTeoricoPeriodo, { maximumFractionDigits: 0 })}</td>
                 </tr>
               )}
             </tbody>
@@ -519,35 +519,7 @@ export function CmvClient({
         <Card className="p-5 mb-3">
           <h3 className="text-[13px] font-semibold mb-1">Evolução do CMV real x teórico</h3>
           <p className="text-[11.5px] mb-3" style={{ color: "var(--sub)" }}>Cada ponto é um fechamento salvo, em ordem cronológica.</p>
-          <ChartFrame
-            vazio={evolucaoCmvAnual.length === 0}
-            tituloVazio="Nenhum fechamento salvo ainda."
-            dicaVazio="Salve o fechamento do período acima pra esse gráfico começar a preencher."
-          >
-            <LineChart data={evolucaoCmvAnual} margin={CHART_MARGIN}>
-              <CartesianGrid {...chartGridProps} />
-              <XAxis dataKey="periodo" tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} />
-              <YAxis tick={axisTickStyle} tickLine={false} axisLine={axisLineStyle} tickFormatter={formatPercentEixo} />
-              <Legend verticalAlign="top" height={28} iconType="circle" iconSize={8} formatter={(value) => <span style={{ color: "var(--sub)", fontSize: 11 }}>{value}</span>} />
-              <Tooltip
-                content={({ payload, label }) => {
-                  if (!payload || !payload.length) return null;
-                  const d = payload[0].payload as { periodo: string; cmvReal: number; cmvTeorico: number };
-                  return (
-                    <ChartTooltipCard
-                      titulo={String(label)}
-                      linhas={[
-                        { rotulo: "CMV real", valor: formatPercent(d.cmvReal), cor: COR_CMV_REAL },
-                        { rotulo: "CMV teórico", valor: formatPercent(d.cmvTeorico), cor: "var(--text)" },
-                      ]}
-                    />
-                  );
-                }}
-              />
-              <Line type="monotone" dataKey="cmvTeorico" name="CMV teórico" stroke={"var(--text)"} strokeWidth={2} dot={{ r: 4, fill: "var(--text)" }} isAnimationActive animationDuration={CHART_ANIMATION_DURATION} animationEasing={CHART_ANIMATION_EASING} />
-              <Line type="monotone" dataKey="cmvReal" name="CMV real" stroke={COR_CMV_REAL} strokeWidth={2} dot={{ r: 4, fill: COR_CMV_REAL }} isAnimationActive animationDuration={CHART_ANIMATION_DURATION} animationEasing={CHART_ANIMATION_EASING} />
-            </LineChart>
-          </ChartFrame>
+          <GraficoEvolucaoCmv dados={evolucaoCmvAnual} />
         </Card>
 
         <Card>
@@ -556,7 +528,7 @@ export function CmvClient({
               <ItemMovel
                 key={fechamento.id}
                 titulo={formatarPeriodo(fechamento.periodoInicio, fechamento.periodoFim)}
-                subtitulo={`R$ ${fechamento.faturamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} · teórico ${formatNumero(cmvTeoricoPctHist, 1)}% · real ${formatNumero(cmvRealPctHist, 1)}%`}
+                subtitulo={`R$ ${numeroBR(fechamento.faturamento, { maximumFractionDigits: 0 })} · teórico ${formatNumero(cmvTeoricoPctHist, 1)}% · real ${formatNumero(cmvRealPctHist, 1)}%`}
                 valor={`${gapPctHist > 0 ? "+" : ""}${formatNumero(gapPctHist, 1)} p.p.`}
                 corValor={gapPctHist > GAP_ALERTA_PP ? "var(--danger)" : undefined}
                 detalhe="gap"
@@ -578,7 +550,7 @@ export function CmvClient({
               {historico.map(({ fechamento, cmvRealPctHist, cmvTeoricoPctHist, gapPctHist }) => (
                 <tr key={fechamento.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
                   <td className="py-2.5 px-5 font-medium">{formatarPeriodo(fechamento.periodoInicio, fechamento.periodoFim)}</td>
-                  <td className="py-2.5 px-3 text-right" style={nums}>R$ {fechamento.faturamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                  <td className="py-2.5 px-3 text-right" style={nums}>R$ {numeroBR(fechamento.faturamento, { maximumFractionDigits: 0 })}</td>
                   <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatNumero(cmvTeoricoPctHist, 1)}%</td>
                   <td className="py-2.5 px-3 text-right" style={nums}>{formatNumero(cmvRealPctHist, 1)}%</td>
                   <td className="py-2.5 px-5 text-right font-medium" style={{ ...nums, color: gapPctHist > GAP_ALERTA_PP ? "var(--danger)" : "var(--text)" }}>

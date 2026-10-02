@@ -5,6 +5,7 @@ import { abrirConsulta } from "@/lib/dados/consulta";
 import { CartaoAuth } from "@/components/auth/CartaoAuth";
 import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
 import { ConsultaFuncionarioView } from "@/components/consulta/ConsultaFuncionarioView";
+import { dataBR } from "@/lib/formato";
 
 // CELULAR (2026-09-26): link só de consulta do pessoal da cozinha (gerado em
 // Equipe e acessos). Sem login: quem tem o link vê a própria escala, as fichas
@@ -32,7 +33,7 @@ export default async function ConsultaPage({ params }: { params: Promise<{ codig
     );
   }
 
-  const atualizadoAs = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+  const atualizadoAs = dataBR(new Date(), { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
   return (
     <>
       {/* Checklist marcado no tablet aparece aqui sozinho (ao voltar pra aba e a cada 1 min). */}

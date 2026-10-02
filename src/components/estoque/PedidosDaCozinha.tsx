@@ -16,12 +16,13 @@ import {
   type Agora, type CategoriaPedido, type Requisicao, type StatusRequisicao,
 } from "@/lib/dominio/requisicao";
 import { normalizarTelefone, telefoneValido } from "@/lib/telefone";
+import { dataBR, numeroBR } from "@/lib/formato";
 
 type Resultado = { ok: true } | { ok: false; erro: string };
 
 function quantidade(r: Requisicao): string {
   if (r.quantidade === null) return "";
-  return `${r.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} ${r.unidade ?? ""}`.trim();
+  return `${numeroBR(r.quantidade, { maximumFractionDigits: 3 })} ${r.unidade ?? ""}`.trim();
 }
 
 function linkWhatsApp(f: Fornecedor, itens: Requisicao[], restaurante: string, entrega: string | null): string | null {
@@ -141,7 +142,7 @@ export function PedidosDaCozinha({
                         </div>
                         {r.observacao && <div className="text-[13px] text-[var(--tinta)]">{r.observacao}</div>}
                         <div className="text-[12.5px] text-[var(--tinta-faint)]">
-                          {r.responsavel} · {new Date(r.criadoEm).toLocaleString("pt-BR", { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+                          {r.responsavel} · {dataBR(r.criadoEm, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
                       <button

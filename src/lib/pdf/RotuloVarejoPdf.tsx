@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
 import type { ConteudoRotuloVarejo } from "@/components/nutricional/RotuloVarejo";
+import { dataBR } from "@/lib/formato";
 
 // RÓTULO PARA VAREJO (2026-09-26): PDF do rótulo de supermercado pra enviar à
 // gráfica/designer. Mesma montagem da prévia (RotuloVarejo.tsx): nome e peso,
@@ -118,5 +119,5 @@ function Documento({ c, rascunho, geradoEm }: { c: ConteudoRotuloVarejo; rascunh
 }
 
 export async function gerarRotuloVarejoPdfBlob(c: ConteudoRotuloVarejo, rascunho: boolean): Promise<Blob> {
-  return pdf(<Documento c={c} rascunho={rascunho} geradoEm={new Date().toLocaleDateString("pt-BR")} />).toBlob();
+  return pdf(<Documento c={c} rascunho={rascunho} geradoEm={dataBR(new Date())} />).toBlob();
 }
