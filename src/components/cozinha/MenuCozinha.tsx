@@ -12,11 +12,12 @@
 
 import { useState } from "react";
 import {
-  ChefHat, ClipboardCheck, Thermometer, CookingPot, Beef, BookOpen, PackageSearch, CalendarDays, ShoppingBasket,
+  ChefHat, ClipboardCheck, Thermometer, CookingPot, Beef, BookOpen, PackageSearch, CalendarDays, ShoppingBasket, LayoutGrid,
   PanelLeftClose, PanelLeftOpen, MoreHorizontal, X,
 } from "lucide-react";
 
-export type Aba = "checklists" | "temperatura" | "producao" | "proteinas" | "fichas" | "pedidos" | "contagem" | "escala";
+// PRAÇAS NA COZINHA (2026-10-02): seção "pracas" na Rotina (montagem no padrão).
+export type Aba = "checklists" | "pracas" | "temperatura" | "producao" | "proteinas" | "fichas" | "pedidos" | "contagem" | "escala";
 
 interface ItemMenu {
   id: Aba;
@@ -29,6 +30,7 @@ const GRUPOS: { titulo: string; itens: ItemMenu[] }[] = [
     titulo: "Rotina",
     itens: [
       { id: "checklists", rotulo: "Checklists", icone: ClipboardCheck },
+      { id: "pracas", rotulo: "Praças", icone: LayoutGrid },
       { id: "temperatura", rotulo: "Temperatura", icone: Thermometer },
     ],
   },

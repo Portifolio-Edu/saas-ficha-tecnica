@@ -7,8 +7,8 @@
 // (dados_cozinha). A faixa "Quem está fazendo" fica sempre à vista: cada
 // registro sai com o nome de quem fez.
 
-import { memo, startTransition, useDeferredValue, useEffect, useState, type ReactNode } from "react";
-import { ChefHat, Check, ChevronLeft, UserRound, EyeOff, AlertTriangle } from "lucide-react";
+import { memo, startTransition, useCallback, useDeferredValue, useEffect, useRef, useState, type ReactNode } from "react";
+import { ChefHat, Check, ChevronLeft, ChevronRight, LayoutGrid, UserRound, EyeOff, AlertTriangle } from "lucide-react";
 import { BarraInferiorCozinha, CHAVE_RECOLHIDO, MenuLateralCozinha, type Aba } from "./MenuCozinha";
 import { useToast, ToastContainer } from "@/components/ficha/Toast";
 import { QuadroProducaoCozinha } from "./QuadroProducaoCozinha";
@@ -16,6 +16,7 @@ import { FichasCozinha } from "./FichasCozinha";
 import { ProteinasCozinha } from "./ProteinasCozinha";
 import { EscalaCozinha } from "./EscalaCozinha";
 import { PedidosCozinha, type SugestaoPedido } from "./PedidosCozinha";
+import { PracasCozinha } from "./PracasCozinha";
 import { agoraNoRestaurante, type AgendaFornecedor, type Agora, type NovaRequisicao, type Requisicao } from "@/lib/dominio/requisicao";
 import type { EscalaPublica } from "@/lib/escalas/publica";
 import { nums } from "@/components/ficha/tema";
@@ -55,6 +56,7 @@ const SEM_ITENS: never[] = [];
 /** Largura de cada seção. TOQUE (2026-09-25): Produção é um quadro de 4 colunas e usa a largura toda; FICHAS: 2 colunas. */
 const LARGURA: Record<Aba, string> = {
   checklists: "max-w-4xl",
+  pracas: "max-w-6xl",
   temperatura: "max-w-4xl",
   producao: "max-w-[1440px]",
   proteinas: "max-w-6xl",
@@ -63,7 +65,7 @@ const LARGURA: Record<Aba, string> = {
   contagem: "max-w-4xl",
   escala: "max-w-6xl",
 };
-const ORDEM_PREPARO: Aba[] = ["producao", "fichas", "temperatura", "proteinas", "pedidos", "contagem", "escala"];
+const ORDEM_PREPARO: Aba[] = ["producao", "pracas", "fichas", "temperatura", "proteinas", "pedidos", "contagem", "escala"];
 
 // Foto que não carrega (link quebrado, sem internet na cozinha) some em vez
 // de deixar um quadro vazio no meio da ficha.
@@ -151,6 +153,30 @@ export function CozinhaApp({
   // layout teria que fazer tudo na hora do toque.
   const [comLayout, setComLayout] = useState<Aba[]>([]);
 
+  // PRAÇAS NA COZINHA (2026-10-02): os checklists ficam aqui, não em cada
+  // seção, porque Checklists e Praças conferem os mesmos itens: marcar numa
+  // aparece na outra e no número do menu. Antes: estado só em SecaoChecklists.
+  const [listas, setListas] = useState(checklists);
+  useEffect(() => setListas(checklists), [checklists]);
+  const { mostrarErro } = useToast();
+  const marcarNaTela = (itemId: string, feito: boolean) =>
+    setListas((atual) =>
+      atual.map((c) => (c.itens.some((i) => i.id === itemId) ? { ...c, itens: c.itens.map((i) => (i.id === itemId ? { ...i, concluidoHoje: feito } : i)) } : c)),
+    );
+  const alternarAgora = useRef<(itemId: string, feito: boolean) => Promise<void>>(async () => {});
+  useEffect(() => {
+    alternarAgora.current = async (itemId, feito) => {
+      marcarNaTela(itemId, !feito);
+      const r = feito ? await acoes.desmarcarItem(itemId) : await acoes.marcarItem(itemId, responsavel ?? "");
+      if (!r.ok) {
+        mostrarErro(r.erro);
+        marcarNaTela(itemId, feito);
+      }
+    };
+  });
+  // Estável: tocar no menu não redesenha as seções guardadas (memo).
+  const alternarItem = useCallback((itemId: string, feito: boolean) => void alternarAgora.current(itemId, feito), []);
+
   useEffect(() => {
     try {
       const salvo = localStorage.getItem(CHAVE_RESPONSAVEL);
@@ -196,12 +222,14 @@ export function CozinhaApp({
     const id = window.setTimeout(preparar, 400);
     return () => window.clearTimeout(id);
   }, [pronto, emUso, montadas, comLayout]);
-  const trocarAba = (a: Aba) => {
+  const trocarAba = useCallback((a: Aba) => {
     setAba(a);
     window.scrollTo({ top: 0 });
-  };
+  }, []);
+  const abrirPracas = useCallback(() => trocarAba("pracas"), [trocarAba]);
   const contadores: Partial<Record<Aba, number>> = {
-    checklists: checklists.reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
+    checklists: listas.filter((c) => c.momento !== "praca").reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
+    pracas: listas.filter((c) => c.momento === "praca").reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
     pedidos: requisicoes.filter((r) => r.status === "pendente").length,
     producao: resumoDoPlano(progressoDoPlano(plano, producoes)).faltam,
   };
@@ -276,7 +304,9 @@ export function CozinhaApp({
                 aba={a}
                 telaAcesa={a === "fichas" && abaConteudo === "fichas" && !trocando}
                 responsavel={responsavel}
-                checklists={checklists}
+                checklists={a === "checklists" || a === "pracas" ? listas : SEM_ITENS}
+                alternarItem={alternarItem}
+                abrirPracas={abrirPracas}
                 locais={locais}
                 temperaturas={temperaturas}
                 fichas={fichas}
@@ -314,6 +344,8 @@ const ConteudoCozinha = memo(function ConteudoCozinha({
   telaAcesa,
   responsavel,
   checklists,
+  alternarItem,
+  abrirPracas,
   locais,
   temperaturas,
   fichas,
@@ -335,6 +367,8 @@ const ConteudoCozinha = memo(function ConteudoCozinha({
   telaAcesa: boolean;
   responsavel: string;
   checklists: Checklist[];
+  alternarItem: (itemId: string, feito: boolean) => void;
+  abrirPracas: () => void;
   locais: LocalArmazenamento[];
   temperaturas: RegistroTemperatura[];
   fichas: FichaCozinha[];
@@ -352,7 +386,9 @@ const ConteudoCozinha = memo(function ConteudoCozinha({
   acoes: AcoesCozinha;
 }) {
   return aba === "checklists" ? (
-    <SecaoChecklists checklists={checklists} responsavel={responsavel} acoes={acoes} />
+    <SecaoChecklists checklists={checklists} alternarItem={alternarItem} abrirPracas={abrirPracas} />
+  ) : aba === "pracas" ? (
+    <PracasCozinha pracas={checklists.filter((c) => c.momento === "praca")} alternarItem={alternarItem} />
   ) : aba === "temperatura" ? (
     <SecaoTemperatura locais={locais} temperaturas={temperaturas} responsavel={responsavel} acoes={acoes} />
   ) : aba === "producao" ? (
@@ -420,26 +456,16 @@ function Cartao({ children, className = "" }: { children: ReactNode; className?:
   );
 }
 
-function SecaoChecklists({ checklists: iniciais, responsavel, acoes }: { checklists: Checklist[]; responsavel: string; acoes: AcoesCozinha }) {
-  const { mostrarErro } = useToast();
-  const [checklists, setChecklists] = useState(iniciais);
-  useEffect(() => setChecklists(iniciais), [iniciais]);
+// PRAÇAS NA COZINHA (2026-10-02): as praças saíram daqui pra seção Praças
+// (foto grande de cada área); aqui fica o atalho. Marcar item agora vem de
+// CozinhaApp (alternarItem), que é o mesmo estado da seção Praças.
+function SecaoChecklists({ checklists: todos, alternarItem, abrirPracas }: { checklists: Checklist[]; alternarItem: (itemId: string, feito: boolean) => void; abrirPracas: () => void }) {
   const [aberto, setAberto] = useState<string | null>(null);
+  const checklists = todos.filter((c) => c.momento !== "praca");
+  const pracas = todos.filter((c) => c.momento === "praca");
+  const pracasFaltam = pracas.reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0);
 
-  const alternar = async (checklistId: string, itemId: string, feito: boolean) => {
-    setChecklists((atual) =>
-      atual.map((c) => (c.id !== checklistId ? c : { ...c, itens: c.itens.map((i) => (i.id === itemId ? { ...i, concluidoHoje: !feito } : i)) })),
-    );
-    const r = feito ? await acoes.desmarcarItem(itemId) : await acoes.marcarItem(itemId, responsavel);
-    if (!r.ok) {
-      mostrarErro(r.erro);
-      setChecklists((atual) =>
-        atual.map((c) => (c.id !== checklistId ? c : { ...c, itens: c.itens.map((i) => (i.id === itemId ? { ...i, concluidoHoje: feito } : i)) })),
-      );
-    }
-  };
-
-  if (checklists.length === 0) return <Vazio texto="Nenhum checklist cadastrado. O gestor monta na tela Checklists." />;
+  if (checklists.length === 0 && pracas.length === 0) return <Vazio texto="Nenhum checklist cadastrado. O gestor monta na tela Checklists." />;
 
   const atual = checklists.find((c) => c.id === aberto);
   if (atual) {
@@ -474,7 +500,7 @@ function SecaoChecklists({ checklists: iniciais, responsavel, acoes }: { checkli
                   {itens.map((i, n) => (
                     <button
                       key={i.id}
-                      onClick={() => alternar(atual.id, i.id, i.concluidoHoje)}
+                      onClick={() => alternarItem(i.id, i.concluidoHoje)}
                       className={`w-full min-h-14 px-4 py-3 flex items-center gap-3 text-left ${n > 0 ? "border-t" : ""}`}
                       style={{ borderColor: "var(--linha)" }}
                       aria-pressed={i.concluidoHoje}
@@ -501,7 +527,23 @@ function SecaoChecklists({ checklists: iniciais, responsavel, acoes }: { checkli
 
   return (
     <section className="space-y-6">
-      {MOMENTOS.map((m) => {
+      {pracas.length > 0 && (
+        <button
+          onClick={abrirPracas}
+          className="w-full text-left rounded-xl border p-4 min-h-20 flex items-center gap-4"
+          style={{ background: "var(--panel)", borderColor: pracasFaltam ? "var(--linha)" : "var(--sucesso)" }}
+        >
+          <LayoutGrid size={22} className="shrink-0 text-[var(--tinta-faint)]" aria-hidden />
+          <span className="flex-1 min-w-0">
+            <span className="block text-[17px] font-semibold">Montagem das praças</span>
+            <span className="block text-[14px] mt-0.5" style={{ color: pracasFaltam ? "var(--tinta-sub)" : "var(--sucesso)" }}>
+              {pracasFaltam ? `${pracasFaltam} ${pracasFaltam === 1 ? "item" : "itens"} pra conferir, com a foto de cada área` : "Todas montadas no padrão hoje"}
+            </span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-[var(--tinta-faint)]" aria-hidden />
+        </button>
+      )}
+      {MOMENTOS.filter((m) => m.id !== "praca").map((m) => {
         const doMomento = checklists.filter((c) => c.momento === m.id);
         if (doMomento.length === 0) return null;
         return (
