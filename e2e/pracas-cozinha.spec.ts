@@ -3,6 +3,9 @@
 // cada praça com as áreas e a lista; conferir um item atualiza a praça, o
 // número do menu e o atalho em Checklists (o mesmo registro); foto amplia,
 // troca e fecha devolvendo o foco; sem violação de acessibilidade.
+// PRAÇAS DA CASA (2026-10-02): "as praças têm que ser as mesmas cadastradas
+// no sistema de gestão": praça criada na gestão (com área, item e foto)
+// aparece igual na cozinha e vira a opção de praça em Equipe/Extras.
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -91,5 +94,42 @@ test.describe("praças no modo cozinha", () => {
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(ampliar).toBeFocused();
+  });
+
+  test("praça cadastrada na gestão aparece igual na cozinha e nas praças da equipe", async ({ page }) => {
+    // Gestão: nova praça com uma área, um item e a foto da área montada.
+    await page.goto("/preview/checklists");
+    await page.getByRole("tab", { name: /^Praças/ }).click();
+    await page.getByRole("button", { name: "Nova praça" }).click();
+    await page.getByPlaceholder(/Nome da praça/).fill("Praça de sobremesas");
+    await page.getByRole("button", { name: "Criar praça" }).click();
+    await page.getByRole("button", { name: /Praça de sobremesas/ }).click();
+    await page.getByPlaceholder(/Nome da área/).fill("Bancada de finalização");
+    await page.getByRole("button", { name: "Criar área" }).click();
+    await page.getByRole("button", { name: "Editar praça" }).click();
+    await page.getByRole("textbox", { name: "Novo item em Bancada de finalização" }).fill("Calda de chocolate no bico dosador");
+    await page.getByRole("button", { name: "Adicionar" }).first().click();
+    await page.getByRole("button", { name: "Pronto" }).click();
+    const png = Buffer.from(PIXEL.split(",")[1], "base64");
+    await page.getByLabel("Foto da praça").first().setInputFiles({ name: "bancada.png", mimeType: "image/png", buffer: png });
+    await page.getByRole("button", { name: "Salvar foto" }).click();
+    await expect(page.getByRole("button", { name: /Ampliar foto de Bancada de finalização/ })).toBeVisible();
+
+    // Cozinha (depois de recarregar): a mesma praça, área, item e foto.
+    await page.goto("/preview/cozinha");
+    await page.getByRole("navigation", { name: "Seções da cozinha" }).getByRole("button", { name: /^Praças/ }).click();
+    await page.getByRole("button", { name: /Praça de sobremesas/ }).click();
+    await expect(page.getByRole("heading", { name: "Bancada de finalização", level: 2 })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Calda de chocolate no bico dosador" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Ampliar foto de Bancada de finalização/ })).toBeVisible();
+
+    // Equipe/Extras: as praças da cozinha são as cadastradas (não a lista genérica).
+    await page.goto("/preview/escalas");
+    await page.getByRole("tab", { name: "Extras" }).click();
+    await page.getByRole("button", { name: "Adicionar extra" }).click();
+    const pracas = page.getByRole("group", { name: "Praças do extra" });
+    for (const nome of ["Praça de sobremesas", "Praça de pizza", "Garde manger (frios)"]) await expect(pracas.getByRole("button", { name: nome })).toBeVisible();
+    await expect(pracas.getByRole("button", { name: "Grelha" })).toHaveCount(0);
+    await expect(page.getByText("as opções são as praças cadastradas em Checklists → Praças")).toBeVisible();
   });
 });

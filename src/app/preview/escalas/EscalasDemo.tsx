@@ -11,7 +11,8 @@ import { useEffect, useMemo, useState } from "react";
 import { EscalasView, type AcoesEscalas } from "@/components/escalas/EscalasView";
 import { CHAVES_DEMO, gravarDemo, lerDemo, useDemo } from "@/lib/demo/armazem";
 import { escalasDemoIniciais, pessoasDemoAtuais } from "@/lib/demo/escalas";
-import { NOME_RESTAURANTE } from "../fixtures";
+import { NOME_RESTAURANTE, checklists as checklistsFixture } from "../fixtures";
+import type { Checklist } from "@/lib/dominio/checklist";
 import { normalizarPerfil, tagsUnicas, validarNota, validarPerfil, type NotaPerfil } from "@/lib/escalas/perfil";
 import { normalizarTelefone, validarExtra, type Extra } from "@/lib/escalas/extras";
 import { hojeLocalISO } from "@/lib/calculo/dia";
@@ -38,6 +39,9 @@ function EscalasDemoCarregada({ hoje }: { hoje: string }) {
   const lerPessoas = () => pessoasDemoAtuais(lerDemo(CHAVES_DEMO.escalaPessoas, iniciais.pessoas), iniciais.pessoas);
   const [ocorrencias] = useDemo<OcorrenciaRegistro>(CHAVES_DEMO.escalaOcorrencias, iniciais.ocorrencias);
   const [regras] = useDemo<RegrasEscala>(CHAVES_DEMO.escalaRegras, padraoRegras);
+  // PRAÇAS DA CASA (2026-10-02): as mesmas praças de Checklists → Praças da demo.
+  const [checklistsDemo] = useDemo<Checklist>(CHAVES_DEMO.checklists, checklistsFixture);
+  const pracasCasa = useMemo(() => checklistsDemo.filter((c) => c.momento === "praca").map((c) => c.nome), [checklistsDemo]);
 
   const acoes = useMemo<AcoesEscalas>(
     () => ({
@@ -137,6 +141,7 @@ function EscalasDemoCarregada({ hoje }: { hoje: string }) {
       regras={regras[0] ?? iniciais.regras}
       notas={notas}
       extras={extras}
+      pracasCasa={pracasCasa}
       nomeRestaurante={NOME_RESTAURANTE}
       hoje={hoje}
       acoes={acoes}

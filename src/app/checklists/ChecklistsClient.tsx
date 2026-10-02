@@ -151,14 +151,34 @@ export function ChecklistsClient({ checklists, turnos }: { checklists: Checklist
     return true;
   };
 
-  // Fotos de referência das praças. Na demo a foto fica só nesta sessão
-  // (URL local do navegador); no app sobe pro bucket pracas-fotos.
+  // Fotos de referência das praças. No app sobe pro bucket pracas-fotos.
+  // PRAÇAS NA COZINHA (2026-10-02): na demo a foto vai junto da praça no
+  // "banco" da demo (já reduzida), pra o modo cozinha mostrar a mesma foto,
+  // inclusive em outra aba ou depois de recarregar. Antes era um link local
+  // (URL.createObjectURL), que some ao recarregar.
   const adicionarFoto = async (checklistId: string, arquivo: File, legenda: string | null, ordem: number, areaId: string | null) => {
     if (emModoDemo) {
-      const url = URL.createObjectURL(arquivo);
+      const url = await new Promise<string>((ok, falha) => {
+        const leitor = new FileReader();
+        leitor.onload = () => ok(String(leitor.result));
+        leitor.onerror = () => falha(leitor.error);
+        leitor.readAsDataURL(arquivo);
+      }).catch(() => null);
+      if (!url) return { ok: false, erro: "Não foi possível ler a foto." } as const;
+      const idFoto = `demo-foto-${Date.now()}`;
       setListaChecklists((prev) =>
-        prev.map((ch) => (ch.id === checklistId ? { ...ch, fotos: [...ch.fotos, { id: `demo-foto-${Date.now()}`, checklistId, url, legenda, ordem, areaId }] } : ch)),
+        prev.map((ch) => (ch.id === checklistId ? { ...ch, fotos: [...ch.fotos, { id: idFoto, checklistId, url, legenda, ordem, areaId }] } : ch)),
       );
+      // O navegador guarda poucos MB: se não coube, desfaz e avisa (senão a
+      // foto apareceria aqui e sumiria da cozinha).
+      let coube = false;
+      try {
+        coube = (localStorage.getItem(CHAVES_DEMO.checklists) ?? "").includes(idFoto);
+      } catch {}
+      if (!coube) {
+        setListaChecklists((prev) => prev.map((ch) => (ch.id === checklistId ? { ...ch, fotos: ch.fotos.filter((f) => f.id !== idFoto) } : ch)));
+        return { ok: false, erro: "A demonstração guarda poucas fotos neste navegador. Apague uma foto pra adicionar outra." } as const;
+      }
       return { ok: true } as const;
     }
     const formData = new FormData();

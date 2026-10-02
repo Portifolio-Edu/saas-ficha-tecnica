@@ -1,5 +1,6 @@
 import { exigirAcesso } from "@/lib/auth/acesso";
 import { carregarEscalasGestao } from "@/lib/dados/escalas";
+import { listarNomesPracas } from "@/lib/dados/checklists";
 import { hojeLocalISO } from "@/lib/calculo/dia";
 import { AppShell } from "@/components/ficha/AppShell";
 import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
@@ -23,7 +24,8 @@ export const dynamic = "force-dynamic";
 
 export default async function EscalasPage() {
   const cliente = await exigirAcesso("/escalas");
-  const { pessoas, ocorrencias, regras, notas, extras } = await carregarEscalasGestao();
+  // PRAÇAS DA CASA (2026-10-02): as praças de domínio usam as de Checklists → Praças.
+  const [{ pessoas, ocorrencias, regras, notas, extras }, pracasCasa] = await Promise.all([carregarEscalasGestao(), listarNomesPracas()]);
 
   return (
     <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Escalas">
@@ -34,6 +36,7 @@ export default async function EscalasPage() {
         regras={regras}
         notas={notas}
         extras={extras}
+        pracasCasa={pracasCasa}
         nomeRestaurante={cliente.nomeRestaurante}
         hoje={hojeLocalISO()}
         acoes={{

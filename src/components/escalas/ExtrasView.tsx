@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Phone, Pencil, Plus, X, ShieldCheck, Trash2 } from "lucide-react";
-import { NIVEIS, PRACAS, chaveTag, rotuloNivel, tagsUnicas } from "@/lib/escalas/perfil";
+import { NIVEIS, ajudaPracas, chaveTag, rotuloNivel, sugestoesDePraca, tagsUnicas } from "@/lib/escalas/perfil";
 import { formatarTelefone, normalizarTelefone, validarExtra, type Extra, type ExtraInput } from "@/lib/escalas/extras";
 import type { PessoaEscala } from "@/lib/escalas/cadastro";
 import type { Setor } from "@/lib/escalas/tipos";
@@ -26,11 +26,14 @@ const estiloCampo = { borderColor: "var(--linha-forte)", color: "var(--tinta)" }
 export function ExtrasView({
   extras,
   pessoas,
+  pracasCasa = [],
   aoSalvar,
   aoRemover,
 }: {
   extras: Extra[];
   pessoas: PessoaEscala[];
+  /** PRAÇAS DA CASA (2026-10-02) */
+  pracasCasa?: string[];
   aoSalvar: (id: string | null, e: ExtraInput) => Promise<Resultado>;
   aoRemover: (id: string) => Promise<Resultado>;
 }) {
@@ -111,6 +114,7 @@ export function ExtrasView({
         <FormExtra
           extra={editando === "novo" ? null : editando}
           pessoas={pessoas}
+          pracasCasa={pracasCasa}
           aoSalvar={aoSalvar}
           aoRemover={aoRemover}
           aoFechar={() => setEditando(null)}
@@ -123,12 +127,14 @@ export function ExtrasView({
 function FormExtra({
   extra,
   pessoas,
+  pracasCasa,
   aoSalvar,
   aoRemover,
   aoFechar,
 }: {
   extra: Extra | null;
   pessoas: PessoaEscala[];
+  pracasCasa: string[];
   aoSalvar: (id: string | null, e: ExtraInput) => Promise<Resultado>;
   aoRemover: (id: string) => Promise<Resultado>;
   aoFechar: () => void;
@@ -231,7 +237,8 @@ function FormExtra({
 
         <div>
           <span className="block text-[13px] font-medium mb-1.5">Praças que domina</span>
-          <SeletorTags rotulo="Praças do extra" tom="praca" sugestoes={PRACAS[e.setor]} valor={e.pracas} onChange={(v) => atualizar({ pracas: v })} placeholder="Outra praça…" />
+          {ajudaPracas(e.setor, pracasCasa) && <p className="text-[12px] text-[var(--tinta-faint)] -mt-0.5 mb-1.5">{ajudaPracas(e.setor, pracasCasa).trim()}</p>}
+          <SeletorTags rotulo="Praças do extra" tom="praca" sugestoes={sugestoesDePraca(e.setor, pracasCasa)} valor={e.pracas} onChange={(v) => atualizar({ pracas: v })} placeholder="Outra praça…" />
         </div>
 
         <label className="flex items-start gap-3 rounded-lg border px-3 py-3 cursor-pointer" style={{ borderColor: e.aceitaWhatsapp ? "var(--etapa-produzido)" : "var(--linha-forte)", background: e.aceitaWhatsapp ? tint("var(--etapa-produzido)", 7) : undefined }}>
