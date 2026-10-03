@@ -3,7 +3,7 @@ import { listarLocaisArmazenamento, listarRegistrosTemperatura } from "@/lib/dad
 import { listarInsumos } from "@/lib/dados/insumos";
 import { AppShell } from "@/components/ficha/AppShell";
 import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
-import { SegurancaClient } from "./SegurancaClient";
+import { SegurancaClient } from "@/components/ficha/TelasComGraficos";
 
 export default async function SegurancaPage() {
   const cliente = await exigirAcesso("/seguranca");

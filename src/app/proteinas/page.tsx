@@ -2,7 +2,7 @@ import { exigirAcesso } from "@/lib/auth/acesso";
 import { listarInsumos } from "@/lib/dados/insumos";
 import { listarProcessamentos } from "@/lib/dados/processamentos";
 import { AppShell } from "@/components/ficha/AppShell";
-import { ProteinasClient } from "./ProteinasClient";
+import { ProteinasClient } from "@/components/ficha/TelasComGraficos";
 
 export default async function ProteinasPage() {
   const cliente = await exigirAcesso("/proteinas");
