@@ -228,6 +228,10 @@ export function consolidarDocumentos(arquivos: { nome: string; conteudo: string 
 
 // AGENTE IA (2026-09-26): nota de COMPRA do fornecedor (NF-e modelo 55), pra
 // dar entrada no estoque pelo agente. Mesmas regras de leitura das de venda.
+// NF-e DE COMPRA (2026-10-03): agora também usada pela tela de importação
+// (Estoque > Importar NF-e de compra). Cada item traz, além do valor dos
+// produtos, o que a nota cobra a mais por ele (frete, seguro, outras despesas,
+// IPI e ICMS-ST): é parte do custo real do insumo.
 export interface ItemComprado {
   codigo: string;
   descricao: string;
@@ -236,15 +240,20 @@ export interface ItemComprado {
   valorUnitario: number;
   /** Valor total do item (quantidade × unitário, menos desconto). */
   valor: number;
+  /** Frete, seguro, outras despesas, IPI e ICMS-ST rateados no item (0 quando a nota não traz). */
+  custosExtras: number;
 }
 
 export interface NotaDeCompra {
   chave: string;
   numero: string;
+  serie: string;
   fornecedor: string;
   cnpjFornecedor: string;
   /** AAAA-MM-DD */
   emitidaEm: string;
+  /** Valor total da nota (vNF), 0 quando não vem. */
+  valorTotal: number;
   itens: ItemComprado[];
 }
 
@@ -252,15 +261,20 @@ export function lerNotaDeCompra(texto: string): NotaDeCompra | { erro: string } 
   const xml = texto.replace(/^﻿/, "");
   if (!/<(?:[\w.-]+:)?infNFe[\s>]/.test(xml)) return { erro: "Não é o XML de uma NF-e." };
   if (valor(xml, "mod") !== "55") return { erro: "Não é NF-e de compra (modelo 55)." };
+  const cStat = blocos(xml, "protNFe").length ? valor(blocos(xml, "protNFe")[0], "cStat") : null;
+  if (cStat !== null && CSTAT_CANCELADA.has(cStat)) return { erro: "Essa nota está cancelada." };
   const emit = blocos(xml, "emit")[0] ?? "";
   return {
     chave: (atributo(xml, "infNFe", "Id") ?? "").replace(/^NFe/, ""),
     numero: valor(xml, "nNF") ?? "",
+    serie: valor(xml, "serie") ?? "",
     fornecedor: valor(emit, "xFant") ?? valor(emit, "xNome") ?? "",
     cnpjFornecedor: valor(emit, "CNPJ") ?? "",
     emitidaEm: (valor(xml, "dhEmi") ?? valor(xml, "dEmi") ?? "").slice(0, 10),
+    valorTotal: numero(valor(xml, "vNF")),
     itens: blocos(xml, "det").map((det) => {
       const prod = blocos(det, "prod")[0] ?? det;
+      const extras = numero(valor(prod, "vFrete")) + numero(valor(prod, "vSeg")) + numero(valor(prod, "vOutro")) + numero(valor(det, "vIPI")) + numero(valor(det, "vICMSST"));
       return {
         codigo: valor(prod, "cProd") ?? "",
         descricao: valor(prod, "xProd") ?? "",
@@ -268,6 +282,7 @@ export function lerNotaDeCompra(texto: string): NotaDeCompra | { erro: string } 
         unidade: (valor(prod, "uCom") ?? "").toUpperCase(),
         valorUnitario: numero(valor(prod, "vUnCom")),
         valor: Math.max(0, numero(valor(prod, "vProd")) - numero(valor(prod, "vDesc"))),
+        custosExtras: Math.round(extras * 100) / 100,
       };
     }),
   };

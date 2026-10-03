@@ -19,7 +19,9 @@ import { hojeLocalISO } from "@/lib/calculo/dia";
 import { CAMPOS_NUTRICIONAIS, type ValoresNutricionais } from "@/lib/calculo/nutricional";
 import { montarEscalaPublica } from "@/lib/escalas/publica";
 import { paraDia, paraISO } from "@/lib/escalas/datas";
-import { lerNotaDeCompra } from "@/lib/integracoes/documentoFiscal";
+import { lerNotaDeCompra, type NotaDeCompra } from "@/lib/integracoes/documentoFiscal";
+import { listarLembrancas, notaJaImportadaEm } from "@/lib/dados/notasCompra";
+import { calcularConferencia, decidirItens, montarConferencia, podeConfirmar, type OpcoesNota } from "@/lib/integracoes/conferenciaNota";
 import { progressoDoPlano } from "@/lib/dominio/planoProducao";
 import {
   CATEGORIAS_PEDIDO, UNIDADES_PEDIDO, agoraNoRestaurante, categoriaDoInsumo, frasePrazo, pedidosDaCategoria,
@@ -28,7 +30,7 @@ import {
 import { montarEntrada, sugerirInsumos, type ItemNota } from "./entradaNota";
 import {
   cancelarProposta, confirmarProposta, criarProposta, listarPropostasPendentes,
-  type DadosEntrada, type DadosListaProducao, type DadosNutricionais, type DadosPedido, type DadosPerda,
+  type DadosEntrada, type DadosEntradaNota, type DadosListaProducao, type DadosNutricionais, type DadosPedido, type DadosPerda,
 } from "./propostas";
 import type { PasseAgente } from "./passe";
 import { ErroFerramenta } from "./erro";
@@ -83,6 +85,93 @@ function lista(a: Args, k: string, max = 60): Args[] {
 const GESTAO: Papel[] = ["dono", "gestor"];
 const ESTOQUE: Papel[] = ["dono", "gestor", "estoquista"];
 const reais = (n: number) => Math.round(n * 100) / 100;
+
+// ---------------------------------------------------------------------------
+// NF-e DE COMPRA PELO AGENTE (2026-10-03): a nota com chave entra pela mesma
+// conferência e pela mesma função de banco da tela (registrar_nota_compra):
+// trava de nota repetida, estoque, preço e histórico numa transação.
+
+function sim(v: unknown): boolean {
+  return v === true || v === "true" || v === 1 || v === "1";
+}
+
+async function proporEntradaDaNota(a: Args, passe: PasseAgente, chave: string) {
+  if (!/^\d{44}$/.test(chave)) throw new ErroFerramenta("chave_nota precisa ter os 44 dígitos da chave de acesso.");
+  const brutos = lista(a, "itens", 500);
+  const emitida = texto(a, "emitida_em");
+  const nota: NotaDeCompra = {
+    chave,
+    numero: texto(a, "numero_nota", { max: 20 }) ?? "",
+    serie: texto(a, "serie", { max: 10 }) ?? "",
+    fornecedor: texto(a, "fornecedor", { max: 200 }) ?? "",
+    cnpjFornecedor: (texto(a, "cnpj_fornecedor", { max: 30 }) ?? "").replace(/\D/g, ""),
+    emitidaEm: emitida && /^\d{4}-\d{2}-\d{2}/.test(emitida) ? emitida.slice(0, 10) : "",
+    valorTotal: Math.max(0, numero(a, "valor_total_nota") ?? 0),
+    itens: brutos.map((i) => ({
+      codigo: texto(i, "codigo", { max: 100 }) ?? "",
+      descricao: texto(i, "descricao", { obrigatorio: true })!,
+      quantidade: numero(i, "quantidade", { obrigatorio: true })!,
+      unidade: (texto(i, "unidade", { max: 20 }) ?? "un").toUpperCase(),
+      valorUnitario: 0,
+      valor: Math.max(0, numero(i, "valor_total") ?? 0),
+      custosExtras: Math.max(0, numero(i, "custos_extras") ?? 0),
+    })),
+  };
+
+  const [insumos, lembrancas, jaImportadaEm] = await Promise.all([listarInsumos(), listarLembrancas(), notaJaImportadaEm(chave)]);
+  if (jaImportadaEm) {
+    const quando = dataBR(jaImportadaEm, { timeZone: "America/Sao_Paulo" });
+    throw new ErroFerramenta(`Essa nota já foi importada em ${quando}. Lançar de novo dobraria o estoque.`);
+  }
+
+  const linhas = montarConferencia(nota, insumos, lembrancas);
+  const decisoes = decidirItens(
+    linhas,
+    brutos.map((i) => ({ insumoId: texto(i, "insumo_id"), fator: numero(i, "fator"), ignorar: sim(i.ignorar) })),
+  );
+  const opcoes: OpcoesNota = {
+    atualizarPrecos: a.atualizar_precos !== false && a.atualizar_precos !== "false",
+    incluirExtras: a.incluir_extras !== false && a.incluir_extras !== "false",
+  };
+  const resultado = calcularConferencia(nota, decisoes, insumos, opcoes.incluirExtras);
+
+  const pendentes = resultado
+    .filter((r) => r.status === "sem_insumo" || r.status === "precisa_fator" || r.status === "invalido")
+    .map((r) => {
+      const l = linhas[r.ordem - 1];
+      const sugerido = l.insumoSugeridoId ? insumos.find((x) => x.id === l.insumoSugeridoId) : undefined;
+      const sugestoes = [...(sugerido ? [{ id: sugerido.id, nome: sugerido.nome }] : []), ...l.alternativas];
+      return { ordem: r.ordem, descricao: l.descricao, quantidade: l.quantidade, unidade: l.unidade, motivo: r.motivo ?? "", sugestoes };
+    });
+  const pode = podeConfirmar(resultado);
+  if (pendentes.length || !pode.ok) {
+    return {
+      proposta: null,
+      pendentes,
+      aviso: `${pode.motivo ?? "Falta resolver itens."} A nota entra inteira de uma vez: resolva com a pessoa e chame propor_entrada_estoque de novo com todos os itens.`,
+    };
+  }
+
+  const prontos = resultado.filter((r) => r.status === "pronto");
+  const ignorados = resultado.length - prontos.length;
+  const linhasResumo = prontos.map(
+    (r) =>
+      `${r.quantidadeInsumo} ${r.unidadeInsumo} de ${r.insumoNome}` +
+      (r.precoUnitarioNovo != null ? ` (R$ ${r.precoUnitarioNovo.toFixed(2)}/${r.unidadeInsumo}${r.suspeito ? ", PREÇO MUITO DIFERENTE: confira a unidade" : ""})` : ""),
+  );
+  const resumo =
+    `Entrada da nota ${nota.numero || chave.slice(25, 34)}${nota.fornecedor ? ` (${nota.fornecedor})` : ""}: ${linhasResumo.join("; ")}` +
+    (ignorados ? `. ${ignorados} ${ignorados === 1 ? "item ignorado" : "itens ignorados"}` : "") +
+    (opcoes.atualizarPrecos ? "" : ". Sem atualizar preços");
+  const dados: DadosEntradaNota = { nota, decisoes, opcoes };
+  const proposta = await criarProposta(passe, "entrada_estoque", resumo, dados);
+  return {
+    proposta: { id: proposta.id, resumo: proposta.resumo },
+    itens: prontos,
+    suspeitos: prontos.filter((r) => r.suspeito).length,
+    instrucao: "Mostre o resumo e peça confirmação. Se houver preço muito diferente, avise antes. Só chame confirmar_proposta depois de um 'sim' explícito.",
+  };
+}
 
 async function acharInsumo(a: Args) {
   const insumos = await listarInsumos();
@@ -250,21 +339,30 @@ export const FERRAMENTAS: Record<string, Ferramenta> = {
   },
 
   ler_nota_xml: {
-    descricao: "Lê o XML de uma NF-e de compra (fornecedor) e devolve fornecedor, número e itens (descrição, quantidade, unidade, valor). Depois use propor_entrada_estoque com esses itens.",
+    descricao:
+      "Lê o XML de uma NF-e de compra (fornecedor) e devolve a nota (chave, número, série, fornecedor, CNPJ, emissão, itens com código) e a conferência: o insumo sugerido pra cada item (ligação lembrada do fornecedor ou nome parecido). Depois use propor_entrada_estoque com chave_nota e os itens.",
     papeis: ESTOQUE,
     async executar(a) {
       const conteudo = texto(a, "xml", { obrigatorio: true, max: 2_000_000 })!;
       const nota = lerNotaDeCompra(conteudo);
       if ("erro" in nota) throw new ErroFerramenta(nota.erro);
-      return nota;
+      // NF-e DE COMPRA PELO AGENTE (2026-10-03): já devolve a conferência e se a nota entrou antes.
+      const [insumos, lembrancas, jaImportadaEm] = await Promise.all([listarInsumos(), listarLembrancas(), /^\d{44}$/.test(nota.chave) ? notaJaImportadaEm(nota.chave) : null]);
+      return { ...nota, ja_importada_em: jaImportadaEm, conferencia: montarConferencia(nota, insumos, lembrancas) };
     },
   },
 
   propor_entrada_estoque: {
     descricao:
-      "Prepara a entrada de uma nota de compra no estoque (e a atualização do preço dos insumos pelo valor da nota). NÃO grava: cria uma proposta que a pessoa precisa confirmar. itens = [{descricao, quantidade, unidade, valor_total?, insumo_id?}]. Devolve o que casou com o cadastro e o que ficou pendente (item não cadastrado ou unidade como CX/PCT que precisa de conversão — pergunte à pessoa e proponha de novo).",
+      "Prepara a entrada de uma nota de compra no estoque (e a atualização do preço dos insumos pelo valor da nota). NÃO grava: cria uma proposta que a pessoa precisa confirmar. " +
+      "NOTA FISCAL (XML ou foto do DANFE): mande SEMPRE chave_nota (44 dígitos) e TODOS os itens da nota, na ordem, com numero_nota, serie, fornecedor, cnpj_fornecedor e emitida_em (AAAA-MM-DD). " +
+      "itens = [{descricao, quantidade, unidade, valor_total, codigo, custos_extras?, insumo_id?, fator?, ignorar?}]; fator = quanto do insumo (na unidade dele) vem em 1 unidade da nota (ex.: 1 CX = 18 l); ignorar = true pra item que não é insumo (limpeza, descartável). " +
+      "Com chave_nota a nota entra inteira de uma vez e nunca duas vezes: todo item precisa estar resolvido (insumo, conversão ou ignorar), senão volta em pendentes pra você perguntar e propor de novo. " +
+      "Sem nota (entrada avulsa, sem chave): itens = [{descricao, quantidade, unidade, valor_total?, insumo_id?}] e o que não casar volta em pendentes.",
     papeis: ESTOQUE,
     async executar(a, passe) {
+      const chaveNota = (texto(a, "chave_nota", { max: 80 }) ?? "").replace(/\D/g, "");
+      if (chaveNota) return proporEntradaDaNota(a, passe, chaveNota);
       const itens: ItemNota[] = lista(a, "itens").map((i) => ({
         descricao: texto(i, "descricao", { obrigatorio: true })!,
         quantidade: numero(i, "quantidade", { obrigatorio: true })!,
