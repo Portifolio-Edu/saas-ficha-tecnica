@@ -12,16 +12,22 @@ import { ROTULO_PAPEL, type Papel } from "@/lib/auth/papeis";
 const CHAVE = "demo:papel";
 const PAPEIS: Papel[] = ["dono", "gestor", "estoquista", "cozinha"];
 
-const Contexto = createContext<{ papel: Papel; setPapel: (p: Papel) => void }>({ papel: "dono", setPapel: () => {} });
+// LAYOUT (2026-10-03): `pronto` diz se o papel salvo já foi lido. O HTML vem do
+// build com "dono"; até ler o localStorage, o cabeçalho esconde o papel em vez
+// de mostrar "Dono" e trocar logo depois. Com o shell no layout.tsx o provider
+// não remonta mais a cada navegação, então isso só acontece na carga da página.
+const Contexto = createContext<{ papel: Papel; setPapel: (p: Papel) => void; pronto: boolean }>({ papel: "dono", setPapel: () => {}, pronto: true });
 
 export function PapelDemoProvider({ children }: { children: ReactNode }) {
   const [papel, setPapelEstado] = useState<Papel>("dono");
+  const [pronto, setPronto] = useState(false);
 
   useEffect(() => {
     try {
       const salvo = localStorage.getItem(CHAVE) as Papel | null;
       if (salvo && PAPEIS.includes(salvo)) setPapelEstado(salvo);
     } catch {}
+    setPronto(true);
   }, []);
 
   const setPapel = (p: Papel) => {
@@ -31,7 +37,7 @@ export function PapelDemoProvider({ children }: { children: ReactNode }) {
     } catch {}
   };
 
-  return <Contexto.Provider value={{ papel, setPapel }}>{children}</Contexto.Provider>;
+  return <Contexto.Provider value={{ papel, setPapel, pronto }}>{children}</Contexto.Provider>;
 }
 
 export function usePapelDemo() {
@@ -39,7 +45,7 @@ export function usePapelDemo() {
 }
 
 export function SeletorPapelDemo() {
-  const { papel, setPapel } = usePapelDemo();
+  const { papel, setPapel, pronto } = usePapelDemo();
   return (
     <label
       className="h-10 pl-2 sm:pl-3 pr-1 rounded-lg border inline-flex items-center gap-1.5 text-[13px] text-[var(--tinta-sub)]"
@@ -51,7 +57,7 @@ export function SeletorPapelDemo() {
       <select
         value={papel}
         onChange={(e) => setPapel(e.target.value as Papel)}
-        className="h-8 bg-transparent text-[13px] font-medium text-[var(--tinta)] outline-none cursor-pointer"
+        className={`h-8 bg-transparent text-[13px] font-medium text-[var(--tinta)] outline-none cursor-pointer ${pronto ? "" : "invisible"}`}
         aria-label="Ver a demonstração como"
       >
         {PAPEIS.map((p) => (

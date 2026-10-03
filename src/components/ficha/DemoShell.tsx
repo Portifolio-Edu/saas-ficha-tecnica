@@ -11,80 +11,39 @@
 // segue o papel escolhido, e a tela que o papel não abre mostra o motivo em
 // vez do conteúdo — a mesma regra do app (src/lib/auth/papeis.ts).
 // Versão anterior: `git show c966f91:src/components/ficha/DemoShell.tsx`.
+//
+// LAYOUT (2026-10-03): o DemoShell agora mora em src/app/preview/layout.tsx e
+// não remonta mais a cada troca de seção (antes cada page.tsx desenhava o
+// próprio; o QA viu o menu remontar em 270 de 270 navegações). O título vem
+// da rota (tituloDaRota) e o índice, o modo cozinha e a consulta do celular
+// continuam sem o menu, como já eram. O provider do "Ver como" fica por fora,
+// então o papel escolhido não volta pra "dono" entre uma tela e outra.
+// O shell em si está em DemoShellComPapel.tsx.
+// Versão anterior (shell dentro de cada página): `git show c61f9f4:src/components/ficha/DemoShell.tsx`.
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, Lock } from "lucide-react";
-import { BotaoAgenteIa } from "@/components/ia/BotaoAgenteIa";
-import { ShellPremium } from "./ShellPremium";
-import { Card } from "./Card";
-import { PapelDemoProvider, SeletorPapelDemo, usePapelDemo } from "./PapelDemo";
-import { DESCRICAO_PAPEL, ROTULO_PAPEL, podeAcessar, rotaInicial, type Papel } from "@/lib/auth/papeis";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import { PapelDemoProvider } from "./PapelDemo";
 
-interface Props {
-  nomeRestaurante: string;
-  tituloPagina: string;
-  children: React.ReactNode;
-}
+const SEM_MENU = ["/", "/cozinha", "/consulta"];
 
-export function DemoShell(props: Props) {
+// O índice, a cozinha e a consulta não usam o menu: com import dinâmico eles não
+// baixam o código do shell (sem isso, +9 a 12 kB de First Load em cada um).
+// Continua renderizando no servidor, então o HTML das seções é o mesmo.
+const DemoShellComPapel = dynamic(() => import("./DemoShellComPapel").then((m) => m.DemoShellComPapel));
+
+export function DemoShell({ nomeRestaurante, children }: { nomeRestaurante: string; children: React.ReactNode }) {
+  const rota = (usePathname() ?? "").replace(/^\/preview/, "") || "/";
+  const semMenu = SEM_MENU.some((r) => (r === "/" ? rota === "/" : rota === r || rota.startsWith(`${r}/`)));
   return (
     <PapelDemoProvider>
-      <DemoShellComPapel {...props} />
+      {semMenu ? (
+        children
+      ) : (
+        <DemoShellComPapel nomeRestaurante={nomeRestaurante} rota={rota}>
+          {children}
+        </DemoShellComPapel>
+      )}
     </PapelDemoProvider>
-  );
-}
-
-function DemoShellComPapel({ nomeRestaurante, tituloPagina, children }: Props) {
-  const router = useRouter();
-  const { papel } = usePapelDemo();
-  const rota = (usePathname() ?? "").replace(/^\/preview/, "") || "/";
-  const liberado = papel !== "cozinha" && podeAcessar(papel, rota);
-
-  return (
-    <ShellPremium
-      prefixoRotas="/preview"
-      papel={papel}
-      nomeRestaurante={nomeRestaurante}
-      subtituloRestaurante={
-        <span className="inline-flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--aviso)" }} />
-          Demonstração · {ROTULO_PAPEL[papel]}
-        </span>
-      }
-      tituloPagina={tituloPagina}
-      acaoRodape={{ rotulo: "Voltar ao índice da demonstração", icone: <ArrowLeft size={16} />, onClick: () => router.push("/preview") }}
-      extrasCabecalho={
-        <>
-          <SeletorPapelDemo />
-          {/* EQUIPE (2026-09-25): o estoquista também usa o agente, na versão do estoque
-              (notas, chegadas, perdas). Antes: só dono e gestor. */}
-          {papel !== "cozinha" && <BotaoAgenteIa variante="cabecalho" escopo={papel === "estoquista" ? "estoque" : "completo"} />}
-        </>
-      }
-    >
-      {liberado ? children : <SemAcesso papel={papel} />}
-    </ShellPremium>
-  );
-}
-
-function SemAcesso({ papel }: { papel: Papel }) {
-  const destino = `/preview${rotaInicial(papel)}`;
-  return (
-    <Card className="p-8 max-w-xl">
-      <div className="w-11 h-11 rounded-[10px] flex items-center justify-center mb-3 border" style={{ background: "var(--panel-elevated)", borderColor: "var(--linha)" }}>
-        <Lock size={20} className="text-[var(--tinta-sub)]" />
-      </div>
-      <h2 className="text-[16px] font-semibold text-[var(--tinta)]">
-        {papel === "cozinha" ? "A cozinha usa o modo cozinha" : `O ${ROTULO_PAPEL[papel].toLowerCase()} não vê esta tela`}
-      </h2>
-      <p className="text-[14px] text-[var(--tinta-sub)] mt-1">{DESCRICAO_PAPEL[papel]}</p>
-      <p className="text-[13px] text-[var(--tinta-faint)] mt-2">
-        No sistema de verdade o bloqueio é no banco de dados: mesmo por fora do app, esse login não consegue ler estes números.
-      </p>
-      <Link href={destino} className="inline-flex items-center mt-5 min-h-10 px-4 rounded-lg text-[14px] font-medium" style={{ background: "var(--tinta)", color: "var(--panel)" }}>
-        {papel === "cozinha" ? "Abrir o modo cozinha" : `Ir para a tela do ${ROTULO_PAPEL[papel].toLowerCase()}`}
-      </Link>
-    </Card>
   );
 }

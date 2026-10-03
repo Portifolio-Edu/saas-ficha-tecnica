@@ -97,6 +97,13 @@ const GRUPOS: { titulo?: string; itens: NavItem[] }[] = [
   },
 ];
 
+/** LAYOUT (2026-10-03): título da barra superior a partir da rota (sem o
+ * prefixo /preview). É o mesmo texto do item do menu, regra que as páginas já
+ * seguiam; com o shell no layout.tsx, a página não passa mais o título. */
+export function tituloDaRota(rota: string): string | undefined {
+  return GRUPOS.flatMap((g) => g.itens).find((n) => rota === n.rota || rota.startsWith(`${n.rota}/`))?.label;
+}
+
 export function ShellPremium({
   prefixoRotas = "",
   papel = "dono",
@@ -152,7 +159,9 @@ export function ShellPremium({
     .map((p) => p[0]?.toUpperCase())
     .join("");
 
-  const menu = (
+  // LAYOUT (2026-10-03): o mesmo menu aparece no computador e na gaveta do
+  // celular; cada <nav> com o seu nome (antes os dois eram "Seções").
+  const menu = (rotuloNav: string) => (
     <div className="flex flex-col h-full">
       {/* Marca */}
       <div className="px-4 h-14 flex items-center justify-between border-b" style={{ borderColor: "var(--linha)" }}>
@@ -172,7 +181,7 @@ export function ShellPremium({
       </div>
 
       {/* Navegação */}
-      <nav className="flex-1 px-3 py-3 space-y-5 overflow-y-auto" aria-label="Seções">
+      <nav className="flex-1 px-3 py-3 space-y-5 overflow-y-auto" aria-label={rotuloNav}>
         {GRUPOS.map((grupo) => ({ ...grupo, itens: grupo.itens.filter((n) => podeAcessar(papel, n.rota)) }))
           .filter((grupo) => grupo.itens.length > 0)
           .map((grupo, i) => (
@@ -246,7 +255,7 @@ export function ShellPremium({
   return (
     <div className="w-full min-h-screen flex" style={{ background: "var(--fundo)", color: "var(--tinta)" }}>
       <aside className="hidden md:flex print:hidden w-60 shrink-0 flex-col sticky top-0 h-screen border-r" style={{ backgroundColor: "var(--panel)", borderColor: "var(--linha)" }}>
-        {menu}
+        {menu("Seções")}
       </aside>
 
       {mobileAberto && <div className="fixed inset-0 z-40 md:hidden" style={{ background: "rgba(0,0,0,0.5)" }} onClick={() => setMobileAberto(false)} />}
@@ -261,7 +270,7 @@ export function ShellPremium({
         // aria-hidden-focus).
         inert={!mobileAberto}
       >
-        {menu}
+        {menu("Seções no celular")}
       </aside>
 
       <main id="conteudo" className="flex-1 flex flex-col min-w-0">
