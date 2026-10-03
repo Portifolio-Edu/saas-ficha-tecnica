@@ -4,8 +4,11 @@
 // importar o XML das notas de venda (NFC-e/SAT) ou a planilha exportada do PDV,
 // ligar cada produto do PDV a uma ficha (uma vez; fica lembrado) e levar as vendas
 // pro fechamento de CMV. Tudo roda no navegador: nenhum arquivo sobe pro servidor.
-// O mapeamento produto → ficha fica no localStorage por enquanto; no backend
-// (Supabase) vira tabela do cliente.
+// O mapeamento produto → ficha fica no banco (tabela produtos_pdv, desde
+// 2026-10-03), do restaurante e não do navegador. Todo produto da importação é
+// gravado, inclusive o que ficou sem decisão: esse vira pendência visível em
+// Integrações e no Fechamento de CMV. Na demo (/preview) não há banco: a
+// decisão fica só no localStorage, como antes.
 // Pra tirar: remover o bloco "Sem integração" em IntegracoesClient.tsx.
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -14,6 +17,8 @@ import { ArrowRight, FileSpreadsheet, FileText, RotateCcw } from "lucide-react";
 import { consolidarDocumentos, type ResumoVendas } from "@/lib/integracoes/documentoFiscal";
 import { consolidarPlanilha, lerCsv, sugerirColunas, type ColunasPlanilha, type Planilha } from "@/lib/integracoes/planilhaVendas";
 import { conciliar, sugerirFicha, SEM_FICHA } from "@/lib/integracoes/conciliacao";
+import { itensParaSalvar } from "@/lib/dominio/produtoPdv";
+import { acaoSalvarProdutosPdv } from "@/app/integracoes/actions";
 import { formatBRL, formatQtd } from "@/components/charts/format";
 
 export const CHAVE_VENDAS_IMPORTADAS = "ficha:vendas-importadas";
@@ -49,11 +54,17 @@ export function ImportadorVendas({
   fichas,
   basePath,
   notasExemplo,
+  mapeamentoInicial,
+  persistir = false,
 }: {
   fichas: { id: string; nome: string }[];
   basePath: string;
   /** Só na demo: lote de XML de exemplo pra testar sem os arquivos do PDV. */
   notasExemplo?: () => { nome: string; conteudo: string }[];
+  /** Ligações já gravadas no banco (chave do produto → id da ficha ou "sem-ficha"). */
+  mapeamentoInicial?: Record<string, string>;
+  /** No app, grava no banco (produtos_pdv). Na demo, só localStorage. */
+  persistir?: boolean;
 }) {
   const router = useRouter();
   const xmlRef = useRef<HTMLInputElement>(null);
@@ -61,12 +72,17 @@ export function ImportadorVendas({
   const [resumo, setResumo] = useState<ResumoVendas | null>(null);
   const [origemTexto, setOrigemTexto] = useState("");
   const [planilha, setPlanilha] = useState<{ nome: string; dados: Planilha; colunas: ColunasPlanilha } | null>(null);
-  const [mapeamento, setMapeamento] = useState<Record<string, string>>({});
+  const [mapeamento, setMapeamento] = useState<Record<string, string>>(() => (persistir ? (mapeamentoInicial ?? {}) : {}));
   const [sugeridos, setSugeridos] = useState<Set<string>>(new Set());
   const [erro, setErro] = useState<string | null>(null);
   const [lendo, setLendo] = useState(false);
+  const [gravando, setGravando] = useState(false);
 
-  useEffect(() => setMapeamento(lerMapeamento()), []);
+  // No app o ponto de partida é o banco; na demo, o que o navegador lembrou.
+  const lembrados = () => (persistir ? (mapeamentoInicial ?? {}) : lerMapeamento());
+  useEffect(() => {
+    if (!persistir) setMapeamento(lerMapeamento());
+  }, [persistir]);
 
   const abrirResumo = (r: ResumoVendas, origem: string) => {
     if (r.produtos.length === 0) {
@@ -74,7 +90,7 @@ export function ImportadorVendas({
       return;
     }
     // Sugere ficha pros produtos que ainda não têm decisão lembrada.
-    const lembrado = lerMapeamento();
+    const lembrado = lembrados();
     const novo = { ...lembrado };
     const marcados = new Set<string>();
     for (const p of r.produtos) {
@@ -156,12 +172,24 @@ export function ImportadorVendas({
 
   const conciliado = useMemo(() => (resumo ? conciliar(resumo, mapeamento) : null), [resumo, mapeamento]);
 
-  const levarProCmv = () => {
+  const levarProCmv = async () => {
     if (!resumo || !conciliado) return;
-    try {
-      // Lembra as decisões pras próximas importações.
-      localStorage.setItem(CHAVE_MAPEAMENTO, JSON.stringify(mapeamento));
-    } catch {}
+    if (persistir) {
+      // Grava todos os produtos, decididos ou não: o sem decisão vira pendência visível.
+      setGravando(true);
+      setErro(null);
+      const resposta = await acaoSalvarProdutosPdv(itensParaSalvar(resumo, mapeamento, new Set(fichas.map((f) => f.id))));
+      setGravando(false);
+      if (!resposta.ok) {
+        setErro(resposta.erro);
+        return;
+      }
+    } else {
+      try {
+        // Demo: lembra as decisões pras próximas importações, só neste navegador.
+        localStorage.setItem(CHAVE_MAPEAMENTO, JSON.stringify(mapeamento));
+      } catch {}
+    }
     const pacote: VendasImportadas = {
       inicio: resumo.inicio,
       fim: resumo.fim,
@@ -345,7 +373,7 @@ export function ImportadorVendas({
             {r.cancelados ? ` · ${r.cancelados} cancelada${r.cancelados > 1 ? "s" : ""} fora` : ""}
             {r.repetidos ? ` · ${r.repetidos} repetida${r.repetidos > 1 ? "s" : ""} fora` : ""}
             {r.ignorados.length ? ` · ${r.ignorados.length} arquivo${r.ignorados.length > 1 ? "s" : ""} ignorado${r.ignorados.length > 1 ? "s" : ""}` : ""}. Fica
-            lembrado pras próximas importações.
+            lembrado {persistir ? "no restaurante" : "neste navegador"} pras próximas importações.
           </p>
         </div>
         <button
@@ -417,11 +445,17 @@ export function ImportadorVendas({
         </table>
       </div>
 
+      {erro && (
+        <div role="alert" className="mx-5 mb-3 text-[14px] rounded-lg px-4 py-3" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
+          {erro}
+        </div>
+      )}
+
       <div className="p-4 border-t flex flex-wrap items-center justify-between gap-3" style={{ borderColor: "var(--linha)" }}>
         <div className="text-[13px] text-[var(--tinta-sub)]">
           {c.pendentes > 0 ? (
             <span style={{ color: "var(--aviso)" }}>
-              {c.pendentes} {c.pendentes === 1 ? "produto sem decisão" : "produtos sem decisão"} (contam como sem ficha).{" "}
+              {c.pendentes} {c.pendentes === 1 ? "produto sem decisão" : "produtos sem decisão"}: {c.pendentes === 1 ? "fica" : "ficam"} de fora do CMV teórico e {persistir ? "marcado" : "marcados"} como pendência até você ligar{c.pendentes === 1 ? " a uma ficha" : " cada um a uma ficha"}.{" "}
             </span>
           ) : null}
           {!semValor && (
@@ -433,11 +467,11 @@ export function ImportadorVendas({
         </div>
         <button
           onClick={levarProCmv}
-          disabled={c.vendas.length === 0}
+          disabled={c.vendas.length === 0 || gravando}
           className="flex items-center gap-2 text-[14px] font-medium px-4 min-h-[var(--alvo-toque)] rounded-lg"
-          style={{ background: "var(--accent)", color: "var(--accent-contrast)", opacity: c.vendas.length === 0 ? 0.5 : 1 }}
+          style={{ background: "var(--accent)", color: "var(--accent-contrast)", opacity: c.vendas.length === 0 || gravando ? 0.5 : 1 }}
         >
-          Levar pro fechamento de CMV
+          {gravando ? "Gravando..." : "Levar pro fechamento de CMV"}
           <ArrowRight size={15} />
         </button>
       </div>

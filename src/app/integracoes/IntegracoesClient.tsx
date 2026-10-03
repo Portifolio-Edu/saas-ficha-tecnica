@@ -19,6 +19,8 @@ import { usePathname } from "next/navigation";
 import { Check, Plug, Sparkles } from "lucide-react";
 import { CANAIS, CANAIS_EM_BREVE, CANAIS_PRIORIDADE, type PedidoRecebido } from "@/lib/integracoes/pdvs";
 import { ImportadorVendas } from "@/components/integracoes/ImportadorVendas";
+import { PendenciasPdv } from "@/components/integracoes/PendenciasPdv";
+import type { ProdutoPdv } from "@/lib/dominio/produtoPdv";
 import { formatBRL } from "@/components/charts/format";
 
 const painel = { background: "var(--panel)", borderColor: "var(--linha)", boxShadow: "var(--shadow-card)" } as const;
@@ -39,8 +41,14 @@ function hora(iso: string): string {
 export function IntegracoesClient({
   fichas,
   demo,
+  mapeamentoInicial,
+  pendentes,
 }: {
   fichas: { id: string; nome: string }[];
+  /** Só no app: ligações produto do PDV -> ficha já gravadas no banco (na demo ficam no navegador). */
+  mapeamentoInicial?: Record<string, string>;
+  /** Só no app: produtos vendidos sem ficha, a pendência visível. */
+  pendentes?: ProdutoPdv[];
   /** Só na /preview: canais simulados como conectados e pedidos chegando. */
   demo?: {
     conectados: string[];
@@ -62,6 +70,9 @@ export function IntegracoesClient({
           O Ficha Técnica não troca o sistema do caixa: ele puxa as vendas do PDV e do delivery pra calcular o CMV real e mostrar onde a margem está vazando.
         </p>
       </div>
+
+      {/* Produtos vendidos sem ficha: pendência visível (só no app, vem do banco). */}
+      {pendentes && pendentes.length > 0 && <PendenciasPdv pendentes={pendentes} fichas={fichas} />}
 
       {/* Vendas entrando (só na demo, simulado). */}
       {demo && conectados.length > 0 && (
@@ -198,7 +209,7 @@ export function IntegracoesClient({
             Funciona com qualquer PDV, mesmo os que não liberam integração: as vendas vêm das notas fiscais que ele já emite, ou da planilha que ele exporta.
           </p>
         </div>
-        <ImportadorVendas fichas={fichas} basePath={basePath} notasExemplo={demo?.notasExemplo} />
+        <ImportadorVendas fichas={fichas} basePath={basePath} notasExemplo={demo?.notasExemplo} mapeamentoInicial={mapeamentoInicial} persistir={!demo && !basePath} />
       </section>
     </div>
   );
