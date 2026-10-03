@@ -11,6 +11,10 @@ import { adicionarAoPlano } from "@/lib/dados/planoProducao";
 import { mensagemErro } from "@/lib/dados/erros";
 import type { CategoriaPedido, UnidadePedido } from "@/lib/dominio/requisicao";
 import type { ValoresNutricionais } from "@/lib/calculo/nutricional";
+import { listarInsumos } from "@/lib/dados/insumos";
+import { registrarNotaCompra } from "@/lib/dados/notasCompra";
+import type { NotaDeCompra } from "@/lib/integracoes/documentoFiscal";
+import { calcularConferencia, montarRegistro, podeConfirmar, type DecisaoItem, type OpcoesNota } from "@/lib/integracoes/conferenciaNota";
 import type { ItemEntrada } from "./entradaNota";
 import type { PasseAgente } from "./passe";
 import { ErroFerramenta } from "./erro";
@@ -22,6 +26,19 @@ export interface DadosEntrada {
   fornecedor: string | null;
   numeroNota: string | null;
   atualizarPrecos: boolean;
+}
+/**
+ * NF-e DE COMPRA PELO AGENTE (2026-10-03): entrada de uma nota com chave de
+ * acesso. Guarda a nota e as decisões, não a conta: na confirmação o servidor
+ * refaz tudo com o cadastro do momento e grava por registrar_nota_compra (a
+ * mesma função da tela: trava de nota repetida, estoque, preço e histórico
+ * numa transação). Mesmo tipo "entrada_estoque" (o banco só aceita os tipos
+ * da lista); o que distingue é o campo `nota`.
+ */
+export interface DadosEntradaNota {
+  nota: NotaDeCompra;
+  decisoes: DecisaoItem[];
+  opcoes: OpcoesNota;
 }
 export interface DadosNutricionais {
   insumoId: string;
@@ -119,7 +136,7 @@ export async function confirmarProposta(passe: PasseAgente, id: string): Promise
 async function aplicar(passe: PasseAgente, tipo: TipoProposta, dados: unknown): Promise<string> {
   switch (tipo) {
     case "entrada_estoque":
-      return aplicarEntrada(dados as DadosEntrada);
+      return dados && typeof dados === "object" && "nota" in dados ? aplicarEntradaDaNota(dados as DadosEntradaNota) : aplicarEntrada(dados as DadosEntrada);
     case "valores_nutricionais": {
       const d = dados as DadosNutricionais;
       await salvarValoresNutricionaisInsumo(d.insumoId, { baseGramas: d.baseGramas, valores: d.valores });
@@ -170,4 +187,14 @@ async function aplicarEntrada(d: DadosEntrada): Promise<string> {
     }
   }
   return `Entrada de ${d.itens.length} ${d.itens.length === 1 ? "item" : "itens"} no estoque.${precos.length ? ` Preços atualizados: ${precos.join("; ")}.` : ""}`;
+}
+
+async function aplicarEntradaDaNota(d: DadosEntradaNota): Promise<string> {
+  // O cadastro pode ter mudado entre a proposta e o "sim": a conta é refeita agora.
+  const resultado = calcularConferencia(d.nota, d.decisoes, await listarInsumos(), d.opcoes.incluirExtras);
+  const pode = podeConfirmar(resultado);
+  if (!pode.ok) throw new ErroFerramenta(`${pode.motivo ?? "A nota mudou desde a proposta."} Proponha a entrada de novo.`);
+  const r = await registrarNotaCompra(montarRegistro(d.nota, d.decisoes, resultado, d.opcoes));
+  const nota = `Nota ${d.nota.numero || d.nota.chave.slice(25, 34)}${d.nota.fornecedor ? ` (${d.nota.fornecedor})` : ""}`;
+  return `${nota} lançada: ${r.entradas} ${r.entradas === 1 ? "item entrou" : "itens entraram"} no estoque${r.precosAtualizados ? `, ${r.precosAtualizados} ${r.precosAtualizados === 1 ? "preço atualizado" : "preços atualizados"}` : ""}${r.ignorados ? `, ${r.ignorados} ${r.ignorados === 1 ? "item ignorado" : "itens ignorados"}` : ""}.`;
 }

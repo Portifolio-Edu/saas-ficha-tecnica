@@ -7,6 +7,7 @@ import {
   chaveLigacao,
   comprasNoPeriodo,
   custoDoItem,
+  decidirItens,
   montarConferencia,
   montarRegistro,
   podeConfirmar,
@@ -131,6 +132,41 @@ describe("conferência: confirmar e gravar", () => {
     const reg = montarRegistro({ ...nota, emitidaEm: "", valorTotal: 0 }, decisoes, calcularConferencia(nota, decisoes, cadastro, true), { atualizarPrecos: true, incluirExtras: true });
     expect(reg.emitida_em).toBeNull();
     expect(reg.valor_total).toBeNull();
+  });
+});
+
+describe("decisões vindas do agente IA", () => {
+  const lembradas = new Map<string, Lembranca>([[chaveLigacao("12345678000190", "31"), { insumoId: "oleo", fator: 18 }]]);
+  const linhas = montarConferencia(nota, cadastro, lembradas);
+
+  it("sem pedido do agente, usa a sugestão (nome ou lembrada, com o fator lembrado)", () => {
+    const d = decidirItens(linhas, []);
+    expect(d).toEqual([
+      { ordem: 1, insumoId: "tom", ignorar: false, fator: null },
+      { ordem: 2, insumoId: "oleo", ignorar: false, fator: 18 },
+    ]);
+    // O detergente não tem sugestão: fica sem decisão e a conferência pede.
+    expect(podeConfirmar(calcularConferencia(nota, d, cadastro, true)).ok).toBe(false);
+  });
+
+  it("o que o agente diz vale: insumo, fator e ignorar", () => {
+    const d = decidirItens(linhas, [{ insumoId: "ceb", fator: null, ignorar: false }, { insumoId: null, fator: 20, ignorar: false }, { insumoId: null, fator: null, ignorar: true }]);
+    expect(d).toEqual([
+      { ordem: 1, insumoId: "ceb", ignorar: false, fator: null },
+      { ordem: 2, insumoId: "oleo", ignorar: false, fator: 20 },
+      { ordem: 3, insumoId: null, ignorar: true, fator: null },
+    ]);
+  });
+
+  it("trocou o insumo da sugestão: o fator lembrado não vai junto", () => {
+    const d = decidirItens(linhas, [undefined, { insumoId: "ovo", fator: null, ignorar: false }]);
+    expect(d[1]).toEqual({ ordem: 2, insumoId: "ovo", ignorar: false, fator: null });
+  });
+
+  it("insumo que não existe vira item inválido, não some", () => {
+    const d = decidirItens(linhas, [{ insumoId: "nao-existe", fator: null, ignorar: false }]);
+    const r = calcularConferencia(nota, d, cadastro, true);
+    expect(r[0].status).toBe("invalido");
   });
 });
 

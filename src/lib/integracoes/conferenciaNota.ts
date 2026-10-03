@@ -193,6 +193,36 @@ export function precoMudou(atual: number, novo: number | null | undefined): bool
   return Math.abs(novo - atual) / Math.max(atual, 0.0001) > VARIACAO_MINIMA;
 }
 
+/** O que o agente IA mandou pra um item da nota (tudo opcional). */
+export interface PedidoItem {
+  insumoId: string | null;
+  fator: number | null;
+  ignorar: boolean;
+}
+
+/**
+ * AGENTE IA (2026-10-03): transforma o que o agente mandou em decisões da
+ * conferência. Vale o que o agente disse; no que ele não disse, a sugestão da
+ * conferência (ligação lembrada do fornecedor ou nome parecido). Insumo
+ * inexistente vira decisão mesmo assim: calcularLinha marca como inválido e o
+ * agente pergunta de novo.
+ */
+export function decidirItens(linhas: LinhaConferencia[], pedidos: (PedidoItem | undefined)[]): DecisaoItem[] {
+  const decisoes: DecisaoItem[] = [];
+  linhas.forEach((l, i) => {
+    const p = pedidos[i];
+    if (p?.ignorar) {
+      decisoes.push({ ordem: l.ordem, insumoId: null, ignorar: true, fator: null });
+      return;
+    }
+    const insumoId = p?.insumoId ?? l.insumoSugeridoId;
+    if (!insumoId) return;
+    const fator = p?.fator ?? (insumoId === l.insumoSugeridoId ? l.fatorSugerido : null);
+    decisoes.push({ ordem: l.ordem, insumoId, ignorar: false, fator });
+  });
+  return decisoes;
+}
+
 export interface OpcoesNota {
   /** O preço do insumo passa a ser o da nota (muda o custo das fichas e o CMV teórico). */
   atualizarPrecos: boolean;
