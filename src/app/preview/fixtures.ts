@@ -21,6 +21,7 @@ import type { NutricionalOverride, Rotulagem, ValoresNutricionaisInsumo } from "
 import type { LocalArmazenamento, RegistroTemperatura } from "@/lib/dominio/temperatura";
 import type { FechamentoCmv } from "@/lib/dominio/fechamentoCmv";
 import type { ValoresNutricionais } from "@/lib/calculo/nutricional";
+import type { CanalVendaConfig, DadosRestaurante } from "@/lib/dominio/configuracoes";
 
 export const NOME_RESTAURANTE = "Cantina Bella Notte";
 
@@ -692,6 +693,21 @@ const fechamentosEmOrdemCronologica: FechamentoCmv[] = [
 export const fechamentos: FechamentoCmv[] = fechamentosEmOrdemCronologica.slice().reverse();
 
 export const margemAlvoCliente = 0.65;
+
+// CONFIGURAÇÕES (2026-10-03): dados da casa e canais da demo. Tudo fictício
+// (comissão e telefone inventados), só pra mostrar a tela e o preço por canal.
+export const restauranteDemo: DadosRestaurante = {
+  nomeRestaurante: NOME_RESTAURANTE,
+  nome: "Marina Bellini",
+  telefone: "5551999990000",
+  cnpj: null,
+  margemAlvo: margemAlvoCliente,
+};
+
+export const canaisDemo: CanalVendaConfig[] = [
+  { id: "canal-ifood", nomeCanal: "iFood", comissaoPercentual: 0.152, embala: true, ativo: true },
+  { id: "canal-proprio", nomeCanal: "Delivery próprio", comissaoPercentual: 0, embala: true, ativo: true },
+];
 
 // PEDIDOS DA COZINHA (2026-09-26): o que a cozinha já pediu na demo.
 export const requisicoesDemo: Requisicao[] = [
