@@ -171,46 +171,49 @@ export function ProteinasClient({ proteinas, processamentos }: { proteinas: Insu
                 );
               })}
             </ListaMovel>
-            <table className="hidden md:table w-full text-[12px]">
-              <thead>
-                <tr style={{ color: "var(--faint)" }} className="text-left text-[12px]">
-                  <th className="py-2.5 px-5 font-medium">Data</th>
-                  <th className="py-2.5 px-2 font-medium">Responsável</th>
-                  <th className="py-2.5 px-2 font-medium">Fornecedor</th>
-                  <th className="py-2.5 px-2 font-medium text-right">Bruto</th>
-                  <th className="py-2.5 px-2 font-medium text-right">Valor/kg</th>
-                  <th className="py-2.5 px-2 font-medium text-right">Líquido</th>
-                  <th className="py-2.5 px-2 font-medium text-right">Aparas reaproveitadas</th>
-                  <th className="py-2.5 px-2 font-medium text-right">Descarte puro</th>
-                  <th className="py-2.5 px-5 font-medium text-right">FC</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lotes.map((l) => {
-                  const descarteAlto = l.pesoDescartePuro / l.pesoBrutoRecebido > 0.08;
-                  return (
-                    <Fragment key={l.id}>
-                      <tr style={{ borderTop: `1px solid ${"var(--border)"}` }}>
-                        <td className="py-2 px-5">{formatarData(l.processadoEm)}</td>
-                        <td className="py-2 px-2 font-medium">{l.responsavel}</td>
-                        <td className="py-2 px-2" style={{ color: "var(--sub)" }}>{l.fornecedor ?? "—"}</td>
-                        <td className="py-2 px-2 text-right" style={nums}>{formatNumero(l.pesoBrutoRecebido, 2)}kg</td>
-                        <td className="py-2 px-2 text-right" style={nums}>{formatBRL(l.valorPagoKg)}</td>
-                        <td className="py-2 px-2 text-right" style={nums}>{formatNumero(l.pesoLiquidoResultante, 2)}kg</td>
-                        <td className="py-2 px-2 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatNumero(l.pesoAparasReaproveitaveis, 2)}kg</td>
-                        <td className="py-2 px-2 text-right" style={{ ...nums, color: descarteAlto ? "var(--danger)" : "var(--text)" }}>{formatNumero(l.pesoDescartePuro, 2)}kg</td>
-                        <td className="py-2 px-5 text-right font-medium" style={nums}>{formatNumero(l.fcObservado, 3)}</td>
-                      </tr>
-                      {l.observacao && (
-                        <tr key={`${l.id}-obs`}>
-                          <td colSpan={9} className="pb-2 px-5 text-[11.5px]" style={{ color: "var(--sub)" }}>Obs: {l.observacao}</td>
+            {/* LARGURA (2026-10-03): rola dentro da área entre 768 e ~1100px (menu de 240px + tabela). */}
+            <div tabIndex={0} role="region" aria-label="Lotes processados" className="hidden md:block overflow-x-auto">
+              <table className="w-full text-[12px]">
+                <thead>
+                  <tr style={{ color: "var(--faint)" }} className="text-left text-[12px]">
+                    <th className="py-2.5 px-5 font-medium">Data</th>
+                    <th className="py-2.5 px-2 font-medium">Responsável</th>
+                    <th className="py-2.5 px-2 font-medium">Fornecedor</th>
+                    <th className="py-2.5 px-2 font-medium text-right">Bruto</th>
+                    <th className="py-2.5 px-2 font-medium text-right">Valor/kg</th>
+                    <th className="py-2.5 px-2 font-medium text-right">Líquido</th>
+                    <th className="py-2.5 px-2 font-medium text-right">Aparas reaproveitadas</th>
+                    <th className="py-2.5 px-2 font-medium text-right">Descarte puro</th>
+                    <th className="py-2.5 px-5 font-medium text-right">FC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lotes.map((l) => {
+                    const descarteAlto = l.pesoDescartePuro / l.pesoBrutoRecebido > 0.08;
+                    return (
+                      <Fragment key={l.id}>
+                        <tr style={{ borderTop: `1px solid ${"var(--border)"}` }}>
+                          <td className="py-2 px-5">{formatarData(l.processadoEm)}</td>
+                          <td className="py-2 px-2 font-medium">{l.responsavel}</td>
+                          <td className="py-2 px-2" style={{ color: "var(--sub)" }}>{l.fornecedor ?? "—"}</td>
+                          <td className="py-2 px-2 text-right" style={nums}>{formatNumero(l.pesoBrutoRecebido, 2)}kg</td>
+                          <td className="py-2 px-2 text-right" style={nums}>{formatBRL(l.valorPagoKg)}</td>
+                          <td className="py-2 px-2 text-right" style={nums}>{formatNumero(l.pesoLiquidoResultante, 2)}kg</td>
+                          <td className="py-2 px-2 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatNumero(l.pesoAparasReaproveitaveis, 2)}kg</td>
+                          <td className="py-2 px-2 text-right" style={{ ...nums, color: descarteAlto ? "var(--danger)" : "var(--text)" }}>{formatNumero(l.pesoDescartePuro, 2)}kg</td>
+                          <td className="py-2 px-5 text-right font-medium" style={nums}>{formatNumero(l.fcObservado, 3)}</td>
                         </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {l.observacao && (
+                          <tr key={`${l.id}-obs`}>
+                            <td colSpan={9} className="pb-2 px-5 text-[11.5px]" style={{ color: "var(--sub)" }}>Obs: {l.observacao}</td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
         </>
       )}

@@ -444,69 +444,72 @@ export function CmvClient({
               </li>
             )}
           </ListaMovel>
-          <table className="hidden md:table w-full text-[12.5px]">
-            <thead>
-              <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
-                <th className="py-2.5 px-5 font-medium">Prato</th>
-                <th className="py-2.5 px-3 font-medium text-right">Vendidos</th>
-                <th className="py-2.5 px-3 font-medium text-right">Preço</th>
-                <th className="py-2.5 px-3 font-medium text-right">CMV unit.</th>
-                <th className="py-2.5 px-3 font-medium text-right">Faturamento</th>
-                <th className="py-2.5 px-3 font-medium text-right">Custo total</th>
-                <th className="py-2.5 px-5 font-medium text-right">Lucro bruto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {linhasCmv.map((l) => {
-                const aberto = pratoExpandido === l.receita.id;
-                return (
-                  <Fragment key={l.receita.id}>
-                    <tr
-                      className="cursor-pointer"
-                      style={{ borderTop: `1px solid ${"var(--border)"}` }}
-                      onClick={() => setPratoExpandido(aberto ? null : l.receita.id)}
-                    >
-                      <td className="py-2.5 px-5">
-                        <span className="inline-flex items-center gap-1.5 font-medium">
-                          {aberto ? <ChevronDown size={13} style={{ color: "var(--faint)" }} /> : <ChevronRight size={13} style={{ color: "var(--faint)" }} />}
-                          {l.receita.nomePrato}
-                        </span>
-                        {l.qtdVendida === 0 && (
-                          <span className="ml-2"><Badge acao>sem vendas cadastradas</Badge></span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3 text-right" style={nums}>{l.qtdVendida}</td>
-                      <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL((l.receita.precoVenda ?? 0))}</td>
-                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatBRL(l.custoPorPorcao)}</td>
-                      <td className="py-2.5 px-3 text-right" style={nums}>R$ {l.faturamentoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoTeoricoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                      <td className="py-2.5 px-5 text-right font-medium" style={nums}>R$ {l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                    </tr>
-                    {aberto && (
-                      <tr style={{ background: "var(--bg)" }}>
-                        <td colSpan={7} className="px-5 py-4">
-                          {composicaoDoCusto(l.receita)}
+          {/* LARGURA (2026-10-03): rola dentro da área entre 768 e ~1100px (menu de 240px + tabela). */}
+          <div tabIndex={0} role="region" aria-label="Pratos do período" className="hidden md:block overflow-x-auto">
+            <table className="w-full text-[12.5px]">
+              <thead>
+                <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
+                  <th className="py-2.5 px-5 font-medium">Prato</th>
+                  <th className="py-2.5 px-3 font-medium text-right">Vendidos</th>
+                  <th className="py-2.5 px-3 font-medium text-right">Preço</th>
+                  <th className="py-2.5 px-3 font-medium text-right">CMV unit.</th>
+                  <th className="py-2.5 px-3 font-medium text-right">Faturamento</th>
+                  <th className="py-2.5 px-3 font-medium text-right">Custo total</th>
+                  <th className="py-2.5 px-5 font-medium text-right">Lucro bruto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {linhasCmv.map((l) => {
+                  const aberto = pratoExpandido === l.receita.id;
+                  return (
+                    <Fragment key={l.receita.id}>
+                      <tr
+                        className="cursor-pointer"
+                        style={{ borderTop: `1px solid ${"var(--border)"}` }}
+                        onClick={() => setPratoExpandido(aberto ? null : l.receita.id)}
+                      >
+                        <td className="py-2.5 px-5">
+                          <span className="inline-flex items-center gap-1.5 font-medium">
+                            {aberto ? <ChevronDown size={13} style={{ color: "var(--faint)" }} /> : <ChevronRight size={13} style={{ color: "var(--faint)" }} />}
+                            {l.receita.nomePrato}
+                          </span>
+                          {l.qtdVendida === 0 && (
+                            <span className="ml-2"><Badge acao>sem vendas cadastradas</Badge></span>
+                          )}
                         </td>
+                        <td className="py-2.5 px-3 text-right" style={nums}>{l.qtdVendida}</td>
+                        <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL((l.receita.precoVenda ?? 0))}</td>
+                        <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatBRL(l.custoPorPorcao)}</td>
+                        <td className="py-2.5 px-3 text-right" style={nums}>R$ {l.faturamentoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                        <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>R$ {l.custoTeoricoPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                        <td className="py-2.5 px-5 text-right font-medium" style={nums}>R$ {l.lucroPrato.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
                       </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-              {linhasCmv.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>Nenhum prato final cadastrado ainda.</td>
-                </tr>
-              )}
-              {linhasCmv.length > 0 && (
-                <tr style={{ borderTop: `1.5px solid ${"var(--border-strong)"}` }}>
-                  <td className="py-2.5 px-5 font-semibold" colSpan={4}>Total do período</td>
-                  <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {faturamentoDasFichas.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {custoTeoricoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-5 text-right font-semibold" style={nums}>R$ {(faturamentoDasFichas - custoTeoricoPeriodo).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                      {aberto && (
+                        <tr style={{ background: "var(--bg)" }}>
+                          <td colSpan={7} className="px-5 py-4">
+                            {composicaoDoCusto(l.receita)}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+                {linhasCmv.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>Nenhum prato final cadastrado ainda.</td>
+                  </tr>
+                )}
+                {linhasCmv.length > 0 && (
+                  <tr style={{ borderTop: `1.5px solid ${"var(--border-strong)"}` }}>
+                    <td className="py-2.5 px-5 font-semibold" colSpan={4}>Total do período</td>
+                    <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {faturamentoDasFichas.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                    <td className="py-2.5 px-3 text-right font-semibold" style={nums}>R$ {custoTeoricoPeriodo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                    <td className="py-2.5 px-5 text-right font-semibold" style={nums}>R$ {(faturamentoDasFichas - custoTeoricoPeriodo).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
 
@@ -564,35 +567,38 @@ export function CmvClient({
             ))}
             {historico.length === 0 && <li className="py-6 px-4 text-center text-[14px]" style={{ color: "var(--faint)" }}>Nenhum fechamento salvo ainda.</li>}
           </ListaMovel>
-          <table className="hidden md:table w-full text-[12.5px]">
-            <thead>
-              <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
-                <th className="py-2.5 px-5 font-medium">Período</th>
-                <th className="py-2.5 px-3 font-medium text-right">Faturamento</th>
-                <th className="py-2.5 px-3 font-medium text-right">CMV teórico</th>
-                <th className="py-2.5 px-3 font-medium text-right">CMV real</th>
-                <th className="py-2.5 px-5 font-medium text-right">Gap</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historico.map(({ fechamento, cmvRealPctHist, cmvTeoricoPctHist, gapPctHist }) => (
-                <tr key={fechamento.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
-                  <td className="py-2.5 px-5 font-medium">{formatarPeriodo(fechamento.periodoInicio, fechamento.periodoFim)}</td>
-                  <td className="py-2.5 px-3 text-right" style={nums}>R$ {fechamento.faturamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
-                  <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatNumero(cmvTeoricoPctHist, 1)}%</td>
-                  <td className="py-2.5 px-3 text-right" style={nums}>{formatNumero(cmvRealPctHist, 1)}%</td>
-                  <td className="py-2.5 px-5 text-right font-medium" style={{ ...nums, color: gapPctHist > GAP_ALERTA_PP ? "var(--danger)" : "var(--text)" }}>
-                    {gapPctHist > 0 ? "+" : ""}{formatNumero(gapPctHist, 1)} p.p.
-                  </td>
+          {/* LARGURA (2026-10-03): rola dentro da área entre 768 e ~1100px (menu de 240px + tabela). */}
+          <div tabIndex={0} role="region" aria-label="Histórico de fechamentos" className="hidden md:block overflow-x-auto">
+            <table className="w-full text-[12.5px]">
+              <thead>
+                <tr style={{ color: "var(--faint)" }} className="text-left text-[10.5px] uppercase tracking-wide">
+                  <th className="py-2.5 px-5 font-medium">Período</th>
+                  <th className="py-2.5 px-3 font-medium text-right">Faturamento</th>
+                  <th className="py-2.5 px-3 font-medium text-right">CMV teórico</th>
+                  <th className="py-2.5 px-3 font-medium text-right">CMV real</th>
+                  <th className="py-2.5 px-5 font-medium text-right">Gap</th>
                 </tr>
-              ))}
-              {historico.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>Nenhum fechamento salvo ainda.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {historico.map(({ fechamento, cmvRealPctHist, cmvTeoricoPctHist, gapPctHist }) => (
+                  <tr key={fechamento.id} style={{ borderTop: `1px solid ${"var(--border)"}` }}>
+                    <td className="py-2.5 px-5 font-medium">{formatarPeriodo(fechamento.periodoInicio, fechamento.periodoFim)}</td>
+                    <td className="py-2.5 px-3 text-right" style={nums}>R$ {fechamento.faturamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</td>
+                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: "var(--sub)" }}>{formatNumero(cmvTeoricoPctHist, 1)}%</td>
+                    <td className="py-2.5 px-3 text-right" style={nums}>{formatNumero(cmvRealPctHist, 1)}%</td>
+                    <td className="py-2.5 px-5 text-right font-medium" style={{ ...nums, color: gapPctHist > GAP_ALERTA_PP ? "var(--danger)" : "var(--text)" }}>
+                      {gapPctHist > 0 ? "+" : ""}{formatNumero(gapPctHist, 1)} p.p.
+                    </td>
+                  </tr>
+                ))}
+                {historico.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-6 px-5 text-center" style={{ color: "var(--faint)" }}>Nenhum fechamento salvo ainda.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
     </div>

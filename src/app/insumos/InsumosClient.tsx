@@ -131,72 +131,75 @@ export function InsumosClient({
             </li>
           )}
         </ListaMovel>
-        <table className="hidden md:table w-full text-[13px]">
-          <thead>
-            <tr style={{ color: "var(--faint)" }} className="text-left text-[11px] uppercase tracking-wide">
-              <th className="py-2.5 px-5 font-medium">Insumo</th>
-              <th className="py-2.5 px-3 font-medium">Categoria</th>
-              <th className="py-2.5 px-3 font-medium">Unidade</th>
-              <th className="py-2.5 px-3 font-medium">Embalagem</th>
-              <th className="py-2.5 px-3 font-medium text-right">Preço pago</th>
-              <th className="py-2.5 px-3 font-medium text-right">Preço/unid.</th>
-              <th className="py-2.5 px-3 font-medium text-right">FC</th>
-              <th className="py-2.5 px-3 font-medium text-right">Estoque</th>
-              <th className="py-2.5 px-5 font-medium text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtrados.map((i) => {
-              const abaixoMinimo = i.estoque && i.estoque.saldoAtual < i.estoque.estoqueMinimo;
-              const editandoEsteAqui = insumoEditando?.id === i.id;
-              return (
-                <Fragment key={i.id}>
-                  <tr style={{ borderTop: `1px solid ${"var(--border)"}` }}>
-                    <td className="py-2.5 px-5">{i.nome}</td>
-                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === i.categoria)?.label ?? i.categoria}</td>
-                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.unidadeMedida}</td>
-                    <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{formatQtd(i.tamanhoEmbalagem)} {i.unidadeMedida}</td>
-                    <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL(i.precoEmbalagem)}</td>
-                    <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL(i.precoUnitario)}</td>
-                    <td className="py-2.5 px-3 text-right" style={{ ...nums, color: i.fatorCorrecao > 1 ? "var(--danger)" : "var(--faint)" }}>{formatNumero(i.fatorCorrecao, 2)}</td>
-                    <td className="py-2.5 px-3 text-right whitespace-nowrap" style={{ ...nums, color: abaixoMinimo ? "var(--danger)" : "var(--text)" }}>
-                      {i.estoque ? `${formatQtd(i.estoque.saldoAtual)}${i.unidadeMedida}${abaixoMinimo ? " · abaixo do mín." : ""}` : <span style={{ color: "var(--faint)" }}>não rastreado</span>}
-                    </td>
-                    <td className="py-2.5 px-5 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          setShowNovoInsumo(false);
-                          setInsumoEditando(editandoEsteAqui ? null : i);
-                        }}
-                        className="text-[11.5px] font-medium mr-3"
-                        style={{ color: "var(--text)" }}
-                      >
-                        editar
-                      </button>
-                      <button onClick={() => excluirInsumoComConfirmacao(i)} className="text-[13px] md:text-[11.5px] font-medium min-h-10 md:min-h-0 px-1" style={{ color: "var(--danger)" }}>
-                        excluir
-                      </button>
-                    </td>
-                  </tr>
-                  {editandoEsteAqui && (
-                    <tr>
-                      <td colSpan={9} className="p-0">
-                        <InsumoForm insumo={i} locais={locais} onCancel={() => setInsumoEditando(null)} onSaved={() => setInsumoEditando(null)} />
+        {/* LARGURA (2026-10-03): rola dentro da área entre 768 e ~1100px (menu de 240px + tabela). */}
+        <div tabIndex={0} role="region" aria-label="Tabela de insumos" className="hidden md:block overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr style={{ color: "var(--faint)" }} className="text-left text-[11px] uppercase tracking-wide">
+                <th className="py-2.5 px-5 font-medium">Insumo</th>
+                <th className="py-2.5 px-3 font-medium">Categoria</th>
+                <th className="py-2.5 px-3 font-medium">Unidade</th>
+                <th className="py-2.5 px-3 font-medium">Embalagem</th>
+                <th className="py-2.5 px-3 font-medium text-right">Preço pago</th>
+                <th className="py-2.5 px-3 font-medium text-right">Preço/unid.</th>
+                <th className="py-2.5 px-3 font-medium text-right">FC</th>
+                <th className="py-2.5 px-3 font-medium text-right">Estoque</th>
+                <th className="py-2.5 px-5 font-medium text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.map((i) => {
+                const abaixoMinimo = i.estoque && i.estoque.saldoAtual < i.estoque.estoqueMinimo;
+                const editandoEsteAqui = insumoEditando?.id === i.id;
+                return (
+                  <Fragment key={i.id}>
+                    <tr style={{ borderTop: `1px solid ${"var(--border)"}` }}>
+                      <td className="py-2.5 px-5">{i.nome}</td>
+                      <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{CATEGORIAS.find((c) => c.id === i.categoria)?.label ?? i.categoria}</td>
+                      <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{i.unidadeMedida}</td>
+                      <td className="py-2.5 px-3" style={{ color: "var(--sub)" }}>{formatQtd(i.tamanhoEmbalagem)} {i.unidadeMedida}</td>
+                      <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL(i.precoEmbalagem)}</td>
+                      <td className="py-2.5 px-3 text-right" style={nums}>{formatBRL(i.precoUnitario)}</td>
+                      <td className="py-2.5 px-3 text-right" style={{ ...nums, color: i.fatorCorrecao > 1 ? "var(--danger)" : "var(--faint)" }}>{formatNumero(i.fatorCorrecao, 2)}</td>
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap" style={{ ...nums, color: abaixoMinimo ? "var(--danger)" : "var(--text)" }}>
+                        {i.estoque ? `${formatQtd(i.estoque.saldoAtual)}${i.unidadeMedida}${abaixoMinimo ? " · abaixo do mín." : ""}` : <span style={{ color: "var(--faint)" }}>não rastreado</span>}
+                      </td>
+                      <td className="py-2.5 px-5 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            setShowNovoInsumo(false);
+                            setInsumoEditando(editandoEsteAqui ? null : i);
+                          }}
+                          className="text-[11.5px] font-medium mr-3"
+                          style={{ color: "var(--text)" }}
+                        >
+                          editar
+                        </button>
+                        <button onClick={() => excluirInsumoComConfirmacao(i)} className="text-[13px] md:text-[11.5px] font-medium min-h-10 md:min-h-0 px-1" style={{ color: "var(--danger)" }}>
+                          excluir
+                        </button>
                       </td>
                     </tr>
-                  )}
-                </Fragment>
-              );
-            })}
-            {insumos.length === 0 && (
-              <tr>
-                <td colSpan={9} className="py-6 px-5 text-center text-[12.5px]" style={{ color: "var(--faint)" }}>
-                  Nenhum insumo cadastrado ainda.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                    {editandoEsteAqui && (
+                      <tr>
+                        <td colSpan={9} className="p-0">
+                          <InsumoForm insumo={i} locais={locais} onCancel={() => setInsumoEditando(null)} onSaved={() => setInsumoEditando(null)} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+              {insumos.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="py-6 px-5 text-center text-[12.5px]" style={{ color: "var(--faint)" }}>
+                    Nenhum insumo cadastrado ainda.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       {mostrarPreparos && (
