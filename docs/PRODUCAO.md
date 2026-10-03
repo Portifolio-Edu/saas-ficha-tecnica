@@ -49,7 +49,10 @@ Estado em 2026-09-24. Cada item diz **quem faz**: 🧑 você (painel/conta/decis
 - [ ] 🤖 Cobrança com Asaas: teste grátis de N dias → assinatura mensal (Pix, boleto, cartão),
       webhook que atualiza `clientes.status_assinatura`, bloqueio suave quando vence e tela
       "Minha assinatura".
-- [ ] 🤖 Guardar no banco a ligação produto do PDV → ficha (hoje fica só no navegador).
+- [x] 🤖 Guardar no banco a ligação produto do PDV → ficha (tabela `produtos_pdv`, só dono e gestor).
+      Produto vendido sem ficha vira pendência visível em Integrações e no Fechamento de CMV.
+      **Falta aplicar** `supabase/migrations/20261003100000_produtos_pdv.sql` e rodar
+      `supabase/testes/produtos_pdv.sql` no banco antes de publicar (sem a tabela, /cmv e /integracoes quebram).
 - [ ] 🤖 Primeiro acesso guiado (restaurante vazio: por onde começar) e modelos de checklist.
 - [ ] 🤖 Monitoramento de erros (Sentry, grátis no início) e página de status simples.
 
@@ -57,7 +60,11 @@ Estado em 2026-09-24. Cada item diz **quem faz**: 🧑 você (painel/conta/decis
 
 - [ ] 🤖 Backend de IA via n8n (agente em produção; hoje só simulado na demo).
 - [ ] 🤖 Integrações por API (iFood Open Delivery, PDVs), conforme credenciamento.
-- [ ] 🤖 Importar XML de NF-e de compra (custo real dos insumos).
+- [x] 🤖 Importar XML de NF-e de compra (custo real dos insumos): Estoque > Importar NF-e de compra.
+      Conferência item a item, conversão de caixa/pacote, frete/IPI/ST no custo, entrada no estoque e
+      preço novo do insumo numa transação; a mesma nota não entra duas vezes; o Fechamento de CMV soma
+      as notas do período em "Compras do período". **Falta aplicar**
+      `supabase/migrations/20261003110000_notas_compra.sql` e rodar `supabase/testes/notas_compra.sql`.
 
 ## Colocar no ar (ordem)
 
