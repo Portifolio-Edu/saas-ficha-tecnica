@@ -6,6 +6,8 @@ import { listarFornecedores } from "@/lib/dados/fornecedores";
 import { listarRequisicoes } from "@/lib/dados/requisicoes";
 import { AppShell } from "@/components/ficha/AppShell";
 import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica";
+import Link from "next/link";
+import { FileText } from "lucide-react";
 import { EstoqueClient } from "./EstoqueClient";
 
 export default async function EstoquePage() {
@@ -25,6 +27,13 @@ export default async function EstoquePage() {
     <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Estoque">
       {/* EQUIPE (2026-09-25): mostra o que a cozinha registrou sem precisar recarregar. */}
       <AtualizacaoAutomatica />
+      {/* NF-e DE COMPRA (2026-10-03): entrada pelo XML da nota, com conferência item a item. */}
+      <div className="flex justify-end mb-3">
+        <Link href="/estoque/nota-compra" className="inline-flex items-center gap-2 text-[14px] font-medium px-3.5 min-h-10 rounded-lg border hover:bg-[var(--panel-hover)]" style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}>
+          <FileText size={15} aria-hidden />
+          Importar NF-e de compra
+        </Link>
+      </div>
       <EstoqueClient insumos={insumos} estoque={estoque} movimentacoes={movimentacoes} fornecedores={fornecedores} contagens={contagens} requisicoes={requisicoes} nomeRestaurante={cliente.nomeRestaurante} />
     </AppShell>
   );
