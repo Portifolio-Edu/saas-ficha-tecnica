@@ -12,18 +12,21 @@
 // renderizando no servidor). Antes este arquivo puxava todas as telas pra
 // qualquer página da demo — a Visão geral carregava a biblioteca de gráficos
 // do CMV (~110 KB) sem usar. Lighthouse: desempenho 86 → ver docs/POLIMENTO §21.
+// DESEMPENHO (2026-10-03): `loading` com esqueleto. Sem ele a área ficava vazia
+// enquanto o código da tela chegava (QA: /preview/cmv, 1s em branco em CPU 4x).
 
-const CmvClient = dynamic(() => import("@/app/cmv/CmvClient").then((m) => m.CmvClient));
-const CmvEstoqueView = dynamic(() => import("@/components/cmv/CmvEstoqueView").then((m) => m.CmvEstoqueView));
-const InsumosClient = dynamic(() => import("@/app/insumos/InsumosClient").then((m) => m.InsumosClient));
-const EstoqueClient = dynamic(() => import("@/app/estoque/EstoqueClient").then((m) => m.EstoqueClient));
-const SegurancaClient = dynamic(() => import("@/app/seguranca/SegurancaClient").then((m) => m.SegurancaClient));
-const RelatoriosClient = dynamic(() => import("@/app/relatorios/RelatoriosClient").then((m) => m.RelatoriosClient));
-const VisaoGeralClient = dynamic(() => import("@/app/visao-geral/VisaoGeralClient").then((m) => m.VisaoGeralClient));
-const ProteinasClient = dynamic(() => import("@/app/proteinas/ProteinasClient").then((m) => m.ProteinasClient));
+const CmvClient = dynamic(() => import("@/app/cmv/CmvClient").then((m) => m.CmvClient), { loading: () => <EsqueletoTela /> });
+const CmvEstoqueView = dynamic(() => import("@/components/cmv/CmvEstoqueView").then((m) => m.CmvEstoqueView), { loading: () => <EsqueletoTela /> });
+const InsumosClient = dynamic(() => import("@/app/insumos/InsumosClient").then((m) => m.InsumosClient), { loading: () => <EsqueletoTela /> });
+const EstoqueClient = dynamic(() => import("@/app/estoque/EstoqueClient").then((m) => m.EstoqueClient), { loading: () => <EsqueletoTela /> });
+const SegurancaClient = dynamic(() => import("@/app/seguranca/SegurancaClient").then((m) => m.SegurancaClient), { loading: () => <EsqueletoTela /> });
+const RelatoriosClient = dynamic(() => import("@/app/relatorios/RelatoriosClient").then((m) => m.RelatoriosClient), { loading: () => <EsqueletoTela /> });
+const VisaoGeralClient = dynamic(() => import("@/app/visao-geral/VisaoGeralClient").then((m) => m.VisaoGeralClient), { loading: () => <EsqueletoTela /> });
+const ProteinasClient = dynamic(() => import("@/app/proteinas/ProteinasClient").then((m) => m.ProteinasClient), { loading: () => <EsqueletoTela /> });
 
 import type { ComponentProps } from "react";
 import dynamic from "next/dynamic";
+import { EsqueletoTela } from "@/components/ficha/Skeleton";
 import { usePapelDemo } from "@/components/ficha/PapelDemo";
 import type { CmvClient as TCmvClient } from "@/app/cmv/CmvClient";
 import type { InsumosClient as TInsumosClient } from "@/app/insumos/InsumosClient";
