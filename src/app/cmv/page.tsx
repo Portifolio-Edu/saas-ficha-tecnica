@@ -5,6 +5,7 @@ import { listarProcessamentos } from "@/lib/dados/processamentos";
 import { listarFechamentos, listarFechamentosEstoque } from "@/lib/dados/fechamentosCmv";
 import { resumoPendenciasPdv } from "@/lib/dados/produtosPdv";
 import { listarComprasPorDia } from "@/lib/dados/notasCompra";
+import { hojeLocalISO } from "@/lib/calculo/dia";
 import { AvisoPendenciasPdv } from "@/components/integracoes/AvisoPendenciasPdv";
 import { CmvEstoqueView } from "@/components/cmv/CmvEstoqueView";
 import { AppShell } from "@/components/ficha/AppShell";
@@ -15,10 +16,10 @@ export default async function CmvPage() {
 
   // EQUIPE (2026-09-25): o estoquista vê só o lado do estoque, sem faturamento.
   if (cliente.papel === "estoquista") {
-    const fechamentos = await listarFechamentosEstoque();
+    const [fechamentos, comprasNotas] = await Promise.all([listarFechamentosEstoque(), listarComprasPorDia()]);
     return (
       <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Fechamento de CMV">
-        <CmvEstoqueView fechamentos={fechamentos} />
+        <CmvEstoqueView fechamentos={fechamentos} comprasNotas={comprasNotas} hoje={hojeLocalISO()} />
       </AppShell>
     );
   }
