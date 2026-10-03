@@ -28,12 +28,12 @@
 // do commit "celular: navegação".
 
 import { useEffect, useState, type ReactNode } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChefHat, Carrot, ClipboardList, LineChart, Settings, AlertTriangle,
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator,
-  Menu, X, Sun, Moon, Plug, Users, CalendarDays,
+  Menu, X, Sun, Moon, Plug, Users, CalendarDays, Loader2,
 } from "lucide-react";
 import { ToastContainer } from "./Toast";
 import { podeAcessar, ROTULO_PAPEL, type Papel } from "@/lib/auth/papeis";
@@ -199,6 +199,7 @@ export function ShellPremium({
                   >
                     <Icone size={17} strokeWidth={1.8} style={{ color: ativo ? "var(--marca)" : "var(--tinta-faint)" }} />
                     {n.label}
+                    <CarregandoLink className="ml-auto" />
                   </Link>
                 );
               })}
@@ -304,11 +305,12 @@ export function ShellPremium({
               key={a.id}
               href={href}
               aria-current={ativo ? "page" : undefined}
-              className="flex flex-col items-center justify-center gap-1 min-h-[60px] text-[11.5px] font-medium"
+              className="relative flex flex-col items-center justify-center gap-1 min-h-[60px] text-[11.5px] font-medium"
               style={{ color: ativo ? "var(--tinta)" : "var(--tinta-faint)" }}
             >
               <Icone size={21} strokeWidth={ativo ? 2.1 : 1.8} style={{ color: ativo ? "var(--marca)" : undefined }} />
               {a.rotulo}
+              <CarregandoLink className="absolute top-2 right-[calc(50%-22px)]" />
             </Link>
           );
         })}
@@ -324,5 +326,20 @@ export function ShellPremium({
       </nav>
       <ToastContainer />
     </div>
+  );
+}
+
+// DESEMPENHO (2026-10-03): retorno imediato no item clicado. Medido em produção
+// (next start): o clique já pinta em 16 a 64ms, mas a tela nova leva de 0,1 a
+// 2,8s pra chegar e, sem sinal nenhum, parecia travado. O useLinkStatus marca
+// o link enquanto a navegação está pendente; o CSS (.indicador-link) segura
+// 120ms antes de mostrar.
+function CarregandoLink({ className = "" }: { className?: string }) {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span className={`indicador-link ${className}`} aria-hidden>
+      <Loader2 size={14} className="animate-spin" style={{ color: "var(--tinta-faint)" }} />
+    </span>
   );
 }
