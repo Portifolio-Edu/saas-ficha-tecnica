@@ -56,13 +56,17 @@ export function BotaoAgenteIa({
           // SISTEMA premium: botão neutro da barra (borda 1px, 40px), no mesmo idioma do
           // botão de tema. Antes: pílula com degradê azul-violeta e ponto verde pulsando
           // (que sugeria "online" num agente que é só demonstração).
-          aria-label="Agente IA (demonstração)"
+          // ACESSIBILIDADE (2026-10-03): o nome acessível repete o texto visível
+          // ("Agente IA demo"); antes "Agente IA (demonstração)" não continha
+          // "demo" e o axe acusava label-content-name-mismatch. O {" "} entre
+          // os spans também conta: sem ele o texto lido era "Agente IAdemo".
+          aria-label="Agente IA demo"
           className={`flex items-center gap-2 px-3 min-h-10 rounded-lg border text-[13px] font-medium transition-colors hover:bg-[var(--panel-hover)] ${className}`}
           style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}
           title="Demonstração do agente de IA (imagens, áudios e WhatsApp)"
         >
           <Bot size={16} style={{ color: "var(--marca)" }} />
-          <span className="hidden sm:inline">Agente IA</span>
+          <span className="hidden sm:inline">Agente IA</span>{" "}
           <span className="hidden sm:inline text-[11px] font-medium px-1.5 py-px rounded border" style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}>
             demo
           </span>
