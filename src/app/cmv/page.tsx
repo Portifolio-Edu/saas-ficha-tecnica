@@ -4,6 +4,7 @@ import { listarReceitas } from "@/lib/dados/receitas";
 import { listarProcessamentos } from "@/lib/dados/processamentos";
 import { listarFechamentos, listarFechamentosEstoque } from "@/lib/dados/fechamentosCmv";
 import { resumoPendenciasPdv } from "@/lib/dados/produtosPdv";
+import { listarComprasPorDia } from "@/lib/dados/notasCompra";
 import { AvisoPendenciasPdv } from "@/components/integracoes/AvisoPendenciasPdv";
 import { CmvEstoqueView } from "@/components/cmv/CmvEstoqueView";
 import { AppShell } from "@/components/ficha/AppShell";
@@ -22,12 +23,13 @@ export default async function CmvPage() {
     );
   }
 
-  const [insumos, todasReceitas, processamentos, fechamentos, pendenciasPdv] = await Promise.all([
+  const [insumos, todasReceitas, processamentos, fechamentos, pendenciasPdv, comprasNotas] = await Promise.all([
     listarInsumos(),
     listarReceitas(),
     listarProcessamentos(),
     listarFechamentos(),
     resumoPendenciasPdv(),
+    listarComprasPorDia(),
   ]);
   const pratos = todasReceitas.filter((r) => r.tipo === "prato_final");
   const preparos = todasReceitas.filter((r) => r.tipo === "preparo_base");
@@ -36,7 +38,7 @@ export default async function CmvPage() {
     <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Fechamento de CMV">
       {/* LIGAÇÃO PRODUTO DO PDV -> FICHA (2026-10-03): venda sem ficha nunca some em silêncio. */}
       <AvisoPendenciasPdv resumo={pendenciasPdv} />
-      <CmvClient pratos={pratos} preparos={preparos} insumos={insumos} processamentos={processamentos} fechamentos={fechamentos} />
+      <CmvClient pratos={pratos} preparos={preparos} insumos={insumos} processamentos={processamentos} fechamentos={fechamentos} comprasNotas={comprasNotas} />
     </AppShell>
   );
 }

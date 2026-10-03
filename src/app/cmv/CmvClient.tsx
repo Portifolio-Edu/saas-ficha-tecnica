@@ -24,6 +24,7 @@ import { calcularFechamentoCmv } from "@/lib/calculo/fechamentoCmv";
 import { acaoCriarFechamento } from "./actions";
 import { CHAVE_VENDAS_IMPORTADAS, type VendasImportadas } from "@/components/integracoes/ImportadorVendas";
 import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
+import { comprasNoPeriodo, type CompraDoDia } from "@/lib/integracoes/conferenciaNota";
 
 const TOP_DONUT = 5;
 
@@ -56,12 +57,15 @@ export function CmvClient({
   insumos,
   processamentos,
   fechamentos,
+  comprasNotas,
 }: {
   pratos: Receita[];
   preparos: Receita[];
   insumos: Insumo[];
   processamentos: Processamento[];
   fechamentos: FechamentoCmv[];
+  /** Só no app: custo das NF-e de compra lançadas, por dia de emissão. */
+  comprasNotas?: CompraDoDia[];
 }) {
   const [periodoInicio, setPeriodoInicio] = useState(primeiroDiaDoMes());
   const [periodoFim, setPeriodoFim] = useState(hoje());
@@ -81,6 +85,9 @@ export function CmvClient({
   // useEffect abaixo e voltar faturamentoPeriodo a só a soma das linhas.
   const [importacao, setImportacao] = useState<VendasImportadas | null>(null);
   const basePath = usePathname()?.startsWith("/preview") ? "/preview" : "";
+  // NF-e DE COMPRA (2026-10-03): o que as notas lançadas somam no período, pra
+  // "Compras do período" sair do custo real em vez de digitado de cabeça.
+  const notasNoPeriodo = comprasNotas ? comprasNoPeriodo(comprasNotas, periodoInicio, periodoFim) : null;
 
   useEffect(() => {
     let pacote: VendasImportadas | null = null;
@@ -384,6 +391,18 @@ export function CmvClient({
               </div>
             ))}
           </div>
+          {notasNoPeriodo && notasNoPeriodo.notas > 0 && (
+            <div className="text-[11.5px] mt-2 flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: "var(--sub)" }}>
+              <span>
+                {notasNoPeriodo.notas} {notasNoPeriodo.notas === 1 ? "NF-e de compra lançada" : "NF-e de compra lançadas"} no período: <b style={{ color: "var(--text)" }}>{formatBRL(notasNoPeriodo.custo)}</b>
+              </span>
+              {numCompras !== notasNoPeriodo.custo && (
+                <button type="button" onClick={() => setCompras(String(notasNoPeriodo.custo))} className="underline underline-offset-2 min-h-8" style={{ color: "var(--text)" }}>
+                  Usar em Compras do período
+                </button>
+              )}
+            </div>
+          )}
           <div className="text-[11.5px] mt-3 pt-3" style={{ color: "var(--sub)", borderTop: `1px solid ${"var(--border)"}` }}>
             Consumo real = {numEstoqueInicial.toLocaleString("pt-BR")} + {numCompras.toLocaleString("pt-BR")} − {numEstoqueFinal.toLocaleString("pt-BR")} = <b style={{ color: "var(--text)" }}>R$ {consumoReal.toLocaleString("pt-BR")}</b>
           </div>
