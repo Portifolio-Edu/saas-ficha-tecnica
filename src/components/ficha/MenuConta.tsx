@@ -83,7 +83,9 @@ export function MenuConta({ nome, detalhe, itens }: { nome: string; detalhe: str
         aria-haspopup="menu"
         aria-expanded={aberto}
         aria-controls={aberto ? id : undefined}
-        aria-label={`Conta de ${nome}`}
+        // INTEGRAÇÃO (2026-10-03): o nome lido contém o texto visível (as
+        // iniciais), regra do axe label-content-name-mismatch. Antes: "Conta de …".
+        aria-label={`Conta de ${nome} (${iniciais})`}
         onClick={() => setAberto((a) => !a)}
         onKeyDown={(e) => {
           if (e.key === "ArrowDown") {
@@ -94,10 +96,7 @@ export function MenuConta({ nome, detalhe, itens }: { nome: string; detalhe: str
         className="w-10 h-10 flex items-center justify-center rounded-full border text-[12.5px] font-semibold text-[var(--tinta)] hover:bg-[var(--panel-hover)]"
         style={{ borderColor: "var(--linha-forte)", background: "var(--panel-elevated)" }}
       >
-        {/* INTEGRAÇÃO (2026-10-03): as iniciais são só desenho; o nome lido é o
-            aria-label ("Conta de …"). Sem o aria-hidden o axe acusava
-            label-content-name-mismatch (texto visível "GR" fora do nome). */}
-        <span aria-hidden>{iniciais}</span>
+        {iniciais}
       </button>
       {aberto && (
         <div
