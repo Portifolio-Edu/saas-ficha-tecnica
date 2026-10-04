@@ -61,7 +61,9 @@ for (const [nome, viewport] of [["notebook baixo", { width: 1214, height: 460 }]
     const ctx = await browser.newContext({ baseURL: "http://127.0.0.1:3000", viewport, isMobile: nome === "celular", hasTouch: nome === "celular", locale: "pt-BR" });
     const page = await ctx.newPage();
     await page.goto("/preview/escalas");
-    const abrir = () => page.getByRole("button", { name: "Agente IA (demonstração)" }).click();
+    // ACESSIBILIDADE (2026-10-03): o nome lido do botão é o texto visível
+    // ("Agente IA demo"); antes "Agente IA (demonstração)" (axe label-content-name-mismatch).
+    const abrir = () => page.getByRole("button", { name: "Agente IA demo" }).click();
 
     await abrir();
     const dlg = page.getByRole("dialog", { name: "Agente IA" });
