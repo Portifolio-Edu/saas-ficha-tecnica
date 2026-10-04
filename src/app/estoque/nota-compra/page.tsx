@@ -10,7 +10,8 @@ import { ImportarNotaCompra } from "@/components/estoque/ImportarNotaCompra";
 import { formatBRL } from "@/components/charts/format";
 import { dataBR } from "@/lib/formato";
 
-function dataBR(iso: string | null): string {
+// Data da nota (aaaa-mm-dd) sem passar por fuso: o dia é o que está escrito.
+function diaDaNota(iso: string | null): string {
   if (!iso) return "—";
   const [a, m, d] = iso.slice(0, 10).split("-");
   return `${d}/${m}/${a}`;
@@ -55,7 +56,7 @@ export default async function NotaCompraPage() {
                         </div>
                         {n.atualizouPrecos && <div className="text-[12px] text-[var(--tinta-faint)]">atualizou preços</div>}
                       </td>
-                      <td className="py-2.5 px-3 whitespace-nowrap">{dataBR(n.emitidaEm)}</td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">{diaDaNota(n.emitidaEm)}</td>
                       <td className="py-2.5 px-3 text-right">{n.qtdItens}</td>
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">{n.valorTotal !== null ? formatBRL(n.valorTotal) : "—"}</td>
                       <td className="py-2.5 px-4 whitespace-nowrap">{dataBR(n.importadaEm, { timeZone: "America/Sao_Paulo" })}</td>

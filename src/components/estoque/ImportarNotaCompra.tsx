@@ -20,7 +20,7 @@ const painel = { background: "var(--panel)", borderColor: "var(--linha)", boxSha
 const campo = "text-[14px] px-3 min-h-10 rounded-lg border bg-[var(--panel)] text-[var(--tinta)]";
 const IGNORAR = "__ignorar__";
 
-function dataBR(iso: string | null): string {
+function diaDaNota(iso: string | null): string {
   if (!iso) return "";
   const [a, m, d] = iso.slice(0, 10).split("-");
   return `${d}/${m}/${a}`;
@@ -185,7 +185,7 @@ export function ImportarNotaCompra({ insumos }: { insumos: Insumo[] }) {
             {nota.serie ? ` série ${nota.serie}` : ""} · {nota.fornecedor || "fornecedor sem nome"}
           </h2>
           <p className="text-[13px] text-[var(--tinta-sub)] mt-0.5">
-            {nota.emitidaEm ? `Emitida em ${dataBR(nota.emitidaEm)}` : "Sem data de emissão"} · {nota.itens.length} {nota.itens.length === 1 ? "item" : "itens"}
+            {nota.emitidaEm ? `Emitida em ${diaDaNota(nota.emitidaEm)}` : "Sem data de emissão"} · {nota.itens.length} {nota.itens.length === 1 ? "item" : "itens"}
             {nota.valorTotal > 0 ? ` · total ${formatBRL(nota.valorTotal)}` : ""}
           </p>
         </div>
