@@ -140,7 +140,9 @@ export function IntegracoesClient({
                   background: conectado ? "var(--panel)" : "color-mix(in srgb, var(--marca) 4%, var(--panel))",
                 }}
               >
-                <div className="flex items-start justify-between gap-2">
+                {/* LARGURA (2026-10-03): a 768px o cartão tem ~140px e o selo "Conectado" saía
+                    da tela; agora desce pra linha de baixo quando não cabe. */}
+                <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <div className="text-[19px] font-semibold tracking-tight text-[var(--tinta)]">{canal.nome}</div>
                     <div className="text-[12.5px] text-[var(--tinta-faint)]">{canal.grupo}</div>
