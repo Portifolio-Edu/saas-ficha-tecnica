@@ -1,12 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Bot, Sparkles, Mic, Camera } from "lucide-react";
+import { Bot, Sparkles, Mic, Camera, Loader2 } from "lucide-react";
 
 // PLANO 9,5 (2026-09-26): o modal do agente (~40 KB) só baixa quando alguém
 // abre o agente pela primeira vez; antes vinha junto com toda página.
-const AgenteIaModal = dynamic(() => import("./AgenteIaModal").then((m) => m.AgenteIaModal), { ssr: false });
+const carregarModal = () => import("./AgenteIaModal");
+const AgenteIaModal = dynamic(() => carregarModal().then((m) => m.AgenteIaModal), { ssr: false });
+
+// DESEMPENHO (2026-10-03): o primeiro clique parecia não fazer nada (o modal só
+// começava a baixar ali). Agora o código é pedido no hover/foco do botão e
+// quando o navegador fica ocioso; se o clique chegar antes, o ícone vira um
+// spinner até o modal abrir. Fora isso o botão é o mesmo.
+// Assim que o código chega, o modal já é montado fechado (ele não desenha nada
+// com aberto=false): montar só no clique custava ~300ms de espera do Suspense.
 
 export function BotaoAgenteIa({
   variante = "flutuante",
@@ -22,10 +30,27 @@ export function BotaoAgenteIa({
 }) {
   const [aberto, setAberto] = useState(false);
   const [jaAbriu, setJaAbriu] = useState(false);
-  const abrir = () => {
-    setJaAbriu(true);
+  const [abrindo, setAbrindo] = useState(false);
+  const precarregar = useCallback(
+    () =>
+      carregarModal()
+        .then(() => setJaAbriu(true))
+        .catch(() => {}),
+    [],
+  );
+  const abrir = useCallback(() => {
     setAberto(true);
-  };
+    if (jaAbriu) return;
+    setAbrindo(true);
+    precarregar().finally(() => setAbrindo(false));
+  }, [jaAbriu, precarregar]);
+
+  useEffect(() => {
+    const ocioso = window.requestIdleCallback ?? ((f: () => void) => window.setTimeout(f, 2000));
+    const cancelar = window.cancelIdleCallback ?? window.clearTimeout;
+    const id = ocioso(() => void precarregar());
+    return () => cancelar(id);
+  }, [precarregar]);
   const [focoId, setFocoId] = useState<string | null>(null);
   const [focoNome, setFocoNome] = useState<string | null>(null);
 
@@ -40,7 +65,7 @@ export function BotaoAgenteIa({
 
     window.addEventListener("abrir-agente-ia", escutarAbertura);
     return () => window.removeEventListener("abrir-agente-ia", escutarAbertura);
-  }, []);
+  }, [abrir]);
 
   const fechar = () => {
     setAberto(false);
@@ -53,16 +78,23 @@ export function BotaoAgenteIa({
       <>
         <button
           onClick={() => abrir()}
+          onPointerEnter={precarregar}
+          onFocus={precarregar}
+          aria-busy={abrindo || undefined}
           // SISTEMA premium: botão neutro da barra (borda 1px, 40px), no mesmo idioma do
           // botão de tema. Antes: pílula com degradê azul-violeta e ponto verde pulsando
           // (que sugeria "online" num agente que é só demonstração).
-          aria-label="Agente IA (demonstração)"
+          // ACESSIBILIDADE (2026-10-03): o nome acessível repete o texto visível
+          // ("Agente IA demo"); antes "Agente IA (demonstração)" não continha
+          // "demo" e o axe acusava label-content-name-mismatch. O {" "} entre
+          // os spans também conta: sem ele o texto lido era "Agente IAdemo".
+          aria-label="Agente IA demo"
           className={`flex items-center gap-2 px-3 min-h-10 rounded-lg border text-[13px] font-medium transition-colors hover:bg-[var(--panel-hover)] ${className}`}
           style={{ background: "var(--panel)", borderColor: "var(--linha)", color: "var(--tinta)" }}
           title="Demonstração do agente de IA (imagens, áudios e WhatsApp)"
         >
-          <Bot size={16} style={{ color: "var(--marca)" }} />
-          <span className="hidden sm:inline">Agente IA</span>
+          {abrindo ? <Loader2 size={16} className="animate-spin" style={{ color: "var(--marca)" }} /> : <Bot size={16} style={{ color: "var(--marca)" }} />}
+          <span className="hidden sm:inline">Agente IA</span>{" "}
           <span className="hidden sm:inline text-[11px] font-medium px-1.5 py-px rounded border" style={{ borderColor: "var(--linha-forte)", color: "var(--tinta-sub)" }}>
             demo
           </span>

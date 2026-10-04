@@ -6,7 +6,7 @@
 // gerado (o banco guarda o hash): perdeu, gera outro e o anterior para.
 // A pessoa vê no celular: /consulta/[código] (ConsultaFuncionarioView).
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Copy, Link2, MessageCircle, Smartphone } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { useToast } from "@/components/ficha/Toast";
@@ -33,6 +33,13 @@ function quando(iso: string): string {
   return dataBR(d, { day: "2-digit", month: "2-digit" });
 }
 
+// HIDRATAÇÃO (2026-10-03): "hoje às 14:05" depende do relógio e do fuso. O HTML
+// vem do build (demo) ou do servidor em UTC (app), e o texto não batia com o do
+// navegador: React #418, a página era refeita do zero e o tema escuro piscava
+// pro claro. Agora a data só entra depois de montar no navegador.
+const semInscricao = () => () => {};
+const useNoNavegador = () => useSyncExternalStore(semInscricao, () => true, () => false);
+
 export function LinksConsulta({
   funcionarios,
   links: linksIniciais,
@@ -48,6 +55,7 @@ export function LinksConsulta({
   const [links, setLinks] = useState(linksIniciais);
   const [novo, setNovo] = useState<{ funcionarioId: string; link: string } | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
+  const noNavegador = useNoNavegador();
   const porPessoa = new Map(links.map((l) => [l.funcionarioId, l]));
 
   const gerar = async (f: Funcionario) => {
@@ -106,7 +114,7 @@ export function LinksConsulta({
                 <div className="flex-1 min-w-[10rem]">
                   <div className="text-[15px] md:text-[14px] font-medium text-[var(--tinta)]">{f.nome}</div>
                   <div className="text-[12.5px] text-[var(--tinta-sub)]">
-                    {!l ? "Sem link" : `Link desde ${quando(l.criadoEm)} · ${l.ultimoAcessoEm ? `abriu ${quando(l.ultimoAcessoEm)}` : "ainda não abriu"}`}
+                    {!l ? "Sem link" : !noNavegador ? "Link ativo" : `Link desde ${quando(l.criadoEm)} · ${l.ultimoAcessoEm ? `abriu ${quando(l.ultimoAcessoEm)}` : "ainda não abriu"}`}
                   </div>
                 </div>
                 <div className="flex gap-2">

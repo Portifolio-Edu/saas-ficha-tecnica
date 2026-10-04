@@ -1,4 +1,3 @@
-import { DemoShell } from "@/components/ficha/DemoShell";
 import { ConfiguracoesClient } from "@/components/configuracoes/ConfiguracoesClient";
 import type { Configuracoes } from "@/lib/dados/configuracoes";
 import { NOME_RESTAURANTE } from "../fixtures";
@@ -49,9 +48,6 @@ const DADOS: Configuracoes = {
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ secao?: string }> }) {
   const { secao } = await searchParams;
-  return (
-    <DemoShell nomeRestaurante={NOME_RESTAURANTE} tituloPagina="Configurações">
-      <ConfiguracoesClient dados={DADOS} secaoInicial={secao} demo />
-    </DemoShell>
-  );
+  // LAYOUT (2026-10-03): o menu vem de src/app/preview/layout.tsx.
+  return <ConfiguracoesClient dados={DADOS} secaoInicial={secao} demo />;
 }
