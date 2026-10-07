@@ -6,6 +6,7 @@
 import { Bloco } from "./campos";
 import { useConfiguracoes } from "./contexto";
 import { EMPRESA } from "@/lib/legal/empresa";
+import { CobrancaPlano } from "./CobrancaPlano";
 
 const PLANOS: Record<string, string> = { trial: "Teste grátis", basico: "Básico", pro: "Profissional" };
 const STATUS: Record<string, { rotulo: string; cor: string }> = {
@@ -35,6 +36,7 @@ export function SecaoPlano() {
           </dd>
         </div>
       </dl>
+      <CobrancaPlano />
       <p className="text-[13px] text-[var(--tinta-sub)] mt-4">
         Para mudar de plano ou tirar dúvida sobre a cobrança, fale com o suporte
         {contato ? (
