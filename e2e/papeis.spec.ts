@@ -188,8 +188,9 @@ test.describe.serial("com login real", () => {
     await entrar(page, gestor.usuario, gestor.senha);
     await expect(page).toHaveURL(/\/visao-geral$/);
     await page.goto("/producoes");
-    await expect(page.getByText(`Massa ${RODADA}`).locator("visible=true").first()).toBeVisible();
-    await expect(page.getByText(cozinheiro).first()).toBeVisible();
+    const emProducao = page.getByRole("region", { name: /^Em produção:/ });
+    await expect(emProducao.getByText(`Massa ${RODADA}`, { exact: true })).toBeVisible();
+    await expect(emProducao.getByRole("definition").filter({ hasText: cozinheiro }).first()).toBeVisible();
   });
 
   test("escala: gestor monta a escala e lança um afastamento", async ({ page }) => {
