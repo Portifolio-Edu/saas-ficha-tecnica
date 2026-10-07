@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test("demo compartilha a delegação entre Configurações e Compras e registra estoque como aprovador", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("demo:papel", "gestor"));
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("demo:papel")) localStorage.setItem("demo:papel", "gestor");
+  });
   await page.goto("/preview/configuracoes?secao=compras");
   const permissao = () => page.getByRole("switch", { name: "Permitir que o estoque aprove e rejeite compras", exact: true });
   await permissao().check();
