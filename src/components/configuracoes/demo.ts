@@ -8,6 +8,7 @@ import { lerEmpresa } from "@/lib/empresa/empresa";
 import { CORES_DESTAQUE } from "@/lib/empresa/cores";
 import { normalizarTelefone, telefoneValido } from "@/lib/telefone";
 import { lerConfigAvisos } from "@/lib/automacoes/avisos";
+import { ehGestao, type Papel } from "@/lib/auth/papeis";
 import type { AcoesConfiguracoes } from "./contexto";
 
 const CHAVE = "demo:configuracoes";
@@ -65,7 +66,17 @@ function arquivoParaUrl(arquivo: File): Promise<string> {
   });
 }
 
+export function permissaoComprasDemo(): boolean { return ler().estoquePodeAprovarCompras === true; }
+
 export const acoesDemo: AcoesConfiguracoes = {
+  async salvarPermissaoCompras(_e, form) {
+    if (!ehGestao((localStorage.getItem("demo:papel") ?? "dono") as Papel)) return { erro: "Só gestor ou dono altera a permissão de compras." };
+    const valor = form.get("estoquePodeAprovar");
+    if (valor !== null && valor !== "on") return { erro: "Permissão de compras inválida." };
+    if (!gravar({ estoquePodeAprovarCompras: valor === "on", permissaoComprasAlteradaEm: new Date().toISOString(), permissaoComprasAlteradaNome: "Gestão (demonstração)" })) return SEM_ESPACO;
+    avisarMarca();
+    return ok("Permissões de compras salvas.");
+  },
   async salvarEmpresa(_e, form) {
     await espera();
     const { dados, erros } = lerEmpresa(form);

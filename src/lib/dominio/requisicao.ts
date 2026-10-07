@@ -51,10 +51,14 @@ export interface Requisicao {
   resolvidoNome?: string | null;
 }
 
+export function podeAprovarCompras(papel: Papel, estoquePermitido = false): boolean {
+  return ehGestao(papel) || (papel === "estoquista" && estoquePermitido);
+}
+
 /** Espelha as transições protegidas pelo banco; usada também na demonstração. */
-export function podeResolverRequisicao(papel: Papel, atual: StatusRequisicao, proximo: StatusRequisicao): boolean {
-  if (atual === "pendente") return ehGestao(papel) && (proximo === "aprovado" || proximo === "cancelado");
-  if (atual === "aprovado") return proximo === "comprado" ? papel !== "cozinha" : ehGestao(papel) && proximo === "cancelado";
+export function podeResolverRequisicao(papel: Papel, atual: StatusRequisicao, proximo: StatusRequisicao, estoquePermitido = false): boolean {
+  if (atual === "pendente") return podeAprovarCompras(papel, estoquePermitido) && (proximo === "aprovado" || proximo === "cancelado");
+  if (atual === "aprovado") return proximo === "comprado" ? papel !== "cozinha" : podeAprovarCompras(papel, estoquePermitido) && proximo === "cancelado";
   return false;
 }
 

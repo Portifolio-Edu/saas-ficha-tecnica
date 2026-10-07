@@ -25,7 +25,8 @@ const RelatoriosClient = dynamic(() => import("@/app/relatorios/RelatoriosClient
 const VisaoGeralClient = dynamic(() => import("@/app/visao-geral/VisaoGeralClient").then((m) => m.VisaoGeralClient), { loading: () => <EsqueletoTela /> });
 const ProteinasClient = dynamic(() => import("@/app/proteinas/ProteinasClient").then((m) => m.ProteinasClient), { loading: () => <EsqueletoTela /> });
 
-import type { ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
+import { EVENTO_MARCA_DEMO, permissaoComprasDemo } from "@/components/configuracoes/demo";
 import dynamic from "next/dynamic";
 import { EsqueletoTela } from "@/components/ficha/Skeleton";
 import { usePapelDemo } from "@/components/ficha/PapelDemo";
@@ -75,12 +76,18 @@ export function EstoqueDemo(props: ComponentProps<typeof TEstoqueClient>) {
 export function ComprasDemo(props: Pick<ComponentProps<typeof TComprasClient>, "insumos" | "fornecedores">) {
   const { papel } = usePapelDemo();
   const [requisicoes] = useDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
+  const [estoquePermitido, setEstoquePermitido] = useState(false);
+  useEffect(() => {
+    const carregar = () => setEstoquePermitido(permissaoComprasDemo());
+    carregar(); window.addEventListener(EVENTO_MARCA_DEMO, carregar); window.addEventListener("storage", carregar);
+    return () => { window.removeEventListener(EVENTO_MARCA_DEMO, carregar); window.removeEventListener("storage", carregar); };
+  }, []);
   const resolver = async (ids: string[], status: StatusRequisicao) => {
     const atuais = lerDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
     const selecionadas = atuais.filter(r => ids.includes(r.id));
-    if (selecionadas.length !== ids.length || selecionadas.some(r => !podeResolverRequisicao(papel, r.status, status))) return { ok: false as const, erro: "A compra precisa de aprovação do gestor ou dono antes de ser confirmada." };
+    if (selecionadas.length !== ids.length || selecionadas.some(r => !podeResolverRequisicao(papel, r.status, status, permissaoComprasDemo()))) return { ok: false as const, erro: "A decisão exige uma pessoa autorizada nas configurações de Compras." };
     const agora = new Date().toISOString();
-    gravarDemo(CHAVES_DEMO.requisicoes, atuais.map(r => !ids.includes(r.id) ? r : { ...r, status, ...(status === "aprovado" ? { aprovadoEm: agora, aprovadoPor: `demo-${papel}`, aprovadoNome: papel === "dono" ? "Dono (demonstração)" : "Gestor (demonstração)" } : { resolvidoEm: agora, resolvidoNome: `${papel} (demonstração)` }) }));
+    gravarDemo(CHAVES_DEMO.requisicoes, atuais.map(r => !ids.includes(r.id) ? r : { ...r, status, ...(status === "aprovado" ? { aprovadoEm: agora, aprovadoPor: `demo-${papel}`, aprovadoNome: papel === "dono" ? "Dono (demonstração)" : papel === "gestor" ? "Gestor (demonstração)" : "Estoque (demonstração)" } : { resolvidoEm: agora, resolvidoNome: `${papel} (demonstração)` }) }));
     return { ok: true as const };
   };
   const solicitar = async (r: NovaRequisicao) => {
@@ -89,7 +96,7 @@ export function ComprasDemo(props: Pick<ComponentProps<typeof TComprasClient>, "
     gravarDemo(CHAVES_DEMO.requisicoes, [{ ...r, id: crypto.randomUUID(), status: "pendente", responsavel: `${papel} (demonstração)`, criadoEm: new Date().toISOString(), resolvidoEm: null }, ...atuais]);
     return { ok: true as const };
   };
-  return <ComprasClient {...props} papel={papel} requisicoes={requisicoes} nomeRestaurante={NOME_RESTAURANTE} resolver={resolver} solicitar={solicitar} />;
+  return <ComprasClient {...props} estoquePermitido={estoquePermitido} papel={papel} requisicoes={requisicoes} nomeRestaurante={NOME_RESTAURANTE} resolver={resolver} solicitar={solicitar} />;
 }
 
 export function SegurancaDemo(props: ComponentProps<typeof TSegurancaClient>) {

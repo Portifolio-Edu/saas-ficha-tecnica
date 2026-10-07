@@ -14,7 +14,7 @@
 // Pra voltar: um só <div key={secao.id}> com a seção escolhida.
 
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
-import { BellRing, Building2, CreditCard, Database, Palette, UserRound } from "lucide-react";
+import { BellRing, Building2, CreditCard, Database, Palette, ShoppingCart, UserRound } from "lucide-react";
 import { Contexto, type ContextoConfiguracoes } from "./contexto";
 import { acoesApp } from "./acoesApp";
 import { acoesDemo, configuracoesDemo } from "./demo";
@@ -22,16 +22,18 @@ import { SecaoRestaurante } from "./SecaoRestaurante";
 import { SecaoConta } from "./SecaoConta";
 import { SecaoAparencia } from "./SecaoAparencia";
 import { SecaoPlano } from "./SecaoPlano";
+import { SecaoCompras } from "./SecaoCompras";
 import { SecaoAvisos } from "./SecaoAvisos";
 import { DadosDaConta } from "./DadosDaConta";
 import { usePapelDemo } from "@/components/ficha/PapelDemo";
 import { ehGestao, type Papel } from "@/lib/auth/papeis";
 import type { Configuracoes } from "@/lib/dados/configuracoes";
 
-export type IdSecao = "restaurante" | "avisos" | "conta" | "aparencia" | "plano" | "dados";
+export type IdSecao = "restaurante" | "compras" | "avisos" | "conta" | "aparencia" | "plano" | "dados";
 
 const SECOES: { id: IdSecao; rotulo: string; icone: typeof Building2; pode: (p: Papel) => boolean }[] = [
   { id: "restaurante", rotulo: "Restaurante", icone: Building2, pode: ehGestao },
+  { id: "compras", rotulo: "Compras", icone: ShoppingCart, pode: ehGestao },
   // AVISOS NO WHATSAPP (2026-10-02)
   { id: "avisos", rotulo: "Avisos no WhatsApp", icone: BellRing, pode: ehGestao },
   { id: "conta", rotulo: "Minha conta", icone: UserRound, pode: () => true },
@@ -150,6 +152,7 @@ export function ConfiguracoesClient({
 /** Memo: marcar a seção no menu não redesenha as seções montadas. */
 const ConteudoSecao = memo(function ConteudoSecao({ id, demo, nomeRestaurante }: { id: IdSecao; demo: boolean; nomeRestaurante: string }) {
   if (id === "restaurante") return <SecaoRestaurante />;
+  if (id === "compras") return <SecaoCompras />;
   if (id === "avisos") return <SecaoAvisos />;
   if (id === "conta") return <SecaoConta />;
   if (id === "aparencia") return <SecaoAparencia />;

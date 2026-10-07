@@ -35,11 +35,15 @@ try {
     await db.exec(`alter function public.${nome}(${parametros}) set schema interno; alter function interno.${nome}(${parametros}) set search_path=public,interno;`);
   }
   for (const nome of ["cliente_de", "garantir_mesmo_restaurante", "carimbar_criado_por"]) await db.exec(funcao(endurecimento, `interno\\.${nome}`));
-  await db.exec(`grant select on public.membros,public.insumos,public.fornecedores to authenticated;
+  await db.exec(`grant select on public.clientes,public.membros,public.insumos,public.fornecedores to authenticated;
     alter table public.fornecedores enable row level security;
     create policy fornecedores_qa on public.fornecedores for select to authenticated using(cliente_id=interno.auth_cliente_id() and interno.auth_estoque());`);
   await db.exec(await ler("supabase/migrations/20260928130000_requisicoes_compra.sql"));
   await db.exec(await ler("supabase/migrations/20261007160000_aprovacao_compras.sql"));
+  await db.exec(await ler("supabase/migrations/20261007170000_permissoes_compras.sql"));
+  await db.exec(`alter table public.clientes enable row level security;
+    create policy clientes_qa_leitura on public.clientes for select to authenticated using(id=interno.auth_cliente_id());
+    create policy clientes_qa_edicao on public.clientes for update to authenticated using(id=interno.auth_cliente_id() and interno.auth_gestao()) with check(id=interno.auth_cliente_id() and interno.auth_gestao());`);
   const resultados = await db.exec(await ler("supabase/testes/requisicoes.sql"));
   const linhas = resultados.flatMap(r => r.rows).filter(r => r.status);
   for (const r of linhas) console.log(`${r.status}: ${r.teste}${r.status === "OK" ? "" : ` (${r.esperado} / ${r.obtido})`}`);
@@ -52,6 +56,23 @@ try {
     insert into requisicoes(cliente_id,categoria,descricao,responsavel) values('f9000000-0000-0000-0000-000000000002','secos','Teste reversão','Dono teste');
     update requisicoes set status='aprovado' where descricao='Teste reversão';
     reset role; select set_config('request.jwt.claims','{}',false);`);
+  await db.exec(`insert into auth.users(id,email) values('f9000000-0000-0000-0000-000000000003','estoque-reversao@exemplo.invalid');
+    insert into membros(cliente_id,user_id,nome,papel,ativo) values('f9000000-0000-0000-0000-000000000002','f9000000-0000-0000-0000-000000000003','Estoque reversão','estoquista',true);
+    update clientes set estoque_pode_aprovar_compras=true where id='f9000000-0000-0000-0000-000000000002';
+    insert into requisicoes(cliente_id,categoria,descricao,responsavel) values('f9000000-0000-0000-0000-000000000002','secos','Delegação revertida','Dono teste');`);
+  await db.exec(await ler("supabase/reverter/20261007170000_permissoes_compras.sql"));
+  const configSalva = await db.query("select estoque_pode_aprovar_compras from clientes where id='f9000000-0000-0000-0000-000000000002'");
+  if (!configSalva.rows[0].estoque_pode_aprovar_compras) throw new Error("Reversão apagou a configuração anterior");
+  await db.exec(`set role authenticated; select set_config('request.jwt.claims','{"sub":"f9000000-0000-0000-0000-000000000003","role":"authenticated"}',false);
+    do $$begin
+      begin update requisicoes set status='aprovado' where descricao='Delegação revertida'; raise exception 'Reversão permitiu aprovação delegada';
+      exception when insufficient_privilege then null; end;
+    end$$;
+    reset role; select set_config('request.jwt.claims','{}',false);`);
+  console.log("OK: reversão mantém configuração e impede aprovação pelo estoque");
+  const restrita = await db.query("select has_column_privilege('authenticated','public.clientes','estoque_pode_aprovar_compras','UPDATE') as pode");
+  if (restrita.rows[0].pode) throw new Error("Reversão não retirou escrita da configuração");
+  console.log("OK: reversão da delegação restaura privilégio restrito sem remover dados");
   await db.exec(await ler("supabase/reverter/20261007160000_aprovacao_compras.sql"));
   const reversao = await db.query("select status,aprovado_nome,aprovado_em is not null as autoria from requisicoes where descricao='Teste reversão'");
   if (reversao.rows.length !== 1 || reversao.rows[0].status !== "pendente" || reversao.rows[0].aprovado_nome !== "Dono teste" || !reversao.rows[0].autoria) throw new Error("Reversão não preservou pedido e autoria");

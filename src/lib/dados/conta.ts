@@ -19,7 +19,7 @@ const TABELAS: Tabela[] = [
   {
     nome: "clientes",
     colunas:
-      "id, nome, nome_restaurante, telefone, cnpj, razao_social, inscricao_estadual, email_contato, telefone_contato, cep, logradouro, numero, complemento, bairro, cidade, uf, logo_path, cor_destaque, plano, status_assinatura, margem_alvo, criado_em, atualizado_em",
+      "id, nome, nome_restaurante, telefone, cnpj, razao_social, inscricao_estadual, email_contato, telefone_contato, cep, logradouro, numero, complemento, bairro, cidade, uf, logo_path, cor_destaque, plano, status_assinatura, margem_alvo, criado_em, atualizado_em, estoque_pode_aprovar_compras, permissao_compras_alterada_em, permissao_compras_alterada_nome",
   },
   { nome: "membros", colunas: "id, papel, nome, usuario, ativo, criado_em" },
   { nome: "pareamentos_cozinha", colunas: "id, expira_em, usado_em, criado_em" },

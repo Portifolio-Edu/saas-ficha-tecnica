@@ -10,6 +10,9 @@ import { DOMINIO_EQUIPE } from "@/lib/auth/equipe";
 import type { DadosAvisos } from "./avisos";
 
 export interface Configuracoes {
+  estoquePodeAprovarCompras?: boolean;
+  permissaoComprasAlteradaEm?: string | null;
+  permissaoComprasAlteradaNome?: string | null;
   empresa: DadosEmpresa;
   /** WhatsApp do cadastro (do dono), 55 + DDD. */
   telefoneDono: string;
@@ -36,7 +39,7 @@ export async function getConfiguracoes(cliente: ClienteAtual, avisos: DadosAviso
     supabase
       .from("clientes")
       .select(
-        "nome_restaurante, razao_social, cnpj, inscricao_estadual, email_contato, telefone_contato, cep, logradouro, numero, complemento, bairro, cidade, uf, telefone, plano, status_assinatura, margem_alvo, cor_destaque, logo_path",
+        "nome_restaurante, razao_social, cnpj, inscricao_estadual, email_contato, telefone_contato, cep, logradouro, numero, complemento, bairro, cidade, uf, telefone, plano, status_assinatura, margem_alvo, cor_destaque, logo_path, estoque_pode_aprovar_compras, permissao_compras_alterada_em, permissao_compras_alterada_nome",
       )
       .eq("id", cliente.id)
       .single(),
@@ -47,6 +50,9 @@ export async function getConfiguracoes(cliente: ClienteAtual, avisos: DadosAviso
   const email = auth.user?.email ?? null;
   const daEquipe = !!email?.endsWith(`@${DOMINIO_EQUIPE}`);
   return {
+    estoquePodeAprovarCompras: c.estoque_pode_aprovar_compras,
+    permissaoComprasAlteradaEm: c.permissao_compras_alterada_em,
+    permissaoComprasAlteradaNome: c.permissao_compras_alterada_nome,
     empresa: {
       nomeRestaurante: c.nome_restaurante,
       razaoSocial: c.razao_social,

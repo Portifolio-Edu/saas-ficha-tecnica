@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
 
 const TELAS = [
   "visao-geral", "receitas", "insumos", "estoque", "estoque/compras", "producoes", "cmv", "checklists", "seguranca",
-  "relatorios", "escalas", "equipe", "proteinas", "nutricional", "integracoes", "configuracoes", "consulta",
+  "relatorios", "escalas", "equipe", "proteinas", "nutricional", "integracoes", "configuracoes", "configuracoes?secao=compras", "consulta",
 ];
 
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

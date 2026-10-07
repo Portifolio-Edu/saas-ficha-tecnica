@@ -83,3 +83,5 @@ A reversão de código não remove a migration aplicada nem cancela recorrência
 A revisão isolada `lancamento/oferta-fundadores` acrescenta [oferta e controle das vagas](melhorias/15-oferta-fundadores.md). Esta revisão não muda a oferta no banco comercial nem habilita pagamentos. As evidências acima referem-se à versão anterior; os resultados desta oferta ficam no documento e no PR correspondentes.
 
 A revisão `melhoria/compras-aprovacao` acrescenta [Compras no Estoque com aprovação pelo gestor/dono](melhorias/16-compras-aprovacao.md), mantendo pedidos da cozinha, agenda de fornecedores e recebimento por estoque/NF-e. A demonstração e os testes não aplicam a migration no banco comercial; a ativação autenticada exige a migration documentada antes de servir o novo código.
+
+A revisão `melhoria/permissoes-compras` acrescenta [delegação da aprovação ao estoque por restaurante](melhorias/17-permissoes-compras.md), configurada somente pela gestão e desligada por padrão. Concessão, revogação, autoria e reversão estão documentadas; nenhuma permissão comercial foi alterada pelo preview.

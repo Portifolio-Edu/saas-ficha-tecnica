@@ -133,8 +133,51 @@ do $$ begin
 end $$;
 insert into resultado select 'falha do lote não confirma parcialmente','aprovado',status from requisicoes where descricao='Lote autorizado';
 
+-- Delegação configurável pela gestão; o estoque não concede a si mesmo.
+insert into resultado select 'permissão: começa restrita à gestão','false',estoque_pode_aprovar_compras::text from clientes where id='fa000000-0000-0000-0000-000000000001';
+select set_config('request.jwt.claims','{"sub":"f1111111-0000-0000-0000-000000000003","role":"authenticated"}',true);
+with tentativa as (update clientes set estoque_pode_aprovar_compras=true where id='fa000000-0000-0000-0000-000000000001' returning id)
+insert into resultado select 'estoque: não concede permissão a si mesmo','0',count(*)::text from tentativa;
+do $$ begin
+ begin update clientes set permissao_compras_alterada_por=auth.uid(); insert into resultado values('permissão: autoria não pode ser forjada','bloqueado','PASSOU (falha)');
+ exception when insufficient_privilege then insert into resultado values('permissão: autoria não pode ser forjada','bloqueado','bloqueado'); end;
+end $$;
+select set_config('request.jwt.claims','{"sub":"f1111111-0000-0000-0000-000000000004","role":"authenticated"}',true);
+update clientes set estoque_pode_aprovar_compras=true where id='fa000000-0000-0000-0000-000000000001';
+insert into resultado select 'gestor: concede com autoria e data','true Gestor R sim',estoque_pode_aprovar_compras::text||' '||permissao_compras_alterada_nome||' '||case when permissao_compras_alterada_por=auth.uid() and permissao_compras_alterada_em is not null then 'sim' else 'não' end from clientes;
+insert into requisicoes(cliente_id,categoria,descricao,responsavel) values('fa000000-0000-0000-0000-000000000001','secos','Delegada rejeitada','Gestor R');
+select set_config('request.jwt.claims','{"sub":"f1111111-0000-0000-0000-000000000002","role":"authenticated"}',true);
+with tentativa as (update requisicoes set status='aprovado' where descricao='Lote aguardando' returning id)
+insert into resultado select 'cozinha: não recebe a permissão delegada ao estoque','0',count(*)::text from tentativa;
+select set_config('request.jwt.claims','{"sub":"f1111111-0000-0000-0000-000000000003","role":"authenticated"}',true);
+update requisicoes set status='aprovado' where descricao='Lote aguardando';
+insert into resultado select 'estoque delegado: aprova com autoria real','aprovado Estoque R sim',status||' '||aprovado_nome||' '||case when aprovado_por=auth.uid() and aprovado_em is not null then 'sim' else 'não' end from requisicoes where descricao='Lote aguardando';
+update requisicoes set status='cancelado' where descricao='Delegada rejeitada';
+insert into resultado select 'estoque delegado: rejeita com autoria real','cancelado Estoque R',status||' '||resolvido_nome from requisicoes where descricao='Delegada rejeitada';
+insert into requisicoes(cliente_id,categoria,descricao,responsavel) values('fa000000-0000-0000-0000-000000000001','secos','Própria delegada','Estoque R');
+update requisicoes set status='aprovado' where descricao='Própria delegada';
+insert into resultado select 'estoque delegado: pode aprovar solicitação própria','aprovado Estoque R',status||' '||aprovado_nome from requisicoes where descricao='Própria delegada';
+update requisicoes set status='cancelado' where descricao='Própria delegada';
+insert into resultado select 'estoque delegado: cancela aprovação antes da compra','cancelado',status from requisicoes where descricao='Própria delegada';
+select set_config('request.jwt.claims','{"sub":"f1111111-0000-0000-0000-000000000001","role":"authenticated"}',true);
+update clientes set estoque_pode_aprovar_compras=false where id='fa000000-0000-0000-0000-000000000001';
+insert into resultado select 'dono: revoga e registra responsável','false Dona R',estoque_pode_aprovar_compras::text||' '||permissao_compras_alterada_nome from clientes;
+insert into requisicoes(cliente_id,categoria,descricao,responsavel) values('fa000000-0000-0000-0000-000000000001','secos','Depois da revogação','Dona R');
+select set_config('request.jwt.claims','{"sub":"f1111111-0000-0000-0000-000000000003","role":"authenticated"}',true);
+do $$ begin
+ begin update requisicoes set status='aprovado' where descricao='Depois da revogação'; insert into resultado values('revogação: bloqueia aprovação direta pela API','bloqueado','PASSOU (falha)');
+ exception when insufficient_privilege then insert into resultado values('revogação: bloqueia aprovação direta pela API','bloqueado','bloqueado'); end;
+ begin update requisicoes set status='cancelado' where descricao='Depois da revogação'; insert into resultado values('revogação: bloqueia rejeição direta pela API','bloqueado','PASSOU (falha)');
+ exception when insufficient_privilege then insert into resultado values('revogação: bloqueia rejeição direta pela API','bloqueado','bloqueado'); end;
+end $$;
+insert into resultado select 'revogação: preserva aprovação anterior','aprovado Estoque R',status||' '||aprovado_nome from requisicoes where descricao='Lote aguardando';
+update requisicoes set status='comprado' where descricao='Lote aguardando';
+insert into resultado select 'revogação: estoque ainda confirma compra autorizada','comprado',status from requisicoes where descricao='Lote aguardando';
+
 -- OUTRO RESTAURANTE
 select set_config('request.jwt.claims', '{"sub":"f2222222-0000-0000-0000-000000000001","role":"authenticated"}', true);
+insert into resultado select 'permissão: outro restaurante não herda delegação','false',estoque_pode_aprovar_compras::text from clientes;
+with tentativa as (update clientes set estoque_pode_aprovar_compras=true where id='fa000000-0000-0000-0000-000000000001' returning id) insert into resultado select 'outra casa: não muda a permissão desta','0',count(*)::text from tentativa;
 insert into resultado select 'outro restaurante: não vê pedidos', '0', count(*)::text from requisicoes;
 with tentativa as (update requisicoes set status='aprovado' returning id) insert into resultado select 'outro restaurante: não aprova pedidos', '0',count(*)::text from tentativa;
 insert into resultado select 'outro restaurante: agenda só dele', 'Do vizinho', (select string_agg(empresa, ',') from agenda_fornecedores());
