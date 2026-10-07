@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* AJUSTES prints (2026-10-06): retirar as setas nativas dos campos numéricos.
+   Continua sendo input number: limites, validação e teclado são preservados.
+   Reversão: docs/melhorias/05-campos-numericos.md. */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 :root {
   /* ==========================================================================
      SISTEMA PREMIUM (2026-09-22) -- direção "padrão premium de SaaS", régua
