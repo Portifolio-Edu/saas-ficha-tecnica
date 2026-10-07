@@ -17,7 +17,7 @@ Requisição criada → aguardando aprovação → aprovada para comprar → com
 ## Alterações
 
 - Nova rota `/estoque/compras` e demonstração `/preview/estoque/compras`, acessadas pela navegação Estoque/Compras. O estoque mantém saldos, movimentações, contagens cegas, fornecedores e NF-e; seu antigo painel de pedidos passa a ser um resumo com link para Compras.
-- Formulário para insumo cadastrado ou item livre, categoria, quantidade/unidade e observação. Responsável e restaurante vêm da sessão; a entrada do navegador não decide a autoria ou o restaurante.
+- Formulário para insumo cadastrado ou item livre, categoria, quantidade/unidade e observação. Seletores têm nomes explícitos para acessibilidade e interação automatizada. Responsável e restaurante vêm da sessão; a entrada do navegador não decide a autoria ou o restaurante.
 - Compras separa aguardando aprovação, aprovadas para comprar e histórico recente. Mantém agenda/prazos dos fornecedores e preparação manual de mensagem no WhatsApp, somente para itens aprovados. Confirmar compra não registra recebimento nem altera saldo: o recebimento continua em Estoque/NF-e.
 - Histórico recente conserva a janela existente de 3 dias e consulta limitada a 300 requisições; não foi acrescentado arquivo completo paginado. Pendentes e aprovadas entram na consulta independentemente da idade, dentro desse limite.
 - A cozinha continua criando e acompanhando pedidos, agora distinguindo espera por aprovação e compra autorizada; exibe rejeições/cancelamentos recentes. Contagens da cozinha, agente e resumo diário incluem ambos os estados abertos. O lembrete de prazo do fornecedor considera somente aprovadas e aponta para Compras.
@@ -29,6 +29,7 @@ Requisição criada → aguardando aprovação → aprovada para comprar → com
 
 - Local: 305 testes unitários em 45 arquivos, tipos, lint e revisão de diff aprovados. Inclui testes de sessão expirada, autoria/restaurante da sessão, ação proibida e falha de aprovação.
 - SQL isolado em PGlite: 32 verificações da política de requisições e mais 1 reversão com preservação dos dados. O script `scripts/verificar-compras-sql.mjs` usa as migrations reais; precisa de PGlite instalado fora das dependências comerciais, indicado por `COMPRAS_QA_MODULOS`.
+- Na primeira execução E2E, 132 cenários passaram, incluindo aprovação/compra autenticadas e acessibilidade de Compras nos dois temas/celular. Foram corrigidos o status omitido numa fixture de inserção em lote e o nome acessível do seletor Categoria; a suíte completa é novamente exigida antes da entrega.
 - CI do PR verifica a cadeia completa de migrations/Supabase, build, acessibilidade nos dois temas, uso em celular e fluxo autenticado cozinha → gestor → estoque, além de estoque → rejeição pelo dono. O resultado final e a revisão exata ficam registrados no PR.
 - Aplicar a migration no banco do ambiente correspondente antes de servir as rotas autenticadas com o novo código; elas consultam os novos campos. A demonstração funciona sem essa ativação. Nenhuma migration, pagamento ou configuração comercial foi executada neste trabalho.
 

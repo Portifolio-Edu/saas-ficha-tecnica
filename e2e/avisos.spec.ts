@@ -117,7 +117,7 @@ test.describe.serial("avisos no WhatsApp", () => {
     })).error).toBeNull();
     expect((await admin().from("requisicoes").insert([
       { cliente_id: clienteA, categoria: "outros", descricao: "Arroz 5 kg", responsavel: "Ana", status: "aprovado", aprovado_em: agora, aprovado_por: idDono, aprovado_nome: "Dona Avisos" },
-      { cliente_id: clienteA, categoria: "outros", descricao: "Feijão sem aprovação", responsavel: "Ana" },
+      { cliente_id: clienteA, categoria: "outros", descricao: "Feijão sem aprovação", responsavel: "Ana", status: "pendente" },
     ])).error).toBeNull();
 
     // Equipe: cozinheira em 6x1 faltou hoje e amanhã (um dos dois é dia de trabalho).
