@@ -38,12 +38,13 @@ O comando imprime somente nomes/estado dos itens. Não valida credenciais remota
 - O navegador encontrou proteção de acesso na prévia; não há comprovação visual da implantação nem teste de gravação no Supabase real nesta revisão.
 - Conexão Vercel disponível não tem acesso ao escopo `voycompany`. Não há conexão Supabase/n8n disponível. Não foram alteradas variáveis remotas, SMTP, domínio, backups ou migrations de produção.
 - Verificador local exercitado com ambiente vazio (retorno 1) e configuração sintética completa (retorno 0), sem reproduzir os valores configurados.
+- Testes de navegador do commit `594bd6f`: 125 passaram, 3 falharam. O diagnóstico mostrou contraste verde insuficiente na consulta e um seletor que escolhia a opção oculta do filtro de responsável. Correções documentadas no grupo 14; resultado da nova rodada registrado no PR. Testes posteriores da série de papéis devem ser executados, não considerados cobertos por essa rodada interrompida.
 
 Não publicar como produto amplamente disponível até encerrar os itens de configuração, oferta, cobrança e fluxo operacional. Um piloto acompanhado pode validar o produto sem declarar essas etapas concluídas.
 
 ## Registro e reversão
 
-Cada grupo tem commit e documentação próprios: [início da operação](melhorias/08-inicio-operacao.md), [assinatura mensal](melhorias/09-assinatura-mensal.md), [configuração](melhorias/10-configuracao-prontidao.md), [revisão das interações](melhorias/11-conciliacao-e-preparo-etapas.md), [cadastro ponta a ponta](melhorias/12-cadastro-e2e.md) e [suspensão da recorrência](melhorias/13-suspensao-assinatura.md).
+Cada grupo tem commit e documentação próprios: [início da operação](melhorias/08-inicio-operacao.md), [assinatura mensal](melhorias/09-assinatura-mensal.md), [configuração](melhorias/10-configuracao-prontidao.md), [revisão das interações](melhorias/11-conciliacao-e-preparo-etapas.md), [cadastro ponta a ponta](melhorias/12-cadastro-e2e.md), [suspensão da recorrência](melhorias/13-suspensao-assinatura.md) e [correções encontradas no navegador](melhorias/14-contraste-consulta-e-teste-quadro.md).
 
 Reversão do código deve usar `git revert` dos commits publicados, do mais recente para o mais antigo; não resetar as branches principais. A migration de assinatura é aditiva e não deve ser removida automaticamente. Se cobrança vier a ser habilitada, seguir a reversão específica que considera recorrências externas e histórico.
 
@@ -59,6 +60,8 @@ Reversão do código deve usar `git revert` dos commits publicados, do mais rece
 | 002bcc7 | test: verificar guia e próximo passo após cadastro |
 | 6fc11c7 | docs: registrar validação do banco e atualizar reversão |
 | 0873e49 | fix: distinguir suspensão de cancelamento da assinatura |
+| 594bd6f | docs: consolidar revisão e reversão da assinatura |
+| 1b472c1 | fix: corrigir contraste da consulta e verificar responsável no quadro |
 
 As árvores desses commits foram comparadas às árvores locais validadas antes de publicar. A revisão inclui um último commit que só registra esta seção.
 
@@ -68,7 +71,7 @@ Para reverter o pacote em uma branch nova, partindo exatamente da revisão publi
 git switch -c reversao/onboarding-prontidao origin/lancamento/onboarding-prontidao
 # Primeiro desfaz o último commit, que somente registra as instruções.
 git revert --no-edit HEAD
-git revert --no-edit 0873e49bf3640f149add7076813f42d28042934c 6fc11c77a6f7961cb3793aeb47bddc3c3a59a680 002bcc7a7cc845dc81341a031bf67ab881e98406 b607184a2f8d497191698876f699fef794aacaa2 5a09c23761d1ae7572a791a53c260d7285284f0c a042398bfebe9b1c2e25f894982b3a011789616f 23e8b215014c10218911f94fba9ff08e4170a9de 5d42edb16ac2f5bcb39120649501d7b2538427d8
+git revert --no-edit 1b472c19735e9afbe54f148cafe436d634f938e8 594bd6fdaa92921dfdaf8ad3b90b3b47f32e24fe 0873e49bf3640f149add7076813f42d28042934c 6fc11c77a6f7961cb3793aeb47bddc3c3a59a680 002bcc7a7cc845dc81341a031bf67ab881e98406 b607184a2f8d497191698876f699fef794aacaa2 5a09c23761d1ae7572a791a53c260d7285284f0c a042398bfebe9b1c2e25f894982b3a011789616f 23e8b215014c10218911f94fba9ff08e4170a9de 5d42edb16ac2f5bcb39120649501d7b2538427d8
 ```
 
 Não usar esses comandos cegamente se houver commits posteriores: identificar primeiro o commit de registro e preservar novas alterações. Para reverter somente uma melhoria, usar seu hash da tabela e conferir dependências.
