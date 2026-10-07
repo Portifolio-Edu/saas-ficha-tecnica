@@ -19,6 +19,7 @@ const CmvClient = dynamic(() => import("@/app/cmv/CmvClient").then((m) => m.CmvC
 const CmvEstoqueView = dynamic(() => import("@/components/cmv/CmvEstoqueView").then((m) => m.CmvEstoqueView), { loading: () => <EsqueletoTela /> });
 const InsumosClient = dynamic(() => import("@/app/insumos/InsumosClient").then((m) => m.InsumosClient), { loading: () => <EsqueletoTela /> });
 const EstoqueClient = dynamic(() => import("@/app/estoque/EstoqueClient").then((m) => m.EstoqueClient), { loading: () => <EsqueletoTela /> });
+const ComprasClient = dynamic(() => import("@/app/estoque/compras/ComprasClient").then(m => m.ComprasClient), { loading: () => <EsqueletoTela /> });
 const SegurancaClient = dynamic(() => import("@/app/seguranca/SegurancaClient").then((m) => m.SegurancaClient), { loading: () => <EsqueletoTela /> });
 const RelatoriosClient = dynamic(() => import("@/app/relatorios/RelatoriosClient").then((m) => m.RelatoriosClient), { loading: () => <EsqueletoTela /> });
 const VisaoGeralClient = dynamic(() => import("@/app/visao-geral/VisaoGeralClient").then((m) => m.VisaoGeralClient), { loading: () => <EsqueletoTela /> });
@@ -30,6 +31,7 @@ import { EsqueletoTela } from "@/components/ficha/Skeleton";
 import { usePapelDemo } from "@/components/ficha/PapelDemo";
 import type { CmvClient as TCmvClient } from "@/app/cmv/CmvClient";
 import type { InsumosClient as TInsumosClient } from "@/app/insumos/InsumosClient";
+import type { ComprasClient as TComprasClient } from "@/app/estoque/compras/ComprasClient";
 import type { EstoqueClient as TEstoqueClient } from "@/app/estoque/EstoqueClient";
 import type { SegurancaClient as TSegurancaClient } from "@/app/seguranca/SegurancaClient";
 import type { RelatoriosClient as TRelatoriosClient } from "@/app/relatorios/RelatoriosClient";
@@ -38,7 +40,7 @@ import type { ProteinasClient as TProteinasClient } from "@/app/proteinas/Protei
 import type { Processamento } from "@/lib/dominio/processamento";
 import { ehGestao } from "@/lib/auth/papeis";
 import { CHAVES_DEMO, gravarDemo, lerDemo, useDemo } from "@/lib/demo/armazem";
-import type { Requisicao, StatusRequisicao } from "@/lib/dominio/requisicao";
+import { podeResolverRequisicao, type NovaRequisicao, type Requisicao, type StatusRequisicao } from "@/lib/dominio/requisicao";
 import { NOME_RESTAURANTE, requisicoesDemo } from "./fixtures";
 import type { ContagemCega } from "@/lib/dominio/estoque";
 import type { Producao } from "@/lib/dominio/producao";
@@ -60,21 +62,34 @@ export function EstoqueDemo(props: ComponentProps<typeof TEstoqueClient>) {
   const [contagens, versao] = useDemo<ContagemCega>(CHAVES_DEMO.contagens, contagensDemo);
   // PEDIDOS DA COZINHA (2026-09-26): o que o tablet da demo pediu.
   const [requisicoes, versaoPedidos] = useDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
-  const resolverPedidos = async (ids: string[], status: StatusRequisicao) => {
-    const agora = new Date().toISOString();
-    gravarDemo(CHAVES_DEMO.requisicoes, lerDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo).map((r) => (ids.includes(r.id) ? { ...r, status, resolvidoEm: agora } : r)));
-    return { ok: true as const };
-  };
   return (
     <EstoqueClient
       key={`${versao}-${versaoPedidos}`}
       {...props}
       contagens={ehGestao(papel) ? contagens : []}
       requisicoes={requisicoes}
-      nomeRestaurante={NOME_RESTAURANTE}
-      resolverPedidos={resolverPedidos}
     />
   );
+}
+
+export function ComprasDemo(props: Pick<ComponentProps<typeof TComprasClient>, "insumos" | "fornecedores">) {
+  const { papel } = usePapelDemo();
+  const [requisicoes] = useDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
+  const resolver = async (ids: string[], status: StatusRequisicao) => {
+    const atuais = lerDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
+    const selecionadas = atuais.filter(r => ids.includes(r.id));
+    if (selecionadas.length !== ids.length || selecionadas.some(r => !podeResolverRequisicao(papel, r.status, status))) return { ok: false as const, erro: "A compra precisa de aprovação do gestor ou dono antes de ser confirmada." };
+    const agora = new Date().toISOString();
+    gravarDemo(CHAVES_DEMO.requisicoes, atuais.map(r => !ids.includes(r.id) ? r : { ...r, status, ...(status === "aprovado" ? { aprovadoEm: agora, aprovadoPor: `demo-${papel}`, aprovadoNome: papel === "dono" ? "Dono (demonstração)" : "Gestor (demonstração)" } : { resolvidoEm: agora, resolvidoNome: `${papel} (demonstração)` }) }));
+    return { ok: true as const };
+  };
+  const solicitar = async (r: NovaRequisicao) => {
+    if (papel === "cozinha") return { ok: false as const, erro: "Solicite pelo aparelho da cozinha." };
+    const atuais = lerDemo<Requisicao>(CHAVES_DEMO.requisicoes, requisicoesDemo);
+    gravarDemo(CHAVES_DEMO.requisicoes, [{ ...r, id: crypto.randomUUID(), status: "pendente", responsavel: `${papel} (demonstração)`, criadoEm: new Date().toISOString(), resolvidoEm: null }, ...atuais]);
+    return { ok: true as const };
+  };
+  return <ComprasClient {...props} papel={papel} requisicoes={requisicoes} nomeRestaurante={NOME_RESTAURANTE} resolver={resolver} solicitar={solicitar} />;
 }
 
 export function SegurancaDemo(props: ComponentProps<typeof TSegurancaClient>) {

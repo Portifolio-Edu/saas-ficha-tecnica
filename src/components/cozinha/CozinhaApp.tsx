@@ -300,7 +300,7 @@ export function CozinhaApp({
   const contadores: Partial<Record<Aba, number>> = {
     checklists: listas.filter((c) => c.momento !== "praca").reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
     pracas: listas.filter((c) => c.momento === "praca").reduce((n, c) => n + c.itens.filter((i) => !i.concluidoHoje).length, 0),
-    pedidos: requisicoes.filter((r) => r.status === "pendente").length,
+    pedidos: requisicoes.filter((r) => r.status === "pendente" || r.status === "aprovado").length,
     producao: resumoDoPlano(progressoDoPlano(plano, producoes)).faltam,
   };
 

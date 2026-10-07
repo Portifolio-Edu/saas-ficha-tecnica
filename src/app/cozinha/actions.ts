@@ -234,6 +234,7 @@ export async function acaoCriarRequisicao(r: NovaRequisicao, responsavel: string
     await criarRequisicao(cliente.id, r, exigirResponsavel(responsavel));
     revalidatePath("/cozinha");
     revalidatePath("/estoque");
+    revalidatePath("/estoque/compras");
     return { ok: true };
   } catch (e) {
     return erro(e);
@@ -246,6 +247,7 @@ export async function acaoRemoverRequisicao(id: string): Promise<Resultado> {
     await removerRequisicao(id);
     revalidatePath("/cozinha");
     revalidatePath("/estoque");
+    revalidatePath("/estoque/compras");
     return { ok: true };
   } catch (e) {
     return erro(e);

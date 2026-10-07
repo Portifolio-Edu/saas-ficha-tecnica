@@ -14,6 +14,7 @@ const TELAS = [
   "/preview/receitas",
   "/preview/insumos",
   "/preview/estoque",
+  "/preview/estoque/compras",
   "/preview/producoes",
   "/preview/cmv",
   "/preview/checklists",

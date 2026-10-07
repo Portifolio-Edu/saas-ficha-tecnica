@@ -216,8 +216,8 @@ export function textoComprasPrazo(a: {
   return [
     `🛒 *${a.restaurante}: pedido do ${a.empresa} fecha em ${tempoRestante(a.minutosRestantes)}*`,
     a.frase,
-    `${a.pedidos.length} ${plural(a.pedidos.length, "pedido da cozinha esperando", "pedidos da cozinha esperando")}: ${emFrase(a.pedidos)}.`,
-    `${a.app}/estoque`,
+    `${a.pedidos.length} ${plural(a.pedidos.length, "compra aprovada esperando", "compras aprovadas esperando")}: ${emFrase(a.pedidos)}.`,
+    `${a.app}/estoque/compras`,
   ].join("\n");
 }
 
@@ -319,7 +319,7 @@ export function textoResumo(r: DadosResumo): string {
     linhas.push(`• Checklists: ${pct}% feitos (${r.checklist.feitos} de ${r.checklist.total} itens)`);
   }
   if (r.insumosAbaixo) linhas.push(`• Insumos abaixo do mínimo: ${r.insumosAbaixo}`);
-  if (r.pedidosPendentes) linhas.push(`• Pedidos da cozinha esperando compra: ${r.pedidosPendentes}`);
+  if (r.pedidosPendentes) linhas.push(`• Requisições abertas (aprovação ou compra): ${r.pedidosPendentes}`);
   linhas.push(`${r.app}/visao-geral`);
   return linhas.join("\n");
 }

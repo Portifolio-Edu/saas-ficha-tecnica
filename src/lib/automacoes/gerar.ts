@@ -227,12 +227,12 @@ export async function montarAvisos(admin: SupabaseClient, app: string, agora = n
     }
   }
 
-  // 4. Fornecedor: pedido fechando com pedido da cozinha esperando, preço que
+  // 4. Fornecedor: pedido fechando com compra aprovada esperando, preço que
   //    subiu e carne rendendo menos que a ficha.
   if (comFornecedor.length) {
     const [pendentes, precos, processamentos] = await Promise.all([
       ler<{ cliente_id: string; categoria: CategoriaPedido; descricao: string }>(
-        admin.from("requisicoes").select("cliente_id, categoria, descricao").in("cliente_id", comFornecedor).eq("status", "pendente").order("criado_em"),
+        admin.from("requisicoes").select("cliente_id, categoria, descricao").in("cliente_id", comFornecedor).eq("status", "aprovado").order("criado_em"),
       ),
       ler<{ id: string; preco_anterior: number; preco_novo: number; insumos: { cliente_id: string; nome: string; unidade_medida: string } }>(
         admin
@@ -438,7 +438,7 @@ export async function montarAvisos(admin: SupabaseClient, app: string, agora = n
         ler<{ cliente_id: string; status: string; motivo_perda: string | null; receitas: { nome_prato: string } | null }>(
           admin.from("producoes").select("cliente_id, status, motivo_perda, receitas(nome_prato)").in("cliente_id", comResumo).gte("criado_em", inicioOntem).lt("criado_em", inicioHoje),
         ),
-        ler<{ cliente_id: string }>(admin.from("requisicoes").select("cliente_id").in("cliente_id", comResumo).eq("status", "pendente")),
+        ler<{ cliente_id: string }>(admin.from("requisicoes").select("cliente_id").in("cliente_id", comResumo).in("status", ["pendente", "aprovado"])),
       ]);
       for (const cliente of comResumo) {
         const prods = producoes.filter((p) => p.cliente_id === cliente);

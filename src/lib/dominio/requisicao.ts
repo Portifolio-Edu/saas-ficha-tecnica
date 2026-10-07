@@ -5,6 +5,7 @@
 // Tudo no relógio do restaurante (America/Sao_Paulo), sem depender do fuso
 // do servidor ou do aparelho.
 
+import { ehGestao, type Papel } from "@/lib/auth/papeis";
 import type { Categoria } from "./insumo";
 import { formatadorData } from "@/lib/formato";
 
@@ -30,7 +31,7 @@ export function categoriaDoInsumo(c: Categoria): CategoriaPedido {
   return "outros";
 }
 
-export type StatusRequisicao = "pendente" | "comprado" | "cancelado";
+export type StatusRequisicao = "pendente" | "aprovado" | "comprado" | "cancelado";
 
 export interface Requisicao {
   id: string;
@@ -44,6 +45,17 @@ export interface Requisicao {
   status: StatusRequisicao;
   criadoEm: string;
   resolvidoEm: string | null;
+  aprovadoEm?: string | null;
+  aprovadoPor?: string | null;
+  aprovadoNome?: string | null;
+  resolvidoNome?: string | null;
+}
+
+/** Espelha as transições protegidas pelo banco; usada também na demonstração. */
+export function podeResolverRequisicao(papel: Papel, atual: StatusRequisicao, proximo: StatusRequisicao): boolean {
+  if (atual === "pendente") return ehGestao(papel) && (proximo === "aprovado" || proximo === "cancelado");
+  if (atual === "aprovado") return proximo === "comprado" ? papel !== "cozinha" : ehGestao(papel) && proximo === "cancelado";
+  return false;
 }
 
 export interface NovaRequisicao {
@@ -61,7 +73,7 @@ export function validarRequisicao(r: NovaRequisicao): string | null {
   if (!d) return "Diga o que precisa (ex.: tomate, coentro).";
   if (d.length > 120) return "Nome do item muito longo.";
   if (r.quantidade !== null && !(r.quantidade > 0 && r.quantidade < 100000)) return "Quantidade inválida.";
-  if (r.quantidade !== null && !r.unidade) return "Escolha a unidade.";
+  if (r.quantidade !== null && (!r.unidade || !UNIDADES_PEDIDO.includes(r.unidade))) return "Escolha a unidade.";
   if ((r.observacao ?? "").length > 200) return "Observação com até 200 letras.";
   return null;
 }

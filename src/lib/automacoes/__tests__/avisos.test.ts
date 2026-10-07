@@ -85,7 +85,7 @@ describe("texto dos avisos", () => {
   it("pedido fechando: fornecedor, quanto falta, prazo e o que a cozinha pediu", () => {
     const t = textoComprasPrazo({ restaurante: "Cantina", empresa: "Hortifruti Silva", minutosRestantes: 90, frase: "Peça até hoje às 18h pra chegar amanhã.", pedidos: ["tomate", "coentro", "cebola"], app });
     expect(t).toContain("pedido do Hortifruti Silva fecha em 1h30");
-    expect(t).toContain("3 pedidos da cozinha esperando: tomate, coentro e cebola.");
+    expect(t).toContain("3 compras aprovadas esperando: tomate, coentro e cebola.");
     expect(textoComprasPrazo({ restaurante: "C", empresa: "X", minutosRestantes: 30, frase: "", pedidos: ["a", "b", "c", "d", "e", "f"], app })).toContain("a, b, c, d e mais 2.");
   });
 
@@ -146,7 +146,7 @@ describe("texto dos avisos", () => {
     const c = textoResumo({ ...base, perdas: Array.from({ length: 4 }, (_, i) => ({ receita: `Molho ${i}`, motivo: "queimou" })), pedidosPendentes: 2, insumosAbaixo: 3 });
     expect(c).toContain("Perdas: 4: Molho 0 (queimou); Molho 1 (queimou); Molho 2 (queimou)…");
     expect(c).toContain("Insumos abaixo do mínimo: 3");
-    expect(c).toContain("esperando compra: 2");
+    expect(c).toContain("Requisições abertas (aprovação ou compra): 2");
   });
 });
 

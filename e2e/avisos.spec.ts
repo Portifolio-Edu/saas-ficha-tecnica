@@ -111,11 +111,14 @@ test.describe.serial("avisos no WhatsApp", () => {
       insumo_id: id("Picanha"), responsavel: "Ana", peso_bruto_recebido: 10, valor_pago_kg: 70, peso_liquido_resultante: 7, fornecedor: "Boi Bom",
     })).error).toBeNull();
 
-    // Fornecedor fecha o pedido daqui a 1 h e a cozinha pediu arroz.
+    // Prazo do fornecedor só considera compras aprovadas; feijão ainda espera decisão.
     expect((await admin().from("fornecedores").insert({
       cliente_id: clienteA, empresa: "Atacadão Teste", telefone: "11999990000", entrega_dias: [0, 1, 2, 3, 4, 5, 6], pedido_ate: horaBrasilia(60), pedido_antecedencia: 0, categorias_pedido: ["outros"],
     })).error).toBeNull();
-    expect((await admin().from("requisicoes").insert({ cliente_id: clienteA, categoria: "outros", descricao: "Arroz 5 kg", responsavel: "Ana" })).error).toBeNull();
+    expect((await admin().from("requisicoes").insert([
+      { cliente_id: clienteA, categoria: "outros", descricao: "Arroz 5 kg", responsavel: "Ana", status: "aprovado", aprovado_em: agora, aprovado_por: idDono, aprovado_nome: "Dona Avisos" },
+      { cliente_id: clienteA, categoria: "outros", descricao: "Feijão sem aprovação", responsavel: "Ana" },
+    ])).error).toBeNull();
 
     // Equipe: cozinheira em 6x1 faltou hoje e amanhã (um dos dois é dia de trabalho).
     const f = await admin().from("funcionarios").insert({ cliente_id: clienteA, nome: "Bia Souza", setor: "cozinha", cargo: "Cozinheira", admitido_em: "2025-01-06", ativo: true }).select("id").single();
@@ -156,7 +159,8 @@ test.describe.serial("avisos no WhatsApp", () => {
     expect(texto("estoque_baixo")).toContain("• Arroz: 2 kg (mínimo 10 kg). Atacadão Teste: peça até hoje");
     expect(texto("estoque_baixo")).not.toContain("Feijão");
     expect(texto("compras_prazo")).toContain("pedido do Atacadão Teste fecha em");
-    expect(texto("compras_prazo")).toContain("1 pedido da cozinha esperando: Arroz 5 kg.");
+    expect(texto("compras_prazo")).toContain("1 compra aprovada esperando: Arroz 5 kg.");
+    expect(texto("compras_prazo")).not.toContain("Feijão sem aprovação");
     expect(texto("preco_subiu")).toContain("• Feijão: R$ 10,00 → R$ 12,00 o kg (+20%)");
     expect(texto("preco_subiu")).not.toContain("Arroz");
     expect(texto("rendimento_baixo")).toContain("• Picanha (Boi Bom): rendeu 70%, o normal é 83%");

@@ -6,8 +6,8 @@ import { rastrearInsumo, atualizarEstoque, pararDeRastrear, registrarMovimentaca
 import { ehGestao } from "@/lib/auth/papeis";
 import { criarFornecedor, atualizarFornecedor, excluirFornecedor } from "@/lib/dados/fornecedores";
 import { validarFornecedor, type FornecedorInput } from "@/lib/dominio/fornecedor";
-import { resolverRequisicoes } from "@/lib/dados/requisicoes";
-import type { StatusRequisicao } from "@/lib/dominio/requisicao";
+import { criarRequisicao, resolverRequisicoes } from "@/lib/dados/requisicoes";
+import { validarRequisicao, type NovaRequisicao, type StatusRequisicao } from "@/lib/dominio/requisicao";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
 
@@ -128,13 +128,30 @@ export async function acaoResolverRequisicoes(ids: string[], status: StatusRequi
   const cliente = await getClienteAtual();
   if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
   if (cliente.papel === "cozinha") return { ok: false, erro: "Quem marca a compra é o estoque ou a gestão." };
+  if (!["aprovado", "comprado", "cancelado"].includes(status)) return { ok: false, erro: "Ação de compra inválida." };
+  if (status !== "comprado" && !ehGestao(cliente.papel)) return { ok: false, erro: "Só o gestor ou dono pode aprovar ou rejeitar uma requisição." };
+  if (!ids.length || ids.length > 300 || ids.some(id => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) return { ok: false, erro: "Selecione uma requisição válida." };
   try {
     const n = await resolverRequisicoes(ids, status);
     if (n === 0 && ids.length) return { ok: false, erro: "Nada foi alterado. Atualize a página e tente de novo." };
     revalidatePath("/estoque");
     revalidatePath("/cozinha");
+    revalidatePath("/estoque/compras");
     return { ok: true };
   } catch (e) {
     return paraResultado(e);
   }
+}
+
+export async function acaoSolicitarCompra(r: NovaRequisicao): Promise<Resultado> {
+  const cliente = await getClienteAtual();
+  if (!cliente) return { ok: false, erro: "Sessão expirada. Faça login novamente." };
+  if (cliente.papel === "cozinha") return { ok: false, erro: "Use Pedidos no aparelho da cozinha para solicitar itens." };
+  const problema = validarRequisicao(r);
+  if (problema) return { ok: false, erro: problema };
+  try {
+    await criarRequisicao(cliente.id, r, cliente.nomeMembro);
+    revalidatePath("/estoque/compras"); revalidatePath("/estoque"); revalidatePath("/cozinha");
+    return { ok: true };
+  } catch (e) { return paraResultado(e); }
 }

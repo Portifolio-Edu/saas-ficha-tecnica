@@ -213,7 +213,7 @@ export const FERRAMENTAS: Record<string, Ferramenta> = {
         agora: dataBR(new Date(), { timeZone: "America/Sao_Paulo", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" }),
         estoque_abaixo_do_minimo: baixo.slice(0, 10).map((i) => ({ nome: i.nome, saldo: i.estoque!.saldoAtual, minimo: i.estoque!.estoqueMinimo, unidade: i.unidadeMedida })),
         total_abaixo_do_minimo: baixo.length,
-        pedidos_da_cozinha_pendentes: requisicoes.filter((r) => r.status === "pendente").length,
+        pedidos_da_cozinha_pendentes: requisicoes.filter((r) => r.status === "pendente" || r.status === "aprovado").length,
         propostas_esperando_confirmacao: pendentes.map((p) => ({ id: p.id, resumo: p.resumo })),
       };
       if (passe.p !== "estoquista") {
@@ -302,9 +302,9 @@ export const FERRAMENTAS: Record<string, Ferramenta> = {
       const [requisicoes, agenda] = await Promise.all([listarRequisicoes(), listarAgendaFornecedores()]);
       const agora = agoraNoRestaurante();
       return CATEGORIAS_PEDIDO.map((c) => {
-        const itens = requisicoes.filter((r) => r.status === "pendente" && r.categoria === c.id);
+        const itens = requisicoes.filter((r) => (r.status === "pendente" || r.status === "aprovado") && r.categoria === c.id);
         const prazo = pedidosDaCategoria(agenda, c.id, agora)[0];
-        return { categoria: c.rotulo, itens: itens.map((r) => ({ descricao: r.descricao, quantidade: r.quantidade, unidade: r.unidade, observacao: r.observacao, pediu: r.responsavel })), prazo: prazo ? `${prazo.empresa}: ${frasePrazo(prazo, agora)}` : null };
+        return { categoria: c.rotulo, itens: itens.map((r) => ({ descricao: r.descricao, quantidade: r.quantidade, unidade: r.unidade, observacao: r.observacao, pediu: r.responsavel, status: r.status, aprovado_por: r.aprovadoNome ?? null })), prazo: prazo ? `${prazo.empresa}: ${frasePrazo(prazo, agora)}` : null };
       }).filter((g) => g.itens.length > 0);
     },
   },
