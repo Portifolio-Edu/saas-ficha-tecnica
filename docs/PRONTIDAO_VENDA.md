@@ -46,3 +46,27 @@ Não publicar como produto amplamente disponível até encerrar os itens de conf
 Cada grupo tem commit e documentação próprios: [início da operação](melhorias/08-inicio-operacao.md), [assinatura mensal](melhorias/09-assinatura-mensal.md), [configuração](melhorias/10-configuracao-prontidao.md) e [revisão das interações](melhorias/11-conciliacao-e-preparo-etapas.md).
 
 Reversão do código deve usar `git revert` dos commits publicados, do mais recente para o mais antigo; não resetar as branches principais. A migration de assinatura é aditiva e não deve ser removida automaticamente. Se cobrança vier a ser habilitada, seguir a reversão específica que considera recorrências externas e histórico.
+
+## Commits publicados desta revisão
+
+| Commit | Alteração |
+|---|---|
+| 5d42edb | feat: orientar o início da operação com dados reais |
+| 23e8b21 | feat: preparar assinatura mensal com conciliação segura |
+| a042398 | docs: registrar prontidão e configurar dados públicos da empresa |
+| 5a09c23 | fix: reconhecer preparo por etapas e permitir conciliação após falha |
+
+As árvores desses commits foram comparadas às árvores locais validadas antes de publicar. A revisão inclui um último commit que só registra esta seção.
+
+Para reverter o pacote em uma branch nova, partindo exatamente da revisão publicada e sem alterações posteriores:
+
+```sh
+git switch -c reversao/onboarding-prontidao origin/lancamento/onboarding-prontidao
+# Primeiro desfaz o último commit, que somente registra as instruções.
+git revert --no-edit HEAD
+git revert --no-edit 5a09c23761d1ae7572a791a53c260d7285284f0c a042398bfebe9b1c2e25f894982b3a011789616f 23e8b215014c10218911f94fba9ff08e4170a9de 5d42edb16ac2f5bcb39120649501d7b2538427d8
+```
+
+Não usar esses comandos cegamente se houver commits posteriores: identificar primeiro o commit de registro e preservar novas alterações. Para reverter somente uma melhoria, usar seu hash da tabela e conferir dependências.
+
+A reversão de código não remove a migration aplicada nem cancela recorrências externas. Seguir o procedimento específico de [assinatura](melhorias/09-assinatura-mensal.md) antes de reverter um ambiente com cobrança habilitada.
