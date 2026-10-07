@@ -313,7 +313,7 @@ export function ShellPremium({
 
       <main id="conteudo" className="flex-1 flex flex-col min-w-0">
         <header
-          className="h-14 shrink-0 flex items-center justify-between gap-3 px-4 md:px-8 sticky top-0 z-20 border-b print:hidden"
+          className="min-h-14 shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1 md:py-0 px-4 md:px-8 sticky top-0 z-20 border-b print:hidden"
           style={{ backgroundColor: "color-mix(in srgb, var(--fundo) 88%, transparent)", borderColor: "var(--linha)", backdropFilter: "blur(8px)" }}
         >
           <div className="flex items-center gap-2 min-w-0">
