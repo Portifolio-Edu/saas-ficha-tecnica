@@ -15,7 +15,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Plus, Play, Check, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Play, Check, Trash2, AlertTriangle, Search } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { nums, shadow } from "@/components/ficha/tema";
 import { NovaProducaoForm } from "@/components/producoes/NovaProducaoForm";
@@ -30,6 +30,8 @@ import { acaoIniciarProducao, acaoAtualizarStatusProducao } from "./actions";
 import { tint, unidadeNoPlural } from "@/components/producoes/formato";
 import { useArrastoToque } from "@/components/producoes/useArrastoToque";
 import { numeroBR } from "@/lib/formato";
+import { normalizarBusca } from "@/lib/busca";
+import { filtrarLotes, SEM_TURNO } from "@/components/producoes/filtros";
 
 type ColunaId = "estoque" | "em_producao" | "produzido" | "perda";
 
@@ -168,6 +170,18 @@ export function ProducoesClient({
   const [modalPerda, setModalPerda] = useState<{ loteId: string; motivo: string } | null>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
 
+  // POLIMENTO fichas-kanban (2026-10-06): filtros só de visualização.
+  // O turno de registro e as transições/consumo não usam estes estados.
+  // Reversão: docs/melhorias/03-filtros-kanban.md.
+  const [buscaQuadro, setBuscaQuadro] = useState("");
+  const [filtroTurno, setFiltroTurno] = useState("");
+  const [filtroResponsavel, setFiltroResponsavel] = useState("");
+  const lotesVisiveis = useMemo(() => filtrarLotes(listaProducoes, { busca: buscaQuadro, turnoId: filtroTurno, responsavel: filtroResponsavel }), [listaProducoes, buscaQuadro, filtroTurno, filtroResponsavel]);
+  const responsaveis = [...new Set(listaProducoes.map((p) => p.responsavel))].sort();
+  const turnosDosLotes = [...new Map([...turnos, ...listaProducoes.filter((p) => p.turnoId).map((p) => ({ id: p.turnoId!, nome: p.nomeTurno ?? "Turno", horario: null }))].map((t) => [t.id, t])).values()];
+  const temFiltrosQuadro = !!(buscaQuadro || filtroTurno || filtroResponsavel);
+  const limparFiltrosQuadro = () => { setBuscaQuadro(""); setFiltroTurno(""); setFiltroResponsavel(""); };
+
   const preparos = receitas.filter((r) => r.tipo === "preparo_base");
   const pratos = receitas.filter((r) => r.tipo === "prato_final");
 
@@ -239,6 +253,8 @@ export function ProducoesClient({
     ],
     [capacidadePreparos, capacidadePratos],
   );
+
+  const capacidadesVisiveis = disponivelProduzir.filter((d) => !buscaQuadro.trim() || normalizarBusca(d.nome).includes(normalizarBusca(buscaQuadro)));
 
   const receitaPorId = useMemo(() => new Map(receitas.map((r) => [r.id, r])), [receitas]);
 
@@ -495,7 +511,7 @@ export function ProducoesClient({
 
           <div className="flex flex-wrap lg:flex-nowrap items-end gap-3 shrink-0">
             <label className="flex flex-col gap-1">
-              <span className="text-[12px] font-bold text-[var(--tinta-sub)]">Turno</span>
+              <span className="text-[12px] font-bold text-[var(--tinta-sub)]">Turno do registro</span>
               <select
                 value={turnoId ?? ""}
                 onChange={(e) => setTurnoId(e.target.value || null)}
@@ -575,13 +591,32 @@ export function ProducoesClient({
             página pra ~2.700px e "Perdas" sumia do campo de visão do chef.
             select-none só no quadro (evita selecionar texto ao arrastar); antes valia pra
             tela toda. */}
+        <div className="mb-4 space-y-2" aria-label="Filtros do quadro de produção">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-3 items-end">
+            <label className="flex flex-col gap-1 text-[12px] text-[var(--tinta-sub)] sm:col-span-2 lg:col-span-1">Buscar no quadro
+              <span className="flex gap-2 items-center px-3 min-h-11 rounded-lg border bg-[var(--panel)] focus-within:ring-2 focus-within:ring-[var(--marca-suave)]" style={{ borderColor: "var(--linha-forte)" }}>
+                <Search size={17} aria-hidden className="shrink-0" /><input value={buscaQuadro} onChange={(e) => setBuscaQuadro(e.target.value)} placeholder="Prato, lote ou responsável" className="w-full min-w-0 bg-transparent outline-none text-[14px] text-[var(--tinta)]" />
+              </span>
+            </label>
+            <label className="flex flex-col gap-1 text-[12px] text-[var(--tinta-sub)]">Filtrar por turno
+              <select value={filtroTurno} onChange={(e) => setFiltroTurno(e.target.value)} className="min-h-11 px-3 rounded-lg border bg-[var(--panel)] text-[14px] text-[var(--tinta)]" style={{ borderColor: "var(--linha-forte)" }}><option value="">Todos os turnos</option>{turnosDosLotes.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}<option value={SEM_TURNO}>Sem turno</option></select>
+            </label>
+            <label className="flex flex-col gap-1 text-[12px] text-[var(--tinta-sub)]">Filtrar por responsável
+              <select value={filtroResponsavel} onChange={(e) => setFiltroResponsavel(e.target.value)} className="min-h-11 px-3 rounded-lg border bg-[var(--panel)] text-[14px] text-[var(--tinta)]" style={{ borderColor: "var(--linha-forte)" }}><option value="">Todos os responsáveis</option>{responsaveis.map((r) => <option key={r} value={r}>{r}</option>)}</select>
+            </label>
+            {temFiltrosQuadro && <button onClick={limparFiltrosQuadro} className="min-h-11 px-3 rounded-lg border text-[14px]" style={{ borderColor: "var(--linha-forte)" }}>Limpar filtros</button>}
+          </div>
+          <p className="text-[13px] text-[var(--tinta-sub)]" role="status">{temFiltrosQuadro ? `${lotesVisiveis.length} de ${listaProducoes.length} lotes exibidos. ` : ""}Os filtros de turno e responsável se aplicam aos lotes; a capacidade em estoque segue a busca pelo prato.</p>
+        </div>
+
         <div ref={refQuadro} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 select-none">
           {colunas.map((col) => {
-            const cardsProducao = listaProducoes.filter((p) => p.status === col.id);
+            const cardsProducao = lotesVisiveis.filter((p) => p.status === col.id);
+            const totalNaColuna = col.id === "estoque" ? disponivelProduzir.length : listaProducoes.filter((p) => p.status === col.id).length;
             const podeSoltarAqui = !!arrasto && transicaoValida(arrasto.origem, col.id);
             const emHoverValido = arrasto?.alvo === col.id && alvoValido;
             const emHoverInvalido = arrasto?.alvo === col.id && arrasto.origem !== col.id && !alvoValido;
-            const contagem = col.id === "estoque" ? disponivelProduzir.length : cardsProducao.length;
+            const contagem = col.id === "estoque" ? capacidadesVisiveis.length : cardsProducao.length;
             const estilo = estilosColunas[col.id];
 
             return (
@@ -606,7 +641,7 @@ export function ProducoesClient({
                       {col.titulo}
                     </h3>
                     <span className="text-[14px] font-black min-w-8 text-center px-2.5 py-0.5 rounded-full" style={{ backgroundColor: estilo.fundoBadge, color: estilo.corTexto }}>
-                      {contagem}
+                      {contagem}{contagem !== totalNaColuna && <span className="font-medium">/{totalNaColuna}</span>}
                     </span>
                   </div>
                   <p className="text-[13px] font-semibold mt-1 text-[var(--tinta-sub)]">{col.desc}</p>
@@ -616,7 +651,7 @@ export function ProducoesClient({
                 <div className="p-3 space-y-3 flex-1 lg:overflow-y-auto overscroll-contain">
                   {contagem === 0 && (
                     <div className="text-[13px] font-bold py-8 text-center rounded-xl border border-dashed" style={{ borderColor: estilo.borda, color: estilo.corTexto }}>
-                      {podeSoltarAqui ? "Solte o lote aqui" : "Nenhum lote nesta etapa"}
+                      {podeSoltarAqui ? "Solte o lote aqui" : totalNaColuna > 0 ? "Nenhum resultado com estes filtros" : "Nenhum lote nesta etapa"}
                     </div>
                   )}
 
@@ -626,7 +661,7 @@ export function ProducoesClient({
                       "Gargalo:" virou "Falta primeiro:", que é o que a cozinha fala.
                       Botão com 44px e ícone; antes ~32px e "Iniciar Produção". */}
                   {col.id === "estoque" &&
-                    disponivelProduzir.map((d) => {
+                    capacidadesVisiveis.map((d) => {
                       const poucos = d.lotes <= 2;
                       return (
                         <div
@@ -697,18 +732,12 @@ export function ProducoesClient({
                           {pr.lote}
                         </div>
                         <div className="text-[15px] font-black text-[var(--tinta)] leading-snug mt-1">{pr.nomeReceita}</div>
-                        <div className="text-[13px] font-semibold text-[var(--tinta-sub)] mt-1">
-                          <strong className="text-[var(--tinta)] font-black">
-                            {numeroBR(pr.quantidade)} {unidadeNoPlural(pr.quantidade, pr.unidadeRendimento)}
-                          </strong>
-                          {" · "}
-                          {pr.responsavel}
-                        </div>
-                        <div className="text-[12px] font-semibold mt-1.5 text-[var(--tinta-sub)]">
-                          {pr.nomeTurno ?? "Sem turno"}
-                          {pr.chefeTurno ? ` · chefe ${pr.chefeTurno}` : ""}
-                          {pr.validade ? ` · validade ${validadeLegivel(pr.validade)}` : ""}
-                        </div>
+                        <div className="text-[15px] font-semibold mt-2" style={nums}>{numeroBR(pr.quantidade)} {unidadeNoPlural(pr.quantidade, pr.unidadeRendimento)}</div>
+                        <dl className="text-[13px] mt-2 space-y-1 text-[var(--tinta-sub)]">
+                          <div><dt className="inline">Responsável: </dt><dd className="inline text-[var(--tinta)]">{pr.responsavel}</dd></div>
+                          <div><dt className="inline">Turno: </dt><dd className="inline">{pr.nomeTurno ?? "Sem turno"}{pr.chefeTurno ? ` · chefe ${pr.chefeTurno}` : ""}</dd></div>
+                          {pr.validade && <div><dt className="inline">Validade: </dt><dd className="inline">{validadeLegivel(pr.validade)}</dd></div>}
+                        </dl>
                         {pr.motivoPerda && (
                           <div
                             className="text-[13px] font-bold mt-2.5 p-2.5 rounded-lg"

@@ -1,5 +1,16 @@
 # Registro de polimento (Impeccable), tela por tela
 
+## Melhorias de fichas e kanban — 06/10/2026
+
+Autorizadas por Edu, com documentação obrigatória para reversão. Registro completo,
+commits separados, testes e instruções para desfazer cada grupo em
+[MELHORIAS_FICHAS_KANBAN.md](MELHORIAS_FICHAS_KANBAN.md).
+
+Abrange cadastro/edição da ficha, busca e filtros de receitas com miniaturas,
+filtros do kanban da gestão e legibilidade do modal da ficha de produção.
+Preserva a ficha completa, as fotos, o modo cozinha e as quatro etapas.
+Publicação ainda pendente: o envio ao GitHub foi bloqueado pela revisão automática.
+
 Cada tela polida vira **um commit próprio** e cada mudança no código leva um
 comentário `POLIMENTO <tela>` dizendo o que mudou e como era antes.
 

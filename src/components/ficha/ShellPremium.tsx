@@ -27,15 +27,17 @@
 // aparecia cortado ("Visã..."). Tema fica dentro do Menu. Reverter: git revert
 // do commit "celular: navegação".
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChefHat, Carrot, ClipboardList, LineChart, Settings, AlertTriangle,
   CookingPot, Scale, Thermometer, Apple, Package, ListChecks, Calculator,
   Menu, X, Sun, Moon, Plug, Users, CalendarDays, Loader2,
+  Search, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { ToastContainer } from "./Toast";
+import { BuscaNavegacao } from "./BuscaNavegacao";
 import { podeAcessar, ROTULO_PAPEL, type Papel } from "@/lib/auth/papeis";
 
 interface NavItem {
@@ -136,6 +138,34 @@ export function ShellPremium({
   const pathname = usePathname() ?? "";
   const [mobileAberto, setMobileAberto] = useState(false);
   const [tema, setTema] = useState<"light" | "dark">("light");
+  // AJUSTES prints (2026-10-06): dois controles, busca e recolher lateral.
+  // Preferência de apresentação; nenhum dado de negócio. Doc: 07-busca-e-lateral.md.
+  const [lateralRecolhida, setLateralRecolhida] = useState(false);
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const chaveLateral = `ft:hub-lateral:v1:${prefixoRotas || "app"}`;
+  const fecharBusca = useCallback(() => setBuscaAberta(false), []);
+
+  useEffect(() => {
+    try { setLateralRecolhida(localStorage.getItem(chaveLateral) === "1"); } catch {}
+  }, [chaveLateral]);
+
+  useEffect(() => {
+    const atalho = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "k" || e.altKey || e.isComposing) return;
+      // Não colocar a busca por cima de uma ficha, foto ou outra janela aberta.
+      if (!buscaAberta && document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      e.preventDefault();
+      setBuscaAberta((atual) => !atual);
+    };
+    window.addEventListener("keydown", atalho);
+    return () => window.removeEventListener("keydown", atalho);
+  }, [buscaAberta]);
+
+  const alternarLateral = () => {
+    const nova = !lateralRecolhida;
+    setLateralRecolhida(nova);
+    try { localStorage.setItem(chaveLateral, nova ? "1" : "0"); } catch {}
+  };
 
   useEffect(() => {
     const atual = document.documentElement.getAttribute("data-theme");
@@ -262,7 +292,7 @@ export function ShellPremium({
 
   return (
     <div className="w-full min-h-screen flex" style={{ background: "var(--fundo)", color: "var(--tinta)" }}>
-      <aside className="hidden md:flex print:hidden w-60 shrink-0 flex-col sticky top-0 h-screen border-r" style={{ backgroundColor: "var(--panel)", borderColor: "var(--linha)" }}>
+      <aside id="hub-lateral" className={`${lateralRecolhida ? "hidden" : "hidden md:flex"} print:hidden w-60 shrink-0 flex-col sticky top-0 h-screen border-r`} style={{ backgroundColor: "var(--panel)", borderColor: "var(--linha)" }}>
         {menu("Seções")}
       </aside>
 
@@ -283,10 +313,29 @@ export function ShellPremium({
 
       <main id="conteudo" className="flex-1 flex flex-col min-w-0">
         <header
-          className="h-14 shrink-0 flex items-center justify-between gap-3 px-4 md:px-8 sticky top-0 z-20 border-b print:hidden"
+          className="min-h-14 shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1 md:py-0 px-4 md:px-8 sticky top-0 z-20 border-b print:hidden"
           style={{ backgroundColor: "color-mix(in srgb, var(--fundo) 88%, transparent)", borderColor: "var(--linha)", backdropFilter: "blur(8px)" }}
         >
           <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={alternarLateral}
+              className="hidden md:flex w-11 h-11 shrink-0 items-center justify-center rounded-lg text-[var(--tinta-sub)] hover:bg-[var(--panel-hover)]"
+              aria-label={lateralRecolhida ? "Expandir menu lateral" : "Recolher menu lateral"}
+              title={lateralRecolhida ? "Expandir menu lateral" : "Recolher menu lateral"}
+              aria-expanded={!lateralRecolhida}
+              aria-controls="hub-lateral"
+            >
+              {lateralRecolhida ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
+            </button>
+            <button
+              onClick={() => setBuscaAberta(true)}
+              className="w-11 h-11 shrink-0 flex items-center justify-center rounded-lg text-[var(--tinta-sub)] hover:bg-[var(--panel-hover)]"
+              aria-label="Buscar seção"
+              title="Buscar seção (Ctrl+K / ⌘K)"
+              aria-haspopup="dialog"
+            >
+              <Search size={19} />
+            </button>
             <h1 className="text-[15px] font-semibold tracking-tight text-[var(--tinta)] truncate">{tituloPagina}</h1>
           </div>
 
@@ -342,6 +391,7 @@ export function ShellPremium({
           Menu
         </button>
       </nav>
+      {buscaAberta && <BuscaNavegacao destinos={ITENS.filter((n) => podeAcessar(papel, n.rota)).map((n) => ({ id: n.id, label: n.label, href: `${prefixoRotas}${n.rota}`, icone: n.icon }))} onClose={fecharBusca} />}
       <ToastContainer />
     </div>
   );

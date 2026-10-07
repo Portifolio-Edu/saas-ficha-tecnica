@@ -13,10 +13,12 @@ export function UploadFoto({
   valor,
   onChange,
   alturaPreview = 120,
+  rotulo = "Foto da receita",
 }: {
   valor: string | null;
   onChange: (url: string | null) => void;
   alturaPreview?: number;
+  rotulo?: string;
 }) {
   const [preview, setPreview] = useState<string | null>(valor);
   const [enviando, setEnviando] = useState(false);
@@ -104,18 +106,18 @@ export function UploadFoto({
       </div>
 
       <div className="flex items-center gap-2">
-        <input ref={inputRef} type="file" aria-label="Foto da receita" accept="image/*" onChange={selecionarArquivo} className="hidden" />
+        <input ref={inputRef} type="file" aria-label={rotulo} accept="image/*" onChange={selecionarArquivo} className="hidden" />
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={enviando}
-          className="text-[11.5px] font-medium px-2.5 py-1 rounded-md"
+          className="text-[14px] font-medium px-3 min-h-11 rounded-lg"
           style={{ border: `1px solid ${"var(--border-strong)"}`, opacity: enviando ? 0.6 : 1 }}
         >
           {enviando ? "Enviando..." : preview ? "Trocar foto" : "Escolher foto"}
         </button>
         {preview && !enviando && (
-          <button type="button" onClick={remover} className="text-[11.5px] font-medium px-2.5 py-1 rounded-md" style={{ color: "var(--danger)" }}>
+          <button type="button" onClick={remover} className="text-[14px] font-medium px-3 min-h-11 rounded-lg" style={{ color: "var(--danger)" }}>
             Remover
           </button>
         )}

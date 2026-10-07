@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { inputStyle } from "@/components/ficha/tema";
 import { ErroBanner } from "@/components/ficha/ErroBanner";
 import { Input } from "@/components/ficha/Input";
@@ -8,6 +8,12 @@ import { useAcaoFormulario } from "@/hooks/useAcaoFormulario";
 import type { Receita } from "@/lib/dominio/receita";
 import type { ProducaoInput, TipoItemProducao } from "@/lib/dominio/producao";
 import { acaoRegistrarProducao } from "@/app/producoes/actions";
+
+// POLIMENTO fichas-kanban (2026-10-06): rótulos permanentes e controles de
+// 44px no registro; mantém validação e ações existentes. Grupo 03 da documentação.
+function CampoProducao({ rotulo, children }: { rotulo: string; children: ReactNode }) {
+  return <label className="flex flex-col gap-1 text-[12px] min-w-0" style={{ color: "var(--sub)" }}><span>{rotulo}</span>{children}</label>;
+}
 
 export function NovaProducaoForm({
   preparos,
@@ -76,37 +82,32 @@ export function NovaProducaoForm({
 
   return (
     <div className="px-5 py-4">
-      <div className="flex gap-2 mb-2">
+      <div className="flex gap-2 mb-4" role="group" aria-label="Tipo da produção">
         {([["preparo", "Preparo próprio"], ["prato", "Prato final"]] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => trocarTipo(id)}
-            className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+            aria-pressed={tipo === id}
+            className="text-[14px] font-medium px-3 min-h-11 rounded-lg"
             style={{ background: tipo === id ? "var(--text)" : "var(--panel)", color: tipo === id ? "var(--text-contrast, #fff)" : "var(--text)", border: `1px solid ${tipo === id ? "var(--text)" : "var(--border-strong)"}` }}
           >
             {label}
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        <select value={receitaId} onChange={(e) => setReceitaId(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 rounded-md col-span-2" style={inputStyle}>
-          {opcoes.map((o) => (
-            <option key={o.id} value={o.id}>{o.nomePrato}</option>
-          ))}
-        </select>
-        <Input placeholder={`Quantidade${unidade ? ` (${unidade})` : ""}`} type="number" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-        <Input aria-label="Responsável" placeholder="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[12.5px] px-2.5 py-1.5" />
-      </div>
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        <Input aria-label="Número do lote" placeholder="Número do lote" value={lote} onChange={(e) => setLote(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
-        <Input aria-label="Validade (ex: 17/09)" placeholder="Validade (ex: 17/09)" value={validade} onChange={(e) => setValidade(e.target.value)} className="text-[12.5px] px-2.5 py-1.5 col-span-2" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <CampoProducao rotulo="Ficha"><select value={receitaId} onChange={(e) => setReceitaId(e.target.value)} className="text-[14px] px-3 min-h-11 rounded-lg w-full" style={inputStyle}>{opcoes.map((o) => <option key={o.id} value={o.id}>{o.nomePrato}</option>)}</select></CampoProducao>
+        <CampoProducao rotulo={`Quantidade${unidade ? ` (${unidade})` : ""}`}><Input type="number" min="0" step="any" inputMode="decimal" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} className="text-[14px] px-3 min-h-11 w-full" /></CampoProducao>
+        <CampoProducao rotulo="Responsável"><Input value={responsavel} onChange={(e) => setResponsavel(e.target.value)} className="text-[14px] px-3 min-h-11 w-full" /></CampoProducao>
+        <CampoProducao rotulo="Número do lote"><Input value={lote} onChange={(e) => setLote(e.target.value)} className="text-[14px] px-3 min-h-11 w-full" /></CampoProducao>
+        <CampoProducao rotulo="Validade (opcional)"><Input placeholder="Ex.: 17/09 ou 7 dias" value={validade} onChange={(e) => setValidade(e.target.value)} className="text-[14px] px-3 min-h-11 w-full" /></CampoProducao>
       </div>
       <ErroBanner erro={faltando ?? erro} />
       <div className="flex gap-2">
-        <button onClick={salvar} disabled={salvando} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando ? 0.6 : 1 }}>
+        <button onClick={salvar} disabled={salvando} className="text-[14px] font-medium px-3.5 min-h-11 rounded-lg" style={{ background: "var(--accent)", color: "var(--accent-contrast, #fff)", opacity: salvando ? 0.6 : 1 }}>
           {salvando ? "Salvando..." : "Salvar produção"}
         </button>
-        <button onClick={onCancel} className="text-[12.5px] font-medium px-3.5 py-1.5 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
+        <button onClick={onCancel} className="text-[14px] font-medium px-3.5 min-h-11 rounded-lg" style={{ border: `1px solid ${"var(--border-strong)"}` }}>
           Cancelar
         </button>
       </div>
