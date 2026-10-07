@@ -87,11 +87,12 @@ Base: `1801f8825c19de80923e3b53cec833f20fb0c9f5`, primeira prévia publicada. Me
 | 5 — Campos numéricos | `d53e3ce` | Ocultar setas nativas do navegador em campos numéricos | [Detalhes](melhorias/05-campos-numericos.md) |
 | 6 — Posição da ficha | `07de371` | Ficha e foto ampliada renderizadas no body, fora do ancestral animado | [Detalhes](melhorias/06-modal-na-janela.md) |
 | 7 — Busca e lateral | `ead26d9` | Busca das seções permitidas, Ctrl+K/⌘K e lateral recolhível com preferência local | [Detalhes](melhorias/07-busca-e-lateral.md) |
+| 7b — Cabeçalho responsivo | `3da3a9e` | Permitir quebra dos controles em telas estreitas | [Detalhes](melhorias/07-busca-e-lateral.md) |
 
 Cada commit acima pode ser revertido sozinho com `git revert CODIGO`. Para voltar toda esta rodada à primeira prévia:
 
 ```bash
-git revert --no-commit ead26d9 07de371 d53e3ce
+git revert --no-commit 3da3a9e ead26d9 07de371 d53e3ce
 git restore --source=1801f8825c19de80923e3b53cec833f20fb0c9f5 -- scripts/verificar-fichas-kanban.mjs
 git add scripts/verificar-fichas-kanban.mjs
 git commit -m "revert: voltar à primeira prévia de fichas e kanban"
@@ -104,7 +105,7 @@ Verificação desta rodada:
 - 268 testes em 39 arquivos aprovados; TypeScript e ESLint de todo `src` sem erros/avisos; `git diff --check` aprovado.
 - Interações em DOM simulado: persistência da lateral e botão de reabrir; busca sem acentos; resultados e vazio; rotas com/sem prefixo; permissões do estoquista; Ctrl+K, setas, Enter, Escape, Tab, foco e restauração de rolagem/inert.
 - Ficha montada dentro do shell animado: portal da ficha e foto fora do ancestral transformado; fotos, ingredientes, texto, foco e Escape preservados. Ctrl+K não abre busca sobre a ficha.
-- Reversões individuais e conjuntas executadas em worktree temporária: arquivos dos grupos voltam à base desta rodada. As três árvores Git de implementação publicadas foram conferidas como idênticas às árvores locais testadas.
+- Reversões individuais dos três ajustes principais e reversão conjunta dos quatro commits de interface executadas em worktree temporária: o código da interface volta à base desta rodada. As quatro árvores Git de implementação publicadas foram conferidas como idênticas às árvores locais testadas.
 - A aparência e as coordenadas não são verificadas pelo DOM simulado. O build remoto e a avaliação visual da nova prévia devem ser conferidos; a proteção de login da Vercel foi mantida.
 
 Prévia: https://saas-ficha-tecnica-git-melhoria-fichas-kanban-8f03bb-voycompany.vercel.app/preview/producoes
