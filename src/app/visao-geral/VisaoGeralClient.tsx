@@ -33,6 +33,7 @@ import type { Producao } from "@/lib/dominio/producao";
 import type { FechamentoCmv } from "@/lib/dominio/fechamentoCmv";
 import { AlertTriangle, ChevronDown, ChevronUp, RotateCcw, CheckCircle, ArrowRight } from "lucide-react";
 import { dataBR as dataPtBR, numeroBR } from "@/lib/formato";
+import { PrimeirosPassos } from "@/components/ficha/PrimeirosPassos";
 
 // POLIMENTO visao-geral: datas do fechamento em dd/mm/aaaa. Antes apareciam
 // cruas em ISO ("2026-08-01 até 2026-08-31").
@@ -206,6 +207,7 @@ export function VisaoGeralClient({
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      <PrimeirosPassos basePath={basePath} insumos={insumos} receitas={receitas} producoes={producoes} fechamentos={fechamentos} />
       {/* Cabeçalho da página: período e meta. SISTEMA premium: substitui o card-herói. */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
