@@ -103,3 +103,6 @@ Import é sempre dinâmico (`await import("@/lib/pdf/...")`), disparado no cliqu
 - Preço por canal (existe no mock, na aba Receitas & Fichas) não entrou em nenhuma rodada -- não faz parte de insumo/receita/preparo/nutricional em si; a edição de rotulagem, que também vivia lá no mock, já foi movida pra `/nutricional`.
 - Turno ativo e chefe de turno em `/producoes` são um seletor local da tela (estado do componente, não persistido), só usados pra preencher `turno_id`/`chefe_turno` ao iniciar produção pelo quadro — não há tela de CRUD de turno ainda, os três turnos padrão (Manhã/Tarde/Noite) são criados automaticamente na primeira visita.
 - Quebra de estoque por insumo (`calcularQuebraEstoque`, seção 5.8) está implementada e testada em `src/lib/calculo/fechamentoCmv.ts`, mas ainda não tem tela — o fechamento de CMV hoje só mostra o gap agregado do período, não a quebra insumo a insumo.
+# Revisão de prontidão para venda
+
+Estado atual, evidências e pendências de ativação em [docs/PRONTIDAO_VENDA.md](docs/PRONTIDAO_VENDA.md). Os documentos anteriores permanecem como histórico. Use `.env.example` para configurar desenvolvimento; cobrança online fica desligada até homologação e definição do preço.
