@@ -4,6 +4,7 @@
 // cabeçalho fixo e fechar de 44px. Fotos principal/etapas continuam presentes.
 // Registro e reversão: docs/melhorias/04-ficha-producao.md.
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatQtd } from "@/components/charts/format";
 import { unidadeNoPlural } from "@/components/producoes/formato";
 import { X, Maximize2 } from "lucide-react";
@@ -13,17 +14,28 @@ import type { Receita } from "@/lib/dominio/receita";
 
 /** Ficha de produção: padrão de empratamento, ingredientes sem custos e
  * passo a passo com fotos. A ficha financeira e os PDFs continuam separados. */
-export function FichaProducaoModal({
-  receita,
-  insumos,
-  todasReceitas,
-  onClose,
-}: {
+type FichaProducaoProps = {
   receita: Receita;
   insumos: Insumo[];
   todasReceitas: Receita[];
   onClose: () => void;
-}) {
+};
+
+// AJUSTES prints (2026-10-06): a animação do conteúdo mantém um transform,
+// que fazia o modal fixed se posicionar dentro da página longa. O portal
+// ancora ficha e foto ampliada na janela. Docs: 06-modal-na-janela.md.
+export function FichaProducaoModal(props: FichaProducaoProps) {
+  const [destino, setDestino] = useState<HTMLElement | null>(null);
+  useEffect(() => setDestino(document.body), []);
+  return destino ? createPortal(<ConteudoFichaProducao {...props} />, destino) : null;
+}
+
+function ConteudoFichaProducao({
+  receita,
+  insumos,
+  todasReceitas,
+  onClose,
+}: FichaProducaoProps) {
   const [ampliada, setAmpliada] = useState(false);
   const id = useId();
   const painel = useRef<HTMLDivElement>(null);
