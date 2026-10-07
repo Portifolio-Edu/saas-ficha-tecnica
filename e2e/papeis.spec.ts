@@ -38,6 +38,11 @@ test.describe.serial("com login real", () => {
     await page.fill("#senha", dono.senha);
     await page.check("input[name=aceite_termos]");
     await page.getByRole("button", { name: /Criar|Cadastr/ }).click();
+    await expect(page).toHaveURL(/\/visao-geral$/);
+    const inicio = page.getByRole("region", { name: "Comece pelo seu restaurante" });
+    await expect(inicio).toBeVisible();
+    await expect(inicio.getByText("0 de 5 etapas")).toBeVisible();
+    await inicio.getByRole("link", { name: /Próximo passo:/ }).click();
     await expect(page).toHaveURL(/\/insumos$/);
     await expect(page.getByText(dono.restaurante).first()).toBeVisible();
 
