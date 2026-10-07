@@ -32,16 +32,17 @@ O comando imprime somente nomes/estado dos itens. Não valida credenciais remota
 
 ## Evidências desta revisão
 
-- Testes unitários/interações, TypeScript e lint: resultados finais registrados no PR da revisão.
+- 293 testes em 44 arquivos passaram; 6 blocos de interação das fichas, Kanban e hub passaram. TypeScript e lint do código e dos scripts passaram; resultados finais registrados no PR da revisão.
 - Migration de assinatura: 16 verificações SQL isoladas em PGlite, com papéis, privilégios e transação PostgreSQL. Há teste correspondente no runner SQL existente do Supabase.
 - O build local depende da fonte hospedada no Google, inacessível neste ambiente; status da implantação Vercel deve ser conferido pelo SHA publicado.
 - O navegador encontrou proteção de acesso na prévia; não há comprovação visual da implantação nem teste de gravação no Supabase real nesta revisão.
 - Conexão Vercel disponível não tem acesso ao escopo `voycompany`. Não há conexão Supabase/n8n disponível. Não foram alteradas variáveis remotas, SMTP, domínio, backups ou migrations de produção.
+- Verificador local exercitado com ambiente vazio (retorno 1) e configuração sintética completa (retorno 0), sem reproduzir os valores configurados.
 
 Não publicar como produto amplamente disponível até encerrar os itens de configuração, oferta, cobrança e fluxo operacional. Um piloto acompanhado pode validar o produto sem declarar essas etapas concluídas.
 
 ## Registro e reversão
 
-Cada grupo tem commit e documentação próprios: [início da operação](melhorias/08-inicio-operacao.md), [assinatura mensal](melhorias/09-assinatura-mensal.md) e [configuração](melhorias/10-configuracao-prontidao.md).
+Cada grupo tem commit e documentação próprios: [início da operação](melhorias/08-inicio-operacao.md), [assinatura mensal](melhorias/09-assinatura-mensal.md), [configuração](melhorias/10-configuracao-prontidao.md) e [revisão das interações](melhorias/11-conciliacao-e-preparo-etapas.md).
 
 Reversão do código deve usar `git revert` dos commits publicados, do mais recente para o mais antigo; não resetar as branches principais. A migration de assinatura é aditiva e não deve ser removida automaticamente. Se cobrança vier a ser habilitada, seguir a reversão específica que considera recorrências externas e histórico.

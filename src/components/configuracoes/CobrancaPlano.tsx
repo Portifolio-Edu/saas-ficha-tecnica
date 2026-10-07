@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useConfiguracoes } from "./contexto";
 import { formatBRL } from "@/components/charts/format";
 
@@ -9,6 +10,7 @@ const ROTULOS: Record<string, string> = { criando: "Solicitação em processamen
 
 export function CobrancaPlano() {
   const { demo } = useConfiguracoes();
+  const router = useRouter();
   const [situacao, setSituacao] = useState<Situacao | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -33,6 +35,7 @@ export function CobrancaPlano() {
       const consulta = await fetch("/api/assinatura", { cache: "no-store" });
       if (!consulta.ok) throw new Error("Operação enviada. Atualize a situação para conferir o resultado.");
       setSituacao(await consulta.json()); setConfirmarCancelamento(false);
+      router.refresh();
     } catch (e) { setErro(e instanceof Error ? e.message : "Não foi possível confirmar a operação."); }
     finally { setOcupado(false); }
   }
@@ -52,10 +55,10 @@ export function CobrancaPlano() {
           <button disabled={ocupado} onClick={() => agir("assinar")} className={botao}>{ocupado ? "Processando…" : "Criar assinatura mensal"}</button>
         </>}
         {situacao.faturaUrl && <a href={situacao.faturaUrl} target="_blank" rel="noopener noreferrer" className={`${botao} inline-flex items-center`}>Abrir cobrança no Asaas</a>}
-        {situacao.estado && <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <button disabled={ocupado} onClick={() => agir("atualizar")} className={botao}>Atualizar situação</button>
-          {situacao.estado !== "cancelada" && <button disabled={ocupado} onClick={() => setConfirmarCancelamento(true)} className={botao}>Cancelar recorrência</button>}
-        </div>}
+          {situacao.estado && situacao.estado !== "cancelada" && <button disabled={ocupado} onClick={() => setConfirmarCancelamento(true)} className={botao}>Cancelar recorrência</button>}
+        </div>
         {confirmarCancelamento && <div className="rounded-lg border border-[var(--linha)] p-4 space-y-3">
           <p className="text-sm text-[var(--tinta-sub)]">Cancelar encerra as próximas cobranças e remove as pendentes da assinatura. Pagamentos anteriores permanecem no histórico.</p>
           <div className="flex flex-wrap gap-2">

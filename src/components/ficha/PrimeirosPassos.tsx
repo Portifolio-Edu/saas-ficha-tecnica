@@ -13,7 +13,7 @@ type DadosInicio = {
 export function passosDoRestaurante(dados: DadosInicio) {
   return [
     { titulo: "Cadastre os insumos", detalhe: "Informe embalagem, preço e unidade para calcular os custos.", rota: "/insumos", pronto: dados.insumos.length > 0 },
-    { titulo: "Monte a primeira ficha técnica", detalhe: "Inclua ingredientes, rendimento, modo de preparo e foto do prato.", rota: "/receitas", pronto: dados.receitas.some(r => r.tipo === "prato_final" && r.ficha.length > 0 && r.rendimento > 0 && Boolean(r.modoPreparo?.trim()) && Boolean(r.fotoUrl)) },
+    { titulo: "Monte a primeira ficha técnica", detalhe: "Inclua ingredientes, rendimento, modo de preparo e foto do prato.", rota: "/receitas", pronto: dados.receitas.some(r => r.tipo === "prato_final" && r.ficha.length > 0 && r.rendimento > 0 && (Boolean(r.modoPreparo?.trim()) || r.etapas.some(e => Boolean(e.texto?.trim()))) && Boolean(r.fotoUrl)) },
     { titulo: "Informe o estoque inicial", detalhe: "Comece com o saldo de pelo menos um insumo; zero também é um saldo válido.", rota: "/estoque", pronto: dados.insumos.some(i => i.estoque !== null) },
     { titulo: "Planeje a primeira produção", detalhe: "Crie uma produção e acompanhe as etapas no quadro da cozinha.", rota: "/producoes", pronto: dados.producoes.length > 0 },
     { titulo: "Faça o primeiro fechamento", detalhe: "Ao terminar o período, registre vendas e inventário para conferir o CMV real.", rota: "/cmv", pronto: dados.fechamentos.length > 0 },

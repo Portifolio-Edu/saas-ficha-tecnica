@@ -4,7 +4,7 @@ import { formatadorData } from "@/lib/formato";
 export type AmbienteAsaas = "sandbox" | "producao";
 export interface ConfigAsaas { ambiente: AmbienteAsaas; chave: string; token: string; valorCentavos: number }
 
-export function configAsaas(env: NodeJS.ProcessEnv = process.env): ConfigAsaas | null {
+export function configAsaas(env: Readonly<Record<string, string | undefined>> = process.env): ConfigAsaas | null {
   if (env.ASAAS_COBRANCA_HABILITADA !== "true") return null;
   const ambiente = env.ASAAS_AMBIENTE;
   const chave = env.ASAAS_API_KEY ?? "";
@@ -60,13 +60,13 @@ export class ClienteAsaas {
     if (typeof window !== "undefined") throw new Error("Cobrança disponível apenas no servidor.");
     const origem = this.config.ambiente === "sandbox" ? "https://api-sandbox.asaas.com/v3" : "https://api.asaas.com/v3";
     try {
-    const resposta = await this.transporte(`${origem}${caminho}`, {
-      method: metodo, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(20_000),
-      headers: { "access_token": this.config.chave, "User-Agent": "FichaTecnica/1.0", "Content-Type": "application/json" },
-      ...(corpo !== undefined ? { body: JSON.stringify(corpo) } : {}),
-    });
-    if (!resposta.ok) throw new Error("Não foi possível confirmar a operação de cobrança. Atualize a situação ou fale com o suporte.");
-    return await resposta.json() as T;
+      const resposta = await this.transporte(`${origem}${caminho}`, {
+        method: metodo, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(20_000),
+        headers: { "access_token": this.config.chave, "User-Agent": "FichaTecnica/1.0", "Content-Type": "application/json" },
+        ...(corpo !== undefined ? { body: JSON.stringify(corpo) } : {}),
+      });
+      if (!resposta.ok) throw new Error("Não foi possível confirmar a operação de cobrança. Atualize a situação ou fale com o suporte.");
+      return await resposta.json() as T;
     } catch { throw new Error("Não foi possível confirmar a operação de cobrança. Atualize a situação ou fale com o suporte."); }
   }
   criarCliente(dados: { name: string; cpfCnpj: string; email: string; externalReference: string }) {

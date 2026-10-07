@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ admin: vi.fn(), dados: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ criarClienteAdmin: mocks.admin }));
 vi.mock("@/lib/dados/configuracoes", () => ({ getConfiguracoes: mocks.dados }));
@@ -28,6 +28,7 @@ beforeEach(() => {
   transporte = vi.fn<typeof fetch>(); vi.stubGlobal("fetch", transporte);
   mocks.dados.mockResolvedValue({ empresa: { cnpj: "11222333000181", razaoSocial: "Casa" }, conta: { email: "dono@exemplo.invalid" } });
 });
+afterEach(() => vi.unstubAllGlobals());
 
 describe("orquestração da assinatura", () => {
   it("não repete criação com solicitação já reservada", async () => {
