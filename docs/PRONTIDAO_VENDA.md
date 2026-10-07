@@ -32,8 +32,8 @@ O comando imprime somente nomes/estado dos itens. Não valida credenciais remota
 
 ## Evidências desta revisão
 
-- 293 testes em 44 arquivos passaram; 6 blocos de interação das fichas, Kanban e hub passaram. TypeScript e lint do código e dos scripts passaram; resultados finais registrados no PR da revisão.
-- Migration de assinatura: 16 verificações SQL isoladas em PGlite, com papéis, privilégios e transação PostgreSQL. O CI do commit `b607184` também recriou a cadeia completa de migrations no Supabase e passou em todos os testes SQL, incluindo assinatura. Isso não confirma migrations aplicadas no banco comercial.
+- 294 testes em 44 arquivos passaram; 6 blocos de interação das fichas, Kanban e hub passaram. TypeScript e lint do código e dos scripts passaram; resultados finais registrados no PR da revisão.
+- Migration de assinatura: 18 verificações SQL isoladas em PGlite, com papéis, privilégios, transação PostgreSQL e suspensão. O CI do commit `b607184` recriou a cadeia completa de migrations no Supabase e passou em todos os testes SQL da versão inicial de cobrança (16 verificações); a versão atual também integra esse runner. Conferir a rodada final no PR. Isso não confirma migrations aplicadas no banco comercial.
 - O build local depende da fonte hospedada no Google, inacessível neste ambiente. Build do app no GitHub Actions e implantação Vercel do commit `b607184` passaram. O status final da revisão está no PR.
 - O navegador encontrou proteção de acesso na prévia; não há comprovação visual da implantação nem teste de gravação no Supabase real nesta revisão.
 - Conexão Vercel disponível não tem acesso ao escopo `voycompany`. Não há conexão Supabase/n8n disponível. Não foram alteradas variáveis remotas, SMTP, domínio, backups ou migrations de produção.
@@ -43,7 +43,7 @@ Não publicar como produto amplamente disponível até encerrar os itens de conf
 
 ## Registro e reversão
 
-Cada grupo tem commit e documentação próprios: [início da operação](melhorias/08-inicio-operacao.md), [assinatura mensal](melhorias/09-assinatura-mensal.md), [configuração](melhorias/10-configuracao-prontidao.md), [revisão das interações](melhorias/11-conciliacao-e-preparo-etapas.md) e [cadastro ponta a ponta](melhorias/12-cadastro-e2e.md).
+Cada grupo tem commit e documentação próprios: [início da operação](melhorias/08-inicio-operacao.md), [assinatura mensal](melhorias/09-assinatura-mensal.md), [configuração](melhorias/10-configuracao-prontidao.md), [revisão das interações](melhorias/11-conciliacao-e-preparo-etapas.md), [cadastro ponta a ponta](melhorias/12-cadastro-e2e.md) e [suspensão da recorrência](melhorias/13-suspensao-assinatura.md).
 
 Reversão do código deve usar `git revert` dos commits publicados, do mais recente para o mais antigo; não resetar as branches principais. A migration de assinatura é aditiva e não deve ser removida automaticamente. Se cobrança vier a ser habilitada, seguir a reversão específica que considera recorrências externas e histórico.
 
@@ -57,6 +57,8 @@ Reversão do código deve usar `git revert` dos commits publicados, do mais rece
 | 5a09c23 | fix: reconhecer preparo por etapas e permitir conciliação após falha |
 | b607184 | docs: registrar commits publicados e reversão |
 | 002bcc7 | test: verificar guia e próximo passo após cadastro |
+| 6fc11c7 | docs: registrar validação do banco e atualizar reversão |
+| 0873e49 | fix: distinguir suspensão de cancelamento da assinatura |
 
 As árvores desses commits foram comparadas às árvores locais validadas antes de publicar. A revisão inclui um último commit que só registra esta seção.
 
@@ -66,7 +68,7 @@ Para reverter o pacote em uma branch nova, partindo exatamente da revisão publi
 git switch -c reversao/onboarding-prontidao origin/lancamento/onboarding-prontidao
 # Primeiro desfaz o último commit, que somente registra as instruções.
 git revert --no-edit HEAD
-git revert --no-edit 002bcc7a7cc845dc81341a031bf67ab881e98406 b607184a2f8d497191698876f699fef794aacaa2 5a09c23761d1ae7572a791a53c260d7285284f0c a042398bfebe9b1c2e25f894982b3a011789616f 23e8b215014c10218911f94fba9ff08e4170a9de 5d42edb16ac2f5bcb39120649501d7b2538427d8
+git revert --no-edit 0873e49bf3640f149add7076813f42d28042934c 6fc11c77a6f7961cb3793aeb47bddc3c3a59a680 002bcc7a7cc845dc81341a031bf67ab881e98406 b607184a2f8d497191698876f699fef794aacaa2 5a09c23761d1ae7572a791a53c260d7285284f0c a042398bfebe9b1c2e25f894982b3a011789616f 23e8b215014c10218911f94fba9ff08e4170a9de 5d42edb16ac2f5bcb39120649501d7b2538427d8
 ```
 
 Não usar esses comandos cegamente se houver commits posteriores: identificar primeiro o commit de registro e preservar novas alterações. Para reverter somente uma melhoria, usar seu hash da tabela e conferir dependências.
