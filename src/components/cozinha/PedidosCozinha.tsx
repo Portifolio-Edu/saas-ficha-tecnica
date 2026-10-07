@@ -84,8 +84,9 @@ export function PedidosCozinha({
     return () => clearInterval(t);
   }, []);
 
-  const pendentes = requisicoes.filter((r) => r.status === "pendente");
+  const pendentes = requisicoes.filter((r) => r.status === "pendente" || r.status === "aprovado");
   const pendentesDaCategoria = pendentes.filter((r) => r.categoria === categoria);
+  const recusadasDaCategoria = requisicoes.filter(r => r.status === "cancelado" && r.categoria === categoria).slice(0, 8);
   const compradasDaCategoria = requisicoes.filter((r) => r.status === "comprado" && r.categoria === categoria).slice(0, 8);
   const prazos = useMemo(() => pedidosDaCategoria(agenda, categoria, agora).slice(0, 2), [agenda, categoria, agora]);
   const sugestoesDaCategoria = sugestoes.filter((s) => s.categoria === categoria);
@@ -287,21 +288,24 @@ export function PedidosCozinha({
                   {r.observacao && <div className="text-[14px] text-[var(--tinta)] mt-0.5">{r.observacao}</div>}
                   <div className="text-[13px] text-[var(--tinta-faint)] mt-0.5">
                     {r.responsavel} · {haQuanto(r.criadoEm)}
+                    <span className="block mt-1">{r.status === "aprovado" ? "Compra aprovada pela gestão" : "Aguardando aprovação do gestor ou dono"}</span>
                   </div>
                 </div>
-                <button
+                {r.status === "pendente" && <button
                   onClick={() => tirar(r)}
                   disabled={removendo === r.id}
                   aria-label={`Tirar ${r.descricao} do pedido`}
                   className="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-[var(--tinta-faint)] hover:text-[var(--danger)] hover:bg-[var(--panel-hover)] disabled:opacity-50"
                 >
                   <X size={20} />
-                </button>
+                </button>}
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {recusadasDaCategoria.length > 0 && <section aria-label="Pedidos rejeitados ou cancelados"><h3 className="text-[15px] font-medium text-[var(--tinta-sub)] mb-2">Rejeitados ou cancelados nos últimos dias</h3><ul className="space-y-1">{recusadasDaCategoria.map(r => <li key={r.id} className="text-[15px] text-[var(--tinta-sub)]">{r.descricao} · Rejeitado ou cancelado{r.resolvidoNome ? ` por ${r.resolvidoNome}` : ""}{r.resolvidoEm ? ` · ${haQuanto(r.resolvidoEm)}` : ""}</li>)}</ul></section>}
 
       {compradasDaCategoria.length > 0 && (
         <section aria-label="Comprados nos últimos dias">

@@ -62,7 +62,7 @@ export function PedidosDaCozinha({
     return () => clearInterval(t);
   }, []);
 
-  const pendentes = requisicoes.filter((r) => r.status === "pendente");
+  const pendentes = requisicoes.filter((r) => r.status === "aprovado");
   const agenda = useMemo(() => fornecedores.map(agendaDoFornecedor), [fornecedores]);
   const grupos = CATEGORIAS_PEDIDO.map((c) => ({ ...c, itens: pendentes.filter((r) => r.categoria === c.id) })).filter((g) => g.itens.length > 0);
 
@@ -80,16 +80,16 @@ export function PedidosDaCozinha({
         <ShoppingBasket size={20} className="text-[var(--tinta-faint)] mt-0.5 shrink-0" />
         <div>
           <h2 className="text-[16px] font-semibold text-[var(--tinta)]">
-            Pedidos da cozinha{pendentes.length > 0 ? ` · ${pendentes.length}` : ""}
+            Compras aprovadas{pendentes.length > 0 ? ` · ${pendentes.length}` : ""}
           </h2>
           <p className="text-[13px] text-[var(--tinta-sub)] mt-0.5">
-            O que a cozinha pediu na aba Pedidos do tablet. O prazo vem dos dias de entrega cadastrados em Fornecedores, aqui embaixo.
+            Itens autorizados pelo gestor ou dono. O prazo vem da agenda cadastrada em Estoque → Fornecedores.
           </p>
         </div>
       </div>
 
       {grupos.length === 0 ? (
-        <p className="px-4 md:px-5 py-5 text-[14px] text-[var(--tinta-sub)]">Nenhum pedido pendente. Quando a cozinha pedir, aparece aqui na hora.</p>
+        <p className="px-4 md:px-5 py-5 text-[14px] text-[var(--tinta-sub)]">Nenhuma compra aprovada aguardando confirmação.</p>
       ) : (
         <ul>
           {grupos.map((g) => {
@@ -142,7 +142,7 @@ export function PedidosDaCozinha({
                         </div>
                         {r.observacao && <div className="text-[13px] text-[var(--tinta)]">{r.observacao}</div>}
                         <div className="text-[12.5px] text-[var(--tinta-faint)]">
-                          {r.responsavel} · {dataBR(r.criadoEm, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+                          {r.responsavel}{r.aprovadoNome ? ` · Aprovado por ${r.aprovadoNome}` : ""} · {dataBR(r.criadoEm, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
                       <button

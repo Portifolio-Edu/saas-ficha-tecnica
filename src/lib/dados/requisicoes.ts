@@ -19,6 +19,10 @@ interface LinhaRequisicao {
   status: StatusRequisicao;
   criado_em: string;
   resolvido_em: string | null;
+  aprovado_em: string | null;
+  aprovado_por: string | null;
+  aprovado_nome: string | null;
+  resolvido_nome: string | null;
 }
 
 function paraRequisicao(r: LinhaRequisicao): Requisicao {
@@ -34,6 +38,10 @@ function paraRequisicao(r: LinhaRequisicao): Requisicao {
     status: r.status,
     criadoEm: r.criado_em,
     resolvidoEm: r.resolvido_em,
+    aprovadoEm: r.aprovado_em,
+    aprovadoPor: r.aprovado_por,
+    aprovadoNome: r.aprovado_nome,
+    resolvidoNome: r.resolvido_nome,
   };
 }
 
@@ -43,8 +51,8 @@ export async function listarRequisicoes(): Promise<Requisicao[]> {
   const desde = new Date(Date.now() - 3 * 86_400_000).toISOString();
   const { data, error } = await supabase
     .from("requisicoes")
-    .select("id, categoria, insumo_id, descricao, quantidade, unidade, observacao, responsavel, status, criado_em, resolvido_em")
-    .or(`status.eq.pendente,resolvido_em.gte.${desde}`)
+    .select("id, categoria, insumo_id, descricao, quantidade, unidade, observacao, responsavel, status, criado_em, resolvido_em, aprovado_em, aprovado_por, aprovado_nome, resolvido_nome")
+    .or(`status.eq.pendente,status.eq.aprovado,resolvido_em.gte.${desde}`)
     .order("criado_em", { ascending: false })
     .limit(300);
   if (error) throw new Error(mensagemErro(error));
@@ -70,7 +78,7 @@ export async function removerRequisicao(id: string): Promise<void> {
   const supabase = await createClient();
   const { data, error } = await supabase.from("requisicoes").delete().eq("id", id).select("id");
   if (error) throw new Error(mensagemErro(error));
-  if (!data?.length) throw new Error("Esse item já foi comprado; não dá mais pra tirar do pedido.");
+  if (!data?.length) throw new Error("Somente quem solicitou ou a gestão pode retirar um item ainda aguardando aprovação.");
 }
 
 export async function resolverRequisicoes(ids: string[], status: StatusRequisicao): Promise<number> {

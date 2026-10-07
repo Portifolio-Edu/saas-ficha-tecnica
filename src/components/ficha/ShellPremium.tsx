@@ -103,6 +103,7 @@ const GRUPOS: { titulo?: string; itens: NavItem[] }[] = [
  * prefixo /preview). É o mesmo texto do item do menu, regra que as páginas já
  * seguiam; com o shell no layout.tsx, a página não passa mais o título. */
 export function tituloDaRota(rota: string): string | undefined {
+  if (rota === "/estoque/compras") return "Compras";
   return GRUPOS.flatMap((g) => g.itens).find((n) => rota === n.rota || rota.startsWith(`${n.rota}/`))?.label;
 }
 

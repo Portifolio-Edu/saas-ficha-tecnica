@@ -4,7 +4,7 @@
 import { test, expect } from "@playwright/test";
 
 const TELAS = [
-  "visao-geral", "receitas", "insumos", "estoque", "producoes", "cmv", "checklists", "seguranca",
+  "visao-geral", "receitas", "insumos", "estoque", "estoque/compras", "producoes", "cmv", "checklists", "seguranca",
   "relatorios", "escalas", "equipe", "proteinas", "nutricional", "integracoes", "configuracoes", "consulta",
 ];
 

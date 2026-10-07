@@ -34,7 +34,7 @@ export default async function EstoquePage() {
           Importar NF-e de compra
         </Link>
       </div>
-      <EstoqueClient insumos={insumos} estoque={estoque} movimentacoes={movimentacoes} fornecedores={fornecedores} contagens={contagens} requisicoes={requisicoes} nomeRestaurante={cliente.nomeRestaurante} />
+      <EstoqueClient insumos={insumos} estoque={estoque} movimentacoes={movimentacoes} fornecedores={fornecedores} contagens={contagens} requisicoes={requisicoes} />
     </AppShell>
   );
 }

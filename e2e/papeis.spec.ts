@@ -245,7 +245,7 @@ test.describe.serial("com login real", () => {
   });
 
   // PEDIDOS DA COZINHA (2026-09-26): fornecedor com agenda → tablet pede → quem compra resolve (no celular).
-  test("estoquista cadastra a agenda do fornecedor; tablet pede hortifrúti com o prazo; estoquista marca comprado no celular", async ({ browser }) => {
+  test("estoquista vê pedido no celular, gestor aprova e só então a compra é confirmada", async ({ browser }) => {
     const celular = await (await browser.newContext({ baseURL: "http://127.0.0.1:3000", locale: "pt-BR", timezoneId: "America/Sao_Paulo", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
     await entrar(celular, estoquista.usuario, estoquista.senha);
     await expect(celular).toHaveURL(/\/estoque$/);
@@ -283,10 +283,29 @@ test.describe.serial("com login real", () => {
     await expect(tablet.getByRole("region", { name: "Pedido de Hortifrúti pendente" }).getByText("Coentro")).toBeVisible();
 
     await celular.reload();
-    await expect(celular.getByText("Pedidos da cozinha · 1")).toBeVisible();
+    await celular.getByRole("link", { name: "Compras", exact: true }).click();
+    await expect(celular).toHaveURL(/\/estoque\/compras$/);
+    await expect(celular.getByRole("region", { name: "Aguardando aprovação" }).getByText("Coentro", { exact: false })).toBeVisible();
+    await expect(celular.getByRole("button", { name: "Aprovar Coentro" })).toHaveCount(0);
+    await expect(celular.getByRole("button", { name: "Marcar Coentro como comprado" })).toHaveCount(0);
+
+    const gestao = await novaAba(browser);
+    await entrar(gestao, gestor.usuario, gestor.senha);
+    await gestao.goto("/estoque/compras");
+    await gestao.getByRole("button", { name: "Aprovar Coentro", exact: true }).click();
+    await expect(gestao.getByRole("region", { name: "Aprovadas para comprar" }).getByText("Coentro", { exact: false })).toBeVisible();
+    const { data: aprovado } = await admin().from("requisicoes").select("status,aprovado_em,aprovado_nome,aprovado_por,resolvido_em").eq("cliente_id", clienteId).single();
+    expect(aprovado).toMatchObject({ status: "aprovado", aprovado_nome: gestor.nome, resolvido_em: null });
+    expect(aprovado!.aprovado_em).toBeTruthy(); expect(aprovado!.aprovado_por).toBeTruthy();
+    await gestao.context().close();
+
+    await tablet.reload(); await tablet.getByRole("button", { name: "Pedidos" }).click();
+    await expect(tablet.getByText("Compra aprovada pela gestão")).toBeVisible();
+    await expect(tablet.getByRole("button", { name: "Tirar Coentro do pedido" })).toHaveCount(0);
+    await celular.reload();
     await expect(celular.getByText(`Horta ${RODADA}: peça até hoje às 23h59`, { exact: false })).toBeVisible();
     await celular.getByRole("button", { name: "Marcar Coentro como comprado" }).click();
-    await expect(celular.getByText("Nenhum pedido pendente.", { exact: false })).toBeVisible();
+    await expect(celular.getByRole("region", { name: "Aprovadas para comprar" }).getByText("Nenhuma compra aprovada", { exact: false })).toBeVisible();
     const { data: req } = await admin().from("requisicoes").select("descricao, quantidade, unidade, status, responsavel, resolvido_em").eq("cliente_id", clienteId).single();
     expect(req).toMatchObject({ descricao: "Coentro", quantidade: 3, unidade: "maço", status: "comprado", responsavel: cozinheiro });
     expect(req!.resolvido_em).toBeTruthy();
@@ -297,6 +316,27 @@ test.describe.serial("com login real", () => {
     await expect(tablet.getByRole("region", { name: "Comprados nos últimos dias" }).getByText(/Coentro/)).toBeVisible();
     await tablet.context().close();
     await celular.context().close();
+  });
+
+  test("estoquista cria requisição; dono rejeita e histórico mantém a decisão", async ({ browser }) => {
+    const estoque = await novaAba(browser); await entrar(estoque, estoquista.usuario, estoquista.senha);
+    await estoque.goto("/estoque/compras");
+    await estoque.getByRole("button", { name: "+ Nova requisição", exact: true }).click();
+    await estoque.getByLabel("Item da compra").fill("Arroz para reposição");
+    await estoque.getByLabel("Categoria", { exact: true }).selectOption("secos");
+    await estoque.getByLabel("Quantidade (opcional)").fill("2,5");
+    await estoque.getByRole("button", { name: "Enviar para aprovação", exact: true }).click();
+    await expect(estoque.getByRole("region", { name: "Aguardando aprovação" }).getByText("Arroz para reposição", { exact: false })).toBeVisible();
+    const { data: criado } = await admin().from("requisicoes").select("status,quantidade,responsavel,aprovado_em").eq("cliente_id", clienteId).eq("descricao", "Arroz para reposição").single();
+    expect(criado).toMatchObject({ status: "pendente", quantidade: 2.5, responsavel: estoquista.nome, aprovado_em: null });
+    const donoCompras = await novaAba(browser); await entrar(donoCompras, dono.email, novaSenhaDono);
+    await donoCompras.goto("/estoque/compras");
+    await donoCompras.getByRole("button", { name: "Rejeitar Arroz para reposição", exact: true }).click();
+    await expect(donoCompras.getByRole("region", { name: "Histórico de compras" }).getByText("Arroz para reposição", { exact: false })).toBeVisible();
+    const { data: rejeitado } = await admin().from("requisicoes").select("status,aprovado_em,resolvido_nome,resolvido_em").eq("cliente_id", clienteId).eq("descricao", "Arroz para reposição").single();
+    expect(rejeitado).toMatchObject({ status: "cancelado", aprovado_em: null, resolvido_nome: dono.nome }); expect(rejeitado!.resolvido_em).toBeTruthy();
+    await estoque.reload(); await expect(estoque.getByRole("region", { name: "Histórico de compras" }).getByText("Rejeitada / cancelada")).toBeVisible();
+    await estoque.context().close(); await donoCompras.context().close();
   });
 
   // LISTA DE PRODUÇÃO (2026-09-26) + menu lateral da cozinha.

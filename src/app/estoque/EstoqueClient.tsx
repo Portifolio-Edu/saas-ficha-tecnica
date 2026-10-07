@@ -5,6 +5,8 @@
 // `git show 4f29ec6:src/app/estoque/EstoqueClient.tsx`.
 
 import { Fragment, useEffect, useState } from "react";
+import Link from "next/link";
+import { NavegacaoEstoque } from "@/components/estoque/NavegacaoEstoque";
 import { usePathname } from "next/navigation";
 import { Camera, Mic } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
@@ -18,13 +20,12 @@ import { CATEGORIAS, type Insumo } from "@/lib/dominio/insumo";
 import type { ContagemCega, EstoqueLinha, Movimentacao } from "@/lib/dominio/estoque";
 import type { Fornecedor } from "@/lib/dominio/fornecedor";
 import { useToast } from "@/components/ficha/Toast";
-import { acaoExcluirFornecedor, acaoResolverRequisicoes } from "./actions";
+import { acaoExcluirFornecedor } from "./actions";
 import { abrirAgenteIaComFoco } from "@/components/ia/BotaoAgenteIa";
 import { formatBRL, formatQtd } from "@/components/charts/format";
 import { ItemMovel, ListaMovel } from "@/components/ficha/ListaMovel";
 import { CATEGORIAS_PEDIDO, diasDeEntregaTexto } from "@/lib/dominio/requisicao";
-import { PedidosDaCozinha } from "@/components/estoque/PedidosDaCozinha";
-import type { Requisicao, StatusRequisicao } from "@/lib/dominio/requisicao";
+import type { Requisicao } from "@/lib/dominio/requisicao";
 import { numeroBR } from "@/lib/formato";
 
 function formatarData(iso: string): string {
@@ -39,8 +40,6 @@ export function EstoqueClient({
   fornecedores,
   contagens = [],
   requisicoes = [],
-  nomeRestaurante = "",
-  resolverPedidos = acaoResolverRequisicoes,
 }: {
   insumos: Insumo[];
   estoque: EstoqueLinha[];
@@ -50,9 +49,6 @@ export function EstoqueClient({
   contagens?: ContagemCega[];
   /** PEDIDOS DA COZINHA (2026-09-26): pedidos de compra da cozinha. */
   requisicoes?: Requisicao[];
-  nomeRestaurante?: string;
-  /** Na demo, grava no "banco" do navegador. */
-  resolverPedidos?: (ids: string[], status: StatusRequisicao) => Promise<{ ok: true } | { ok: false; erro: string }>;
 }) {
   const pathname = usePathname();
   const emModoDemo = pathname?.startsWith("/preview");
@@ -132,7 +128,11 @@ export function EstoqueClient({
 
   return (
     <div className="max-w-5xl space-y-6">
-      <PedidosDaCozinha requisicoes={requisicoes} fornecedores={fornecedores} nomeRestaurante={nomeRestaurante} resolver={resolverPedidos} />
+      <NavegacaoEstoque pendentes={requisicoes.filter(r => r.status === "pendente").length} />
+      <Card className="p-4 md:p-5 flex flex-wrap items-center justify-between gap-3">
+        <div><h2 className="text-base font-semibold text-[var(--tinta)]">Compras</h2><p className="mt-1 text-sm text-[var(--tinta-sub)]">{requisicoes.filter(r => r.status === "pendente").length} aguardando aprovação · {requisicoes.filter(r => r.status === "aprovado").length} aprovadas para comprar</p></div>
+        <Link href={`${emModoDemo ? "/preview" : ""}/estoque/compras`} className="min-h-11 inline-flex items-center rounded-lg border border-[var(--linha-forte)] px-4 text-sm font-medium text-[var(--tinta)]">Abrir Compras</Link>
+      </Card>
       <ContagensCegas contagens={contagens} />
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-1">

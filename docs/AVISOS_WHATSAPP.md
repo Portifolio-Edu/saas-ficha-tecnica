@@ -10,7 +10,7 @@ item já avisado não volta):
 | Aviso | Quando | Opção na tela |
 |---|---|---|
 | Insumo abaixo do mínimo | Saldo < mínimo. Diz quanto tem e o prazo do fornecedor pra repor. Volta a avisar só depois de uma nova entrada (compra) e nova queda | Falta de insumo |
-| Pedido do fornecedor fechando | Faltam até 2 h pro prazo do fornecedor e há pedido da cozinha esperando nas categorias dele | Problema com fornecedor |
+| Pedido do fornecedor fechando | Faltam até 2 h pro prazo do fornecedor e há compra aprovada esperando nas categorias dele | Problema com fornecedor |
 | Fornecedor subiu o preço | Troca de preço de +10% ou mais nas últimas 24 h | Problema com fornecedor |
 | Carne rendendo menos | Processamento das últimas 24 h com fator de correção 10%+ pior que o da ficha (cita o fornecedor) | Problema com fornecedor |
 | Falta gente na equipe | Falta/atestado ou equipe abaixo do mínimo hoje ou amanhã (motor da escala), a partir do horário escolhido | Falta de funcionário |
@@ -98,3 +98,7 @@ aviso na tela. Banco: `supabase/reverter/20261002120000_avisos_gestao.sql`
 - Vendas do dia (quando o PDV estiver integrado): hoje só sai no fechamento.
 - Nutricionista: temperatura e higiene, num canal dela.
 - NF-e por e-mail → proposta de entrada no estoque.
+
+## Compras com aprovação — 07/10/2026
+
+Na revisão [16](melhorias/16-compras-aprovacao.md), os lembretes de prazo ao fornecedor consideram somente requisições aprovadas. O resumo diário conta tanto solicitações aguardando aprovação como compras aprovadas ainda abertas. Nenhuma automação ou envio foi ativado nesta revisão.

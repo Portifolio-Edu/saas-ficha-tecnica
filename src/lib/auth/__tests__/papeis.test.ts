@@ -13,6 +13,7 @@ describe("podeAcessar", () => {
 
   it("estoquista só abre compras, estoque e CMV", () => {
     expect(podeAcessar("estoquista", "/estoque")).toBe(true);
+    expect(podeAcessar("estoquista", "/estoque/compras")).toBe(true);
     expect(podeAcessar("estoquista", "/insumos")).toBe(true);
     expect(podeAcessar("estoquista", "/cmv")).toBe(true);
     expect(podeAcessar("estoquista", "/relatorios")).toBe(false);
@@ -31,6 +32,7 @@ describe("podeAcessar", () => {
     expect(podeAcessar("cozinha", "/cozinha")).toBe(true);
     expect(podeAcessar("cozinha", "/cozinha/fichas")).toBe(true);
     expect(podeAcessar("cozinha", "/estoque")).toBe(false);
+    expect(podeAcessar("cozinha", "/estoque/compras")).toBe(false);
     expect(podeAcessar("cozinha", "/checklists")).toBe(false);
   });
 
