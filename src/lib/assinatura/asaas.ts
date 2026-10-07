@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { OFERTA_SAAS } from "./oferta";
 import { formatadorData } from "@/lib/formato";
 
 export type AmbienteAsaas = "sandbox" | "producao";
@@ -10,7 +11,7 @@ export function configAsaas(env: Readonly<Record<string, string | undefined>> = 
   const chave = env.ASAAS_API_KEY ?? "";
   const token = env.ASAAS_WEBHOOK_TOKEN ?? "";
   const valor = env.ASAAS_PLANO_MENSAL_CENTAVOS ?? "";
-  if ((ambiente !== "sandbox" && ambiente !== "producao") || !/^\d+$/.test(valor) || !Number.isSafeInteger(Number(valor)) || Number(valor) <= 0 || token.length < 32 || token.length > 255 || /\s/.test(token) || token === chave) {
+  if ((ambiente !== "sandbox" && ambiente !== "producao") || !/^\d+$/.test(valor) || !Number.isSafeInteger(Number(valor)) || Number(valor) !== OFERTA_SAAS.mensalCentavos || token.length < 32 || token.length > 255 || /\s/.test(token) || token === chave) {
     throw new Error("Configuração da assinatura incompleta. Fale com o suporte.");
   }
   if (!chave.startsWith(ambiente === "sandbox" ? "$aact_hmlg_" : "$aact_prod_")) throw new Error("Chave de cobrança incompatível com o ambiente.");
@@ -73,10 +74,10 @@ export class ClienteAsaas {
   criarCliente(dados: { name: string; cpfCnpj: string; email: string; externalReference: string }) {
     return this.chamar<{ id: string }>("/customers", "POST", dados);
   }
-  criarAssinatura(customer: string, referencia: string) {
+  criarAssinatura(customer: string, referencia: string, valorCentavos: number, primeiroVencimento: string) {
     return this.chamar<AssinaturaAsaas>("/subscriptions", "POST", {
       customer, externalReference: referencia, billingType: "UNDEFINED", cycle: "MONTHLY",
-      value: this.config.valorCentavos / 100, nextDueDate: diaDaCobranca(), description: "Ficha Técnica — plano mensal do restaurante",
+      value: valorCentavos / 100, nextDueDate: primeiroVencimento, description: "Ficha Técnica — plano mensal do restaurante",
     });
   }
   recuperarAssinatura(id: string) { return this.chamar<AssinaturaAsaas>(`/subscriptions/${encodeURIComponent(id)}`); }
