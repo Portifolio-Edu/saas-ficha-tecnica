@@ -17,14 +17,15 @@ async function executar() {
   const saida = path.join(temporario, 'componentes.cjs');
   try {
     await esbuild.build({
-      stdin: { contents: `export { ReceitaForm } from './src/components/receitas/ReceitaForm'; export { ReceitasClient } from './src/app/receitas/ReceitasClient'; export { ProducoesClient } from './src/app/producoes/ProducoesClient'; export { FichaProducaoModal } from './src/components/receitas/FichaProducaoModal'; export * as dados from './src/app/preview/fixtures';`, resolveDir: raiz, loader: 'tsx' },
+      stdin: { contents: `export { ReceitaForm } from './src/components/receitas/ReceitaForm'; export { ReceitasClient } from './src/app/receitas/ReceitasClient'; export { ProducoesClient } from './src/app/producoes/ProducoesClient'; export { FichaProducaoModal } from './src/components/receitas/FichaProducaoModal'; export { ShellPremium } from './src/components/ficha/ShellPremium'; export * as dados from './src/app/preview/fixtures';`, resolveDir: raiz, loader: 'tsx' },
       outfile: saida, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', alias: { '@': path.join(raiz, 'src') }, logLevel: 'silent',
       plugins: [{ name: 'acoes-controladas', setup(build) {
-        build.onResolve({ filter: /^react(?:\/.*)?$/ }, (args) => ({ path: doProjeto.resolve(args.path), external: true }));
+        build.onResolve({ filter: /^react(?:-dom)?(?:\/.*)?$/ }, (args) => ({ path: doProjeto.resolve(args.path), external: true }));
+        build.onResolve({ filter: /^next\/link$/ }, () => ({ path: 'link', namespace: 'teste' }));
         build.onResolve({ filter: /^next\/navigation$/ }, () => ({ path: 'navigation', namespace: 'teste' }));
         build.onResolve({ filter: /^(?:@\/app\/(receitas|producoes)\/actions|\.\/actions)$/ }, () => ({ path: 'actions', namespace: 'teste' }));
         build.onResolve({ filter: /^@\/lib\/pdf\// }, (args) => ({ path: args.path, external: true }));
-        build.onLoad({ filter: /.*/, namespace: 'teste' }, (args) => ({ loader: 'js', contents: args.path === 'navigation' ? `export const usePathname = () => '/preview/producoes';` : `const registrar = async (...args) => { globalThis.__fichaChamadas.push(args); return { ok: true }; }; export const acaoCriarReceita=registrar, acaoAtualizarReceita=registrar, acaoExcluirReceita=registrar, acaoIniciarProducao=registrar, acaoAtualizarStatusProducao=registrar, acaoRegistrarProducao=registrar; export const acaoUploadFotoReceita = async () => ({ok:false,erro:'Upload não é exercitado neste teste.'});` }));
+        build.onLoad({ filter: /.*/, namespace: 'teste' }, (args) => ({ loader: 'js', contents: args.path === 'link' ? `import {createElement} from 'react'; export const useLinkStatus=()=>({pending:false}); export default function Link({href,onClick,children,...props}) { return createElement('a',{...props,href,onClick:(e)=>{e.preventDefault();globalThis.__fichaDestino=href;onClick?.(e)}},children); }` : args.path === 'navigation' ? `export const usePathname = () => '/preview/producoes';` : `const registrar = async (...args) => { globalThis.__fichaChamadas.push(args); return { ok: true }; }; export const acaoCriarReceita=registrar, acaoAtualizarReceita=registrar, acaoExcluirReceita=registrar, acaoIniciarProducao=registrar, acaoAtualizarStatusProducao=registrar, acaoRegistrarProducao=registrar, acaoNovoFechamento=registrar; export const acaoUploadFotoReceita = async () => ({ok:false,erro:'Upload não é exercitado neste teste.'});` }));
       } }],
     });
     const dom = new JSDOM('<!doctype html><body><button id="origem">Abrir ficha</button><div id="teste"></div></body>', { url: 'https://teste.invalid/preview/producoes', pretendToBeVisual: true });
@@ -38,7 +39,7 @@ async function executar() {
     const React = doProjeto('react');
     const { act } = React;
     const { createRoot } = doProjeto('react-dom/client');
-    const { ReceitaForm, ReceitasClient, ProducoesClient, FichaProducaoModal, dados } = doProjeto(saida);
+    const { ReceitaForm, ReceitasClient, ProducoesClient, FichaProducaoModal, ShellPremium, dados } = doProjeto(saida);
     const host = document.getElementById('teste');
     const root = createRoot(host);
     const render = async (componente, props) => {
@@ -152,26 +153,89 @@ async function executar() {
     assert.equal(localStorage.getItem('demo_estoque'), estoqueAposInicio);
     console.log('OK kanban: quatro etapas, filtros, turno, início/conclusão/perda e baixa única');
 
-    // Modal: fotos/ingredientes/texto, Escape e foco.
+    // Hub: preferência reversível, busca por seção e permissões reais do menu.
+    const shellProps = { prefixoRotas: '/preview', papel: 'dono', nomeRestaurante: 'Teste', tituloPagina: 'Receitas e fichas', acaoRodape: { rotulo: 'Sair do teste', icone: null, onClick() {} }, children: React.createElement('p', null, 'Conteúdo da seção') };
+    await render(ShellPremium, shellProps);
+    await clicar(botao('Recolher menu lateral'));
+    assert.equal(localStorage.getItem('ft:hub-lateral:v1:/preview'), '1');
+    assert.equal(botao('Expandir menu lateral').getAttribute('aria-expanded'), 'false');
+    await render(ShellPremium, shellProps);
+    assert.equal(botao('Expandir menu lateral').getAttribute('aria-expanded'), 'false', 'Preferência mantida ao remontar');
+    await clicar(botao('Expandir menu lateral'));
+    assert.equal(localStorage.getItem('ft:hub-lateral:v1:/preview'), '0');
+    const abrirBusca = botao('Buscar seção');
+    await clicar(abrirBusca);
+    let dialogoBusca = document.querySelector('[role="dialog"]');
+    const inputBusca = dialogoBusca.querySelector('input');
+    assert(document.activeElement === inputBusca, 'Busca recebe foco inicial');
+    assert.equal(host.inert, true, 'Fundo fica inerte');
+    await preencher(inputBusca, 'producoes');
+    assert.equal(dialogoBusca.querySelectorAll('a').length, 1);
+    assert.equal(dialogoBusca.querySelector('a').getAttribute('href'), '/preview/producoes');
+    const fecharBusca = botao('Fechar busca', dialogoBusca);
+    fecharBusca.focus();
+    await act(async () => fecharBusca.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true })));
+    assert(document.activeElement === dialogoBusca.querySelector('a'), 'Shift+Tab fica dentro da busca');
+    await act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })));
+    assert(document.activeElement === fecharBusca, 'Tab volta ao primeiro controle');
+    inputBusca.focus();
+    await act(async () => inputBusca.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true })));
+    assert(document.activeElement === dialogoBusca.querySelector('a'), 'Seta seleciona o resultado');
+    inputBusca.focus();
+    await act(async () => inputBusca.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })));
+    assert.equal(global.__fichaDestino, '/preview/producoes');
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.equal(host.inert, undefined); // jsdom: restaurado ao valor anterior, sem simular layout.
+    assert(document.activeElement === abrirBusca, 'Retorno ao botão de busca');
+    await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true })));
+    dialogoBusca = document.querySelector('[role="dialog"]');
+    await preencher(dialogoBusca.querySelector('input'), 'zzzzzz');
+    assert(dialogoBusca.textContent.includes('Nenhuma seção encontrada'));
+    await act(async () => dialogoBusca.querySelector('input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })));
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.equal(document.body.style.overflow, '');
+    await render(ShellPremium, { ...shellProps, papel: 'estoquista' });
+    await clicar(botao('Buscar seção'));
+    dialogoBusca = document.querySelector('[role="dialog"]');
+    assert.equal(dialogoBusca.querySelectorAll('a').length, 5);
+    assert(!dialogoBusca.textContent.includes('Equipe e acessos'));
+    assert(!dialogoBusca.textContent.includes('Receitas e fichas'));
+    await clicar(botao('Fechar busca', dialogoBusca));
+    await render(ShellPremium, { ...shellProps, prefixoRotas: '' });
+    await clicar(botao('Buscar seção'));
+    dialogoBusca = document.querySelector('[role="dialog"]');
+    assert(dialogoBusca.querySelector('a[href="/receitas"]'), 'App não usa prefixo de demo');
+    await clicar(botao('Fechar busca', dialogoBusca));
+    console.log('OK hub: persistência, busca, atalhos, foco, rotas e permissões');
+
+    // Modal sob o conteúdo animado: portal na janela, fotos, Escape e foco.
     await act(async () => root.render(null));
     const origem = document.getElementById('origem'); origem.focus();
     let fechou = 0;
-    await act(async () => root.render(React.createElement(FichaProducaoModal, { receita, insumos: dados.insumos, todasReceitas: dados.todasReceitas, onClose: () => { fechou++; root.render(null); } })));
-    assert.equal(host.querySelectorAll('img').length, 2);
-    assert(host.textContent.includes('Texto geral do preparo.'));
-    assert(host.textContent.includes('Ingredientes'));
-    assert(document.activeElement === botao('Fechar ficha de produção'), 'Foco inicial no fechar');
+    host.style.transform = 'translateY(0)';
+    await act(async () => root.render(React.createElement(ShellPremium, { ...shellProps, children: React.createElement(FichaProducaoModal, { receita, insumos: dados.insumos, todasReceitas: dados.todasReceitas, onClose: () => { fechou++; root.render(null); } }) })));
+    const ficha = document.querySelector('[aria-label="Fechar ficha de produção"]').closest('[role="dialog"]');
+    assert.equal(ficha.parentElement.parentElement, document.body, 'Modal fora do ancestral transformado');
+    assert.equal(host.contains(ficha), false);
+    assert.equal(ficha.querySelectorAll('img').length, 2);
+    assert(ficha.textContent.includes('Texto geral do preparo.'));
+    assert(ficha.textContent.includes('Ingredientes'));
+    assert(document.activeElement === botao('Fechar ficha de produção', ficha), 'Foco inicial no fechar');
     assert.equal(document.body.style.overflow, 'hidden');
-    assert(!host.textContent.includes('R$'), 'Ficha operacional não apresenta custos');
+    assert(!ficha.textContent.includes('R$'), 'Ficha operacional não apresenta custos');
+    await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true })));
+    assert.equal(document.querySelectorAll('[role="dialog"]').length, 1, 'Busca não abre sobre a ficha');
     await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true })));
-    assert(document.activeElement === botao('Ampliar foto'), 'Shift+Tab fica dentro da ficha');
+    assert(document.activeElement === botao('Ampliar foto', ficha), 'Shift+Tab fica dentro da ficha');
     await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })));
-    assert(document.activeElement === botao('Fechar ficha de produção'), 'Tab fica dentro da ficha');
-    await clicar(botao('Ampliar foto'));
-    assert(document.activeElement === botao('Fechar visualização ampliada'), 'Foco no fechar da foto');
+    assert(document.activeElement === botao('Fechar ficha de produção', ficha), 'Tab fica dentro da ficha');
+    await clicar(botao('Ampliar foto', ficha));
+    const foto = document.querySelector('[aria-label="Fechar visualização ampliada"]').closest('[role="dialog"]');
+    assert.equal(foto.parentElement, document.body, 'Foto ampliada também fora da página');
+    assert(document.activeElement === botao('Fechar visualização ampliada', foto), 'Foco no fechar da foto');
     await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
     assert.equal(fechou, 0);
-    assert(document.activeElement === botao('Ampliar foto'), 'Retorno ao botão que ampliou');
+    assert(document.activeElement === botao('Ampliar foto', ficha), 'Retorno ao botão que ampliou');
     await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
     assert.equal(fechou, 1); assert(document.activeElement === origem, 'Retorno ao botão que abriu a ficha'); assert.equal(document.body.style.overflow, '');
     await act(async () => root.unmount());

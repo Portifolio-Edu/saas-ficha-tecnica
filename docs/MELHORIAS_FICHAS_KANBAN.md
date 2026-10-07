@@ -30,9 +30,9 @@ git revert d818e51 # modal da ficha de produção
 
 **Escolha apenas a linha do grupo que deseja desfazer.** Os quatro grupos podem ser revertidos individualmente. O helper de busca tem um commit separado justamente para que desfazer os filtros de receitas não quebre os filtros do kanban.
 
-## Desfazer todas as melhorias de interface
+## Desfazer a primeira rodada de melhorias de interface
 
-Execute a sequência abaixo, do mais recente para o mais antigo:
+Se os ajustes dos prints estiverem aplicados, reverta primeiro essa segunda rodada usando o registro abaixo. Depois execute a sequência abaixo, do mais recente para o mais antigo:
 
 ```bash
 git revert --no-commit d818e51 75c1d80 3fd2535 344a5e1 3a294df
@@ -77,3 +77,35 @@ O código, a documentação e o histórico dos commits estão preparados localme
 Branch: `melhoria/fichas-kanban-polimento`, baseada em `82d80b2` de `integracao`. A URL da prévia será registrada no PR assim que o build terminar; o endereço antigo de `integracao` não contém estas alterações.
 
 A recriação dos commits pela API mudou seus códigos, mas as árvores Git de todos os cinco commits de implementação foram conferidas e são idênticas às árvores locais testadas. A documentação foi atualizada para usar os códigos publicados. O bundle local original continua sendo um backup adicional.
+
+## Segunda rodada — ajustes dos prints (06/10/2026)
+
+Base: `1801f8825c19de80923e3b53cec833f20fb0c9f5`, primeira prévia publicada. Mesma branch de prévia; nenhuma promoção ou merge na versão atual.
+
+| Grupo | Commit publicado | Mudança | Registro |
+|---|---|---|---|
+| 5 — Campos numéricos | `d53e3ce` | Ocultar setas nativas do navegador em campos numéricos | [Detalhes](melhorias/05-campos-numericos.md) |
+| 6 — Posição da ficha | `07de371` | Ficha e foto ampliada renderizadas no body, fora do ancestral animado | [Detalhes](melhorias/06-modal-na-janela.md) |
+| 7 — Busca e lateral | `ead26d9` | Busca das seções permitidas, Ctrl+K/⌘K e lateral recolhível com preferência local | [Detalhes](melhorias/07-busca-e-lateral.md) |
+
+Cada commit acima pode ser revertido sozinho com `git revert CODIGO`. Para voltar toda esta rodada à primeira prévia:
+
+```bash
+git revert --no-commit ead26d9 07de371 d53e3ce
+git restore --source=1801f8825c19de80923e3b53cec833f20fb0c9f5 -- scripts/verificar-fichas-kanban.mjs
+git add scripts/verificar-fichas-kanban.mjs
+git commit -m "revert: voltar à primeira prévia de fichas e kanban"
+```
+
+O script de interação foi atualizado para os portais e para exercitar a busca/lateral; ao retirar essas funcionalidades, volte também o script conforme acima. O histórico documental permanece. Nenhum comando de reversão altera dados do restaurante.
+
+Verificação desta rodada:
+
+- 268 testes em 39 arquivos aprovados; TypeScript e ESLint de todo `src` sem erros/avisos; `git diff --check` aprovado.
+- Interações em DOM simulado: persistência da lateral e botão de reabrir; busca sem acentos; resultados e vazio; rotas com/sem prefixo; permissões do estoquista; Ctrl+K, setas, Enter, Escape, Tab, foco e restauração de rolagem/inert.
+- Ficha montada dentro do shell animado: portal da ficha e foto fora do ancestral transformado; fotos, ingredientes, texto, foco e Escape preservados. Ctrl+K não abre busca sobre a ficha.
+- Reversões individuais e conjuntas executadas em worktree temporária: arquivos dos grupos voltam à base desta rodada. As três árvores Git de implementação publicadas foram conferidas como idênticas às árvores locais testadas.
+- A aparência e as coordenadas não são verificadas pelo DOM simulado. O build remoto e a avaliação visual da nova prévia devem ser conferidos; a proteção de login da Vercel foi mantida.
+
+Prévia: https://saas-ficha-tecnica-git-melhoria-fichas-kanban-8f03bb-voycompany.vercel.app/preview/producoes
+Registro do build e revisão: https://github.com/Portifolio-Edu/saas-ficha-tecnica/pull/3
