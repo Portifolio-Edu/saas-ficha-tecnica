@@ -2,6 +2,8 @@
 
 Solicitação de Edu: uma seção Compras dentro do Estoque, com aprovação pelo gestor ou dono. A repetição de “estoque” na lista de acessos foi interpretada como estoquista, gestor e dono, coerente com os aprovadores mencionados. A cozinha continua solicitando pelo seu aparelho.
 
+Atualização posterior: [delegação configurável ao estoque](17-permissoes-compras.md) mantém esta regra como padrão, mas permite gestor/dono autorizar também o perfil Estoquista. A matriz abaixo registra a configuração padrão da primeira entrega.
+
 ## Fluxo e permissões
 
 | Ação | Estoquista | Gestor | Dono | Cozinha |

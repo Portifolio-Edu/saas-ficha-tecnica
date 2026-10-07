@@ -30,7 +30,7 @@ export function NovaRequisicaoForm({ insumos, solicitar, fechar }: { insumos: In
     finally { setOcupado(false); }
   }
   return <form onSubmit={enviar} aria-label="Nova requisição de compra" className="rounded-xl border border-[var(--linha)] bg-[var(--panel)] p-4 md:p-5 space-y-4">
-    <div><h2 className="font-semibold text-[var(--tinta)]">Nova requisição</h2><p className="mt-1 text-sm text-[var(--tinta-sub)]">O pedido será encaminhado para aprovação do gestor ou dono.</p></div>
+    <div><h2 className="font-semibold text-[var(--tinta)]">Nova requisição</h2><p className="mt-1 text-sm text-[var(--tinta-sub)]">O pedido ficará aguardando aprovação.</p></div>
     <div className="grid gap-4 sm:grid-cols-2">
       <label htmlFor={`${id}-insumo`} className="space-y-1 text-sm text-[var(--tinta-sub)]"><span id={`${id}-insumo-label`}>Insumo cadastrado (opcional)</span><select aria-labelledby={`${id}-insumo-label`} id={`${id}-insumo`} value={insumoId} onChange={e => escolher(e.target.value)} className={campo}><option value="">Outro item</option>{insumos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}</select></label>
       <label htmlFor={`${id}-descricao`} className="space-y-1 text-sm text-[var(--tinta-sub)]"><span>Item da compra</span><input id={`${id}-descricao`} value={descricao} onChange={e => setDescricao(e.target.value)} maxLength={120} required className={campo} readOnly={Boolean(insumoId)} /></label>

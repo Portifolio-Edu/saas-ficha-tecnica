@@ -288,7 +288,7 @@ export function PedidosCozinha({
                   {r.observacao && <div className="text-[14px] text-[var(--tinta)] mt-0.5">{r.observacao}</div>}
                   <div className="text-[13px] text-[var(--tinta-faint)] mt-0.5">
                     {r.responsavel} · {haQuanto(r.criadoEm)}
-                    <span className="block mt-1">{r.status === "aprovado" ? "Compra aprovada pela gestão" : "Aguardando aprovação do gestor ou dono"}</span>
+                    <span className="block mt-1">{r.status === "aprovado" ? "Compra aprovada" : "Aguardando aprovação"}</span>
                   </div>
                 </div>
                 {r.status === "pendente" && <button

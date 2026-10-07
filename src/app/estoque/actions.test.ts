@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ cliente: vi.fn(), resolver: vi.fn(), criar: vi.fn(), revalidar: vi.fn() }));
+const mocks = vi.hoisted(() => ({ cliente: vi.fn(), resolver: vi.fn(), criar: vi.fn(), permissao: vi.fn(), revalidar: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidar }));
 vi.mock("@/lib/dados/cliente", () => ({ getClienteAtual: mocks.cliente }));
 vi.mock("@/lib/dados/requisicoes", () => ({ resolverRequisicoes: mocks.resolver, criarRequisicao: mocks.criar }));
+vi.mock("@/lib/dados/permissoesCompras", () => ({ estoquePodeAprovarCompras: mocks.permissao }));
 import { acaoResolverRequisicoes, acaoSolicitarCompra } from "./actions";
 const id = "aa111111-0000-0000-0000-000000000001";
 const pedido = { descricao: "Arroz", categoria: "secos" as const, insumoId: null, quantidade: 2.5, unidade: "kg" as const, observacao: null };
-beforeEach(() => { vi.resetAllMocks(); mocks.cliente.mockResolvedValue({ id: "restaurante-da-sessao", userId: "user", nomeMembro: "Estoque", papel: "estoquista" }); mocks.resolver.mockResolvedValue(1); });
+beforeEach(() => { vi.resetAllMocks(); mocks.cliente.mockResolvedValue({ id: "restaurante-da-sessao", userId: "user", nomeMembro: "Estoque", papel: "estoquista" }); mocks.resolver.mockResolvedValue(1); mocks.permissao.mockResolvedValue(false); });
 describe("requisição e aprovação de compras", () => {
   it("sem sessão não cria nem resolve compras", async () => {
     mocks.cliente.mockResolvedValue(null);
@@ -17,6 +18,17 @@ describe("requisição e aprovação de compras", () => {
   it("estoquista não aprova nem rejeita, mesmo chamando a ação diretamente", async () => {
     for (const status of ["aprovado", "cancelado"] as const) expect((await acaoResolverRequisicoes([id], status)).ok).toBe(false);
     expect(mocks.resolver).not.toHaveBeenCalled();
+  });
+  it("estoque autorizado pode aprovar e rejeitar, e perde a permissão quando revogada", async () => {
+    mocks.permissao.mockResolvedValue(true);
+    for (const status of ["aprovado", "cancelado"] as const) expect(await acaoResolverRequisicoes([id], status)).toEqual({ ok: true });
+    expect(mocks.permissao).toHaveBeenCalledWith("restaurante-da-sessao");
+    mocks.permissao.mockResolvedValue(false); mocks.resolver.mockClear();
+    expect((await acaoResolverRequisicoes([id], "aprovado")).ok).toBe(false); expect(mocks.resolver).not.toHaveBeenCalled();
+  });
+  it("falha ao consultar permissão não concede aprovação ao estoque", async () => {
+    mocks.permissao.mockRejectedValue(new Error("Não foi possível conferir a permissão."));
+    expect((await acaoResolverRequisicoes([id], "aprovado")).ok).toBe(false); expect(mocks.resolver).not.toHaveBeenCalled();
   });
   it("gestor e dono podem enviar aprovação para o banco", async () => {
     for (const papel of ["gestor", "dono"]) {

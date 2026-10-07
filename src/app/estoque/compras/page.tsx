@@ -1,3 +1,4 @@
+import { estoquePodeAprovarCompras } from "@/lib/dados/permissoesCompras";
 import { exigirAcesso } from "@/lib/auth/acesso";
 import { listarInsumos } from "@/lib/dados/insumos";
 import { listarFornecedores } from "@/lib/dados/fornecedores";
@@ -7,6 +8,6 @@ import { AtualizacaoAutomatica } from "@/components/ficha/AtualizacaoAutomatica"
 import { ComprasClient } from "./ComprasClient";
 export default async function ComprasPage() {
   const cliente = await exigirAcesso("/estoque/compras");
-  const [insumos, fornecedores, requisicoes] = await Promise.all([listarInsumos(), listarFornecedores(), listarRequisicoes()]);
-  return <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Compras"><AtualizacaoAutomatica /><ComprasClient papel={cliente.papel} insumos={insumos} fornecedores={fornecedores} requisicoes={requisicoes} nomeRestaurante={cliente.nomeRestaurante} /></AppShell>;
+  const [insumos, fornecedores, requisicoes, estoquePermitido] = await Promise.all([listarInsumos(), listarFornecedores(), listarRequisicoes(), estoquePodeAprovarCompras(cliente.id)]);
+  return <AppShell nomeRestaurante={cliente.nomeRestaurante} papel={cliente.papel} tituloPagina="Compras"><AtualizacaoAutomatica /><ComprasClient estoquePermitido={estoquePermitido} papel={cliente.papel} insumos={insumos} fornecedores={fornecedores} requisicoes={requisicoes} nomeRestaurante={cliente.nomeRestaurante} /></AppShell>;
 }

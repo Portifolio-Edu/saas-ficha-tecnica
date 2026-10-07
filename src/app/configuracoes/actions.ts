@@ -290,3 +290,18 @@ export async function acaoSalvarAvisos(_estado: EstadoForm, form: FormData): Pro
   revalidatePath("/configuracoes");
   return { ok: Date.now(), sucesso: "Avisos salvos." };
 }
+
+/** A gestão delega/revoga a aprovação para o perfil Estoquista desta casa. */
+export async function acaoSalvarPermissaoCompras(_estado: EstadoForm, form: FormData): Promise<EstadoForm> {
+  const cliente = await exigirGestao();
+  if (typeof cliente === "string") return { erro: cliente };
+  const valor = form.get("estoquePodeAprovar");
+  if (valor !== null && valor !== "on") return { erro: "Permissão de compras inválida." };
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from("clientes").update({ estoque_pode_aprovar_compras: valor === "on" }).eq("id", cliente.id).select("id");
+    if (error || !data?.length) return { erro: "Não foi possível salvar a permissão de compras. Atualize e tente novamente." };
+    revalidatePath("/configuracoes"); revalidatePath("/estoque/compras"); revalidatePath("/cozinha");
+    return { ok: Date.now(), sucesso: "Permissões de compras salvas." };
+  } catch { return { erro: "Não foi possível salvar a permissão de compras. Tente novamente." }; }
+}

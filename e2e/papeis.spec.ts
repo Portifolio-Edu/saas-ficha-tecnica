@@ -300,7 +300,7 @@ test.describe.serial("com login real", () => {
     await gestao.context().close();
 
     await tablet.reload(); await tablet.getByRole("button", { name: "Pedidos" }).click();
-    await expect(tablet.getByText("Compra aprovada pela gestão")).toBeVisible();
+    await expect(tablet.getByText("Compra aprovada", { exact: true })).toBeVisible();
     await expect(tablet.getByRole("button", { name: "Tirar Coentro do pedido" })).toHaveCount(0);
     await celular.reload();
     await expect(celular.getByText(`Horta ${RODADA}: peça até hoje às 23h59`, { exact: false })).toBeVisible();
@@ -337,6 +337,40 @@ test.describe.serial("com login real", () => {
     expect(rejeitado).toMatchObject({ status: "cancelado", aprovado_em: null, resolvido_nome: dono.nome }); expect(rejeitado!.resolvido_em).toBeTruthy();
     await estoque.reload(); await expect(estoque.getByRole("region", { name: "Histórico de compras" }).getByText("Rejeitada / cancelada")).toBeVisible();
     await estoque.context().close(); await donoCompras.context().close();
+  });
+
+  test("gestor delega aprovação ao estoque; dono revoga sem perder o histórico", async ({ browser }) => {
+    const gestao = await novaAba(browser); await entrar(gestao, gestor.usuario, gestor.senha);
+    await gestao.goto("/configuracoes?secao=compras");
+    const permissao = gestao.getByRole("switch", { name: "Permitir que o estoque aprove e rejeite compras", exact: true });
+    await expect(permissao).not.toBeChecked();
+    const estoque = await novaAba(browser); await entrar(estoque, estoquista.usuario, estoquista.senha);
+    await estoque.goto("/configuracoes?secao=compras");
+    await expect(estoque.getByRole("switch", { name: /Permitir que o estoque/ })).toHaveCount(0);
+    await permissao.check(); await gestao.getByRole("button", { name: "Salvar permissões", exact: true }).click();
+    await expect(gestao.getByText("Permissões de compras salvas.", { exact: true })).toBeVisible();
+    const { data: config } = await admin().from("clientes").select("estoque_pode_aprovar_compras,permissao_compras_alterada_nome,permissao_compras_alterada_em").eq("id", clienteId).single();
+    expect(config).toMatchObject({ estoque_pode_aprovar_compras: true, permissao_compras_alterada_nome: gestor.nome }); expect(config!.permissao_compras_alterada_em).toBeTruthy();
+    await estoque.goto("/estoque/compras");
+    await estoque.getByRole("button", { name: "+ Nova requisição", exact: true }).click();
+    await estoque.getByLabel("Item da compra").fill("Reposição autorizada pelo estoque");
+    await estoque.getByRole("button", { name: "Enviar para aprovação", exact: true }).click();
+    await estoque.getByRole("button", { name: "Aprovar Reposição autorizada pelo estoque", exact: true }).click();
+    await expect(estoque.getByRole("region", { name: "Aprovadas para comprar" }).getByText("Reposição autorizada pelo estoque", { exact: true })).toBeVisible();
+    const { data: aprovada } = await admin().from("requisicoes").select("status,aprovado_nome").eq("cliente_id", clienteId).eq("descricao", "Reposição autorizada pelo estoque").single();
+    expect(aprovada).toMatchObject({ status: "aprovado", aprovado_nome: estoquista.nome });
+    const donoConfig = await novaAba(browser); await entrar(donoConfig, dono.email, novaSenhaDono);
+    await donoConfig.goto("/configuracoes?secao=compras");
+    await donoConfig.getByRole("switch", { name: /Permitir que o estoque/ }).uncheck();
+    await donoConfig.getByRole("button", { name: "Salvar permissões", exact: true }).click();
+    await expect(donoConfig.getByText("Permissões de compras salvas.", { exact: true })).toBeVisible();
+    await estoque.reload();
+    await expect(estoque.getByRole("button", { name: /^Aprovar / })).toHaveCount(0);
+    await estoque.getByRole("button", { name: "Marcar Reposição autorizada pelo estoque como comprado", exact: true }).click();
+    await expect(estoque.getByRole("region", { name: "Histórico de compras" }).getByText(`Aprovado por ${estoquista.nome}`, { exact: false })).toBeVisible();
+    const { data: revogada } = await admin().from("clientes").select("estoque_pode_aprovar_compras,permissao_compras_alterada_nome").eq("id", clienteId).single();
+    expect(revogada).toMatchObject({ estoque_pode_aprovar_compras: false, permissao_compras_alterada_nome: dono.nome });
+    await gestao.context().close(); await estoque.context().close(); await donoConfig.context().close();
   });
 
   // LISTA DE PRODUÇÃO (2026-09-26) + menu lateral da cozinha.

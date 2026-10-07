@@ -45,11 +45,13 @@ export function PedidosDaCozinha({
   nomeRestaurante,
   agoraInicial,
   resolver,
+  podeCancelar = false,
 }: {
   requisicoes: Requisicao[];
   fornecedores: Fornecedor[];
   nomeRestaurante: string;
   agoraInicial?: Agora;
+  podeCancelar?: boolean;
   resolver: (ids: string[], status: StatusRequisicao) => Promise<Resultado>;
 }) {
   const { mostrarErro, mostrarSucesso } = useToast();
@@ -66,12 +68,14 @@ export function PedidosDaCozinha({
   const agenda = useMemo(() => fornecedores.map(agendaDoFornecedor), [fornecedores]);
   const grupos = CATEGORIAS_PEDIDO.map((c) => ({ ...c, itens: pendentes.filter((r) => r.categoria === c.id) })).filter((g) => g.itens.length > 0);
 
-  const marcar = async (ids: string[], chave: string, texto: string) => {
+  const marcar = async (ids: string[], chave: string, texto: string, status: StatusRequisicao = "comprado") => {
+    if (ocupado) return;
     setOcupado(chave);
-    const r = await resolver(ids, "comprado");
-    setOcupado(null);
-    if (!r.ok) return mostrarErro(r.erro);
-    mostrarSucesso(texto);
+    try {
+      const r = await resolver(ids, status);
+      if (!r.ok) mostrarErro(r.erro); else mostrarSucesso(texto);
+    } catch { mostrarErro("Não foi possível registrar a decisão. Atualize Compras e tente novamente."); }
+    finally { setOcupado(null); }
   };
 
   return (
@@ -83,7 +87,7 @@ export function PedidosDaCozinha({
             Compras aprovadas{pendentes.length > 0 ? ` · ${pendentes.length}` : ""}
           </h2>
           <p className="text-[13px] text-[var(--tinta-sub)] mt-0.5">
-            Itens autorizados pelo gestor ou dono. O prazo vem da agenda cadastrada em Estoque → Fornecedores.
+            Itens autorizados conforme as permissões de Compras. O prazo vem da agenda cadastrada em Estoque → Fornecedores.
           </p>
         </div>
       </div>
@@ -145,6 +149,7 @@ export function PedidosDaCozinha({
                           {r.responsavel}{r.aprovadoNome ? ` · Aprovado por ${r.aprovadoNome}` : ""} · {dataBR(r.criadoEm, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
+                      <div className="flex shrink-0 flex-wrap gap-2">
                       <button
                         onClick={() => marcar([r.id], r.id, `${r.descricao}: comprado.`)}
                         disabled={ocupado !== null}
@@ -154,6 +159,8 @@ export function PedidosDaCozinha({
                       >
                         Comprado
                       </button>
+                      {podeCancelar && <button onClick={() => marcar([r.id], r.id, `${r.descricao}: compra cancelada.`, "cancelado")} disabled={ocupado !== null} aria-label={`Cancelar compra de ${r.descricao}`} className="min-h-11 md:min-h-9 px-3 rounded-lg border text-[13px] font-medium hover:bg-[var(--panel-hover)] disabled:opacity-60" style={{ borderColor: "var(--linha-forte)" }}>Cancelar</button>}
+                      </div>
                     </li>
                   ))}
                 </ul>

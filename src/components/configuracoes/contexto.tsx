@@ -27,6 +27,7 @@ export interface AcoesConfiguracoes {
   trocarSenha: AcaoForm;
   sairDeTodos: () => Promise<void>;
   salvarAvisos: AcaoForm;
+  salvarPermissaoCompras: AcaoForm;
 }
 
 export interface ContextoConfiguracoes {
