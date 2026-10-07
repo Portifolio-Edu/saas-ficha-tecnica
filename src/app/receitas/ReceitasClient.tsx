@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronRight, Download, ClipboardList } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, Download, ClipboardList, Search } from "lucide-react";
 import { Card } from "@/components/ficha/Card";
 import { Badge } from "@/components/ficha/Badge";
 import { nums } from "@/components/ficha/tema";
@@ -21,7 +21,12 @@ import { useToast } from "@/components/ficha/Toast";
 import { acaoExcluirReceita } from "./actions";
 import { formatBRL, formatNumero, formatQtd } from "@/components/charts/format";
 import { dataBR } from "@/lib/formato";
+import { filtrarReceitas } from "@/components/receitas/filtros";
+import { FotoReceitaMiniatura } from "@/components/receitas/FotoReceitaMiniatura";
 
+// POLIMENTO fichas-kanban (2026-10-06): busca, categoria, margem baixa e miniatura.
+// A ficha completa expandida e os dois PDFs continuam no mesmo lugar.
+// Reversão: docs/melhorias/02-localizacao-receitas.md.
 export function ReceitasClient({
   receitas,
   insumos,
@@ -43,11 +48,27 @@ export function ReceitasClient({
   const [gerandoPdf, setGerandoPdf] = useState<string | null>(null);
   const [fichaProducao, setFichaProducao] = useState<Receita | null>(null);
   const { mostrarErro } = useToast();
+  const [busca, setBusca] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [soAbaixoDoAlvo, setSoAbaixoDoAlvo] = useState(false);
 
-  const contexto = construirContexto(insumos, [...receitas, ...preparos], processamentos);
+  const contexto = useMemo(() => construirContexto(insumos, [...receitas, ...preparos], processamentos), [insumos, receitas, preparos, processamentos]);
   const lotesProteina = processamentos.map(paraProcessamentoCalc);
   const insumoPorId = new Map(insumos.map((i) => [i.id, i]));
   const preparoPorId = new Map(preparos.map((p) => [p.id, p]));
+
+  const dadosReceitas = useMemo(() => receitas.map((receita) => {
+    const cmv = calcularCmvReceita(receita.id, contexto);
+    const custoPorPorcao = calcularCustoPorPorcao(receita.id, contexto);
+    const cmvPct = receita.precoVenda ? (custoPorPorcao / receita.precoVenda) * 100 : 0;
+    const margemPct = receita.precoVenda ? ((receita.precoVenda - custoPorPorcao) / receita.precoVenda) * 100 : 0;
+    const margemAlvo = receita.margemAlvo ?? margemAlvoCliente;
+    return { receita, cmv, custoPorPorcao, cmvPct, margemPct, margemAlvo, abaixoDoAlvo: margemPct / 100 < margemAlvo, precoSugerido: calcularPrecoSugerido(custoPorPorcao, receita.margemAlvo, margemAlvoCliente) };
+  }), [receitas, contexto, margemAlvoCliente]);
+  const categorias = [...new Set(receitas.map((p) => p.categoria || "Sem categoria"))].sort();
+  const visiveis = filtrarReceitas(dadosReceitas, { busca, categoria, abaixoDoAlvo: soAbaixoDoAlvo, margemAlvoCliente });
+  const temFiltros = !!(busca || categoria || soAbaixoDoAlvo);
+  const limparFiltros = () => { setBusca(""); setCategoria(""); setSoAbaixoDoAlvo(false); };
 
   const excluirComConfirmacao = async (receita: Receita) => {
     if (!window.confirm(`Excluir "${receita.nomePrato}"? Isso não pode ser desfeito.`)) return;
@@ -139,13 +160,13 @@ export function ReceitasClient({
   return (
     <div className="max-w-5xl space-y-3">
       <div className="flex items-center justify-between mb-1">
-        <p className="text-[12.5px]" style={{ color: "var(--sub)" }}>{receitas.length} prato{receitas.length !== 1 ? "s" : ""} cadastrado{receitas.length !== 1 ? "s" : ""}.</p>
+        <p className="text-[13px]" style={{ color: "var(--sub)" }} role="status">{visiveis.length} de {receitas.length} pratos{temFiltros ? " encontrados" : " cadastrados"}.</p>
         <button
           onClick={() => {
             setEditando(null);
             setShowNova(!showNova);
           }}
-          className="text-[12.5px] font-medium px-3 py-1.5 rounded-lg"
+          className="text-[14px] font-medium px-3.5 min-h-11 rounded-lg"
           style={{ background: showNova ? "var(--bg)" : "var(--accent)", color: showNova ? "var(--text)" : "var(--accent-contrast, #fff)", border: `1px solid ${showNova ? "var(--border-strong)" : "var(--accent)"}` }}
           disabled={insumos.length === 0}
           title={insumos.length === 0 ? "Cadastre um insumo primeiro" : undefined}
@@ -154,28 +175,37 @@ export function ReceitasClient({
         </button>
       </div>
 
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-end" aria-label="Filtros de receitas">
+        <label className="flex-1 min-w-0 flex items-center gap-2 px-3 min-h-11 rounded-lg border" style={{ borderColor: "var(--border-strong)", background: "var(--panel)" }}>
+          <Search size={17} style={{ color: "var(--sub)" }} aria-hidden />
+          <input aria-label="Buscar prato ou categoria" value={busca} onChange={(e) => setBusca(e.target.value)} disabled={!!editando} placeholder="Buscar prato ou categoria" className="w-full min-w-0 bg-transparent outline-none text-[14px] disabled:opacity-50" />
+        </label>
+        <label className="flex flex-col gap-1 text-[12px]" style={{ color: "var(--sub)" }}>Categoria
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)} disabled={!!editando} className="min-h-11 px-3 rounded-lg border text-[14px] disabled:opacity-50" style={{ background: "var(--panel)", color: "var(--text)", borderColor: "var(--border-strong)" }}>
+            <option value="">Todas as categorias</option>{categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+        <label className="flex gap-2 items-center min-h-11 text-[14px] cursor-pointer"><input type="checkbox" checked={soAbaixoDoAlvo} onChange={(e) => setSoAbaixoDoAlvo(e.target.checked)} disabled={!!editando} className="w-4 h-4" />Abaixo da meta</label>
+        {temFiltros && <button onClick={limparFiltros} disabled={!!editando} className="min-h-11 px-3 text-[14px] rounded-lg border disabled:opacity-50" style={{ borderColor: "var(--border-strong)" }}>Limpar filtros</button>}
+      </div>
+      {editando && <p className="text-[13px]" style={{ color: "var(--sub)" }}>Conclua ou cancele a edição para alterar os filtros.</p>}
+
       {showNova && (
         <Card className="mb-3">
           <ReceitaForm insumos={insumos} preparos={preparos} onCancel={() => setShowNova(false)} onSaved={() => setShowNova(false)} />
         </Card>
       )}
 
-      {receitas.map((p) => {
+      {visiveis.map(({ receita: p, cmv, custoPorPorcao, cmvPct, margemPct, margemAlvo, abaixoDoAlvo, precoSugerido }) => {
         const aberto = expandido === p.id;
         const editandoEsteAqui = editando?.id === p.id;
-        const cmv = calcularCmvReceita(p.id, contexto);
-        const custoPorPorcao = calcularCustoPorPorcao(p.id, contexto);
-        const cmvPct = p.precoVenda ? (custoPorPorcao / p.precoVenda) * 100 : 0;
-        const margemPct = p.precoVenda ? ((p.precoVenda - custoPorPorcao) / p.precoVenda) * 100 : 0;
-        const margemAlvo = p.margemAlvo ?? margemAlvoCliente;
-        const abaixoDoAlvo = margemPct / 100 < margemAlvo;
-        const precoSugerido = calcularPrecoSugerido(custoPorPorcao, p.margemAlvo, margemAlvoCliente);
 
         return (
           <Card key={p.id}>
             <button className="w-full flex flex-wrap md:flex-nowrap items-center justify-between gap-x-3 gap-y-1 px-4 md:px-5 py-4 text-left" onClick={() => setExpandido(aberto ? null : p.id)} aria-expanded={aberto}>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                 {aberto ? <ChevronDown size={15} style={{ color: "var(--faint)" }} /> : <ChevronRight size={15} style={{ color: "var(--faint)" }} />}
+                <FotoReceitaMiniatura key={`${p.id}-${p.fotoUrl}`} url={p.fotoUrl} />
                 <span className="text-[14px] font-semibold">{p.nomePrato}</span>
                 {abaixoDoAlvo && <Badge acao>margem baixa</Badge>}
               </div>
@@ -308,6 +338,8 @@ export function ReceitasClient({
           </Card>
         );
       })}
+
+      {receitas.length > 0 && visiveis.length === 0 && <div className="py-8 text-center text-[14px]" style={{ color: "var(--sub)" }}><p>Nenhum prato corresponde aos filtros.</p><button onClick={limparFiltros} className="mt-3 min-h-11 px-4 rounded-lg border" style={{ borderColor: "var(--border-strong)" }}>Mostrar todos os pratos</button></div>}
 
       {receitas.length === 0 && !showNova && (
         <div className="text-[12.5px] py-6 text-center" style={{ color: "var(--faint)" }}>
