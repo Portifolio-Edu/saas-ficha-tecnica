@@ -34,7 +34,7 @@ export function urlFaturaSegura(valor: unknown): string | null {
 
 export interface AssinaturaAsaas { id: string; customer: string; externalReference: string; status: string; deleted?: boolean; value: number; cycle: string }
 export interface PagamentoAsaas { id: string; subscription: string; customer: string; status: string; dueDate: string; invoiceUrl?: string; value: number; deleted?: boolean }
-export type EstadoAssinatura = "pendente" | "ativa" | "atrasada" | "cancelada";
+export type EstadoAssinatura = "pendente" | "ativa" | "atrasada" | "inativa" | "cancelada";
 
 export function diaDaCobranca(data = new Date()): string {
   return formatadorData({ timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }, "en-CA").format(data);
@@ -42,7 +42,8 @@ export function diaDaCobranca(data = new Date()): string {
 
 /** Estado atual, sem confiar na ordem nem no conteúdo financeiro dos webhooks. */
 export function resumoAssinatura(assinatura: AssinaturaAsaas, pagamentos: PagamentoAsaas[], hoje = diaDaCobranca()): { estado: EstadoAssinatura; faturaUrl: string | null } {
-  if (assinatura.deleted || assinatura.status !== "ACTIVE") return { estado: "cancelada", faturaUrl: null };
+  if (assinatura.deleted) return { estado: "cancelada", faturaUrl: null };
+  if (assinatura.status !== "ACTIVE") return { estado: "inativa", faturaUrl: null };
   const validos = pagamentos.filter(p => !p.deleted && p.subscription === assinatura.id && p.customer === assinatura.customer);
   const vencidos = validos.filter(p => p.dueDate <= hoje).sort((a, b) => b.dueDate.localeCompare(a.dueDate));
   const ultimo = vencidos[0];

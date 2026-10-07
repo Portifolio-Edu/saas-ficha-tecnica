@@ -6,7 +6,7 @@ import { useConfiguracoes } from "./contexto";
 import { formatBRL } from "@/components/charts/format";
 
 interface Situacao { disponivel: boolean; teste?: boolean; valorCentavos?: number; estado?: string | null; faturaUrl?: string | null; erro?: string }
-const ROTULOS: Record<string, string> = { criando: "Solicitação em processamento", pendente: "Aguardando pagamento", ativa: "Pagamento confirmado", atrasada: "Pagamento atrasado", cancelada: "Recorrência cancelada" };
+const ROTULOS: Record<string, string> = { criando: "Solicitação em processamento", pendente: "Aguardando pagamento", ativa: "Pagamento confirmado", atrasada: "Pagamento atrasado", inativa: "Recorrência suspensa", cancelada: "Recorrência cancelada" };
 
 export function CobrancaPlano() {
   const { demo } = useConfiguracoes();

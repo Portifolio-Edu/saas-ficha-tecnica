@@ -54,6 +54,13 @@ do $$ begin
  insert into resultado values ('não exclui conta com recorrência','bloqueado','falhou');
  exception when raise_exception then insert into resultado values ('não exclui conta com recorrência','bloqueado','bloqueado'); end;
 end $$;
+select public.conciliar_assinatura_saas('f7a00000-2222-0000-0000-000000000001','sub_p','cus_a','inativa',null,'2026-10-10','evt_inativa');
+insert into resultado select 'suspensão não é cancelamento definitivo','inativa',estado from public.assinaturas_saas where id='f7a00000-2222-0000-0000-000000000001';
+do $$ begin
+ begin delete from public.clientes where id='f7a00000-0000-0000-0000-000000000001';
+ insert into resultado values ('suspensão não libera exclusão de conta','bloqueado','falhou');
+ exception when raise_exception then insert into resultado values ('suspensão não libera exclusão de conta','bloqueado','bloqueado'); end;
+end $$;
 select public.conciliar_assinatura_saas('f7a00000-1111-0000-0000-000000000001','sub_s','cus_a','cancelada',null,'2026-10-11','evt_cs');
 select public.conciliar_assinatura_saas('f7a00000-2222-0000-0000-000000000001','sub_p','cus_a','cancelada',null,'2026-10-11','evt_cp');
 insert into public.assinaturas_saas(id,cliente_id,ambiente,valor_centavos,criado_em) values ('f7a00000-3333-0000-0000-000000000001','f7a00000-0000-0000-0000-000000000001','producao',9900,now()+interval '1 second');

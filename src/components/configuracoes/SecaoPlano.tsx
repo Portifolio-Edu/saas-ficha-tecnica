@@ -14,6 +14,8 @@ const STATUS: Record<string, { rotulo: string; cor: string }> = {
   ativa: { rotulo: "Ativa", cor: "var(--sucesso)" },
   atrasada: { rotulo: "Pagamento atrasado", cor: "var(--aviso)" },
   cancelada: { rotulo: "Cancelada", cor: "var(--sinal)" },
+  inativa: { rotulo: "Suspensa", cor: "var(--aviso)" },
+  pendente: { rotulo: "Aguardando pagamento", cor: "var(--aviso)" },
 };
 
 export function SecaoPlano() {

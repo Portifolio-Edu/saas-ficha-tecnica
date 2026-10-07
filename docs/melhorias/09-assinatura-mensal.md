@@ -13,7 +13,7 @@ Há emissão recorrente de faturas, não uma implementação própria de débito
 - Webhook autenticado por token próprio `asaas-access-token`. Consulta financeira canônica, sem ativar plano com base em callback, criação da assinatura ou conteúdo do evento.
 - RPC transacional com idempotência por evento, bloqueio da linha e proteção contra conciliação antiga. Eventos de uma recorrência cancelada não alteram uma nova assinatura.
 - Link de fatura restrito a HTTPS em `asaas.com` e subdomínios. Sem dados pessoais ou chaves nos logs de falha.
-- Cancelamento explícito encerra recorrência e pendentes no provedor; histórico local permanece. Nova contratação é permitida após cancelamento. Exclusão da conta verifica assinatura antes de apagar fotos e tem proteção adicional no banco.
+- Cancelamento explícito encerra recorrência e pendentes no provedor; histórico local permanece. Suspensão é identificada separadamente e não libera nova contratação ou exclusão da conta. Nova contratação é permitida após cancelamento definitivo. Exclusão da conta verifica assinatura antes de apagar fotos e tem proteção adicional no banco.
 - Exportação da conta inclui situação e valor da assinatura. Compatível com implantação sem a nova tabela enquanto a cobrança está desligada.
 
 ## Ativação necessária, ainda não realizada
@@ -27,7 +27,7 @@ Há emissão recorrente de faturas, não uma implementação própria de débito
 
 ## Validação executada
 
-Testes unitários do adaptador, permissões da API, webhook, reserva e conciliação. 16 verificações SQL da migration em PostgreSQL WASM (PGlite) com base mínima. O teste está em `supabase/testes/assinatura_saas.sql` e também roda no CI existente do Supabase. A execução isolada não confirma a cadeia completa nem o banco de produção. Tipos, lint e regressões do projeto são registrados em `docs/PRONTIDAO_VENDA.md`.
+Testes unitários do adaptador, permissões da API, webhook, reserva e conciliação. 18 verificações SQL da migration em PostgreSQL WASM (PGlite) com base mínima, incluindo suspensão. O teste está em `supabase/testes/assinatura_saas.sql` e também roda no CI existente do Supabase. A execução isolada não confirma a cadeia completa nem o banco de produção. Tipos, lint e regressões do projeto são registrados em `docs/PRONTIDAO_VENDA.md`.
 
 ## Reversão
 

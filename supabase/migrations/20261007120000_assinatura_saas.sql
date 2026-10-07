@@ -6,7 +6,7 @@ create table public.assinaturas_saas (
   valor_centavos bigint not null check (valor_centavos > 0),
   customer_id text,
   subscription_id text,
-  estado text not null default 'criando' check (estado in ('criando','pendente','ativa','atrasada','cancelada')),
+  estado text not null default 'criando' check (estado in ('criando','pendente','ativa','atrasada','inativa','cancelada')),
   fatura_url text,
   sincronizado_em timestamptz,
   criado_em timestamptz not null default now(),
@@ -37,7 +37,7 @@ declare a public.assinaturas_saas;
 begin
   select * into a from public.assinaturas_saas where id = p_id for update;
   if not found then raise exception 'Assinatura desconhecida'; end if;
-  if p_estado not in ('pendente','ativa','atrasada','cancelada') then raise exception 'Estado inválido'; end if;
+  if p_estado not in ('pendente','ativa','atrasada','inativa','cancelada') then raise exception 'Estado inválido'; end if;
   if (a.subscription_id is not null and a.subscription_id <> p_subscription)
      or (a.customer_id is not null and a.customer_id <> p_customer) then
     raise exception 'Vínculo de cobrança inválido';

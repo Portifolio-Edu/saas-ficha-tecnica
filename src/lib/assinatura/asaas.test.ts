@@ -43,6 +43,10 @@ describe("conciliação financeira", () => {
   it("usa o dia do Brasil perto da virada UTC", () => {
     expect(diaDaCobranca(new Date("2026-10-08T01:00:00Z"))).toBe("2026-10-07");
   });
+  it("distingue suspensão de cancelamento definitivo", () => {
+    expect(resumoAssinatura({ ...assinatura, status: "INACTIVE" }, [pagamento], "2026-10-07")).toEqual({ estado: "inativa", faturaUrl: null });
+    expect(resumoAssinatura({ ...assinatura, status: "INACTIVE", deleted: true }, [], "2026-10-07").estado).toBe("cancelada");
+  });
 });
 
 describe("adaptador Asaas", () => {
