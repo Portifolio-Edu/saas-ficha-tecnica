@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getClienteAtual } from "@/lib/dados/cliente";
 import { configAsaas } from "@/lib/assinatura/asaas";
-import { atualizarAssinatura, exigirCobranca, iniciarAssinatura, lerAssinatura } from "@/lib/assinatura/servico";
+import { atualizarAssinatura, exigirCobranca, iniciarAssinatura, lerAssinatura, consultarOferta } from "@/lib/assinatura/servico";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,8 +13,8 @@ export async function GET() {
   try {
     const config = configAsaas();
     if (!config) return NextResponse.json({ disponivel: false });
-    const registro = await lerAssinatura(cliente.id, config);
-    return NextResponse.json({ disponivel: true, teste: config.ambiente === "sandbox", valorCentavos: registro && registro.estado !== "cancelada" ? Number(registro.valor_centavos) : config.valorCentavos, estado: registro?.estado ?? null, faturaUrl: registro?.fatura_url ?? null }, { headers: { "Cache-Control": "no-store" } });
+    const [registro, oferta] = await Promise.all([lerAssinatura(cliente.id, config), consultarOferta(cliente.id, config)]);
+    return NextResponse.json({ oferta, disponivel: true, teste: config.ambiente === "sandbox", valorCentavos: registro && registro.estado !== "cancelada" ? Number(registro.valor_centavos) : Number(oferta.valor_centavos), estado: registro?.estado ?? null, faturaUrl: registro?.fatura_url ?? null }, { headers: { "Cache-Control": "no-store" } });
   } catch { return NextResponse.json({ erro: "Não foi possível consultar a assinatura. Fale com o suporte." }, { status: 503 }); }
 }
 
@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
   if (corpo.acao === "cancelar" && corpo.confirmar !== true) return NextResponse.json({ erro: "Confirme o cancelamento da recorrência." }, { status: 400 });
   try {
     const config = exigirCobranca();
-    if (corpo.acao === "assinar" && corpo.valorAceitoCentavos !== config.valorCentavos) return NextResponse.json({ erro: "O preço mudou. Reabra a seção Plano para conferir antes de assinar." }, { status: 409 });
-    if (corpo.acao === "assinar") await iniciarAssinatura(cliente, config);
+    if (corpo.acao === "assinar" && (typeof corpo.valorAceitoCentavos !== "number" || !Number.isSafeInteger(corpo.valorAceitoCentavos))) return NextResponse.json({ erro: "O preço mudou. Reabra a seção Plano para conferir antes de assinar." }, { status: 409 });
+    if (corpo.acao === "assinar") await iniciarAssinatura(cliente, config, corpo.valorAceitoCentavos as number);
     else await atualizarAssinatura(cliente.id, config, corpo.acao === "cancelar");
     return NextResponse.json({ ok: true });
   } catch (e) {

@@ -16,13 +16,15 @@ try {
       select (current_setting('request.jwt.claims',true)::jsonb ->> 'sub')::uuid
     $$;
     create table auth.users(id uuid primary key,email text);
-    create table public.clientes(id uuid primary key,user_id uuid references auth.users(id),nome text,nome_restaurante text,telefone text,plano text default 'trial',status_assinatura text default 'trial');
+    create table public.clientes(id uuid primary key,user_id uuid references auth.users(id),nome text,nome_restaurante text,telefone text,plano text default 'trial',status_assinatura text default 'trial',criado_em timestamptz not null default now());
     grant select on public.clientes to authenticated;
     grant all on public.clientes to service_role;
   `);
   await db.exec(await readFile(new URL("../supabase/migrations/20261007120000_assinatura_saas.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../supabase/migrations/20261007150000_oferta_fundadores.sql", import.meta.url), "utf8"));
   const resultados = await db.exec(await readFile(new URL("../supabase/testes/assinatura_saas.sql", import.meta.url), "utf8"));
-  const linhas = resultados.flatMap(r => r.rows).filter(r => r.status);
+  const oferta = await db.exec(await readFile(new URL("../supabase/testes/oferta_fundadores.sql", import.meta.url), "utf8"));
+  const linhas = [...resultados,...oferta].flatMap(r => r.rows).filter(r => r.status);
   for (const linha of linhas) console.log(`${linha.status}: ${linha.teste}`);
   if (!linhas.length || linhas.some(l => l.status !== "OK")) process.exitCode = 1;
-} finally { await db.close(); }
+} catch (erro) { console.error(erro.message); console.error(erro.detail ?? ""); console.error(erro.where ?? ""); process.exitCode = 1; } finally { await db.close(); }

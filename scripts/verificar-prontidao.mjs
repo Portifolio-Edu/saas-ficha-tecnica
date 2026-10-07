@@ -22,7 +22,7 @@ if (cobrancaHabilitada) {
     { item: "Ambiente Asaas explícito", ok: ["sandbox","producao"].includes(env.ASAAS_AMBIENTE) },
     { item: "Chave Asaas do ambiente", ok: (env.ASAAS_API_KEY ?? "").startsWith(env.ASAAS_AMBIENTE === "producao" ? "$aact_prod_" : "$aact_hmlg_") },
     { item: "Token próprio do webhook", ok: (env.ASAAS_WEBHOOK_TOKEN ?? "").length >= 32 && (env.ASAAS_WEBHOOK_TOKEN ?? "").length <= 255 && !/\s/.test(env.ASAAS_WEBHOOK_TOKEN ?? "") && env.ASAAS_WEBHOOK_TOKEN !== env.ASAAS_API_KEY },
-    { item: "Preço mensal inteiro em centavos", ok: /^\d+$/.test(env.ASAAS_PLANO_MENSAL_CENTAVOS ?? "") && Number.isSafeInteger(Number(env.ASAAS_PLANO_MENSAL_CENTAVOS)) && Number(env.ASAAS_PLANO_MENSAL_CENTAVOS) > 0 },
+    { item: "Preço mensal aprovado (R$ 297)", ok: /^\d+$/.test(env.ASAAS_PLANO_MENSAL_CENTAVOS ?? "") && Number.isSafeInteger(Number(env.ASAAS_PLANO_MENSAL_CENTAVOS)) && Number(env.ASAAS_PLANO_MENSAL_CENTAVOS) === 29700 },
     { item: "Cobrança real fora de prévias", ok: env.ASAAS_AMBIENTE !== "producao" || !env.VERCEL_ENV || env.VERCEL_ENV === "production" },
   );
 }

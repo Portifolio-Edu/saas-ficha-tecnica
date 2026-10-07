@@ -36,3 +36,7 @@ Reverter o commit `feat: preparar assinatura mensal com conciliação segura`. A
 A migration é aditiva. Após reverter o código, manter tabelas/dados para conciliação e auditoria; não fazer `DROP` como reversão automática. Desligar flag não remove a proteção contra exclusão de conta com recorrência.
 
 Referências técnicas primárias: [assinaturas](https://docs.asaas.com/reference/criar-nova-assinatura), [webhooks](https://docs.asaas.com/docs/webhook-para-cobrancas), [remoção da recorrência](https://docs.asaas.com/reference/remover-assinatura).
+
+### Atualização em 07/10/2026 — oferta escolhida
+
+Edu definiu 7 dias grátis, R$ 297 mensais e R$ 197 para os 10 fundadores enquanto mantiverem a assinatura, com confirmação no primeiro pagamento. A revisão [15](15-oferta-fundadores.md) substitui o valor livre de configuração por essa oferta e define o primeiro vencimento e a reserva transacional. A regra de bloqueio de acesso continua pendente.

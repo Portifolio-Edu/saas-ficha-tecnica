@@ -3,9 +3,10 @@ import { getConfiguracoes } from "@/lib/dados/configuracoes";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { cnpjValido } from "@/lib/empresa/empresa";
 import { ClienteAsaas, configAsaas, resumoAssinatura, type ConfigAsaas, type AssinaturaAsaas } from "./asaas";
+import { OFERTA_SAAS, type OfertaSaas } from "./oferta";
 
-interface Registro { id: string; cliente_id: string; ambiente: string; valor_centavos: number; customer_id: string | null; subscription_id: string | null; estado: string; fatura_url: string | null }
-const COLUNAS = "id, cliente_id, ambiente, valor_centavos, customer_id, subscription_id, estado, fatura_url";
+interface Registro { id: string; cliente_id: string; ambiente: string; valor_centavos: number; customer_id: string | null; subscription_id: string | null; estado: string; fatura_url: string | null; primeiro_vencimento: string; fundador_confirmado?: boolean }
+const COLUNAS = "id, cliente_id, ambiente, valor_centavos, customer_id, subscription_id, estado, fatura_url, primeiro_vencimento, fundador_confirmado";
 const erroBanco = () => new Error("Não foi possível consultar a assinatura. Fale com o suporte.");
 
 export async function lerAssinatura(clienteId: string, config: ConfigAsaas): Promise<Registro | null> {
@@ -14,22 +15,29 @@ export async function lerAssinatura(clienteId: string, config: ConfigAsaas): Pro
   return data as Registro | null;
 }
 
+export async function consultarOferta(clienteId: string, config: ConfigAsaas): Promise<OfertaSaas> {
+  const { data, error } = await criarClienteAdmin().rpc("consultar_oferta_saas", { p_cliente: clienteId, p_ambiente: config.ambiente });
+  if (error || !Array.isArray(data) || !data[0]) throw erroBanco();
+  return data[0] as OfertaSaas;
+}
+
 async function conciliar(config: ConfigAsaas, registro: Registro, assinatura: AssinaturaAsaas, inicio: string, evento: string | null = null) {
   if (assinatura.externalReference !== registro.id || (registro.customer_id && assinatura.customer !== registro.customer_id) || assinatura.cycle !== "MONTHLY" || Math.round(assinatura.value * 100) !== Number(registro.valor_centavos)) {
     throw new Error("A cobrança precisa ser conferida pelo suporte.");
   }
   const api = new ClienteAsaas(config);
-  const pagamentos = assinatura.deleted ? [] : await api.listarPagamentos(assinatura.id);
+  const pagamentos = assinatura.deleted && Number(registro.valor_centavos) !== OFERTA_SAAS.fundadorCentavos ? [] : await api.listarPagamentos(assinatura.id);
   const resumo = resumoAssinatura(assinatura, pagamentos);
-  const { error } = await criarClienteAdmin().rpc("conciliar_assinatura_saas", {
+  const { error } = await criarClienteAdmin().rpc("conciliar_oferta_saas", {
     p_id: registro.id, p_subscription: assinatura.id, p_customer: assinatura.customer,
     p_estado: resumo.estado, p_fatura_url: resumo.faturaUrl, p_inicio: inicio, p_evento: evento,
+    p_pagamento_confirmado: pagamentos.some(p => !p.deleted && p.subscription === assinatura.id && p.customer === assinatura.customer && Math.round(p.value * 100) === Number(registro.valor_centavos) && ["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(p.status)),
   });
   if (error) throw erroBanco();
   return resumo;
 }
 
-export async function iniciarAssinatura(cliente: ClienteAtual, config: ConfigAsaas) {
+export async function iniciarAssinatura(cliente: ClienteAtual, config: ConfigAsaas, valorAceitoCentavos: number) {
   const atual = await lerAssinatura(cliente.id, config);
   if (atual && atual.estado !== "cancelada") throw new Error("Já existe uma solicitação. Use Atualizar situação para conferir, sem criar outra cobrança.");
   const dados = await getConfiguracoes(cliente);
@@ -38,11 +46,12 @@ export async function iniciarAssinatura(cliente: ClienteAtual, config: ConfigAsa
   }
   // A reserva única é gravada ANTES de qualquer POST financeiro. Mesmo um timeout
   // não permite repetir a criação; recuperação usa GET por externalReference.
-  const { data, error } = await criarClienteAdmin().from("assinaturas_saas").insert({
-    cliente_id: cliente.id, ambiente: config.ambiente, valor_centavos: config.valorCentavos,
-  }).select(COLUNAS).single();
-  if (error || !data) throw new Error("Uma solicitação já está sendo processada. Atualize a situação.");
-  const registro = data as Registro;
+  const { data, error } = await criarClienteAdmin().rpc("reservar_assinatura_saas", {
+    p_cliente: cliente.id, p_ambiente: config.ambiente, p_valor_aceito: valorAceitoCentavos,
+  });
+  if (error || !data) throw new Error("A oferta mudou ou já existe uma solicitação. Reabra Plano e atualize a situação antes de assinar.");
+  const registro = (Array.isArray(data) && data.length === 1 ? data[0] : data) as Registro;
+  if (!registro.id || registro.cliente_id !== cliente.id || registro.ambiente !== config.ambiente || Number(registro.valor_centavos) !== valorAceitoCentavos || !/^\d{4}-\d{2}-\d{2}$/.test(registro.primeiro_vencimento ?? "")) throw erroBanco();
   const api = new ClienteAsaas(config);
   const pagador = await api.criarCliente({ name: dados.empresa.razaoSocial, cpfCnpj: dados.empresa.cnpj, email: dados.conta.email, externalReference: registro.id });
   if (!pagador.id?.startsWith("cus_")) throw new Error("Resposta de cobrança inválida.");
@@ -50,7 +59,7 @@ export async function iniciarAssinatura(cliente: ClienteAtual, config: ConfigAsa
   if (gravacao.error) throw erroBanco();
   registro.customer_id = pagador.id;
   const inicio = new Date().toISOString();
-  const assinatura = await api.criarAssinatura(pagador.id, registro.id);
+  const assinatura = await api.criarAssinatura(pagador.id, registro.id, Number(registro.valor_centavos), registro.primeiro_vencimento);
   return conciliar(config, registro, assinatura, inicio);
 }
 

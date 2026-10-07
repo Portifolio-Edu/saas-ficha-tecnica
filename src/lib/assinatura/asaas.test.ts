@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { ClienteAsaas, configAsaas, diaDaCobranca, resumoAssinatura, tokenWebhookValido, urlFaturaSegura, type AssinaturaAsaas, type PagamentoAsaas } from "./asaas";
 
-const env = { ASAAS_COBRANCA_HABILITADA: "true", ASAAS_AMBIENTE: "sandbox", ASAAS_API_KEY: "$aact_hmlg_teste", ASAAS_WEBHOOK_TOKEN: "t".repeat(40), ASAAS_PLANO_MENSAL_CENTAVOS: "9900" };
+const env = { ASAAS_COBRANCA_HABILITADA: "true", ASAAS_AMBIENTE: "sandbox", ASAAS_API_KEY: "$aact_hmlg_teste", ASAAS_WEBHOOK_TOKEN: "t".repeat(40), ASAAS_PLANO_MENSAL_CENTAVOS: "29700" };
 const assinatura: AssinaturaAsaas = { id: "sub_1", customer: "cus_1", externalReference: "referencia", value: 99, cycle: "MONTHLY", status: "ACTIVE" };
 const pagamento: PagamentoAsaas = { id: "pay_1", subscription: "sub_1", customer: "cus_1", value: 99, dueDate: "2026-10-01", status: "RECEIVED" };
 
 describe("configuração da cobrança", () => {
   it("fica desligada por padrão e exige valor, segredo e ambiente compatíveis", () => {
     expect(configAsaas({})).toBeNull();
-    expect(configAsaas(env)?.valorCentavos).toBe(9900);
-    for (const valor of ["", "0", "99.90", "-10", "999999999999999999999"]) expect(() => configAsaas({ ...env, ASAAS_PLANO_MENSAL_CENTAVOS: valor })).toThrow();
+    expect(configAsaas(env)?.valorCentavos).toBe(29700);
+    for (const valor of ["", "0", "9900", "19700", "99.90", "-10", "999999999999999999999"]) expect(() => configAsaas({ ...env, ASAAS_PLANO_MENSAL_CENTAVOS: valor })).toThrow();
     expect(() => configAsaas({ ...env, ASAAS_AMBIENTE: "producao" })).toThrow();
     expect(() => configAsaas({ ...env, ASAAS_WEBHOOK_TOKEN: env.ASAAS_API_KEY })).toThrow();
     expect(() => configAsaas({ ...env, ASAAS_AMBIENTE: "producao", ASAAS_API_KEY: "$aact_prod_teste", VERCEL_ENV: "preview" })).toThrow();
@@ -52,16 +52,16 @@ describe("conciliação financeira", () => {
 describe("adaptador Asaas", () => {
   it("manda valor do servidor e referência, sem dados de cartão", async () => {
     const transporte = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(assinatura)));
-    await new ClienteAsaas(configAsaas(env)!, transporte).criarAssinatura("cus_1", "referencia");
+    await new ClienteAsaas(configAsaas(env)!, transporte).criarAssinatura("cus_1", "referencia", 29700, "2030-10-15");
     const [url, opcoes] = transporte.mock.calls[0];
     expect(url).toBe("https://api-sandbox.asaas.com/v3/subscriptions");
     expect(opcoes?.headers).toHaveProperty("access_token", env.ASAAS_API_KEY);
-    expect(JSON.parse(String(opcoes?.body))).toMatchObject({ value: 99, cycle: "MONTHLY", billingType: "UNDEFINED", customer: "cus_1", externalReference: "referencia" });
+    expect(JSON.parse(String(opcoes?.body))).toMatchObject({ value: 297, cycle: "MONTHLY", billingType: "UNDEFINED", nextDueDate: "2030-10-15", customer: "cus_1", externalReference: "referencia" });
     expect(String(opcoes?.body)).not.toContain("creditCard");
   });
   it("não repete POST após resposta incerta nem expõe erro bruto do provedor", async () => {
     const transporte = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ errors: [{ description: "DADO SENSIVEL" }] }), { status: 500 }));
-    await expect(new ClienteAsaas(configAsaas(env)!, transporte).criarAssinatura("cus_1", "ref")).rejects.toThrow("Não foi possível confirmar");
+    await expect(new ClienteAsaas(configAsaas(env)!, transporte).criarAssinatura("cus_1", "ref", 29700, "2030-10-15")).rejects.toThrow("Não foi possível confirmar");
     expect(transporte).toHaveBeenCalledTimes(1);
   });
   it("percorre as páginas sem perder pagamentos mais antigos", async () => {

@@ -65,7 +65,10 @@ const TABELAS: Tabela[] = [
   { nome: "perfil_notas" },
   { nome: "banco_extras" },
   { nome: "perfis_extra" },
-  { nome: "assinaturas_saas", colunas: "id, ambiente, valor_centavos, estado, criado_em, sincronizado_em", migrationOpcional: true },
+  { nome: "testes_saas", migrationOpcional: true },
+  // Sem segredos nesta tabela; SELECT * inclui condições novas e mantém
+  // compatibilidade com a migration anterior, sob a RLS exclusiva do dono.
+  { nome: "assinaturas_saas", migrationOpcional: true },
 ];
 
 export const TABELAS_EXPORTADAS = TABELAS.map((t) => t.nome);

@@ -8,7 +8,7 @@ Base: `integracao`, com melhorias de fichas/Kanban até `1bc9565ea780c5e53f595f3
 |---|---|---|
 | Primeiro uso | Guia por dados reais na Visão geral e cadastro direcionado para ele | Conferir cadastro, confirmação de e-mail e conta vazia na implantação |
 | Assinatura | Emissão mensal Asaas, página hospedada, conciliação autenticada, cancelamento e proteção contra duplicação | Preço, conta, webhook, migration, homologação sandbox e ativação deliberada; flag desligada |
-| Oferta e acesso | Plano mensal único escolhido pelo responsável | Valor, duração do teste e regra de acesso após vencimento/cancelamento; expiração/bloqueio comercial não implementados |
+| Oferta e acesso | 7 dias grátis, R$ 297/mês; 10 fundadores a R$ 197 enquanto mantiverem assinatura; vaga confirmada no primeiro pagamento. Datas e reserva protegidas preparadas na migration da oferta | Definir e implementar a regra de acesso após vencimento/cancelamento; expiração/bloqueio comercial não implementados. Ativar e homologar a oferta em sandbox |
 | Empresa e suporte | Dados centralizados, agora configuráveis por variáveis públicas | Razão social, CNPJ, endereço, contato, contato de privacidade e foro reais; termos comerciais revisados |
 | Login e equipe | Código de cadastro, confirmação, recuperação e papéis; suíte E2E existente | SMTP e redirects no domínio definitivo, com teste de entrega e login por papel |
 | Banco | Migrations e testes SQL existentes; teste novo de assinatura | Confirmar migrations aplicadas no projeto atual, isolamento e cadeia completa em Supabase |
@@ -77,3 +77,7 @@ git revert --no-edit 1b472c19735e9afbe54f148cafe436d634f938e8 594bd6fdaa92921dfd
 Não usar esses comandos cegamente se houver commits posteriores: identificar primeiro o commit de registro e preservar novas alterações. Para reverter somente uma melhoria, usar seu hash da tabela e conferir dependências.
 
 A reversão de código não remove a migration aplicada nem cancela recorrências externas. Seguir o procedimento específico de [assinatura](melhorias/09-assinatura-mensal.md) antes de reverter um ambiente com cobrança habilitada.
+
+## Oferta aprovada em 07/10/2026
+
+A revisão isolada `lancamento/oferta-fundadores` acrescenta [oferta e controle das vagas](melhorias/15-oferta-fundadores.md). Esta revisão não muda a oferta no banco comercial nem habilita pagamentos. As evidências acima referem-se à versão anterior; os resultados desta oferta ficam no documento e no PR correspondentes.
