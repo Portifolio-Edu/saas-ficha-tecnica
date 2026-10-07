@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { mensagemErro } from "./erros";
 
-type Tabela = { nome: string; colunas?: string; ordem?: string };
+type Tabela = { nome: string; colunas?: string; ordem?: string; migrationOpcional?: boolean };
 
 const TABELAS: Tabela[] = [
   // Colunas escolhidas onde há dado técnico que não é do restaurante
@@ -65,6 +65,7 @@ const TABELAS: Tabela[] = [
   { nome: "perfil_notas" },
   { nome: "banco_extras" },
   { nome: "perfis_extra" },
+  { nome: "assinaturas_saas", colunas: "id, ambiente, valor_centavos, estado, criado_em, sincronizado_em", migrationOpcional: true },
 ];
 
 export const TABELAS_EXPORTADAS = TABELAS.map((t) => t.nome);
@@ -85,6 +86,7 @@ export async function exportarDadosRestaurante(): Promise<Record<string, unknown
         .select(t.colunas ?? "*")
         .order(t.ordem ?? "id")
         .range(de, de + PAGINA - 1);
+      if (error && t.migrationOpcional && ["42P01", "PGRST205"].includes(error.code)) break;
       if (error) throw new Error(`${t.nome}: ${mensagemErro(error)}`);
       linhas.push(...(data ?? []));
       if (!data || data.length < PAGINA) break;
@@ -118,6 +120,12 @@ async function listarArquivos(balde: string, pasta: string): Promise<string[]> {
  */
 export async function excluirRestaurante(clienteId: string, donoUserId: string): Promise<void> {
   const admin = criarClienteAdmin();
+
+  // Antes de remover fotos/logins. Compatível com uma implantação ainda sem
+  // a migration de cobrança; outros erros não autorizam apagar dados.
+  const assinatura = await admin.from("assinaturas_saas").select("id").eq("cliente_id", clienteId).neq("estado", "cancelada").limit(1);
+  if (assinatura.error && !["42P01", "PGRST205"].includes(assinatura.error.code)) throw new Error("Não foi possível conferir a assinatura antes de excluir a conta.");
+  if (assinatura.data?.length) throw new Error("Cancele ou concilie a assinatura em Plano antes de excluir o restaurante.");
 
   const { data: membros, error: erroMembros } = await admin.from("membros").select("user_id").eq("cliente_id", clienteId);
   if (erroMembros) throw new Error(mensagemErro(erroMembros));

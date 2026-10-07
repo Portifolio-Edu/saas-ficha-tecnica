@@ -109,7 +109,7 @@ export async function cadastrar(_estado: EstadoAuth, formData: FormData): Promis
     };
   }
 
-  redirect("/insumos");
+  redirect("/visao-geral");
 }
 
 export async function sair() {

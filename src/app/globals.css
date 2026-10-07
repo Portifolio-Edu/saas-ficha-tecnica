@@ -106,7 +106,9 @@ input[type="number"]::-webkit-outer-spin-button {
   --etapa-producao: #D97706;
   --etapa-producao-texto: #92400E; /* antes #B45309 (contraste 3,9–4,4 no fundo tingido) */
   --etapa-produzido: #059669;
-  --etapa-produzido-texto: #047857;
+  /* Texto em etiquetas de folga/produzido: AA mesmo sobre verde tingido.
+     Antes #047857 (4,19:1 na consulta). Só o texto escurece; o acento fica. */
+  --etapa-produzido-texto: #065F46;
   --etapa-perda: #DC2626;
   --etapa-perda-texto: #B91C1C;
 

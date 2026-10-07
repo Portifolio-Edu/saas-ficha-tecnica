@@ -38,6 +38,11 @@ test.describe.serial("com login real", () => {
     await page.fill("#senha", dono.senha);
     await page.check("input[name=aceite_termos]");
     await page.getByRole("button", { name: /Criar|Cadastr/ }).click();
+    await expect(page).toHaveURL(/\/visao-geral$/);
+    const inicio = page.getByRole("region", { name: "Comece pelo seu restaurante" });
+    await expect(inicio).toBeVisible();
+    await expect(inicio.getByText("0 de 5 etapas")).toBeVisible();
+    await inicio.getByRole("link", { name: /Próximo passo:/ }).click();
     await expect(page).toHaveURL(/\/insumos$/);
     await expect(page.getByText(dono.restaurante).first()).toBeVisible();
 
@@ -183,8 +188,9 @@ test.describe.serial("com login real", () => {
     await entrar(page, gestor.usuario, gestor.senha);
     await expect(page).toHaveURL(/\/visao-geral$/);
     await page.goto("/producoes");
-    await expect(page.getByText(`Massa ${RODADA}`).locator("visible=true").first()).toBeVisible();
-    await expect(page.getByText(cozinheiro).first()).toBeVisible();
+    const emProducao = page.getByRole("region", { name: /^Em produção:/ });
+    await expect(emProducao.getByText(`Massa ${RODADA}`, { exact: true })).toBeVisible();
+    await expect(emProducao.getByRole("definition").filter({ hasText: cozinheiro }).first()).toBeVisible();
   });
 
   test("escala: gestor monta a escala e lança um afastamento", async ({ page }) => {
